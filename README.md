@@ -4,31 +4,38 @@ Warren will be a new message queue for Python 3, backed by AMQP.
 The emphasis is on providing conceptually simple communication 
 between multiple applications/processes.
 
-Working is the working name for the project, it may change.
+This is provisionally not aimed at microservice architectures. Rather 
+at cases where they are several non-micro applications which require some 
+level of coordination.
+
+*Warren* is the working name for the project, it may change.
+
+**TL;DR:** Short of time? I’m particularly interested in responses to the ‘Concerns’ section below.
 
 ## Motivation
 
 *This was originally and briefly discussed in a 
-[Hacker News theead](https://news.ycombinator.com/item?id=14556988).*
+[Hacker News thread](https://news.ycombinator.com/item?id=14556988).*
 
 Current Python message queues function well in the case where there 
 is a single app which needs to queue tasks for execution later.
+However, the seem poorly suited to multi-application ecosystems.
 The reasons for this can be broken down as follows:
 
 **Broker limitations** - Queues such as [rq](http://python-rq.org/)
-support are limited by the use of Redis as a broker. This 
-becomes a problem when dealing with losly coupled apps (details below)
+are limited by the use of Redis as a broker. This 
+becomes a problem when dealing with loosely coupled apps (see ‘Why AMQP’).
 
 **Complexity** - [Celery](http://celery.readthedocs.io/) in particular 
 becomes particularly conceptually complex when dealing with with 
 multiple applications communicating via AMQP. This is partly because 
 Celery's terminology overlaps and somewhat conflicts with that of AMQP.
-It is also because the Celery documentation is also pretty light on details 
-when it comes to more complex setups.
+It is also because the Celery documentation is pretty light on details 
+when it comes to more complex setups (as is Google).
 
 **Conceptual mapping** - Messages sent via apps seem to break down into 
-two categories, events & calls. Event messages should be sent without 
-caring who is listening and without expecting a response. An app should 
+two categories, *events* & *calls*. Event messages should be sent without 
+caring who is listening and without expecting a response. Additionally, an app should 
 be able to have multiple listeners for an event. Calls 
 require that a process is present to respond, and the response must be 
 returned to the calling process. I believe surfacing this distinction 
@@ -48,24 +55,24 @@ tightly coupled to the underlying broker (i.e. because
 supporting multiple brokers leads to significant complexity in other popular message queues).
 
 I am also proposing that the broker be AMQP-based 
-(e.g. [RabbitMQ](https://www.rabbitmq.com)). This is because I feel 
+(e.g. [RabbitMQ](https://www.rabbitmq.com)). This is because I believe 
 AMQP provides the features needed to losely couple applications via a message queue.
 
 For example, I want to send a ``user.registered`` event from App A. App A should 
 be able to send this without knowing if anyone is listening for it, without knowing 
 what queue it should go on, and without knowing anything about the implementation
-of the event handlers. Moreover, App B should be able to listen for ``user.registered`` without 
+of any event handlers. Moreover, App B should be able to listen for ``user.registered`` without 
 having to know anything about where the event comes from.
 
-With brokers such as Redis this isn’t possible because App A needs push a message 
+This isn’t possible with brokers such as Redis because App A needs push a message 
 to the queue that App B is listening on. App A therefore needs to know that App B exists and 
 that it is listening on a particular queue. Additionally, if App C then also wants to listen 
 for the event then it will need its own queue. At this point App A needs to enqueue the message *twice*, 
 once for App B and once for App C.
 
-AMQP solves this by adding the concept of ‘exchanges’. 
+AMQP solves this by adding the concept of ‘exchanges’.
 With AMQP, App B would create its own queue and configure it to receive messages 
-from one or more exchanges, perhaps also filtering for only certainly messages.
+from one or more exchanges, perhaps also filtering for only certain messages.
 App A sends a message to the AMQP *exchange*. AMQP then places that message into 
 each queue listening on that exchange. This includes the queue that App B created, 
 and therefore App B receives the message.
@@ -79,10 +86,10 @@ without App A ever knowing or caring.
 
 **History repeating** - Presumably this has all been done before. 
 What did/do those implementations look like? What were their failings? Am 
-I bound to repeat them?
+I bound to repeat them? ([ESB](https://en.wikipedia.org/wiki/Enterprise_service_bus)?)
 
 **AMQP suitability** - I’ve heard rumours of RabbitMQ being unstable under 
-heavy load. Is this still true? Are there alternative AMQP brokers? Also,
+heavy load. Is this still true? Is it a concern? Are there alternative AMQP brokers? Also,
 are there reasons AMQP wouldn’t be suitable?
 
 **Demand** - Is there demand for a project such as this? Do others encounter these 
@@ -91,10 +98,17 @@ pain points? If not, why not?
 **Collaborators** - Currently it is just me, @adamcharnock. These things are more 
 sustainable with multiple people. See below…
 
+**Microservices** - I am uncertain of the suitability of broker-based 
+message transport for microservice architectures. In particular, I’ve seen 
+latencies of around 300ms (via Celery) while waiting for a task to return a response.
+This is fine for offline processes, but would probably but too slow for serving HTTP 
+requests to users. Is it acceptable to discount this use case? 
+Can these latencies be reduced? Could/should ZeroMQ be used to return the responses?
+
 ## Get involved!
 
 I’d much prefer to work on this as a team. Input at the design stage will 
-also be particularly important, but coding and maintenance help is also excellent.
+be particularly important, but coding and maintenance help is also excellent.
 
 I’m hoping the implementation can be kept small and sleek, and I imagine this will 
 be a slow burn over 12ish months.
@@ -107,4 +121,3 @@ scheduled tasks, and perhaps monitoring/debugging.
 
 Watch this space. I would like to at least partially address the above 
 concerns before designing an implementation.
-
