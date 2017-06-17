@@ -121,3 +121,14 @@ scheduled tasks, and perhaps monitoring/debugging.
 
 Watch this space. I would like to at least partially address the above 
 concerns before designing an implementation.
+
+## Suggestions made
+
+### Consider MQTT rather than AMQP
+
+Questions to be answered:
+
+* Does MQTT support loosely coupling processes as described above?
+* What brokers are available?
+* How do MQTT brokers compare to RabbitMQ et al? Stability, features, etc
+* How easily can the brokers be deployed?
