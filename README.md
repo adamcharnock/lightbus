@@ -5,7 +5,7 @@ The emphasis is on providing conceptually simple communication
 between multiple applications/processes.
 
 This is provisionally not aimed at microservice architectures. Rather 
-at cases where they are several non-micro applications which require some 
+at cases where there are several non-micro applications which require some 
 level of coordination.
 
 *Warren* is the working name for the project, it may change.
