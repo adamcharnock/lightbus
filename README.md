@@ -19,7 +19,7 @@ level of coordination.
 
 Current Python message queues function well in the case where there 
 is a single app which needs to queue tasks for execution later.
-However, the seem poorly suited to multi-application ecosystems.
+However, they seem poorly suited to multi-application ecosystems.
 The reasons for this can be broken down as follows:
 
 **Broker limitations** - Queues such as [rq](http://python-rq.org/)
@@ -90,13 +90,13 @@ I bound to repeat them? ([ESB](https://en.wikipedia.org/wiki/Enterprise_service_
 
 **AMQP suitability** - I’ve heard rumours of RabbitMQ being unstable under 
 heavy load. Is this still true? Is it a concern? Are there alternative AMQP brokers? Also,
-are there reasons AMQP wouldn’t be suitable?
+are there other reasons AMQP wouldn’t be suitable?
 
 **Demand** - Is there demand for a project such as this? Do others encounter these 
 pain points? If not, why not?
 
 **Collaborators** - Currently it is just me, @adamcharnock. These things are more 
-sustainable with multiple people. See below…
+sustainable with multiple people. See below.
 
 **Microservices** - I am uncertain of the suitability of broker-based 
 message transport for microservice architectures. In particular, I’ve seen 
