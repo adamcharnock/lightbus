@@ -77,16 +77,19 @@ without App A ever knowing or caring.
 
 ## Concerns
 
-* **History repeating** - Presumably this has all been done before. 
-  What did/do those implementations look like? What were their failings? Am 
-  I bound to repeat them?
-* **AMQP suitability** - I’ve heard rumours of RabbitMQ being unstable under 
-  heavy load. Is this still true? Are there alternative AMQP brokers? Also,
-  are there reasons AMQP wouldn’t be suitable?
-* **Demand** - Is there demand for a project such as this? Do others encounter these 
-  pain points? If not, why not?
-* **Collaborators** - Current it is just me, @adamcharnock. These things are more 
-  sustainable with multiple people. 
+**History repeating** - Presumably this has all been done before. 
+What did/do those implementations look like? What were their failings? Am 
+I bound to repeat them?
+
+**AMQP suitability** - I’ve heard rumours of RabbitMQ being unstable under 
+heavy load. Is this still true? Are there alternative AMQP brokers? Also,
+are there reasons AMQP wouldn’t be suitable?
+
+**Demand** - Is there demand for a project such as this? Do others encounter these 
+pain points? If not, why not?
+
+**Collaborators** - Current it is just me, @adamcharnock. These things are more 
+sustainable with multiple people. 
 
 
 ## Implementation
