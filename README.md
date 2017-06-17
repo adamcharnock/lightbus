@@ -88,8 +88,19 @@ are there reasons AMQP wouldn’t be suitable?
 **Demand** - Is there demand for a project such as this? Do others encounter these 
 pain points? If not, why not?
 
-**Collaborators** - Current it is just me, @adamcharnock. These things are more 
-sustainable with multiple people. 
+**Collaborators** - Currently it is just me, @adamcharnock. These things are more 
+sustainable with multiple people. See below…
+
+## Get involved!
+
+I’d much prefer to work on this as a team. Input at the design stage will 
+also be particularly important, but coding and maintenance help is also excellent.
+
+I’m hoping the implementation can be kept small and sleek, and I imagine this will 
+be a slow burn over 12ish months.
+
+There is probably also a web UI side-project down the road. Something for managing 
+scheduled tasks, and perhaps monitoring/debugging.
 
 
 ## Implementation
