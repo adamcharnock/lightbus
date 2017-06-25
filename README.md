@@ -56,7 +56,7 @@ supporting multiple brokers leads to significant complexity in other popular mes
 
 I am also proposing that the broker be AMQP-based 
 (e.g. [RabbitMQ](https://www.rabbitmq.com)). This is because I believe 
-AMQP provides the features needed to losely couple applications via a message queue.
+AMQP provides the features needed to loosely couple applications via a message queue.
 
 For example, I want to send a ``user.registered`` event from App A. App A should 
 be able to send this without knowing if anyone is listening for it, without knowing 
