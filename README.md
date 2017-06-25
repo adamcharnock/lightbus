@@ -132,3 +132,10 @@ Questions to be answered:
 * What brokers are available?
 * How do MQTT brokers compare to RabbitMQ et al? Stability, features, etc
 * How easily can the brokers be deployed?
+
+### Consider Kafka rather than AMQP
+
+Questions to be answered:
+
+* Does Kafka support loosely coupling processes as described above?
+* How easily can Kafka be deployed?
