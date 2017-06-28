@@ -88,22 +88,22 @@ without App A ever knowing or caring.
 What did/do those implementations look like? What were their failings? Am 
 I bound to repeat them? ([ESB](https://en.wikipedia.org/wiki/Enterprise_service_bus)?)
 
-**AMQP suitability** - I’ve heard rumours of RabbitMQ being unstable under 
-heavy load. Is this still true? Is it a concern? Are there alternative AMQP brokers? Also,
-are there other reasons AMQP wouldn’t be suitable?
+**AMQP suitability** - Rabbit MQ, the most popular AMQP broker, does not handle network paritions particularly well. Is it a concern? Would an alternative such as ActiveMQ be a suitable alternative? Are there reasons AMQP protocol wouldn’t be suitable in general?
 
 **Demand** - Is there demand for a project such as this? Do others encounter these 
 pain points? If not, why not?
 
 **Collaborators** - Currently it is just me, @adamcharnock. These things are more 
-sustainable with multiple people. See below.
+sustainable with multiple people and I am therefore very interesting in workin on this with others. 
+More details below.
 
 **Microservices** - I am uncertain of the suitability of broker-based 
 message transport for microservice architectures. In particular, I’ve seen 
 latencies of around 300ms (via Celery) while waiting for a task to return a response.
 This is fine for offline processes, but would probably but too slow for serving HTTP 
 requests to users. Is it acceptable to discount this use case? 
-Can these latencies be reduced? Could/should ZeroMQ be used to return the responses?
+Can these latencies be reduced? Could/should ZeroMQ be used to return the responses, 
+thereby reducing latencies?
 
 ## Get involved!
 
@@ -115,7 +115,6 @@ be a slow burn over 12ish months.
 
 There is probably also a web UI side-project down the road. Something for managing 
 scheduled tasks, and perhaps monitoring/debugging.
-
 
 ## Implementation
 
