@@ -24,9 +24,9 @@ def main():
     with Connection('amqp://guest:guest@127.0.0.1:5672//') as conn:
         simple_queue = conn.SimpleQueue('simple_queue')
         # Block until we get the 'ready to start' message
-        # print('Waiting for kick-off message from producer')
-        # simple_queue.get(block=True).ack()
-        # print("Got it! Let's go...")
+        print('Waiting for kick-off message from producer')
+        simple_queue.get(block=True).ack()
+        print("Got it! Let's go...")
 
         def get():
             nonlocal sockets

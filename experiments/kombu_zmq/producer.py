@@ -28,7 +28,7 @@ log('Listening for results on {}:{}'.format(HOST, PORT))
 
 with Connection('amqp://guest:guest@localhost:5672//') as conn:
     simple_queue = conn.SimpleQueue('simple_queue')
-    # simple_queue.put('kick-off!')
+    simple_queue.put('kick-off!')
 
     def put():
         message_id = str(randint(100, 999))
