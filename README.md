@@ -88,7 +88,9 @@ without App A ever knowing or caring.
 What did/do those implementations look like? What were their failings? Am 
 I bound to repeat them? ([ESB](https://en.wikipedia.org/wiki/Enterprise_service_bus)?)
 
-**AMQP suitability** - Rabbit MQ, the most popular AMQP broker, does not handle network paritions particularly well. Is it a concern? Would an alternative such as ActiveMQ be a suitable alternative? Are there reasons AMQP protocol wouldn’t be suitable in general?
+**AMQP suitability** - Rabbit MQ, the most popular AMQP broker, does not handle network paritions 
+particularly well. Is it a concern? Would an alternative such as ActiveMQ be a suitable alternative? 
+Are there reasons AMQP protocol wouldn’t be suitable in general?
 
 **Demand** - Is there demand for a project such as this? Do others encounter these 
 pain points? If not, why not?
@@ -104,6 +106,8 @@ This is fine for offline processes, but would probably but too slow for serving 
 requests to users. Is it acceptable to discount this use case? 
 Can these latencies be reduced? Could/should ZeroMQ be used to return the responses, 
 thereby reducing latencies?
+
+**Update:** [Promising results with AMQP + ZeroMQ](https://github.com/adamcharnock/warren/tree/master/experiments/kombu_zmq).
 
 ## Get involved!
 
