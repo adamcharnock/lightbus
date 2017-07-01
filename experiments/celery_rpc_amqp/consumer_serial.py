@@ -1,7 +1,7 @@
 import sys
 import timeit
 
-from celery_tasks import add
+from .celery_tasks import add
 
 
 TOTAL_MESSAGES = int(sys.argv[1])

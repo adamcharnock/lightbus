@@ -1,5 +1,6 @@
-celery==4.0.2
-kombu==4.0.2
+git+https://git@github.com/celery/celery.git@master#egg=celery
+git+https://git@github.com/celery/kombu.git@master#egg=kombu
 amqp==2.1.4
 cprofilev==1.0.7
 redis==2.10.5
+pyzmq==16.0.2
