@@ -121,6 +121,7 @@ Reasons for pursuing this project anyway:
 * Space for targeting specifically non-microservices. Eg.
     * Syncing data models between applications
 * Better debugging & developer tools
+* Because fun?
 
 ## Get involved!
 
