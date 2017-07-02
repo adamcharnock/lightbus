@@ -110,6 +110,18 @@ thereby reducing latencies?
 
 **Update:** [Promising results with AMQP + ZeroMQ](https://github.com/adamcharnock/warren/tree/master/experiments/kombu_zmq).
 
+### Nameko basically does this already
+
+Yep, [nameko does this](http://nameko.readthedocs.io/). This may nullify the need for this project. 
+Reasons for pursuing this project anyway:
+
+* Nameko is aimed specifically at microservices
+* Preferences regarding how services are defined
+* Performance improvements to be gained from combining AMQP + ZeroMQ
+* Space for targeting specifically non-microservices. Eg.
+    * Syncing data models between applications
+* Better debugging & developer tools
+
 ## Get involved!
 
 I’d much prefer to work on this as a team. Input at the design stage will 
