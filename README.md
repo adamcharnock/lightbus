@@ -8,7 +8,8 @@ This is provisionally not aimed at microservice architectures. Rather
 at cases where there are several non-micro applications which require some 
 level of coordination.
 
-*Warren* is the working name for the project, it may change.
+*Warren* is the working name for the project, it ~~may~~ will change 
+as the name is [already taken](https://pypi.python.org/pypi/warren/0.1.0).
 
 **TL;DR:** Short of time? I’m particularly interested in responses to the ‘Concerns’ section below.
 
