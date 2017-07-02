@@ -3,9 +3,17 @@
 
 from mycompany.common.auth import api
 
+# Blocking calls
 user_info = api.get_user(username='testuser')
 password_ok = api.check_passsword(password='Passw0rd1')
 api.user_registered.listen(my_callback)
+
+# Parallel calls
+async_result1 = api.get_user.async(username='testuser')
+async_result2 = api.check_passsword.async(password='Passw0rd1')
+user_info = async_result1.wait()
+password_ok = async_result2.wait()
+
 
 # Pro
 #   - Presence of 'api' indicates that this is an external service
