@@ -1,5 +1,7 @@
 # Design Document
 
+*Warren - Filling the gap between monolithic and microservice*
+
 Warren will be a new message queue for Python 3, backed by AMQP. 
 The emphasis is on providing conceptually simple communication 
 between multiple applications/processes.
@@ -12,6 +14,38 @@ level of coordination.
 as the name is [already taken](https://pypi.python.org/pypi/warren/0.1.0).
 
 **TL;DR:** Short of time? I’m particularly interested in responses to the ‘Concerns’ section below.
+
+## Goals
+
+* A backend RPC & pub/sub between applications
+* Ease of development & debugging
+* Excellent tooling & documentation
+* Targeting smaller teams
+* High speed & low latency (but not at the expense of other goals)
+
+## Non-goals
+
+We explicitly do not wish to support the following:
+
+* Microservice architectures
+* High volume (> 5,000 messages per second, at least initially)
+
+## Assumptions
+
+* APIs exposed on trusted network only
+
+## Example use
+
+A company has several Python-based web applications for handling 
+sales, spare parts, support, and warranty registrations. These applications are 
+separate entities, but need a backend communication system for coordination and data 
+sharing. The support app checks the user has a valid warranty, the warranty app 
+pulls data in from sales, and the support app also needs information regarding spare 
+part availability.
+
+Warren provides a uniform backend allowing these applications to expose their own 
+APIs and consume the APIs of others. These APIs feature both methods to be called 
+(RPC) and events which can be published & subscribed to (PUB/SUB).
 
 ## Motivation
 
@@ -106,22 +140,18 @@ latencies of around 300ms (via Celery) while waiting for a task to return a resp
 This is fine for offline processes, but would probably but too slow for serving HTTP 
 requests to users. Is it acceptable to discount this use case? 
 Can these latencies be reduced? Could/should ZeroMQ be used to return the responses, 
-thereby reducing latencies?
-
-**Update:** [Promising results with AMQP + ZeroMQ](https://github.com/adamcharnock/warren/tree/master/experiments/kombu_zmq).
+thereby reducing latencies? **Update:** [Promising results with AMQP + ZeroMQ](https://github.com/adamcharnock/warren/tree/master/experiments/kombu_zmq).
 
 ### Nameko basically does this already
 
-Yep, [nameko does this](http://nameko.readthedocs.io/). This may nullify the need for this project. 
-Reasons for pursuing this project anyway:
+Yep, [nameko does this](http://nameko.readthedocs.io/). However:
 
 * Nameko is aimed specifically at microservices
-* Preferences regarding how services are defined
-* Performance improvements to be gained from combining AMQP + ZeroMQ
+* Definition of APIs is very Service-oriented (this makes sense for microservices)
+* Potential performance improvements to be gained from combining AMQP + ZeroMQ
 * Space for targeting specifically non-microservices. Eg.
     * Syncing data models between applications
 * Better debugging & developer tools
-* Because fun?
 
 ## Get involved!
 
@@ -150,9 +180,17 @@ Questions to be answered:
 * How do MQTT brokers compare to RabbitMQ et al? Stability, features, etc
 * How easily can the brokers be deployed?
 
+**Quotes of note:**
+
+> We recommend the use of AMQP protocol to build reliable,scalable, and advanced clustering messaging infrastructuresover an ideal WLAN, and the use of MQTT protocol to supportconnections with edge nodes (simple sensors/actuators) underconstrained environments (low-speed wireless access) 
+
+[source](http://sci-hub.io/10.1109/ccnc.2015.7158101)
+
 ### Consider Kafka rather than AMQP
 
 Questions to be answered:
 
 * Does Kafka support loosely coupling processes as described above?
 * How easily can Kafka be deployed?
+* **Update:** Kafka appears more difficult to setup. Plus we'd tie ourselves to 
+  an implementation, rather than a protocol (in the case of AMQP)
