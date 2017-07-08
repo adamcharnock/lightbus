@@ -153,6 +153,20 @@ Yep, [nameko does this](http://nameko.readthedocs.io/). However:
     * Syncing data models between applications
 * Better debugging & developer tools
 
+**What we could keep/ditch from the example provided by Nameko:**
+
+* Ditch: Dependency injection
+  * I'm not sold on DI in Python. I get the impression that it is a rather
+    verbose way of achieving IoC compared to what python supports natively
+    as a dynamic language.
+* Keep: Shell
+* Change: Define APIs not services
+  * This is also proving some clarity on how Warren would be different to
+    Nameko. In this case it indicates that Warren has a bias towards
+    inter-application communication, rather than being geared around microservices..
+* Enhance: Tooling
+* Enhance: Documentation
+
 ## Get involved!
 
 I’d much prefer to work on this as a team. Input at the design stage will 
