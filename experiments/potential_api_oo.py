@@ -58,7 +58,7 @@ class AuthImplementation(Api):
         }
 
     def check_password(self, password: str) -> dict:
-        return (password == 'Passw0rd!')
+        return password == 'Passw0rd!'
 
 client = AuthImplementation.as_client()
 server = AuthImplementation.as_server()
@@ -71,6 +71,7 @@ server = AuthImplementation.as_server()
 #   - Has the option of being DRY where client/server separation is not required
 # Cons:
 #   - Not DRY in it's long form
+#   - Forcing an OO design
 
 #######################
 # Additional thoughts #
