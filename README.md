@@ -167,6 +167,39 @@ Yep, [nameko does this](http://nameko.readthedocs.io/). However:
 * Enhance: Tooling
 * Enhance: Documentation
 
+## Pitching as a Celery replacement?
+
+What would be required to pitch this as a celery replacement? I think 
+it depends on the Celery user. Smaller projects will have different 
+needs to larger projects.
+
+The following table considers 
+what features different sized projects may consider a 'must have' requirement.
+For the sake of this simple analysis, a small project may be considered a hobby project or smaller commercial project, 
+likely with a sole developer. A large project would be one with a team of 10+ 
+developers serving significant traffic. A medium project would be everything 
+in between.
+
+
+| Feature                                                  | Small project | Medium project | Large project |
+| -------------------------------------------------------- |:-------------:|:--------------:|:-------------:|
+| Support for simple (non-AMQP) brokers                    | ✔             | -              | -             |
+| Can function on non-trusted network (Heroku)             | ✔             | -              | -             |
+| Conceptually simple                                      | ✔             | ✔              | -             |
+| Scheduling                                               | ✔             | ✔              | ✔             |
+| Monitoring                                               | ?             | ✔              | ✔             |
+| Rate limiting                                            | -             | ✔              | ✔             |
+| Workflows (eg. tasking chaining)                         | -             | ✔              | ✔             |
+| Cross-project communication                              | -             | ✔              | ✔             |
+| RPC                                                      | -             | ✔              | ✔             |
+| Pub/sub                                                  | -             | ✔              | ✔             |
+| Schema support                                           | -             | ?              | ✔             |
+| Multi-language support                                   | -             | ?              | ✔             |
+| Versioning of internal APIs                              | -             | ?              | ✔             |
+| Support for 'specialist' (non-AMQP) brokers, e.g. Kafka  | -             | -              | ✔             |
+| Easy conceptual mapping to microservices                 | -             | -              | ✔             |
+
+
 ## Get involved!
 
 I’d much prefer to work on this as a team. Input at the design stage will 
