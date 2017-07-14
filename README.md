@@ -189,7 +189,7 @@ in between.
 | Scheduling                                               | ✔             | ✔              | ✔             |
 | Monitoring                                               | ?             | ✔              | ✔             |
 | Rate limiting                                            | -             | ✔              | ✔             |
-| Workflows (eg. tasking chaining)                         | -             | ✔              | ✔             |
+| Workflows (eg. task chaining)                            | -             | ✔              | ✔             |
 | Cross-project communication                              | -             | ✔              | ✔             |
 | RPC                                                      | -             | ✔              | ✔             |
 | Pub/sub                                                  | -             | ✔              | ✔             |
