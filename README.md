@@ -1,23 +1,26 @@
 # Design Document
 
-*Warren - Filling the gap between monolithic and microservice*
+*Lightbus - Filling the gap between monolithic and microservice*
 
-Warren will be a new message queue for Python 3, backed by AMQP. 
-The emphasis is on providing conceptually simple communication 
+**Note: This document is very much a work in progress**
+
+Lightbus will be a new message bus for Python 3, backed by AMQP.
+Our focus is providing conceptually simple communication 
 between multiple applications/processes.
 
-This is provisionally not aimed at microservice architectures. Rather 
-at cases where there are several non-micro applications which require some 
-level of coordination.
+Lightbus will be able to substitute for message queues such as 
+Celery & Rq, but it will encourage a more extensible & loosely coupled architecture.
 
-*Warren* is the working name for the project, it ~~may~~ will change 
-as the name is [already taken](https://pypi.python.org/pypi/warren/0.1.0).
+Lightbus will not be aimed at microservice architectures. Rather 
+at cases where several non-micro applications which require some 
+level of coordination.
 
 **TL;DR:** Short of time? I’m particularly interested in responses to the ‘Concerns’ section below.
 
 ## Goals
 
-* A backend RPC & pub/sub between applications
+* RPC
+* Events (pub/sub)
 * Ease of development & debugging
 * Excellent tooling & documentation
 * Targeting smaller teams
@@ -28,7 +31,7 @@ as the name is [already taken](https://pypi.python.org/pypi/warren/0.1.0).
 We explicitly do not wish to support the following:
 
 * Microservice architectures
-* High volume (> 5,000 messages per second, at least initially)
+* High volume (arbitrarily set at over 5,000 messages per second)
 
 ## Assumptions
 
@@ -43,7 +46,7 @@ sharing. The support app checks the user has a valid warranty, the warranty app
 pulls data in from sales, and the support app also needs information regarding spare 
 part availability.
 
-Warren provides a uniform backend allowing these applications to expose their own 
+Lightbus provides a uniform backend communication bus allowing these applications to expose their own 
 APIs and consume the APIs of others. These APIs feature both methods to be called 
 (RPC) and events which can be published & subscribed to (PUB/SUB).
 
@@ -55,7 +58,11 @@ APIs and consume the APIs of others. These APIs feature both methods to be calle
 Current Python message queues function well in the case where there 
 is a single app which needs to queue tasks for execution later.
 However, they seem poorly suited to multi-application ecosystems.
-The reasons for this can be broken down as follows:
+
+Conversely, existing Python message bus systems ([Zato](https://zato.io/), for example)
+appear designed for much larger projects but at the cost of complexity.
+
+### Analysis of existing message queues
 
 **Broker limitations** - Queues such as [rq](http://python-rq.org/)
 are limited by the use of Redis as a broker. This 
@@ -82,6 +89,10 @@ queues to be difficult. I want simple ways to both assert that a message was
 created and simulate incoming messages. Both should take identical parameters.
 I would also like to see much better debugging tools, to help answer the question 
 “Why isn’t App B receiving message X from App A?”
+
+### Analysis of existing buses
+
+TBA - Zato discussion
 
 ## Why AMQP
 
@@ -123,7 +134,7 @@ without App A ever knowing or caring.
 What did/do those implementations look like? What were their failings? Am 
 I bound to repeat them? ([ESB](https://en.wikipedia.org/wiki/Enterprise_service_bus)?)
 
-**AMQP suitability** - Rabbit MQ, the most popular AMQP broker, does not handle network paritions 
+**AMQP suitability** - Rabbit MQ, the most popular AMQP broker, does not handle network partitions 
 particularly well. Is it a concern? Would an alternative such as ActiveMQ be a suitable alternative? 
 Are there reasons AMQP protocol wouldn’t be suitable in general?
 
@@ -131,20 +142,23 @@ Are there reasons AMQP protocol wouldn’t be suitable in general?
 pain points? If not, why not?
 
 **Collaborators** - Currently it is just me, @adamcharnock. These things are more 
-sustainable with multiple people and I am therefore very interesting in workin on this with others. 
+sustainable with multiple people and I am therefore very interested in working on this with others. 
 More details below.
 
-**Microservices** - I am uncertain of the suitability of broker-based 
-message transport for microservice architectures. In particular, I’ve seen 
-latencies of around 300ms (via Celery) while waiting for a task to return a response.
-This is fine for offline processes, but would probably but too slow for serving HTTP 
-requests to users. Is it acceptable to discount this use case? 
-Can these latencies be reduced? Could/should ZeroMQ be used to return the responses, 
-thereby reducing latencies? **Update:** [Promising results with AMQP + ZeroMQ](https://github.com/adamcharnock/warren/tree/master/experiments/kombu_zmq).
+**Niche** – Have I correctly identified that there is a niche that isn't being filled 
+by existing message queues and buses?
 
-### Nameko basically does this already
+### Existing work
 
-Yep, [nameko does this](http://nameko.readthedocs.io/). However:
+#### Celery / Rq
+
+See 'Analysis of existing message queues' above
+
+#### Zato.io
+
+See 'Analysis of existing buses' above
+
+#### Nameko
 
 * Nameko is aimed specifically at microservices
 * Definition of APIs is very Service-oriented (this makes sense for microservices)
@@ -161,8 +175,8 @@ Yep, [nameko does this](http://nameko.readthedocs.io/). However:
     as a dynamic language.
 * Keep: Shell
 * Change: Define APIs not services
-  * This is also proving some clarity on how Warren would be different to
-    Nameko. In this case it indicates that Warren has a bias towards
+  * This is also proving some clarity on how Lightbus would be different to
+    Nameko. In this case it indicates that Lightbus has a bias towards
     inter-application communication, rather than being geared around microservices..
 * Enhance: Tooling
 * Enhance: Documentation
@@ -218,26 +232,4 @@ concerns before designing an implementation.
 
 ## Suggestions made
 
-### Consider MQTT rather than AMQP
-
-Questions to be answered:
-
-* Does MQTT support loosely coupling processes as described above?
-* What brokers are available?
-* How do MQTT brokers compare to RabbitMQ et al? Stability, features, etc
-* How easily can the brokers be deployed?
-
-**Quotes of note:**
-
-> We recommend the use of AMQP protocol to build reliable,scalable, and advanced clustering messaging infrastructuresover an ideal WLAN, and the use of MQTT protocol to supportconnections with edge nodes (simple sensors/actuators) underconstrained environments (low-speed wireless access) 
-
-[source](http://sci-hub.io/10.1109/ccnc.2015.7158101)
-
-### Consider Kafka rather than AMQP
-
-Questions to be answered:
-
-* Does Kafka support loosely coupling processes as described above?
-* How easily can Kafka be deployed?
-* **Update:** Kafka appears more difficult to setup. Plus we'd tie ourselves to 
-  an implementation, rather than a protocol (in the case of AMQP)
+*Discarded suggestions moved to ARCHIVE.md.*
