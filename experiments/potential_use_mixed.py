@@ -10,6 +10,7 @@ user_registered = Event(api='my_company.auth', name='user_registered')
 
 class AuthApi(Api):
     user_registered = Event()
+    any = Event(matches='.#')  # Matches routing keys 'my_company.auth.#'
 
     class Meta:
         name = 'my_company.auth'

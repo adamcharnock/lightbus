@@ -37,6 +37,9 @@ We explicitly do not wish to support the following:
 
 * APIs exposed on trusted network only
 
+*Note: Requiring private network would essentially prevent deployment on Heroku.
+This may not be viable.*
+
 ## Example use
 
 A company has several Python-based web applications for handling 
@@ -46,7 +49,7 @@ sharing. The support app checks the user has a valid warranty, the warranty app
 pulls data in from sales, and the support app also needs information regarding spare 
 part availability.
 
-Lightbus provides a uniform backend communication bus allowing these applications to expose their own 
+Lightbus provides a uniform communication backend allowing these applications to expose their own 
 APIs and consume the APIs of others. These APIs feature both methods to be called 
 (RPC) and events which can be published & subscribed to (PUB/SUB).
 
@@ -62,11 +65,15 @@ However, they seem poorly suited to multi-application ecosystems.
 Conversely, existing Python message bus systems ([Zato](https://zato.io/), for example)
 appear designed for much larger projects but at the cost of complexity.
 
+Lightbus targets projects which fall in the gap between these two use cases.
+
 ### Analysis of existing message queues
+
+I have identified problems with existing message queues as follows:
 
 **Broker limitations** - Queues such as [rq](http://python-rq.org/)
 are limited by the use of Redis as a broker. This 
-becomes a problem when dealing with loosely coupled apps (see ‘Why AMQP’).
+becomes a problem when trying to architect loosely coupled apps (see ‘Why AMQP’).
 
 **Complexity** - [Celery](http://celery.readthedocs.io/) in particular 
 becomes particularly conceptually complex when dealing with with 
@@ -76,7 +83,7 @@ It is also because the Celery documentation is pretty light on details
 when it comes to more complex setups (as is Google).
 
 **Conceptual mapping** - Messages sent via apps seem to break down into 
-two categories, *events* & *calls*. Event messages should be sent without 
+two categories, *events* (pub/sub) & *calls* (RPC). Event messages should be sent without 
 caring who is listening and without expecting a response. Additionally, an app should 
 be able to have multiple listeners for an event. Calls 
 require that a process is present to respond, and the response must be 
@@ -105,10 +112,10 @@ I am also proposing that the broker be AMQP-based
 AMQP provides the features needed to loosely couple applications via a message queue.
 
 For example, I want to send a ``user.registered`` event from App A. App A should 
-be able to send this without knowing if anyone is listening for it, without knowing 
+be able to send this event without knowing if anyone is listening for it, without knowing 
 what queue it should go on, and without knowing anything about the implementation
 of any event handlers. Moreover, App B should be able to listen for ``user.registered`` without 
-having to know anything about where the event comes from.
+having to know any specific details about where the event comes from.
 
 This isn’t possible with brokers such as Redis because App A needs push a message 
 to the queue that App B is listening on. App A therefore needs to know that App B exists and 
@@ -177,7 +184,7 @@ See 'Analysis of existing buses' above
 * Change: Define APIs not services
   * This is also proving some clarity on how Lightbus would be different to
     Nameko. In this case it indicates that Lightbus has a bias towards
-    inter-application communication, rather than being geared around microservices..
+    inter-application communication, rather than being geared around microservices.
 * Enhance: Tooling
 * Enhance: Documentation
 
@@ -213,6 +220,8 @@ in between.
 | Support for 'specialist' (non-AMQP) brokers, e.g. Kafka  | -             | -              | ✔             |
 | Easy conceptual mapping to microservices                 | -             | -              | ✔             |
 
+
+This can therefore be used to provide an initial feature wish list.
 
 ## Get involved!
 
