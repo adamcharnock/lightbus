@@ -6,10 +6,6 @@
 Lightbus (design)
 =================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
 *Lightbus - Filling the gap between monolithic and microservice*
 
 **Note: This design document is very much a work in progress**
