@@ -1,2 +1,3 @@
 sphinx==1.6.3
+sphinx-autobuild==0.7.1
 -e git+https://github.com/bitprophet/alabaster/#egg=alabaster
