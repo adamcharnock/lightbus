@@ -1,0 +1,2 @@
+sphinx==1.6.3
+-e git+https://github.com/bitprophet/alabaster/#egg=alabaster
