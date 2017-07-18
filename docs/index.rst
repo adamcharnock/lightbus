@@ -22,7 +22,7 @@ focus is providing conceptually simple communication between multiple
 applications/processes.**
 
 Lightbus will be able to substitute for message queues such as Celery &
-Rq, but it will encourage a more extensible & loosely coupled
+Rq, but it will encourage a more extensible and loosely coupled
 architecture.
 
 Lightbus will not be aimed at microservice architectures. Rather at
