@@ -9,5 +9,7 @@ Lightbus will be able to substitute for message queues such as Celery &
 Rq, but it will encourage a more extensible & loosely coupled
 architecture.
 
-`See lightbus.org<http://lightbus.org/>`_
------------------------------------------
+`See lightbus.org`_
+-------------------
+
+.. _See lightbus.org: http://lightbus.org/
