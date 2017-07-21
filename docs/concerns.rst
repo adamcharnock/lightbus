@@ -1,6 +1,8 @@
 Concerns
 ========
 
+.. readingtime::
+
 History repeating
 -----------------
 

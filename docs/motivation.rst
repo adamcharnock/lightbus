@@ -1,6 +1,8 @@
 Motivation
 ==========
 
+.. readingtime::
+
 Current Python task queues function well in the case where there is a
 single app which needs to queue tasks for execution later. However, they
 seem poorly suited to multi-application ecosystems.

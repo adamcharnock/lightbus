@@ -1,6 +1,8 @@
 Alternatives
 ============
 
+.. readingtime::
+
 Celery
 ------
 

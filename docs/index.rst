@@ -13,9 +13,9 @@ Introduction
     concerns
     implementation
 
-*Lightbus - Filling the gap between monolithic and microservice*
+.. readingtime::
 
-**Note: This design document is very much a work in progress**
+*Lightbus - Filling the gap between monolithic and microservice (design stage)*
 
 **Lightbus will be a new message bus for Python 3, backed by AMQP. Our
 focus is providing conceptually simple communication between multiple

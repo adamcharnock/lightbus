@@ -1,6 +1,8 @@
 Implementation
 ==============
 
+.. readingtime::
+
 Principles
 ----------
 
