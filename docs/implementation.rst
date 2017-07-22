@@ -6,7 +6,9 @@ Implementation
 Principles
 ----------
 
-TBA
+.. todo::
+
+    Come up with some principles
 
 Why AMQP
 --------
@@ -49,7 +51,9 @@ without App A ever knowing or caring.
 API first sketch
 ----------------
 
-TBA
+.. todo::
+
+    Write API first sketch
 
 .. figure:: _static/images/huh.jpg
     :align: center

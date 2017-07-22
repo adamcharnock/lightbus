@@ -187,3 +187,4 @@ autosectionlabel_prefix_document = True
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/3.6': None}
 
+todo_include_todos = True

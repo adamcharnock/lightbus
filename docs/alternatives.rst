@@ -39,7 +39,9 @@ Rq
     :width: 100
     :alt: RQ logo
 
-TBA
+.. todo::
+
+    Write RQ section
 
 Zato
 ----
