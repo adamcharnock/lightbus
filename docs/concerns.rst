@@ -42,7 +42,7 @@ by existing task queues and buses? Am I missing something obvious?
     :align: center
     :alt: Someone in a canoe on a canal. Not me.
 
-    That's not me.  Next: :doc:`implementation`
+    That's not me.  Next: :doc:`implementation/index`
 
 .. _GitHub stars: https://github.com/adamcharnock/lightbus
 .. _Adam Charnock: https://adamcharnock.com/

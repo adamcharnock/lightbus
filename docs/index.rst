@@ -2,7 +2,7 @@ Introduction
 ============
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
     :numbered:
     :titlesonly:
     :hidden:
@@ -11,7 +11,7 @@ Introduction
     motivation
     alternatives
     concerns
-    implementation
+    implementation/index
 
 .. readingtime::
 
@@ -75,7 +75,7 @@ applications to expose their own APIs and consume the APIs of others.
 These APIs feature both methods to be called (RPC) and events which can
 be published & subscribed to (PUB/SUB).
 
-.. figure:: _static/images/tent-at-night.jpg
+.. figure:: /_static/images/tent-at-night.jpg
     :align: center
     :alt: A glowing tent at night in an orange orchard. Pretty, but not relevant.
 

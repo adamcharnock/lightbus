@@ -98,7 +98,7 @@ welcome intelligent disagreement, agreement, or additions.
 
 **Broker limitations** - Queues such as `rq`_ are limited by their
 simplicity, in particular due to the choice of broker. This becomes a
-problem when trying to architect loosely coupled apps (see above, and :ref:`implementation:Why AMQP`).
+problem when trying to architect loosely coupled apps (see above, and :ref:`implementation/index:Why AMQP`).
 
 **Complexity** - `Celery`_ in particular becomes
 conceptually complex when dealing with with multiple applications

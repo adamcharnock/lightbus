@@ -3,6 +3,13 @@ Implementation
 
 .. readingtime::
 
+.. toctree::
+    :maxdepth: 1
+    :titlesonly:
+
+    self
+    schema
+
 Principles
 ----------
 
@@ -55,7 +62,7 @@ API first sketch
 
     Write API first sketch
 
-.. figure:: _static/images/huh.jpg
+.. figure:: /_static/images/huh.jpg
     :align: center
     :alt: Decaying machinery
 
