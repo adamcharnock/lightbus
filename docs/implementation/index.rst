@@ -8,6 +8,7 @@ Implementation
     :titlesonly:
 
     self
+    examples
     schema
 
 Principles
