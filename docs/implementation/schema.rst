@@ -10,9 +10,9 @@ Schema
 
 **Early design stage**
 
-Lightbus supports a schema format based upon `JSON Schema`_. A schema
-files specifies information about one or more APIs. The values
-of certain keys are valid JSON schema definitions, and can therefore
+Lightbus will optionally support a schema format based upon `JSON Schema`_. A schema
+file will specify information about one or more APIs. The values
+of certain keys will be valid JSON schema definitions, and can therefore
 be used to validate data.
 
 Keys containing JSON schema data are:
@@ -25,7 +25,7 @@ Questions
 
 * Is there demand for a schema?
 * Is JSON schema a good choice given Lightbus' :ref:`design goals <index:Goals>`?
-* Is the Lightbus schema format sane?
+* Is the Lightbus schema format sane? (hint: probably not yet)
 
 Why use a schema
 ----------------
