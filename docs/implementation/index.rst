@@ -10,6 +10,7 @@ Implementation
     self
     examples
     schema
+    choices
 
 Principles
 ----------
