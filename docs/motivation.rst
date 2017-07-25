@@ -30,7 +30,7 @@ Buses on the other hand can be seen a little differently. A relevant definition 
 down, but I would say:
 
 * A bus provides loose coupling. The developer says what *did* happen, not what *should* happen.
-* A bus provides bi-directional communication.
+* Additionally, a bus provides bi-directional communication.
 
 Example
 ~~~~~~~

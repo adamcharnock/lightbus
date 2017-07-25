@@ -79,9 +79,7 @@ focus on microservices sets it apart.
 -  Nameko is aimed specifically at microservices
 -  Definition of APIs is very Service-oriented (this makes sense for
    microservices)
--  Potential performance improvements to be gained from combining AMQP +
-   ZeroMQ
--  Could be spare for better debugging & developer tools
+-  Could be space for improved debugging & developer tools
 
 Learnings from Nameko
 ~~~~~~~~~~~~~~~~~~~~~
@@ -93,7 +91,7 @@ Learnings from Nameko
 -  **Services** – I'm inclined to define APIs rather than Services. Lightbus is
    aimed at existing apps which need to communicate, not stand-alone services.
    This distinction may be as conceptual as it is practical.
--  **Tooling** – I'd like to enhance to available tooling
+-  **Tooling** – I'd like to enhance the available tooling
 -  **Documentation** – I'd like to offer more detailed documentation, both API and narrative.
    However, this can be easier said than done. Planning and outlining will be important in
    order to do this well.
@@ -107,6 +105,9 @@ analysis, a small project may be considered a hobby project or smaller
 commercial project, likely with a sole developer. A large project would
 be one with a team of 10+ developers serving significant traffic. A
 medium project would be everything in between.
+
+I expect few projects will fit neatly into one of the columns below.
+However, my hope is that these broad strokes will be useful regardless.
 
 Lightbus will be targeting the 'medium' category.
 
@@ -137,7 +138,8 @@ Lightbus will be targeting the 'medium' category.
 +------------------------------------------------+-----------------+------------------+-----------------+
 | Multiple broker support                        | -               | -                | ✔               |
 +------------------------------------------------+-----------------+------------------+-----------------+
-| 'Enterprise features' (LDAP auth anyone?)      | -               | -                | ✔               |
+| Enterprisey features (Auditing, LDAP auth,     |                 |                  |                 |
+| regulation, compliance...)                     | -               | -                | ✔               |
 +------------------------------------------------+-----------------+------------------+-----------------+
 
 .. _Nameko: https://github.com/nameko/nameko
