@@ -1,6 +1,8 @@
 Choices
 =======
 
+.. readingtime::
+
 The following choices still need to be made
 
 Python asyncio
