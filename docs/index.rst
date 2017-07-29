@@ -30,35 +30,18 @@ applications/processes.
 
     </strong>
 
+Lightbus goals
+--------------
+
 Lightbus will be able to substitute for task queues such as Celery &
 Rq, but it will encourage more extensible and loosely coupled
 system design.
 
 Lightbus will not be aimed at microservice architectures. Rather at
 cases where several non-micro applications which require some level of
-coordination. See :ref:`Lightbus positioning <alternatives:Lightbus positioning>` for further details.
+coordination. See  for further details.
 
-Request for Comments
---------------------
-
-I have created the design document to solicit feedback, critique, and general interest.
-Additionally, I'm interested in thoughts regarding the :doc:`concerns section <concerns>`
-section.
-
-**How to get in touch:**
-
-* Open a `new GitHub issue`_
-* Email adam@[projectname].org
-* Relevant Hacker News / Reddit threads
-
-.. important::
-
-    Please include some information regarding your projects' particular circumstances –
-    team size, project size, current architecture etc. This
-    helps give some context to any discussion.
-
-Lightbus goals
---------------
+Initial goals are as follows:
 
 -  RPC
 -  Events (pub/sub)
@@ -66,6 +49,8 @@ Lightbus goals
 -  Excellent tooling & documentation
 -  Targeting smaller teams
 -  High speed & low latency (but not at the expense of other goals)
+
+See also, :doc:`alternatives` and :ref:`alternatives:Lightbus positioning`.
 
 What Lightbus is not
 --------------------
@@ -78,15 +63,17 @@ We explicitly do not wish to support the following:
 Assumptions
 -----------
 
--  APIs exposed on trusted network only
+-  APIs exposed on a trusted network only
+-  Lightbus will use an off-the-shelf AMQP broker rather than anything
+   purpose-built (See also: :ref:`implementation/index:Why AMQP`).
 
 .. note::
 
     Requiring private network would essentially prevent deployment on
     Heroku. This may be sufficient motivation to provide an alternative.
 
-Example use
------------
+Fictional scenario
+------------------
 
 A company has several Python-based web applications for handling sales,
 spare parts, support, and warranty registrations. These applications are
@@ -97,8 +84,26 @@ support app also needs information regarding spare part availability.
 
 Lightbus provides a uniform communication backend allowing these
 applications to expose their own APIs and consume the APIs of others.
-These APIs feature both methods to be called (RPC) and events which can
+These APIs feature both callable methods (RPC) and events which can
 be published & subscribed to (PUB/SUB).
+
+Request for Comments
+--------------------
+
+I have created the design document to solicit feedback, critique, and general interest.
+I am very open to comments on any aspect of the design.
+
+**How to get in touch:**
+
+* Open a `new GitHub issue`_
+* Email adam@ *projectname* .org
+* Relevant Hacker News / Reddit threads
+
+.. important::
+
+    Please include some information regarding your projects' particular circumstances –
+    team size, project size, current architecture etc. This
+    helps give some context to any discussion.
 
 .. figure:: /_static/images/tent-at-night.jpg
     :align: center

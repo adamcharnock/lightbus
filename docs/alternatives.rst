@@ -3,6 +3,13 @@ Alternatives
 
 .. readingtime::
 
+.. contents::
+    :local:
+    :backlinks: none
+
+Below I examine the current alternatives to Lightbus with the intention
+of determining how Lightbus should be positioned.
+
 Celery
 ------
 
@@ -13,9 +20,7 @@ Celery
 
 `Celery`_ is one of the most popular Python task queues. It provides
 its own scheduler service, supports multiple backends, and can
-provide both pub/sub & rpc.
-
-I've already touched on Celery in in :ref:`motivation:Existing task queues`.
+provide both pub/sub & RPC.
 
 Learnings from Celery
 ~~~~~~~~~~~~~~~~~~~~~
@@ -84,12 +89,12 @@ focus on microservices sets it apart.
 Learnings from Nameko
 ~~~~~~~~~~~~~~~~~~~~~
 
--  **Dependency injection** – I’m not sold on DI in Python. I get the impression that it is a
-   rather verbose way of achieving IoC compared to what python supports
+-  **Dependency injection** – I’m not sold on `DI`_ in Python. I get the impression that it is a
+   rather verbose way of achieving `IoC`_ compared to what python supports
    natively as a dynamic language. This feature *may* also be more applicable to larger teams.
--  **Shell** – Definitely. Perhaps via `bpython`_ ?
+-  **Shell** – An excellent ideal. Perhaps via `bpython`_ ?
 -  **Services** – I'm inclined to define APIs rather than Services. Lightbus is
-   aimed at existing apps which need to communicate, not stand-alone services.
+   aimed at existing backend applications which need to communicate, rather than service-oriented architectures.
    This distinction may be as conceptual as it is practical.
 -  **Tooling** – I'd like to enhance the available tooling
 -  **Documentation** – I'd like to offer more detailed documentation, both API and narrative.
@@ -149,6 +154,8 @@ Lightbus will be targeting the 'medium' category.
 .. _navigation: https://kubernetes.io/docs/home/
 .. _terrifying: https://zato.io/docs/index.html
 .. _Django: https://docs.djangoproject.com/
+.. _DI: https://wikipedia.org/wiki/Dependency_injection
+.. _IoC: https://wikipedia.org/wiki/Inversion_of_control
 
 .. figure:: _static/images/rose.jpg
     :align: center

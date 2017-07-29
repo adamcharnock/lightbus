@@ -1,6 +1,5 @@
 from lightbus import Api, Event
 
-
 class AuthApi(Api):
     user_registered = Event()
 

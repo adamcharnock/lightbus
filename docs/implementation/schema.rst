@@ -15,11 +15,6 @@ file will specify information about one or more APIs. The values
 of certain keys will be valid JSON schema definitions, and can therefore
 be used to validate data.
 
-Keys containing JSON schema data are:
-
-* ``arguments``
-* ``response``
-
 Questions
 ---------
 
@@ -30,11 +25,19 @@ Questions
 Why use a schema
 ----------------
 
-*  Makes developing consumers easier
-*  Can test output against schema
-*  Can test method use against schema
-*      >>> AuthApi.check_password.validate(username='adam', bad_key='secret')
-* Can validate fixtures against schema
+1.  Makes developing & testing consumers easier
+2.  Can test output against schema
+3.  Can test method use against schema
+
+    .. code-block:: python
+
+        # Validate parameters. In this case validation fails.
+        AuthApi.check_password.validate(
+            username='adam',
+            bad_key='secret'
+        )
+
+4. Can validate fixtures against schema
 
 Our example API
 ---------------
@@ -98,10 +101,6 @@ available:
 * Python type hinting (easiest)
 * Customising the schema files (most flexible)
 
-.. todo::
-
-    How to specify event parameter types in Python?
-
 Types using Python
 ~~~~~~~~~~~~~~~~~~
 
@@ -141,13 +140,18 @@ As you can see above, the schema now includes the following
 * Method return types
 * Event parameters (TODO)
 
+
+.. todo::
+
+    How to specify event parameter types in Python?
+
 Multiple schema files
 ---------------------
 
 Sometimes it may be preferable to store your schema in multiple files. For example:
 
-* You may be consuming APIs from multiple producers.
-* You may prefer the readability of one API per file.
+* You will likely be consuming APIs from multiple producers. One schema per file obviates the need to merge schema files.
+* You may prefer the readability of one API schema per file.
 
 Dumping
 ~~~~~~~

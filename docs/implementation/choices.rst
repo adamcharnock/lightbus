@@ -97,7 +97,7 @@ Allowing non-blocking RPC
 -------------------------
 
 In :ref:`implementation/choices:Differentiating time critical messages` we suggest that
-both the following forms of RPC call should be valid.
+both the following forms of RPC call should be valid:
 
 .. code-block:: python
 

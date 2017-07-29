@@ -3,11 +3,12 @@ Motivation
 
 .. readingtime::
 
-Current Python task queues function well in the case where there is a
+Current Python *task queues* (:ref:`Celery <alternatives:Celery>`, for example)
+function well in the case where there is a
 single app which needs to queue tasks for execution later. However, they
 seem poorly suited to multi-application ecosystems.
 
-Conversely, existing Python bus systems (`Zato`_, for example)
+Conversely, existing Python *message buses* (:ref:`Zato <alternatives:Zato>`, for example)
 appear designed for much larger projects but at the cost of complexity
 in both use and deployment.
 
@@ -29,11 +30,11 @@ A task queue typically enables a developer to execute a specific piece of code a
 Buses on the other hand can be seen a little differently. A relevant definition is hard to pin
 down, but I would say:
 
-* A bus provides loose coupling. The developer says what *did* happen, not what *should* happen.
+* A bus provides loose coupling. The dispatching code says what *did* happen, not what *should* happen.
 * Additionally, a bus provides bi-directional communication.
 
-Example
-~~~~~~~
+Queue/bus example
+~~~~~~~~~~~~~~~~~
 
 A user registers with your application. They upload a profile image, and you also need to
 send them a welcome email.
@@ -88,40 +89,6 @@ Benefits of this technique are:
 Downsides are:
 
 * **No longer explicit** - you cannot know what will happen by looking at the dispatch call [#f2]_.
-
-Existing task queues
---------------------
-
-With the above, I have identified a number of pain points with existing task queues.
-This is based on my experience and conversations with other developers. I
-welcome intelligent disagreement, agreement, or additions.
-
-**Broker limitations** - Queues such as `rq`_ are limited by their
-simplicity, in particular due to the choice of broker. This becomes a
-problem when trying to architect loosely coupled apps (see above, and :ref:`implementation/index:Why AMQP`).
-
-**Complexity** - `Celery`_ in particular becomes
-conceptually complex when dealing with with multiple applications
-communicating via AMQP. This is in part because Celery’s (/Kombu's) terminology
-overlaps and somewhat conflicts with that of AMQP. Celery's documentation is
-also pretty light on details when it comes to
-more complex setups (as is Google).
-
-**Conceptual mapping** - Task queue concepts do not map well to implementing
-RPC and pub/sub. This is reasonable, and perhaps somewhere one would expect a bus
-to perform better (more on this shortly).
-
-**Testing & debugging** - I find writing tests for existing queues
-harder than it should be. I want simple ways to both assert that a task was
-dispatched and simulate incoming tasks. Both should take identical
-parameters. I would also like to see much better debugging tools to
-help answer the question “Why is/isn’t App B receiving message X from App
-A?”
-
-Existing buses
---------------
-
-TBA. `Zato`_.
 
 
 .. figure:: _static/images/sunset.jpg
