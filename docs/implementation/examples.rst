@@ -26,7 +26,7 @@ Here we show the simplest possible use. Note that:
 
 You run the provider as follows:
 
-.. code-block:: plain
+.. code-block:: text
     :emphasize-lines: 1
     :caption: Running the provider/server
     :name: run

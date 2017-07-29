@@ -24,7 +24,7 @@ Questions
 ---------
 
 * Is there demand for a schema?
-* Is JSON schema a good choice given Lightbus' :ref:`design goals <index:Goals>`?
+* Is JSON schema a good choice given Lightbus' :ref:`design goals <index:Lightbus goals>`?
 * Is the Lightbus schema format sane? (hint: probably not yet)
 
 Why use a schema
@@ -156,7 +156,7 @@ To dump multiple files, specify the ``directory`` argument to ``dump_schema()``,
 
 .. code-block:: python
 
-    >> bus.dump_schema(directory='./schema')
+    >>> bus.dump_schema(directory='./schema')
 
 .. code-block:: shell
 
