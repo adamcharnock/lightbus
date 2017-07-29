@@ -60,7 +60,11 @@ Generating a schema on your provider
     {
         'my_company.auth': [
             {
-                'api': 'my_company.auth',
+                'type': 'event',
+                'name': 'user_registered',
+                'arguments': ...,  # TBC
+            }, {
+                'type': 'rpc',
                 'name': 'check_password',
                 'arguments': {
                     'username': {},
@@ -121,7 +125,11 @@ Now we can generate our schema again and see the results:
     {
         'my_company.auth': [
             {
-                'api': 'my_company.auth',
+                'type': 'event',
+                'name': 'user_registered',
+                'arguments': ...,  # TBC
+            }, {
+                'type': 'rpc',
                 'name': 'check_password',
                 'arguments': {
                     'username': { 'type': 'string' },
@@ -139,7 +147,6 @@ As you can see above, the schema now includes the following
 * Method parameters
 * Method return types
 * Event parameters (TODO)
-
 
 .. todo::
 
