@@ -57,13 +57,6 @@ without App A ever knowing or caring.
 
 .. seealso:: :ref:`motivation:Task queue vs bus`
 
-API first sketch
-----------------
-
-.. todo::
-
-    Write API first sketch
-
 .. figure:: /_static/images/huh.jpg
     :align: center
     :alt: Decaying machinery

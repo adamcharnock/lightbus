@@ -12,6 +12,7 @@ Introduction
     alternatives
     concerns
     implementation/index
+    todo
 
 .. readingtime::
 

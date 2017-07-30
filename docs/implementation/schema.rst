@@ -85,7 +85,7 @@ Error checking with schemas
 
 .. todo::
 
-    Write me
+    Write 'Error checking with schemas' section
 
 
 Specifying types
