@@ -61,20 +61,20 @@ section.
 Lightbus goals
 --------------
 
--  RPC
--  Events (pub/sub)
--  Ease of development & debugging
--  Excellent tooling & documentation
--  Targeting smaller teams
--  High speed & low latency (but not at the expense of other goals)
+-  **Remote Procedure Call (RPC)** - Calling remote procedures and receiving the response
+-  **Events (pub/sub)** - Broadcasting events which other applications may subscribe to
+-  **Ease of development & debugging**
+-  **Excellent tooling & documentation**
+-  **Targeting smaller teams**
+-  **High speed & low latency** (but not at the expense of other goals)
 
-What Lightbus is not
---------------------
+Not microservices
+-----------------
 
-We explicitly do not wish to support the following:
-
--  Microservice architectures
--  High volume (arbitrarily set at over 5,000 messages per second) [#f1]_
+Lightbus is not aimed at microservice architectures. If you decompose your
+applications into many hundreds/thousands of services then perhaps consider
+:ref:`alternatives:Nameko`. Lightbus is aimed at small teams which need
+a common communications system for their backend applications.
 
 Assumptions
 -----------
@@ -110,7 +110,3 @@ be published & subscribed to (PUB/SUB).
 .. _RabbitMQ: https://www.rabbitmq.com
 .. _Hacker News thread: https://news.ycombinator.com/item?id=14556988
 .. _new GitHub issue: https://github.com/adamcharnock/lightbus/issues/new
-
-.. [#f1] There is no specific reason for this, except that the goal of Lightbus is
-        not to achieve the extremes of throughput. Where that line lies is unclear,
-        so for now I've chosen an arbitrary value.
