@@ -1,7 +1,10 @@
+from typing import NewType
 from lightbus import Api, Event
 
 class AuthApi(Api):
-    user_registered = Event()
+    user_registered = Event(arguments=[
+        NewType('username', str)
+    ])
 
     class Meta:
         name = 'my_company.auth'

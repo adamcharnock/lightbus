@@ -25,19 +25,9 @@ Questions
 Why use a schema
 ----------------
 
-1.  Makes developing & testing consumers easier
-2.  Can test output against schema
-3.  Can test method use against schema
-
-    .. code-block:: python
-
-        # Validate parameters. In this case validation fails.
-        AuthApi.check_password.validate(
-            username='adam',
-            bad_key='secret'
-        )
-
-4. Can validate fixtures against schema
+1. Tests can validate API use against a schema rather than requiring service to be present
+2. Can be used to enhance tooling (e.g. `GraphQL interactive editor <http://graphql.org/swapi-graphql/>`_)
+3. Can enhance reporting & monitoring
 
 Our example API
 ---------------
@@ -62,7 +52,9 @@ Generating a schema on your provider
             {
                 'type': 'event',
                 'name': 'user_registered',
-                'arguments': ...,  # TBC
+                'arguments': {
+                    'username': {}
+                 }
             }, {
                 'type': 'rpc',
                 'name': 'check_password',
@@ -90,9 +82,28 @@ Loading a schema on the client is simple:
 Error checking with schemas
 ---------------------------
 
-.. todo::
+Lightbus will – by default – validate all parameters and responses in cases where a schema is present.
+This will be configurable for both arguments & responses. The intention of the
+enabled-by-default state is to allow errors to be caught sooner.
 
-    Write 'Error checking with schemas' section
+You may wish to disable this in production for performance. However, Lightbus will still
+be performant with validation enabled.
+
+Manual validation will also be available as follows:
+
+.. code-block:: python
+
+
+    # Validate event dispatch arguments
+    my_company.auth.user_registered.validate(
+        arguments=dict(username='adam')
+    )
+
+    # Validate RPC call (can specify one or both of 'arguments' & 'response')
+    my_company.auth.check_password.validate(
+        arguments=dict(username='adam', password='secret'),
+        response=True
+    )
 
 
 Specifying types
@@ -127,7 +138,9 @@ Now we can generate our schema again and see the results:
             {
                 'type': 'event',
                 'name': 'user_registered',
-                'arguments': ...,  # TBC
+                'arguments': {
+                    'username': { 'type': 'string' }
+                 }
             }, {
                 'type': 'rpc',
                 'name': 'check_password',
@@ -143,14 +156,10 @@ Now we can generate our schema again and see the results:
 As you can see above, the schema now includes the following
 
 * The available API names
-* Methods & events available for each API
-* Method parameters
-* Method return types
-* Event parameters (TODO)
-
-.. todo::
-
-    How to specify event parameter types in Python?
+* RPC & events available for each API
+* Event parameters & types
+* RPC parameters & types
+* RPC return types
 
 Multiple schema files
 ---------------------

@@ -127,3 +127,17 @@ Provisional decision
 2. Documentation should include clear guidance promoting the use of events rather than non-blocking RPC
 
 .. [#f1] Are we `no longer saying <https://github.com/kennethreitz/python-guide/issues/525>`_ 'consenting adults'?
+
+Serialisation
+-------------
+
+How shall messages be serialised?
+
+* Using JSON schema implies JSON
+* However, `MessagePack`_ is JSON compatible so could be used also
+
+Providing a pluggable serializer seems like a sensible choice. Defaulting to JSON
+for readability and debugging would be wise.
+
+
+.. _MessagePack: http://msgpack.org/
