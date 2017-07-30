@@ -4,7 +4,7 @@ Example use
 .. readingtime::
 
 Right, let's get down to code. Below are some thoughts on how the
-Lightroom api could look. This is a starting point for discussion
+Lightroom API could look. This is a starting point for discussion
 rather than anything particularly solid.
 
 Most of the following examples revolve around a simple API for
@@ -17,7 +17,6 @@ Here we show the simplest possible use. Note that:
 
 * Lightbus auto-discovers your APIs in ``bus.py`` files (unless configured for manual registration)
 * The client knows nothing of the API it is calling (see :doc:`schema <schema>`).
-*
 
 
 .. literalinclude:: code/auth_simple.py
@@ -45,7 +44,10 @@ You will then be able to consume the API in another terminal window.
     :name: consume
 
     >>> bus = lightbus.create()
-    >>> bus.my_company.auth.check_password(username='admin', password='secret')
+    >>> bus.my_company.auth.check_password(
+    ...     username='admin',
+    ...     password='secret'
+    ... )
     True
 
     # You can also listen for events...
