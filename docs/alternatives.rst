@@ -8,7 +8,9 @@ Alternatives
     :backlinks: none
 
 Below I examine the current alternatives to Lightbus with the intention
-of determining how Lightbus should be positioned.
+of determining how Lightbus should be positioned. I've also included any
+relevant highly voted/commented issues for each project as this may indicate
+demand for additional features.
 
 Celery
 ------
@@ -36,6 +38,13 @@ Learnings from Celery
   hard to navigate. Ideas: Separate product information from documentation.
   Have `navigation`_. Less scary `getting started guide`_.
 
+Top voted Celery issues
+~~~~~~~~~~~~~~~~~~~~~~~
+
+* `Proposal to deprecate Redis as a broker support <https://github.com/celery/celery/issues/3274>`_
+  – They kept it
+* The vast majority of other top-voted issues are bugs
+
 Rq
 ----
 
@@ -44,9 +53,25 @@ Rq
     :width: 100
     :alt: RQ logo
 
-.. todo::
+`Rq`_ is a simple Redis-backed task queue. It provides minimal functionality
+but has a very simple API and clear documentation.
 
-    Write RQ section
+There is a separate `Rq Dashboard`_ project which provides a simple interface onto
+the brokers current state.
+
+Learnings from Rq
+~~~~~~~~~~~~~~~~~
+
+* A simple API with clear documentation goes a long way
+* Provide additional functionality in separate projects (i.e. dashboard, scheduling)
+* Jobs are defined by the function's import path. This will not scale well to multiple
+  applications, and I believe will be too fragile for Lightbus' goals.
+
+Top voted Rq issues
+~~~~~~~~~~~~~~~~~~~
+
+* `Enable automatic reload upon source code changes <https://github.com/nvie/rq/issues/2>`_
+* `Worker concurrency <https://github.com/nvie/rq/issues/45>`_
 
 Zato
 ----
@@ -68,6 +93,10 @@ Learnings from Zato
 - **Screenshots** – I like images & screenshots. Let's make them pretty and readable.
 - Perhaps if I manage to read the docs I'll add some technical observations.
 
+Top voted Zato issues
+~~~~~~~~~~~~~~~~~~~~~
+
+No issues that are both relevant and highly voted/commented.
 
 Nameko
 ------
@@ -101,6 +130,11 @@ Learnings from Nameko
    However, this can be easier said than done. Planning and outlining will be important in
    order to do this well.
 
+Top voted Nameko issues
+~~~~~~~~~~~~~~~~~~~~~~~
+
+* `Auto reload app with nameko run? <https://github.com/nameko/nameko/issues/420>`_
+
 Lightbus positioning
 --------------------
 
@@ -114,7 +148,7 @@ medium project would be everything in between.
 I expect few projects will fit neatly into one of the columns below.
 However, my hope is that these broad strokes will be useful regardless.
 
-Lightbus will be targeting the 'medium' category.
+**Lightbus will be targeting the 'medium' category.**
 
 +------------------------------------------------+-----------------+------------------+-----------------+
 | Feature                                        | Small project   | Medium project   | Large project   |
@@ -156,6 +190,8 @@ Lightbus will be targeting the 'medium' category.
 .. _Django: https://docs.djangoproject.com/
 .. _DI: https://wikipedia.org/wiki/Dependency_injection
 .. _IoC: https://wikipedia.org/wiki/Inversion_of_control
+.. _Rq Dashboard: https://github.com/eoranged/rq-dashboard
+.. _Rq: http://python-rq.org/
 
 .. figure:: _static/images/rose.jpg
     :align: center
