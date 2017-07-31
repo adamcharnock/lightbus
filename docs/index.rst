@@ -22,7 +22,7 @@ Introduction
     <strong>
 
 Lightbus will be a new :ref:`message bus <motivation:Task queue vs bus>`
-for Python 3, :ref:`backed by AMQP <implementation/index:Why AMQP>`. Our
+for Python 3, :ref:`backed by AMQP <implementation/amqp:Why AMQP>`. Our
 focus is providing conceptually simple communication between multiple
 applications/processes.
 
@@ -65,7 +65,7 @@ Assumptions
 
 -  APIs exposed on a trusted network only
 -  Lightbus will use an off-the-shelf AMQP broker rather than anything
-   purpose-built (See also: :ref:`implementation/index:Why AMQP`).
+   purpose-built (See also: :ref:`implementation/amqp:Why AMQP`).
 
 .. note::
 

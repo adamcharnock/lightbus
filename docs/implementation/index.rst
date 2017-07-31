@@ -1,8 +1,6 @@
 Implementation
 ==============
 
-.. readingtime::
-
 .. toctree::
     :maxdepth: 2
 

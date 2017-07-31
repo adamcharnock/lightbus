@@ -1,6 +1,13 @@
 Why AMQP
 ========
 
+.. readingtime::
+
+.. image:: /_static/images/rabbitmq.png
+    :align: right
+    :width: 100
+    :alt: Rabbitmq logo
+
 For the reasons detailed previously I am proposing Lightbus be
 tightly coupled to the underlying broker (i.e. because
 supporting multiple brokers leads to significant complexity in other popular message queues).

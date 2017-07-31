@@ -36,6 +36,7 @@ def process_readingtime_nodes(app, doctree, fromdocname):
     for node in doctree.traverse(ReadingTime):
         para = nodes.rubric()
         minutes = int(round(count / 200.0))
+        minutes = max(minutes, 1)
         para += nodes.Text("Reading time: {} {}".format(
             minutes,
             'minute' if minutes == 1 else 'minutes'

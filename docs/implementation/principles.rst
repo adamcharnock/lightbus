@@ -1,6 +1,8 @@
 Principles
 ==========
 
+.. readingtime::
+
 Below are some provisional guiding principles. `The Zen of Python <https://www.python.org/dev/peps/pep-0020/>`_
 very much applies also, and some points have been duplicated below.
 

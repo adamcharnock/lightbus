@@ -1,11 +1,11 @@
 Choices
 =======
 
+.. readingtime::
+
 .. contents::
     :local:
     :backlinks: none
-
-.. readingtime::
 
 The following choices still need to be made
 
