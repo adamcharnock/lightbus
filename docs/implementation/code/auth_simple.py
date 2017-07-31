@@ -1,4 +1,4 @@
-from typing import NewType
+# bus.py
 from lightbus import Api, Event
 
 class AuthApi(Api):

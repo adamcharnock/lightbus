@@ -140,4 +140,13 @@ Providing a pluggable serializer seems like a sensible choice. Defaulting to JSO
 for readability and debugging would be wise.
 
 
+.. figure:: /_static/images/huh.jpg
+    :align: center
+    :alt: Decaying machinery
+
+    Lightbus, a series of corkscrews. I hope this kept you interested.
+
+    If you like it, `star it <https://github.com/adamcharnock/lightbus>`_.
+
+
 .. _MessagePack: http://msgpack.org/

@@ -10,10 +10,10 @@ rather than anything particularly solid.
 Most of the following examples revolve around a simple API for
 authentication.
 
-Simple case
------------
+Auth API example
+----------------
 
-Here we show the simplest possible use. Note that:
+Here we show a simple Lightbus user case. Note that:
 
 * Lightbus auto-discovers your APIs in ``bus.py`` files (unless configured for manual registration)
 * The client knows nothing of the API it is calling (see :doc:`schema <schema>`).
@@ -33,7 +33,7 @@ You run the provider as follows:
     $ lightbus start
     Lightbus provider starting...
     Found 1 API:
-        - my_company.auth (2 methods, 1 event)
+        - my_company.auth (1 method, 1 event)
     Connected to broker on amqp://rabbitmq
     Waiting for messages...
 
@@ -43,7 +43,10 @@ You will then be able to consume the API in another terminal window.
     :caption: Consuming the API via a Python shell
     :name: consume
 
+    # Create a simple schemaless bus
     >>> bus = lightbus.create()
+
+    # Call the check_password() RPC method
     >>> bus.my_company.auth.check_password(
     ...     username='admin',
     ...     password='secret'
@@ -59,7 +62,7 @@ free to shorten this to ``auth`` if you prefer, or even lengthen it to
 ``my_company.some_product.auth``.
 
 Client error cases
-~~~~~~~~~~~~~~~~~~
+------------------
 
 .. code-block:: python
     :caption: Errors one may receive when making API calls.

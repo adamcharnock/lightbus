@@ -169,8 +169,8 @@ Sometimes it may be preferable to store your schema in multiple files. For examp
 * You will likely be consuming APIs from multiple producers. One schema per file obviates the need to merge schema files.
 * You may prefer the readability of one API schema per file.
 
-Dumping
-~~~~~~~
+Dumping schemas to individual files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To dump multiple files, specify the ``directory`` argument to ``dump_schema()``, rather than ``file``:
 
@@ -185,8 +185,8 @@ To dump multiple files, specify the ``directory`` argument to ``dump_schema()``,
     my_company.customers.json
     my_company.sales.json
 
-Loading
-~~~~~~~
+Loading schemas from individual files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
