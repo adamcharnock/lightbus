@@ -54,8 +54,8 @@ Not microservices
 -----------------
 
 Lightbus is not aimed at microservice architectures. If you decompose your
-applications into many hundreds/thousands of services then perhaps consider
-:ref:`alternatives:Nameko`. Lightbus is aimed at small teams which need
+applications into many (hundreds/thousands) of services then perhaps consider
+:ref:`alternatives:Nameko`. Lightbus is aimed at medium-sized projects which need
 a common communications system for their backend applications.
 
 See also, :doc:`alternatives` and :ref:`alternatives:Lightbus positioning`.
