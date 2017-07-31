@@ -10,3 +10,18 @@ div.body p, div.body dd, div.body li, div.body blockquote {
     -webkit-hyphens: manual;
     hyphens: manual;
 }
+
+pre {
+    padding: 7px 15px;
+}
+
+/* Columns */
+@media only screen and (min-width : 768px) {
+    .row {
+        display: flex;
+        justify-content: space-between;
+    }
+    .row > * {
+        width: 48%;
+    }
+}

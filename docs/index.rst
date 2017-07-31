@@ -37,7 +37,7 @@ Lightbus will be able to substitute for task queues such as Celery &
 Rq, but it will encourage more a extensible and loosely coupled
 system design.
 
-Lightbus will not be aimed at microservice architectures. Rather at
+Lightbus will not be aimed at microservice architectures (see below). Rather at
 cases where several non-micro applications which require some level of
 coordination.
 
@@ -49,6 +49,44 @@ Initial goals are as follows:
 -  **Excellent tooling & documentation**
 -  **Targeting smaller teams**
 -  **High speed & low latency** (but not at the expense of other goals)
+
+Quick example
+-------------
+
+.. container:: row
+
+    .. container:: col
+
+        **Define your API**
+
+        .. code-block:: python
+
+            class AuthApi(Api):
+                my_event = Event()
+
+                class Meta:
+                    name = 'example'
+
+                def hello_world(self):
+                    return 'Hello world'
+
+    .. container:: col
+
+        **Make calls and listen for events**
+
+        .. code-block:: python
+
+            >>> bus = lightbus.create()
+            >>> bus.example.hello_world()
+            'Hello world'
+            >>> bus.example.my_event.listen(
+            ...     callback
+            ... )
+
+.. seealso::
+
+    Further sample code can be found in :doc:`implementation/examples`,
+    within the :doc:`implementation/index` section.
 
 Not microservices
 -----------------

@@ -193,6 +193,19 @@ Loading schemas from individual files
     >>> bus = lightbus.create()
     >>> bus = lightbus.add_schema(directory='./schema')
 
+Generation of stub files
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+I would like to support the generation of Python stub files to enable
+IDE code completion:
+
+.. code-block:: python
+
+    >>> bus = lightbus.create()
+    >>> bus = lightbus.add_schema(directory='./schema')
+    >>> lightbus.generate_stubs('./.stubs')
+
+
 
 .. _Python type hinting: https://docs.python.org/3/library/typing.html
 .. _JSON Schema: http://json-schema.org/
