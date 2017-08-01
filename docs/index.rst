@@ -140,7 +140,7 @@ I am very open to comments on any aspect of the design.
 
 * Open a `new GitHub issue`_
 * Email adam@ *projectname* .org
-* Relevant Hacker News / Reddit threads
+* Any relevant `Hacker News <https://news.ycombinator.com/item?id=14900465>`_ / Reddit threads
 
 .. important::
 
