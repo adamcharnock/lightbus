@@ -14,3 +14,10 @@ very much applies also, and some points have been duplicated below.
 * Favour pragmatism and productivity.
 * Provide system transparency through clear output and tooling.
 * Error messages should be verbose, state the problem, provide likely causes, and suggest common solutions.
+
+Next
+----
+
+Next up: :doc:`amqp`
+
+Or, if you don't care, skip it and move straight to: :doc:`examples`

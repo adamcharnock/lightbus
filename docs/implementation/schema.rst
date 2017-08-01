@@ -209,3 +209,8 @@ IDE code completion:
 
 .. _Python type hinting: https://docs.python.org/3/library/typing.html
 .. _JSON Schema: http://json-schema.org/
+
+Next
+----
+
+Next up: :doc:`choices` (the last section!)

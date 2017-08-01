@@ -38,11 +38,10 @@ Niche
 Have I correctly identified that there is a niche which isn't being filled
 by existing task queues and buses? Am I missing something obvious?
 
-.. figure:: _static/images/boat.jpg
-    :align: center
-    :alt: Someone in a canoe on a canal. Not me.
+Next
+----
 
-    That's not me.  Next: :doc:`implementation/index`
+Next we move onto considering the implementation. First up is :doc:`Implementation principles <implementation/principles>`.
 
 .. _GitHub stars: https://github.com/adamcharnock/lightbus
 .. _Adam Charnock: https://adamcharnock.com/

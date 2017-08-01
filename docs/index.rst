@@ -22,8 +22,8 @@ Introduction
     <strong>
 
 Lightbus will be a new :ref:`message bus <motivation:Task queue vs bus>`
-for Python 3, :ref:`backed by AMQP <implementation/amqp:Why AMQP>`. Our
-focus is providing conceptually simple communication between multiple
+for Python 3, :ref:`backed by AMQP <implementation/amqp:Why AMQP>`. Lightbus will
+focus on providing conceptually simple communication between multiple
 applications/processes.
 
 .. raw:: html
@@ -143,11 +143,10 @@ I am very open to comments on any aspect of the design.
     team size, project size, current architecture etc. This
     helps give some context to any discussion.
 
-.. figure:: /_static/images/tent-at-night.jpg
-    :align: center
-    :alt: A glowing tent at night in an orange orchard. Pretty, but not relevant.
+Next
+----
 
-    Images make things less boring. Next up: :doc:`motivation`
+Next up: :doc:`motivation`
 
 .. _RabbitMQ: https://www.rabbitmq.com
 .. _Hacker News thread: https://news.ycombinator.com/item?id=14556988

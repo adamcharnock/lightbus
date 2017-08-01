@@ -102,6 +102,7 @@ html_theme_options = {
     'github_button': True,
     'github_type': 'star',
     'github_count': False,
+    'description': 'Proposal for a new Python message bus / task queue',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -186,3 +187,4 @@ autosectionlabel_prefix_document = True
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/3.6': None}
+

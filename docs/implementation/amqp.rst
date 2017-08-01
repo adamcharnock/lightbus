@@ -43,5 +43,10 @@ without App A ever knowing or caring.
 
 .. seealso:: :ref:`motivation:Task queue vs bus`
 
+Next
+----
+
+Next up: :doc:`examples` (real made-up code!)
+
 .. _RabbitMQ: https://www.rabbitmq.com
 .. _ActiveMQ: http://activemq.apache.org/

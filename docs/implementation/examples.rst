@@ -100,3 +100,8 @@ Client error cases
 
 Using a schema will provide an additional layer of error checking prior to
 attempting the API call. See :doc:`schema <schema>` for further details.
+
+Next
+----
+
+Next up: :doc:`schema`

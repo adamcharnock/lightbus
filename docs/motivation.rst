@@ -109,3 +109,8 @@ Downsides are:
          desired, and 2) the conceptual mapping feels odd.
 
 .. [#f2] My hope is that tooling can help here.
+
+Next
+----
+
+Next up: :doc:`alternatives`

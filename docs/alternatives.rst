@@ -181,6 +181,11 @@ However, my hope is that these broad strokes will be useful regardless.
 | regulation, compliance...)                     | -               | -                | ✔               |
 +------------------------------------------------+-----------------+------------------+-----------------+
 
+Next
+----
+
+Next up: :doc:`concerns`
+
 .. _Nameko: https://github.com/nameko/nameko
 .. _bpython: https://github.com/bpython/bpython
 .. _sane default settings: https://library.launchkit.io/three-quick-tips-from-two-years-with-celery-c05ff9d7f9eb
@@ -192,10 +197,3 @@ However, my hope is that these broad strokes will be useful regardless.
 .. _IoC: https://wikipedia.org/wiki/Inversion_of_control
 .. _Rq Dashboard: https://github.com/eoranged/rq-dashboard
 .. _Rq: http://python-rq.org/
-
-.. figure:: _static/images/rose.jpg
-    :align: center
-    :alt: Large painting of a rose, barely-functional piano in foreground
-
-    I think my house is weird. Next: :doc:`concerns`
-
