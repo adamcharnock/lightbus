@@ -1,11 +1,12 @@
 Introduction
 ============
 
+.. readingtime::
+
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :numbered:
     :titlesonly:
-    :hidden:
 
     self
     motivation
@@ -13,7 +14,6 @@ Introduction
     concerns
     implementation/index
 
-.. readingtime::
 
 *Lightbus - Filling the gap between monolithic and microservice (design stage)*
 

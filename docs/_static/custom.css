@@ -25,3 +25,10 @@ pre {
         width: 48%;
     }
 }
+
+/*Only show introduction toc on mobile*/
+@media only screen and (min-width : 876px) {
+    #introduction .toctree-wrapper {
+        display: none;
+    }
+}
