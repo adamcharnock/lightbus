@@ -140,7 +140,8 @@ I am very open to comments on any aspect of the design.
 
 * Open a `new GitHub issue`_
 * Email adam@ *projectname* .org
-* Any relevant `Hacker News <https://news.ycombinator.com/item?id=14900465>`_ / Reddit threads
+* Any relevant `Hacker News <https://news.ycombinator.com/item?id=14900465>`_ /
+  `Reddit <https://www.reddit.com/r/Python/comments/6qwg9p/lightbus_proposal_for_a_new_python_message_bus/>`_ threads
 
 .. important::
 
