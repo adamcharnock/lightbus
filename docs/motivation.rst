@@ -90,14 +90,6 @@ Downsides are:
 
 * **No longer explicit** - you cannot know what will happen by looking at the dispatch call [#f2]_.
 
-
-.. figure:: _static/images/sunset.jpg
-    :align: center
-    :alt: Sunset with wind turbines.
-
-    Nope, still not relevant. Don't get your hopes up. Next: :doc:`alternatives`
-
-
 .. _Hacker News thread: https://news.ycombinator.com/item?id=14556988
 .. _Zato: https://zato.io/
 .. _rq: http://python-rq.org/

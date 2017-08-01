@@ -34,16 +34,16 @@ Lightbus goals
 --------------
 
 Lightbus will be able to substitute for task queues such as Celery &
-Rq, but it will encourage more a extensible and loosely coupled
+Rq, but it will encourage a more extensible and loosely coupled
 system design.
 
-Lightbus will not be aimed at microservice architectures (see below). Rather at
-cases where several non-micro applications which require some level of
-coordination.
+Lightbus will not be aimed at microservice architectures (see below). Rather,
+it will be aimed at situations where several non-micro applications require
+some level of coordination.
 
 Initial goals are as follows:
 
--  **Remote Procedure Call (RPC)** - Calling remote procedures and receiving the response
+-  **Remote Procedure Call (RPC)** - Calling remote procedures and receiving returned data
 -  **Events (pub/sub)** - Broadcasting events which other applications may subscribe to
 -  **Ease of development & debugging**
 -  **Excellent tooling & documentation**
@@ -83,10 +83,8 @@ Quick example
             ...     callback
             ... )
 
-.. seealso::
-
-    Further sample code can be found in :doc:`implementation/examples`,
-    within the :doc:`implementation/index` section.
+Further sample code can be found in :doc:`implementation/examples`,
+within the :doc:`implementation/index` section of this proposal.
 
 Not microservices
 -----------------
@@ -102,13 +100,13 @@ Assumptions
 -----------
 
 -  APIs exposed on a trusted network only
--  Lightbus will use an off-the-shelf AMQP broker rather than anything
+-  Lightbus will use an off-the-shelf broker rather than anything
    purpose-built (See also: :ref:`implementation/amqp:Why AMQP`).
 
 .. note::
 
     Requiring private network would essentially prevent deployment on
-    Heroku. This may be sufficient motivation to provide an alternative.
+    Heroku. This may be sufficient motivation to revise this decision.
 
 Fictional scenario
 ------------------
@@ -120,10 +118,17 @@ coordination and data sharing. The support app checks the user has a
 valid warranty, the warranty app pulls data in from sales, and the
 support app also needs information regarding spare part availability.
 
-Lightbus provides a uniform communication backend allowing these
+These applications also need to queue tasks for execution by background workers,
+as well as execute tasks on a schedule.
+
+Lightbus will provide a uniform communication backend allowing these
 applications to expose their own APIs and consume the APIs of others.
 These APIs feature both callable methods (RPC) and events which can
-be published & subscribed to (PUB/SUB).
+be published & subscribed to (pub/sub).
+
+Lightbus will also be able to fill the role of a
+:ref:`task queue <motivation:Task queue vs bus>`, as
+well as provide a scheduling mechanism.
 
 Request for Comments
 --------------------
