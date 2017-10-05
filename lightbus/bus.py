@@ -1,56 +1,46 @@
-from typing import Optional
+from typing import Any
 
-import asyncio
+from lightbus.client import ClientNode
+from lightbus.message import Message
+from lightbus.server import Server
+import lightbus
+
+__all__ = ['Bus']
 
 
 class Bus(object):
 
-    def __init__(self, broker_transport, result_transport):
+    def __init__(self, broker_transport: 'lightbus.BrokerTransport', result_transport: 'lightbus.ResultTransport'):
         self.broker_transport = broker_transport
         self.result_transport = result_transport
 
     def __getattr__(self, item):
         return ClientNode(name=str(item), bus=self, parent=None)
 
+    def serve(self):
+        Server(bus=self).run_forever()
 
-class ClientNode(object):
+    # RPCs
 
-    def __init__(self, name: str, bus: Bus, parent: Optional['ClientNode']):
-        self.name = name
-        self.bus = bus
-        self.parent = parent
+    async def call_rpc(self, api, name, kwargs, priority=0):
+        result_info = self.result_transport.get_result_info(api, name, kwargs, priority)
+        return await self.broker_transport.call_rpc(api, name, kwargs, result_info, priority)
 
-    def __call__(self, *args, **kwargs):
-        """Synchronous call"""
-        loop = asyncio.get_event_loop()
-        val = loop.run_until_complete(asyncio.wait_for(self.asyn(*args, **kwargs), timeout=1))
-        loop.close()
-        return val
+    async def consume_rpcs(self, api):
+        return await self.broker_transport.consume_rpcs(api)
 
-    async def asyn(self, *args, **kwargs):
-        """Asynchronous call"""
-        await asyncio.sleep(0.5)
-        return 'Called'
+    # Events
 
-    def __getattr__(self, item):
-        return ClientNode(name=str(item), bus=self.bus, parent=self)
+    async def send_event(self, api, name, kwargs):
+        return await self.broker_transport.send_event(api, name, kwargs)
 
-    def __str__(self):
-        path = [node.name for node in self.ancestors(include_self=True)]
-        path.reverse()
-        return '.'.join(path)
+    async def consume_events(self, api):
+        return await self.broker_transport.consume_events(api)
 
-    def __repr__(self):
-        return '<ClientNode {}>'.format(self.name)
+    # Results
 
-    def ancestors(self, include_self=False):
-        parent = self
-        while parent is not None:
-            if parent != self or include_self:
-                yield parent
-            parent = parent.parent
+    async def send_result(self, client_message: Message, result: Any):
+        return await self.result_transport.send(client_message, result)
 
-
-if __name__ == '__main__':
-    bus = Bus(broker_transport=None, result_transport=None)
-    print(bus.adam.foo.bar.hello())
+    async def receive_result(self, client_message: Message):
+        return await self.result_transport.receive(client_message)
