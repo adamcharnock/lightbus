@@ -1,9 +1,11 @@
 from typing import Any
 
+import asyncio
+
 from lightbus.client import ClientNode
-from lightbus.message import Message
-from lightbus.server import Server
+from lightbus.message import RpcMessage, ResultMessage
 import lightbus
+from lightbus.utilities import handle_aio_exceptions
 
 __all__ = ['Bus']
 
@@ -14,20 +16,29 @@ class Bus(object):
         self.broker_transport = broker_transport
         self.result_transport = result_transport
 
-    def __getattr__(self, item):
-        return ClientNode(name=str(item), bus=self, parent=None)
+    # def __getattr__(self, item):
+    #     return ClientNode(name=str(item), bus=self, parent=None)
 
-    def serve(self):
-        Server(bus=self).run_forever()
+    def serve(self, api, loop=None):
+        loop = loop or asyncio.get_event_loop()
+        asyncio.ensure_future(handle_aio_exceptions(self.consume, api=api), loop=loop)
+        loop.run_forever()
+        loop.close()
 
     # RPCs
 
-    async def call_rpc(self, api, name, kwargs, priority=0):
+    async def consume(self, api):
+        while True:
+            rpc_message = await self.broker_transport.consume_rpcs(api)
+            result = await self.call_rpc_local(api, name=rpc_message.procedure_name, kwargs=rpc_message.kwargs)
+            await self.send_result(rpc_message=rpc_message, result=result)
+
+    async def call_rpc_remote(self, api, name, kwargs, priority=0):
         result_info = self.result_transport.get_result_info(api, name, kwargs, priority)
         return await self.broker_transport.call_rpc(api, name, kwargs, result_info, priority)
 
-    async def consume_rpcs(self, api):
-        return await self.broker_transport.consume_rpcs(api)
+    async def call_rpc_local(self, api, name, kwargs):
+        return await api.call(name, kwargs)
 
     # Events
 
@@ -39,8 +50,9 @@ class Bus(object):
 
     # Results
 
-    async def send_result(self, client_message: Message, result: Any):
-        return await self.result_transport.send(client_message, result)
+    async def send_result(self, rpc_message: RpcMessage, result: Any):
+        result_message = ResultMessage(result=result)
+        return await self.result_transport.send(rpc_message, result_message)
 
-    async def receive_result(self, client_message: Message):
-        return await self.result_transport.receive(client_message)
+    async def receive_result(self, rpc_message: RpcMessage):
+        return await self.result_transport.receive(rpc_message)
