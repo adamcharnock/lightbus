@@ -9,7 +9,7 @@ __all__ = ['BrokerTransport', 'ResultTransport', 'DebugBrokerTransport', 'DebugR
 class BrokerTransport(object):
     # TODO: BrokerTransport is probably the wrong name, as it implies how it should be implemented
 
-    async def call_rpc(self, api, name, kwargs, result_info, priority=0):
+    async def call_rpc(self, rpc_message: RpcMessage):
         """Publish a call to a remote procedure"""
         pass
 
@@ -28,7 +28,7 @@ class BrokerTransport(object):
 
 class ResultTransport(object):
 
-    def get_result_info(self, api, name, kwargs, priority=0) -> dict:
+    def get_return_path(self, rpc_message: RpcMessage) -> dict:
         return {}
 
     async def send(self, rpc_message: RpcMessage, result_message: ResultMessage):
@@ -51,9 +51,9 @@ class ResultTransport(object):
 
 class DebugBrokerTransport(BrokerTransport):
 
-    async def call_rpc(self, api, name, kwargs, result_info, priority=0):
+    async def call_rpc(self, rpc_message: RpcMessage):
         """Publish a call to a remote procedure"""
-        pass
+        print('Calling RPC with message: {}'.format(rpc_message))
 
     async def consume_rpcs(self, api) -> RpcMessage:
         """Consume RPC calls for the given API"""
@@ -74,7 +74,7 @@ class DebugBrokerTransport(BrokerTransport):
 
 class DebugResultTransport(ResultTransport):
 
-    def get_result_info(self, api, name, kwargs, priority=0) -> dict:
+    def get_return_path(self, rpc_message: RpcMessage) -> dict:
         return {
             'debug-result-transport': 'hello',
         }
@@ -83,4 +83,8 @@ class DebugResultTransport(ResultTransport):
         print('Sending result to message "{}". Result message is: {}'.format(rpc_message, result_message))
 
     async def receive(self, rpc_message: RpcMessage) -> ResultMessage:
-        pass
+        print('Staring to listen for result')
+        await asyncio.sleep(0.5)
+        print('Faking received result')
+
+        return ResultMessage(result='Fake result')

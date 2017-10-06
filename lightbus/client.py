@@ -2,11 +2,14 @@ import asyncio
 from typing import Optional
 
 import lightbus
+from lightbus.exceptions import InvalidClientNodeConfiguration
 
 
 class ClientNode(object):
 
     def __init__(self, name: str, bus: 'Bus', parent: Optional['ClientNode']):
+        if not parent and name:
+            raise InvalidClientNodeConfiguration("Root client node may not have a name")
         self.name = name
         self.bus = bus
         self.parent = parent
@@ -15,13 +18,12 @@ class ClientNode(object):
         """Synchronous call"""
         loop = asyncio.get_event_loop()
         val = loop.run_until_complete(asyncio.wait_for(self.asyn(*args, **kwargs), timeout=1))
-        loop.close()
         return val
 
     async def asyn(self, *args, **kwargs):
         """Asynchronous call"""
-        return await self.bus.call_rpc(
-            api=self.path(include_self=False),
+        return await self.bus.call_rpc_remote(
+            api_name=self.path(include_self=False),
             name=self.name,
             kwargs={'arg': 'value'}
         )
@@ -53,4 +55,5 @@ if __name__ == '__main__':
         broker_transport=lightbus.DebugBrokerTransport(),
         result_transport=lightbus.DebugResultTransport()
     )
-    print(bus.adam.foo.bar.hello())
+    client = bus.client()
+    print(client.adam.foo.bar.hello())

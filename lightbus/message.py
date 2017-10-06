@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 
 from lightbus.exceptions import InvalidRpcMessage
 
@@ -17,10 +17,11 @@ class Message(object):
 
 class RpcMessage(Message):
 
-    def __init__(self, *, api_name: str, procedure_name: str, kwargs: dict=Optional[None]):
+    def __init__(self, *, api_name: str, procedure_name: str, kwargs: dict=Optional[None], return_path: Any=None):
         self.api_name = api_name
         self.procedure_name = procedure_name
         self.kwargs = kwargs
+        self.return_path = return_path
 
     def __repr__(self):
         return '<{}: {} {}({})>'.format(
@@ -33,6 +34,7 @@ class RpcMessage(Message):
         dictionary = {
             'api_name': self.api_name,
             'procedure_name': self.procedure_name,
+            'return_path': self.return_path or '',
         }
         dictionary.update(
             **{'kw:{}'.format(k): v for k, v in self.kwargs.items()}

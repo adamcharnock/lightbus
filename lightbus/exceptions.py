@@ -6,3 +6,7 @@ class LightbusException(Exception):
 
 class InvalidRpcMessage(LightbusException):
     pass
+
+
+class InvalidClientNodeConfiguration(LightbusException):
+    pass
