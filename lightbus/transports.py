@@ -90,12 +90,12 @@ class DebugResultTransport(ResultTransport):
         return 'debug://foo'
 
     async def send(self, rpc_message: RpcMessage, result_message: ResultMessage):
-        logger.info("Faking sending of result {}".format(result_message))
+        logger.info("Faking sending of result: {}".format(result_message))
 
     async def receive(self, rpc_message: RpcMessage) -> ResultMessage:
-        logger.debug("Faking listening for results. Will issue fake result in 0.5 seconds...")
+        logger.info("⌛ Faking listening for results. Will issue fake result in 0.5 seconds...")
         await asyncio.sleep(0.5)
-        logger.info('Faking received result')
+        logger.debug('Faking received result')
 
         return ResultMessage(result='Fake result')
 

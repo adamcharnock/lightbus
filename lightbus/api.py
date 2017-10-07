@@ -27,6 +27,12 @@ class Registry(object):
                 "was specified, or maybe the API has not been registered.".format(name)
             )
 
+    def __iter__(self):
+        return iter(self._apis.values())
+
+    def all(self):
+        return self._apis.values()
+
 
 registry = Registry()
 
@@ -38,9 +44,13 @@ class ApiMeta(type):
         if is_api_base_class:
             super(ApiMeta, cls).__init__(name, bases, dict)
         else:
+            # TODO: This isn't quite right. Initialising an instance of on an API
+            # in a metaclass doesn't seem like something we want to be doing.
             dict['meta'] = cls.Meta()
             super(ApiMeta, cls).__init__(name, bases, dict)
-            registry.add(dict['meta'].name, cls())
+            api = cls()
+            api.meta = dict['meta']
+            registry.add(dict['meta'].name, api)
 
 
 class Api(object, metaclass=ApiMeta):
