@@ -24,8 +24,10 @@ class RpcMessage(Message):
         self.return_path = return_path
 
     def __repr__(self):
-        return '<{}: {} {}({})>'.format(
-            self.__class__.__name__,
+        return '<{}: {}>'.format(self.__class__.__name__, self)
+
+    def __str__(self):
+        return '{}.{}({})'.format(
             self.api_name, self.procedure_name,
             ', '.join('{}={}'.format(k, v) for k, v in self.kwargs.items())
         )
@@ -81,6 +83,9 @@ class ResultMessage(Message):
 
     def __repr__(self):
         return '<{}: {}>'.format(self.__class__.__name__, self.result)
+
+    def __str__(self):
+        return str(self.result)
 
     def to_dict(self) -> dict:
         return {'result': self.result}

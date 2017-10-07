@@ -1,14 +1,6 @@
 import lightbus
-
-
-class Api(object):
-
-    class Meta:
-        name = None
-
-    async def call(self, procedure_name, kwargs):
-        # TODO: Handling code for sync/async method calls (if we want to support both)
-        return getattr(self, procedure_name)(**kwargs)
+from lightbus.api import Api
+from lightbus.utilities import setup_dev_logging
 
 
 class AuthApi(Api):
@@ -21,6 +13,8 @@ class AuthApi(Api):
 
 
 def main():
+    setup_dev_logging()
+
     bus = lightbus.Bus(
         broker_transport=lightbus.DebugBrokerTransport(),
         result_transport=lightbus.DebugResultTransport()

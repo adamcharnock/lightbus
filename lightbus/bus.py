@@ -5,7 +5,7 @@ import asyncio
 from lightbus.client import ClientNode
 from lightbus.message import RpcMessage, ResultMessage
 import lightbus
-from lightbus.serve import Api
+from lightbus.api import Api
 from lightbus.utilities import handle_aio_exceptions
 
 __all__ = ['Bus']

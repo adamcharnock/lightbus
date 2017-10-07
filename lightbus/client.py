@@ -1,8 +1,12 @@
 import asyncio
+import logging
 from typing import Optional
 
-import lightbus
 from lightbus.exceptions import InvalidClientNodeConfiguration
+from lightbus.log import L, Bold, escape_codes
+from lightbus.utilities import setup_dev_logging
+
+logger = logging.getLogger(__name__)
 
 
 class ClientNode(object):
@@ -14,19 +18,24 @@ class ClientNode(object):
         self.bus = bus
         self.parent = parent
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, **kwargs):
         """Synchronous call"""
         loop = asyncio.get_event_loop()
-        val = loop.run_until_complete(asyncio.wait_for(self.asyn(*args, **kwargs), timeout=1))
+        val = loop.run_until_complete(asyncio.wait_for(self.asyn(**kwargs), timeout=1))
         return val
 
-    async def asyn(self, *args, **kwargs):
+    async def asyn(self, **kwargs):
         """Asynchronous call"""
-        return await self.bus.call_rpc_remote(
-            api_name=self.path(include_self=False),
+        api_name = self.path(include_self=False)
+        logger.info("📞  Calling {}.{} with kwargs: {}".format(api_name, self.name, kwargs))
+
+        result = await self.bus.call_rpc_remote(
+            api_name=api_name,
             name=self.name,
-            kwargs={'arg': 'value'}
+            kwargs=kwargs
         )
+        logger.debug("Call {}.{} completed with result: {}".format(api_name, self.name, result))
+        return result
 
     def __getattr__(self, item):
         return ClientNode(name=str(item), bus=self.bus, parent=self)
@@ -47,13 +56,22 @@ class ClientNode(object):
     def path(self, include_self=True):
         path = [node.name for node in self.ancestors(include_self=include_self)]
         path.reverse()
-        return '.'.join(path)
+        return '.'.join(path[1:])
 
 
 if __name__ == '__main__':
+    setup_dev_logging()
+
+    # Make sure we make the AuthApi available
+    import lightbus.serve
+
+    result_transport = lightbus.DirectResultTransport()
     bus = lightbus.Bus(
-        broker_transport=lightbus.DebugBrokerTransport(),
-        result_transport=lightbus.DebugResultTransport()
+        broker_transport=lightbus.DirectBrokerTransport(result_transport),
+        result_transport=result_transport
     )
     client = bus.client()
-    print(client.adam.foo.bar.hello())
+    print(client.my_company.auth.check_password(
+        username='admin',
+        password='secret'
+    ))
