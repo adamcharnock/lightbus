@@ -84,6 +84,8 @@ class LightbusLogRecord(object):
         """Add attributes from the escape_codes dict and the record."""
         self.is_tty = True
         self.additional_line_prefix = ''
+        record.name = record.name.ljust(30)
+
         self.__dict__.update(escape_codes)
         self.__dict__.update(record.__dict__)
 
