@@ -10,6 +10,8 @@ customisation in the long term.
 import logging
 import sys
 
+import re
+
 __all__ = ('escape_codes', 'default_log_colors', 'LightbusFormatter',
            'LevelFormatter', 'TTYColoredFormatter')
 
@@ -84,6 +86,7 @@ class LightbusLogRecord(object):
         """Add attributes from the escape_codes dict and the record."""
         self.is_tty = True
         self.additional_line_prefix = ''
+        self.msg_cb = None
         record.name = record.name.ljust(30)
 
         self.__dict__.update(escape_codes)
@@ -91,19 +94,37 @@ class LightbusLogRecord(object):
 
         # Keep a reference to the original record so ``__getattr__`` can
         # access functions that are not in ``__dict__``
-        self.__record = record
+        self._record = record
 
     def getMessage(self):
+        # Render the message if necessary (i.e. because it is an instance of the L class)
         if hasattr(self.msg, 'render'):
             self.msg = self.msg.render(
                 tty=self.is_tty,
                 additional_line_prefix=self.additional_line_prefix,
-                style=self.log_color
+                style=self.log_color,
+                msg_cb=self.msg_cb,
             )
-        self.__record.getMessage()
+        else:
+            if self.msg_cb:
+                self.msg = self.msg_cb(self.msg, is_tty=self.is_tty)
+
+        return self._record.getMessage()
 
     def __getattr__(self, name):
-        return getattr(self.__record, name)
+        return getattr(self._record, name)
+
+
+def _justify_icons(message, is_tty):
+    # Align messages alongside emojis/icons
+    if is_tty:
+        matches = re.match(r'([\U00002000-\U000FFFFF])(\s*)(.*)', message)
+        if matches:
+            return '{0}  {2}'.format(*matches.groups())
+        else:
+            return '   {}'.format(message)
+    else:
+        return message
 
 
 class LightbusFormatter(logging.Formatter):
@@ -167,6 +188,7 @@ class LightbusFormatter(logging.Formatter):
         record = LightbusLogRecord(record)
         record.log_color = self.color(self.log_colors, record.levelname)
         record.is_tty = self.stream.isatty()
+        record.msg_cb = _justify_icons
 
         # Set secondary log colors
         if self.secondary_log_colors:
@@ -220,7 +242,7 @@ class L(object):
     def __repr__(self):
         return repr(self.__str__())
 
-    def render(self, parent_style='', style='', tty=True, additional_line_prefix=''):
+    def render(self, parent_style='', style='', tty=True, additional_line_prefix='', msg_cb=None):
         style = style or self.style
         keys = [
             v.render(parent_style=style, tty=tty) if hasattr(v, 'render') else v
@@ -228,7 +250,10 @@ class L(object):
             self.values
         ]
         if tty:
-            return style + str(self.log_message).format(*keys) + escape_codes['reset'] + parent_style
+            msg = str(self.log_message).format(*keys)
+            if msg_cb:
+                msg = msg_cb(msg, is_tty=tty)
+            return style + msg + escape_codes['reset'] + parent_style
         else:
             return str(self.log_message).format(*keys)
 
@@ -245,7 +270,7 @@ class LBullets(L):
         self.bullet = bullet
         self.indent = indent
 
-    def render(self, parent_style='', style='', tty=True, additional_line_prefix=''):
+    def render(self, parent_style='', style='', tty=True, additional_line_prefix='', msg_cb=None):
         if not tty:
             return '{}: {}'.format(self.log_message, ', '.join(self.items))
 
@@ -272,5 +297,7 @@ class LBullets(L):
         ] + [
             '{}{}{} {}'.format(additional_line_prefix, ' ' * indent, self.bullet, item) for item in rendered_items
         ] + [additional_line_prefix])
+        if msg_cb:
+            msg = msg_cb(msg, is_tty=tty)
         return style + msg + escape_codes['reset'] + parent_style
 

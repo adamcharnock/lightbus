@@ -52,10 +52,6 @@ class RedisRpcTransport(RpcTransport):
         ))
 
     async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
-        # I would very much like to use an asynchronous generator here,
-        # but that would mean ditching support for Python 3.5 which may
-        # be somewhat jumping the gun.
-
         # Get the name of each stream
         streams = ['{}:stream'.format(api.meta.name) for api in apis]
         # Get where we last left off in each stream
@@ -76,7 +72,7 @@ class RedisRpcTransport(RpcTransport):
                 RpcMessage.from_dict(decoded_fields)
             )
             logger.debug(LBullets(
-                L("Received message {} on stream {}", Bold(message_id), Bold(stream)),
+                L("⬅ Received message {} on stream {}", Bold(message_id), Bold(stream)),
                 items=decoded_fields
             ))
 
@@ -131,12 +127,12 @@ class RedisResultTransport(ResultTransport):
         await p.execute()
 
         logger.debug(L(
-            "Sent result {} into Redis in {} using return path {}",
+            "➡ Sent result {} into Redis in {} using return path {}",
             Bold(result_message), human_time(time.time() - start_time), Bold(rpc_message.return_path)
         ))
 
     async def receive(self, rpc_message: RpcMessage) -> ResultMessage:
-        logger.info(L("⌛️  Awaiting Redis result for RPC message: {}", Bold(rpc_message)))
+        logger.info(L("⌛ Awaiting Redis result for RPC message: {}", Bold(rpc_message)))
         redis = await self.get_redis()
         redis_key = self._parse_return_path(rpc_message.return_path)
         # TODO: Make timeout configurable
@@ -146,7 +142,7 @@ class RedisResultTransport(ResultTransport):
         result = redis_decode(result)
 
         logger.info(L(
-            "✅  Received Redis result in {} for RPC message {}: {}",
+            "⬅ Received Redis result in {} for RPC message {}: {}",
             human_time(time.time() - start_time), rpc_message, Bold(result)
         ))
         return result

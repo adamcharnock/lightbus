@@ -82,6 +82,8 @@ class Bus(object):
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)
         rpc_message.return_path = self.result_transport.get_return_path(rpc_message)
 
+        logger.info("➡ Calling remote RPC ".format(rpc_message))
+
         start_time = time.time()
         # TODO: It is possible that the RPC will be called before we start waiting for the response. This is bad.
         result, _ = await asyncio.wait_for(asyncio.gather(
@@ -89,7 +91,7 @@ class Bus(object):
             self.rpc_transport.call_rpc(rpc_message),
         ), timeout=10)
 
-        logger.info(L("Called {} in {}", Bold(rpc_message.canonical_name), human_time(time.time() - start_time)))
+        logger.info(L("⚡ Remote call of {} completed in {}", Bold(rpc_message.canonical_name), human_time(time.time() - start_time)))
 
         return result
 
@@ -97,7 +99,7 @@ class Bus(object):
         api = registry.get(api_name)
         start_time = time.time()
         result = await api.call(name, kwargs)
-        logger.info(L("Executed {}.{} in {}", Bold(api_name), Bold(name), human_time(time.time() - start_time)))
+        logger.info(L("⚡ Executed {}.{} in {}", Bold(api_name), Bold(name), human_time(time.time() - start_time)))
         return result
 
     # Events

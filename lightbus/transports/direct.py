@@ -64,5 +64,5 @@ class DirectResultTransport(ResultTransport):
     async def receive(self, rpc_message: RpcMessage) -> ResultMessage:
         logger.info(L("⌛️  Awaiting result for RPC message: {}", Bold(rpc_message)))
         result = await rpc_message._direct_result_transport_future
-        logger.info(L("✅  Received result for RPC message {}: {}", rpc_message, Bold(result)))
+        logger.info(L("⬅  Received result for RPC message {}: {}", rpc_message, Bold(result)))
         return result

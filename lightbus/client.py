@@ -28,14 +28,11 @@ class ClientNode(object):
     async def asyn(self, **kwargs):
         """Asynchronous call"""
         api_name = self.path(include_self=False)
-        logger.info("📞  Calling {}.{} with kwargs: {}".format(api_name, self.name, kwargs))
-
         result = await self.bus.call_rpc_remote(
             api_name=api_name,
             name=self.name,
             kwargs=kwargs
         )
-        logger.debug("Call {}.{} completed with result: {}".format(api_name, self.name, result))
         return result
 
     def __getattr__(self, item):
@@ -75,12 +72,3 @@ if __name__ == '__main__':
         username='admin',
         password='secret'
     )
-    client.my_company.auth.check_password(
-        username='admin',
-        password='secret'
-    )
-    client.my_company.auth.check_password(
-        username='admin',
-        password='secret'
-    )
-
