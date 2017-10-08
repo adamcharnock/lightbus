@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 class Bus(object):
 
-    def __init__(self, broker_transport: 'lightbus.BrokerTransport', result_transport: 'lightbus.ResultTransport'):
-        self.broker_transport = broker_transport
+    def __init__(self, rpc_transport: 'lightbus.RpcTransport', result_transport: 'lightbus.ResultTransport'):
+        self.rpc_transport = rpc_transport
         self.result_transport = result_transport
 
     def client(self):
@@ -26,7 +26,7 @@ class Bus(object):
 
     def serve(self, api, loop=None):
         logger.info("Lightbus getting ready to serve")
-        logger.info("    ∙ Broker transport: {}".format(self.broker_transport))
+        logger.info("    ∙ RPC transport: {}".format(self.rpc_transport))
         logger.info("    ∙ Result transport: {}".format(self.result_transport))
         logger.info("")
 
@@ -55,7 +55,7 @@ class Bus(object):
     async def consume(self, api):
         # TODO: Should just consume all APIs in registry
         while True:
-            rpc_message = await self.broker_transport.consume_rpcs(api)
+            rpc_message = await self.rpc_transport.consume_rpcs(api)
             result = await self.call_rpc_local(api, name=rpc_message.procedure_name, kwargs=rpc_message.kwargs)
             await self.send_result(rpc_message=rpc_message, result=result)
 
@@ -66,7 +66,7 @@ class Bus(object):
         # TODO: It is possible that the RPC will be called before we start waiting for the response. This is bad.
         result, _ = await asyncio.wait_for(asyncio.gather(
             self.result_transport.receive(rpc_message),
-            self.broker_transport.call_rpc(rpc_message),
+            self.rpc_transport.call_rpc(rpc_message),
         ), timeout=10)
         return result
 
@@ -76,10 +76,10 @@ class Bus(object):
     # Events
 
     async def send_event(self, api, name, kwargs):
-        return await self.broker_transport.send_event(api, name, kwargs)
+        return await self.rpc_transport.send_event(api, name, kwargs)
 
     async def consume_events(self, api):
-        return await self.broker_transport.consume_events(api)
+        return await self.rpc_transport.consume_events(api)
 
     # Results
 

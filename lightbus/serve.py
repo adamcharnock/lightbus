@@ -16,7 +16,7 @@ def main():
     setup_dev_logging()
 
     bus = lightbus.Bus(
-        broker_transport=lightbus.DebugBrokerTransport(),
+        rpc_transport=lightbus.DebugRpcTransport(),
         result_transport=lightbus.DebugResultTransport()
     )
     api = AuthApi()

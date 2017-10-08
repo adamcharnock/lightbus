@@ -8,16 +8,15 @@ from lightbus.log import L, Bold
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 
 __all__ = [
-    'BrokerTransport', 'ResultTransport',
-    'DebugBrokerTransport', 'DebugResultTransport',
-    'DirectBrokerTransport', 'DirectResultTransport',
+    'RpcTransport', 'ResultTransport',
+    'DebugRpcTransport', 'DebugResultTransport',
+    'DirectRpcTransport', 'DirectResultTransport',
 ]
 
 logger = logging.getLogger(__name__)
 
 
-class BrokerTransport(object):
-    # TODO: BrokerTransport is probably the wrong name, as it implies how it should be implemented
+class RpcTransport(object):
 
     async def call_rpc(self, rpc_message: RpcMessage):
         """Publish a call to a remote procedure"""
@@ -59,7 +58,7 @@ class ResultTransport(object):
         pass
 
 
-class DebugBrokerTransport(BrokerTransport):
+class DebugRpcTransport(RpcTransport):
 
     async def call_rpc(self, rpc_message: RpcMessage):
         """Publish a call to a remote procedure"""
@@ -100,13 +99,13 @@ class DebugResultTransport(ResultTransport):
         return ResultMessage(result='Fake result')
 
 
-class DirectBrokerTransport(BrokerTransport):
+class DirectRpcTransport(RpcTransport):
 
     def __init__(self, result_transport: 'DirectResultTransport'):
         self.result_transport = result_transport
 
     async def call_rpc(self, rpc_message: RpcMessage):
-        # Direct broker calls API method immediately
+        # Direct RPC transport calls API method immediately
         logger.debug("Directly executing RPC call for message {}".format(rpc_message))
         api = registry.get(rpc_message.api_name)
         result = await api.call(
@@ -123,7 +122,7 @@ class DirectBrokerTransport(BrokerTransport):
 
     async def consume_rpcs(self, api) -> RpcMessage:
         raise UnsupportedUse(
-            "You are using the DirectBrokerTransport. This transport "
+            "You are using the DirectRpcTransport. This transport "
             "calls RPCs immediately & directly in the current process rather than "
             "relying on a remote process. Consuming RPCs therefore doesn't make sense "
             "in this context and is unsupported."

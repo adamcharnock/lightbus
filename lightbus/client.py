@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     result_transport = lightbus.DirectResultTransport()
     bus = lightbus.Bus(
-        broker_transport=lightbus.DirectBrokerTransport(result_transport),
+        rpc_transport=lightbus.DirectRpcTransport(result_transport),
         result_transport=result_transport
     )
     client = bus.client()
