@@ -10,7 +10,7 @@ Why AMQP (or not?)
 
 **Update October 2017:** I'm backing away from the idea of using AMQP.
 I believe the requirements outlined below can be handled by consumer
-groups brokers such as `Kafka`_ & `Redis with streams`_.
+groups in brokers such as `Kafka`_ & `Redis with streams`_.
 
 For the reasons detailed previously I am proposing Lightbus be
 tightly coupled to the underlying broker (i.e. because
