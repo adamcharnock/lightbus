@@ -8,7 +8,7 @@ Why AMQP (or not?)
     :width: 100
     :alt: Rabbitmq logo
 
-**Update October 2017:* I'm backing away from the idea of using AMQP.
+**Update October 2017:** I'm backing away from the idea of using AMQP.
 I believe the requirements outlined below can be handled by consumer
 groups brokers such as `Kafka`_ & `Redis with streams`_.
 
