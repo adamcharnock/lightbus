@@ -1,4 +1,5 @@
 import lightbus
+import lightbus.transports.debug
 from lightbus.api import Api
 from lightbus.utilities import setup_dev_logging
 
@@ -16,8 +17,8 @@ def main():
     setup_dev_logging()
 
     bus = lightbus.Bus(
-        rpc_transport=lightbus.DebugRpcTransport(),
-        result_transport=lightbus.DebugResultTransport()
+        rpc_transport=lightbus.transports.debug.DebugRpcTransport(),
+        result_transport=lightbus.transports.debug.DebugResultTransport()
     )
     api = AuthApi()
     bus.serve(api)

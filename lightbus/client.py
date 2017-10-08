@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import Optional
 
+import lightbus.transports.direct
 from lightbus.exceptions import InvalidClientNodeConfiguration
 from lightbus.log import L, Bold, escape_codes
 from lightbus.utilities import setup_dev_logging
@@ -65,9 +66,9 @@ if __name__ == '__main__':
     # Make sure we make the AuthApi available
     import lightbus.serve
 
-    result_transport = lightbus.DirectResultTransport()
+    result_transport = lightbus.transports.direct.DirectResultTransport()
     bus = lightbus.Bus(
-        rpc_transport=lightbus.DirectRpcTransport(result_transport),
+        rpc_transport=lightbus.transports.direct.DirectRpcTransport(result_transport),
         result_transport=result_transport
     )
     client = bus.client()
