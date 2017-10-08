@@ -61,3 +61,6 @@ class Api(object, metaclass=ApiMeta):
     async def call(self, procedure_name, kwargs):
         # TODO: Handling code for sync/async method calls (if we want to support both)
         return getattr(self, procedure_name)(**kwargs)
+
+    def __str__(self):
+        return self.meta.name

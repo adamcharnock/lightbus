@@ -27,10 +27,14 @@ class RpcMessage(Message):
         return '<{}: {}>'.format(self.__class__.__name__, self)
 
     def __str__(self):
-        return '{}.{}({})'.format(
-            self.api_name, self.procedure_name,
+        return '{}({})'.format(
+            self.canonical_name,
             ', '.join('{}={}'.format(k, v) for k, v in self.kwargs.items())
         )
+
+    @property
+    def canonical_name(self):
+        return "{}.{}".format(self.api_name, self.procedure_name)
 
     def to_dict(self) -> dict:
         dictionary = {

@@ -72,7 +72,7 @@ def parse_colors(sequence):
     return ''.join(escape_codes[n] for n in sequence.split(',') if n)
 
 
-class ColoredRecord(object):
+class LightbusLogRecord(object):
     """
     Wraps a LogRecord, adding named escape codes to the internal dict.
 
@@ -82,12 +82,23 @@ class ColoredRecord(object):
 
     def __init__(self, record):
         """Add attributes from the escape_codes dict and the record."""
+        self.is_tty = True
+        self.additional_line_prefix = ''
         self.__dict__.update(escape_codes)
         self.__dict__.update(record.__dict__)
 
         # Keep a reference to the original record so ``__getattr__`` can
         # access functions that are not in ``__dict__``
         self.__record = record
+
+    def getMessage(self):
+        if hasattr(self.msg, 'render'):
+            self.msg = self.msg.render(
+                tty=self.is_tty,
+                additional_line_prefix=self.additional_line_prefix,
+                style=self.log_color
+            )
+        self.__record.getMessage()
 
     def __getattr__(self, name):
         return getattr(self.__record, name)
@@ -151,8 +162,9 @@ class LightbusFormatter(logging.Formatter):
 
     def format(self, record):
         """Format a message from a record object."""
-        record = ColoredRecord(record)
+        record = LightbusLogRecord(record)
         record.log_color = self.color(self.log_colors, record.levelname)
+        record.is_tty = self.stream.isatty()
 
         # Set secondary log colors
         if self.secondary_log_colors:
@@ -171,6 +183,7 @@ class LightbusFormatter(logging.Formatter):
             self._style = logging._STYLES[self.style][0](self._fmt)
 
         # Format the message
+        record.additional_line_prefix = self.get_additional_line_prefix(record)
         message = super(LightbusFormatter, self).format(record)
 
         # Add a reset code to the end of the message
@@ -179,6 +192,17 @@ class LightbusFormatter(logging.Formatter):
             message += escape_codes['reset']
 
         return message
+
+    def get_additional_line_prefix(self, record):
+        fmt_before_msg = self._fmt.split('%(msg)s', 1)
+        if len(fmt_before_msg) == 1:
+            return 0
+        formatted_prefix = fmt_before_msg[0] % {
+            k: '' if 'color' in k else ' ' * len(str(v))
+            for k, v
+            in record.__dict__.items()
+        }
+        return formatted_prefix
 
 
 class L(object):
@@ -194,16 +218,46 @@ class L(object):
     def __repr__(self):
         return repr(self.__str__())
 
-    def render(self, parent_style='', style=''):
+    def render(self, parent_style='', style='', tty=True, additional_line_prefix=''):
         style = style or self.style
         keys = [
-            v.render(parent_style=style) if hasattr(v, 'render') else v
+            v.render(parent_style=style, tty=tty) if hasattr(v, 'render') else v
             for v in
             self.values
         ]
-        return style + str(self.log_message).format(*keys) + escape_codes['reset'] + parent_style
+        if tty:
+            return style + str(self.log_message).format(*keys) + escape_codes['reset'] + parent_style
+        else:
+            return str(self.log_message).format(*keys)
 
 
 class Bold(L):
     style = escape_codes['bold']
 
+
+class LBullets(L):
+
+    def __init__(self, log_message, *values, items, bullet='∙', indent=4):
+        super().__init__(log_message, *values)
+        self.items = items
+        self.bullet = bullet
+        self.indent = indent
+
+    def render(self, parent_style='', style='', tty=True, additional_line_prefix=''):
+        style = style or self.style
+        rendered_items = [
+            item.render(parent_style=style, tty=tty) if hasattr(item, 'render') else item
+            for item
+            in self.items
+        ]
+
+        if tty:
+            indent = self.indent
+            msg = "\n".join([
+                '{}:'.format(self.log_message),
+            ] + [
+                '{}{}{} {}'.format(additional_line_prefix, ' ' * indent, self.bullet, item) for item in rendered_items
+            ] + [additional_line_prefix])
+            return style + msg + escape_codes['reset'] + parent_style
+        else:
+            return '{}: {}'.format(self.log_message, ', '.join(self.items))

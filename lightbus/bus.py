@@ -4,9 +4,10 @@ from typing import Any
 import asyncio
 
 from lightbus.client import ClientNode
+from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage
-import lightbus
-from lightbus.api import Api, registry
+from lightbus.api import registry
+from lightbus.transports import RpcTransport, ResultTransport
 from lightbus.utilities import handle_aio_exceptions
 
 __all__ = ['Bus']
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class Bus(object):
 
-    def __init__(self, rpc_transport: 'lightbus.RpcTransport', result_transport: 'lightbus.ResultTransport'):
+    def __init__(self, rpc_transport: 'RpcTransport', result_transport: 'ResultTransport'):
         self.rpc_transport = rpc_transport
         self.result_transport = result_transport
 
@@ -25,23 +26,32 @@ class Bus(object):
         return ClientNode(name='', bus=self, parent=None)
 
     def serve(self, api, loop=None):
-        logger.info("Lightbus getting ready to serve")
-        logger.info("    ∙ RPC transport: {}".format(self.rpc_transport))
-        logger.info("    ∙ Result transport: {}".format(self.result_transport))
-        logger.info("")
+        logger.info(LBullets(
+            "Lightbus getting ready to serve. APIs found",
+            items=[
+                L("RPC transport: {}.{}".format(
+                    self.rpc_transport.__module__,
+                    Bold(self.rpc_transport.__class__.__name__))
+                ),
+                L("Result transport: {}.{}".format(
+                    self.result_transport.__module__,
+                    Bold(self.result_transport.__class__.__name__)
+                ))
+            ]
+        ))
 
         if registry.all():
-            logger.info("APIs in registry ({}):".format(len(registry.all())))
-            for api in registry:
-                logger.info("    ∙ {}".format(api.meta.name))
-            logger.info("")
+            logger.info(LBullets(
+                "APIs in registry ({})".format(len(registry.all())),
+                items=registry.all()
+            ))
         else:
             logger.error("No APIs have been registered, lightbus has nothing to do. Exiting.")
             exit(1)
 
         loop = loop or asyncio.get_event_loop()
 
-        asyncio.ensure_future(handle_aio_exceptions(self.consume, api=api), loop=loop)
+        asyncio.ensure_future(handle_aio_exceptions(self.consume), loop=loop)
         try:
             loop.run_forever()
         except KeyboardInterrupt:
@@ -52,12 +62,15 @@ class Bus(object):
 
     # RPCs
 
-    async def consume(self, api):
-        # TODO: Should just consume all APIs in registry
+    async def consume(self, apis=None):
+        if apis is None:
+            apis = registry.all()
+
         while True:
-            rpc_message = await self.rpc_transport.consume_rpcs(api)
-            result = await self.call_rpc_local(api, name=rpc_message.procedure_name, kwargs=rpc_message.kwargs)
-            await self.send_result(rpc_message=rpc_message, result=result)
+            rpc_messages = await self.rpc_transport.consume_rpcs(apis)
+            for rpc_message in rpc_messages:
+                result = await self.call_rpc_local(api, name=rpc_message.procedure_name, kwargs=rpc_message.kwargs)
+                await self.send_result(rpc_message=rpc_message, result=result)
 
     async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict):
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)

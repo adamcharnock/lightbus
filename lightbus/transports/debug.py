@@ -1,8 +1,12 @@
 import asyncio
+import logging
+from typing import Sequence
 
-from lightbus import RpcTransport, ResultTransport
+from lightbus.transports.base import ResultTransport, RpcTransport
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
-from lightbus.transports import logger
+
+
+logger = logging.getLogger(__name__)
 
 
 class DebugRpcTransport(RpcTransport):
@@ -11,15 +15,15 @@ class DebugRpcTransport(RpcTransport):
         """Publish a call to a remote procedure"""
         logger.debug("Faking dispatch of message {}".format(rpc_message))
 
-    async def consume_rpcs(self, api) -> RpcMessage:
+    async def consume_rpcs(self, api) -> Sequence[RpcMessage]:
         """Consume RPC calls for the given API"""
         logger.debug("Faking consumption of RPCs. Waiting 1 second before issuing fake RPC call...")
         await asyncio.sleep(1)
         logger.debug("Issuing fake RPC call")
-        return RpcMessage(api_name='my_company.auth', procedure_name='check_password', kwargs=dict(
+        return [RpcMessage(api_name='my_company.auth', procedure_name='check_password', kwargs=dict(
             username='admin',
             password='secret',
-        ))
+        ))]
 
     async def send_event(self, api, name, kwargs):
         """Publish an event"""

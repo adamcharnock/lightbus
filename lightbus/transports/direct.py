@@ -1,11 +1,15 @@
 import asyncio
+import logging
+from typing import Sequence
 
-from lightbus import RpcTransport, ResultTransport
-from lightbus.api import registry
+from lightbus.transports.base import ResultTransport, RpcTransport
+from lightbus.api import registry, Api
 from lightbus.exceptions import UnsupportedUse
 from lightbus.log import L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
-from lightbus.transports import logger
+
+
+logger = logging.getLogger(__name__)
 
 
 class DirectRpcTransport(RpcTransport):
@@ -29,7 +33,7 @@ class DirectRpcTransport(RpcTransport):
         )
         logger.info("⚡️  Directly executed RPC call & sent result for message {}.".format(rpc_message))
 
-    async def consume_rpcs(self, api) -> RpcMessage:
+    async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         raise UnsupportedUse(
             "You are using the DirectRpcTransport. This transport "
             "calls RPCs immediately & directly in the current process rather than "
