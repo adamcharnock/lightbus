@@ -69,7 +69,11 @@ class Bus(object):
         while True:
             rpc_messages = await self.rpc_transport.consume_rpcs(apis)
             for rpc_message in rpc_messages:
-                result = await self.call_rpc_local(api, name=rpc_message.procedure_name, kwargs=rpc_message.kwargs)
+                result = await self.call_rpc_local(
+                    api_name=rpc_message.api_name,
+                    name=rpc_message.procedure_name,
+                    kwargs=rpc_message.kwargs
+                )
                 await self.send_result(rpc_message=rpc_message, result=result)
 
     async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict):
@@ -83,7 +87,8 @@ class Bus(object):
         ), timeout=10)
         return result
 
-    async def call_rpc_local(self, api, name, kwargs):
+    async def call_rpc_local(self, api_name: str, name: str, kwargs: dict):
+        api = registry.get(api_name)
         return await api.call(name, kwargs)
 
     # Events
