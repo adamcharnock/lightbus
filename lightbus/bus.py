@@ -29,17 +29,17 @@ class Bus(object):
 
     def serve(self, api, loop=None):
         logger.info(LBullets(
-            "Lightbus getting ready to serve. APIs found",
-            items=[
-                L("RPC transport: {}.{}".format(
-                    self.rpc_transport.__module__,
-                    Bold(self.rpc_transport.__class__.__name__))
+            "Lightbus getting ready to serve. Brokers in use",
+            items={
+                "RPC transport": L(
+                    '{}.{}',
+                    self.rpc_transport.__module__, Bold(self.rpc_transport.__class__.__name__)
                 ),
-                L("Result transport: {}.{}".format(
-                    self.result_transport.__module__,
+                "Result transport": L(
+                    '{}.{}', self.result_transport.__module__,
                     Bold(self.result_transport.__class__.__name__)
-                ))
-            ]
+                ),
+            }
         ))
 
         if registry.all():
