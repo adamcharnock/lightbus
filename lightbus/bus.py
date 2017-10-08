@@ -3,12 +3,14 @@ from typing import Any
 
 import asyncio
 
+import time
+
 from lightbus.client import ClientNode
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage
 from lightbus.api import registry
 from lightbus.transports import RpcTransport, ResultTransport
-from lightbus.utilities import handle_aio_exceptions
+from lightbus.utilities import handle_aio_exceptions, human_time
 
 __all__ = ['Bus']
 
@@ -80,16 +82,23 @@ class Bus(object):
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)
         rpc_message.return_path = self.result_transport.get_return_path(rpc_message)
 
+        start_time = time.time()
         # TODO: It is possible that the RPC will be called before we start waiting for the response. This is bad.
         result, _ = await asyncio.wait_for(asyncio.gather(
             self.result_transport.receive(rpc_message),
             self.rpc_transport.call_rpc(rpc_message),
         ), timeout=10)
+
+        logger.info(L("Called {} in {}", Bold(rpc_message.canonical_name), human_time(time.time() - start_time)))
+
         return result
 
     async def call_rpc_local(self, api_name: str, name: str, kwargs: dict):
         api = registry.get(api_name)
-        return await api.call(name, kwargs)
+        start_time = time.time()
+        result = await api.call(name, kwargs)
+        logger.info(L("Executed {}.{} in {}", Bold(api_name), Bold(name), human_time(time.time() - start_time)))
+        return result
 
     # Events
 

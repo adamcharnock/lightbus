@@ -64,6 +64,7 @@ class RpcMessage(Message):
 
         api_name = dictionary.get('api_name')
         procedure_name = dictionary.get('procedure_name')
+        return_path = dictionary.get('return_path')
 
         if not api_name:
             raise InvalidRpcMessage(
@@ -76,7 +77,7 @@ class RpcMessage(Message):
 
         kwargs = {k[3:]: v for k, v in dictionary.items() if k.startswith('kw:')}
 
-        return cls(api_name=api_name, procedure_name=procedure_name, kwargs=kwargs)
+        return cls(api_name=api_name, procedure_name=procedure_name, return_path=return_path, kwargs=kwargs)
 
 
 class ResultMessage(Message):

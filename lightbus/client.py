@@ -66,13 +66,21 @@ if __name__ == '__main__':
     # Make sure we make the AuthApi available
     import lightbus.serve
 
-    result_transport = lightbus.transports.direct.DirectResultTransport()
     bus = lightbus.Bus(
-        rpc_transport=lightbus.transports.direct.DirectRpcTransport(result_transport),
-        result_transport=result_transport
+        rpc_transport=lightbus.transports.RedisRpcTransport(),
+        result_transport=lightbus.transports.RedisResultTransport(),
     )
     client = bus.client()
-    print(client.my_company.auth.check_password(
+    client.my_company.auth.check_password(
         username='admin',
         password='secret'
-    ))
+    )
+    client.my_company.auth.check_password(
+        username='admin',
+        password='secret'
+    )
+    client.my_company.auth.check_password(
+        username='admin',
+        password='secret'
+    )
+

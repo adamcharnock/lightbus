@@ -244,20 +244,31 @@ class LBullets(L):
         self.indent = indent
 
     def render(self, parent_style='', style='', tty=True, additional_line_prefix=''):
-        style = style or self.style
-        rendered_items = [
-            item.render(parent_style=style, tty=tty) if hasattr(item, 'render') else item
-            for item
-            in self.items
-        ]
-
-        if tty:
-            indent = self.indent
-            msg = "\n".join([
-                '{}:'.format(self.log_message),
-            ] + [
-                '{}{}{} {}'.format(additional_line_prefix, ' ' * indent, self.bullet, item) for item in rendered_items
-            ] + [additional_line_prefix])
-            return style + msg + escape_codes['reset'] + parent_style
-        else:
+        if not tty:
             return '{}: {}'.format(self.log_message, ', '.join(self.items))
+
+        style = style or self.style
+
+        def render_child(item) -> str:
+            if hasattr(item, 'render'):
+                return item.render(parent_style=style, tty=tty)
+            else:
+                return item
+
+        rendered_items = []
+        if isinstance(self.items, dict):
+            key_width = max(map(len, self.items.keys())) + 1
+            for k, v in self.items.items():
+                rendered_items.append('{}: {}'.format(render_child(k).ljust(key_width), render_child(v)))
+        else:
+            for item in self.items:
+                rendered_items.append(render_child(item))
+
+        indent = self.indent
+        msg = "\n".join([
+            '{}:'.format(self.log_message),
+        ] + [
+            '{}{}{} {}'.format(additional_line_prefix, ' ' * indent, self.bullet, item) for item in rendered_items
+        ] + [additional_line_prefix])
+        return style + msg + escape_codes['reset'] + parent_style
+

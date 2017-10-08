@@ -20,8 +20,8 @@ def main():
     setup_dev_logging()
 
     bus = lightbus.Bus(
-        rpc_transport=lightbus.transports.debug.DebugRpcTransport(),
-        result_transport=lightbus.transports.debug.DebugResultTransport()
+        rpc_transport=lightbus.transports.RedisRpcTransport(),
+        result_transport=lightbus.transports.RedisResultTransport()
     )
     api = AuthApi()
     bus.serve(api)

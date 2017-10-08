@@ -31,3 +31,9 @@ def setup_dev_logging():
     logger.addHandler(handler)
     logger.setLevel(logging.DEBUG)
 
+
+def human_time(seconds: float):
+    if seconds > 1:
+        return '{} seconds'.format(round(seconds, 2))
+    else:
+        return '{} milliseconds'.format(round(seconds * 1000, 2))
