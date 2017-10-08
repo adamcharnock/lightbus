@@ -1,5 +1,5 @@
-Why AMQP
-========
+Why AMQP (or not?)
+==================
 
 .. readingtime::
 
@@ -7,6 +7,10 @@ Why AMQP
     :align: right
     :width: 100
     :alt: Rabbitmq logo
+
+**Update October 2017:* I'm backing away from the idea of using AMQP.
+I believe the requirements outlined below can be handled by consumer
+groups brokers such as `Kafka`_ & `Redis with streams`_.
 
 For the reasons detailed previously I am proposing Lightbus be
 tightly coupled to the underlying broker (i.e. because
@@ -50,3 +54,5 @@ Next up: :doc:`examples` (real made-up code!)
 
 .. _RabbitMQ: https://www.rabbitmq.com
 .. _ActiveMQ: http://activemq.apache.org/
+.. _Kafka: https://kafka.apache.org/
+.. _Redis with streams: http://antirez.com/news/114

@@ -22,9 +22,8 @@ Introduction
     <strong>
 
 Lightbus will be a new :ref:`message bus <motivation:Task queue vs bus>`
-for Python 3, :ref:`backed by AMQP <implementation/amqp:Why AMQP>`. Lightbus will
-focus on providing conceptually simple communication between multiple
-applications/processes.
+for Python 3. Lightbus will focus on providing conceptually simple
+communication between multiple applications/processes.
 
 .. raw:: html
 
@@ -49,6 +48,12 @@ Initial goals are as follows:
 -  **Excellent tooling & documentation**
 -  **Targeting smaller teams**
 -  **High speed & low latency** (but not at the expense of other goals)
+
+Development Status
+------------------
+
+Work has begun on a proof-of-concept. You can
+`view progress in GitHub`_.
 
 Quick example
 -------------
@@ -157,3 +162,4 @@ Next up: :doc:`motivation`
 .. _RabbitMQ: https://www.rabbitmq.com
 .. _Hacker News thread: https://news.ycombinator.com/item?id=14556988
 .. _new GitHub issue: https://github.com/adamcharnock/lightbus/issues/new
+.. _view progress in GitHub: https://github.com/adamcharnock/lightbus/issues/1
