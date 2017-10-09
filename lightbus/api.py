@@ -37,23 +37,31 @@ class Registry(object):
 registry = Registry()
 
 
-class ApiMeta(type):
+class ApiOptions(object):
+    name: str
 
-    def __init__(cls, name, bases=None, dict=None):
+    def __init__(self, options):
+        for k, v in options.items():
+            if not k.startswith('_'):
+                setattr(k, v)
+
+
+class ApiMetaclass(type):
+
+    def __new__(cls, name, bases=None, dict=None):
         is_api_base_class = (name == 'Api' and bases == (object,))
         if is_api_base_class:
-            super(ApiMeta, cls).__init__(name, bases, dict)
+            super().__init__(name, bases, dict)
         else:
-            # TODO: This isn't quite right. Initialising an instance of on an API
-            # in a metaclass doesn't seem like something we want to be doing.
-            dict['meta'] = cls.Meta()
-            super(ApiMeta, cls).__init__(name, bases, dict)
-            api = cls()
-            api.meta = dict['meta']
-            registry.add(dict['meta'].name, api)
+            options = dict.get('Meta', object())
+            dict.update(
+                meta=ApiOptions(options),
+            )
+            cls = type.__new__(name, bases, dict)
+            registry.add(options.name, cls())
 
 
-class Api(object, metaclass=ApiMeta):
+class Api(object, metaclass=ApiMetaclass):
 
     class Meta:
         name = None
