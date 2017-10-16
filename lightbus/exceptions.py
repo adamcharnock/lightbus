@@ -22,3 +22,7 @@ class UnknownApi(LightbusException):
 
 class InvalidApiRegistryEntry(LightbusException):
     pass
+
+
+class InvalidApiEventConfiguration(LightbusException):
+    pass

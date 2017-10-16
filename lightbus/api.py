@@ -43,21 +43,19 @@ class ApiOptions(object):
     def __init__(self, options):
         for k, v in options.items():
             if not k.startswith('_'):
-                setattr(k, v)
+                setattr(self, k, v)
 
 
 class ApiMetaclass(type):
 
-    def __new__(cls, name, bases=None, dict=None):
+    def __init__(cls, name, bases=None, dict=None):
         is_api_base_class = (name == 'Api' and bases == (object,))
         if is_api_base_class:
-            super().__init__(name, bases, dict)
+            super(ApiMetaclass, cls).__init__(name, bases, dict)
         else:
             options = dict.get('Meta', object())
-            dict.update(
-                meta=ApiOptions(options),
-            )
-            cls = type.__new__(name, bases, dict)
+            cls.meta = ApiOptions(cls.Meta.__dict__.copy())
+            super(ApiMetaclass, cls).__init__(name, bases, dict)
             registry.add(options.name, cls())
 
 
