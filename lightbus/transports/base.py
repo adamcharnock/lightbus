@@ -30,7 +30,7 @@ class ResultTransport(object):
         raise NotImplementedError()
 
     async def receive_result(self, rpc_message: RpcMessage) -> ResultMessage:
-        """Receive the response for the given message
+        """Receive the result for the given message
 
         Args:
             rpc_message (): The original message sent to the server
