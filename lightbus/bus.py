@@ -1,12 +1,11 @@
 import logging
-from typing import Any
+from typing import Any, Optional, Callable
 
 import asyncio
 
 import time
 
-from lightbus.client import ClientNode
-from lightbus.exceptions import InvalidEventArguments
+from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage
 from lightbus.api import registry
@@ -26,8 +25,8 @@ class Bus(object):
         self.result_transport = result_transport
 
     def client(self):
-        return ClientNode(name='', parent=None,
-                          on_fire=self.on_fire, on_listen=self.on_listen, on_call=self.call_rpc_remote)
+        return BusNode(name='', parent=None,
+                       on_fire=self.on_fire, on_listen=self.on_listen, on_call=self.call_rpc_remote)
 
     def serve(self, api, loop=None):
         logger.info(LBullets(
@@ -107,16 +106,36 @@ class Bus(object):
     # Events
 
     def on_fire(self, api_name, name, kwargs: dict):
-        api = registry.get(api_name)
-        event = api.get_event(name)
+        try:
+            api = registry.get(api_name)
+        except UnknownApi:
+            raise UnknownApi(
+                "I tried to fire the event {api_name}.{name}, but could not find API {api_name} in the registry. "
+                "An API being in the registry implies you are an authority on that API. Therefore, "
+                "I require the API to be in the registry as it seems like a bad idea to fire "
+                "events on behalf of remote APIs. However, this could also be caused by a typo in the "
+                "API name or event name, or be because the API has not been "
+                "correctly registered.".format(**locals())
+            )
+
+        try:
+            event = api.get_event(name)
+        except EventNotFound:
+            raise EventNotFound(
+                "I tried to fire the event {api_name}.{name}, but the API {api_name} does not "
+                "seem to contain an event named {name}. You may need to define the event, you "
+                "may also be using the incorrect API. Also check for typos.".format(**locals())
+            )
+
         if set(event.arguments) != set(kwargs.keys()):
             raise InvalidEventArguments(
-                "Invalid event arguments supplied. Attempted to fire event with "
-                "arguments: {}. Event expected: {}".format(
-                    sorted(kwargs.keys()),
-                    sorted(event.arguments),
+                "Invalid event arguments supplied when firing event. Attempted to fire event with "
+                "{} arguments: {}. Event expected {}: {}".format(
+                    len(kwargs), sorted(kwargs.keys()),
+                    len(event.arguments), sorted(event.arguments),
                 )
             )
+
         return self.event_transport.send_event(api, name, kwargs)
 
     def on_listen(self, api_name, name, listener):
@@ -133,3 +152,62 @@ class Bus(object):
 
     async def receive_result(self, rpc_message: RpcMessage):
         return await self.result_transport.receive(rpc_message)
+
+
+class BusNode(object):
+
+    def __init__(self, name: str, *, parent: Optional['BusNode'],
+                 on_call: Callable, on_listen: Callable, on_fire: Callable):
+        if not parent and name:
+            raise InvalidBusNodeConfiguration("Root client node may not have a name")
+        self.name = name
+        self.parent = parent
+        self.on_call = on_call
+        self.on_listen = on_listen
+        self.on_fire = on_fire
+
+    def __getattr__(self, item):
+        return BusNode(name=item, parent=self,
+                       on_call=self.on_call, on_listen=self.on_listen, on_fire=self.on_fire)
+
+    def __str__(self):
+        return self.fully_qualified_name
+
+    def __repr__(self):
+        return '<BusNode {}>'.format(self.fully_qualified_name)
+
+    def __call__(self, **kwargs):
+        coroutine = self.on_call(api_name=self.api_name, name=self.name, kwargs=kwargs)
+
+        # TODO: Make some utility code for this
+        loop = asyncio.get_event_loop()
+        val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=1))
+        return val
+
+    async def asyn(self, **kwargs):
+        return await self.on_call(api_name=self.api_name, name=self.name, kwargs=kwargs)
+
+    def listen(self, listener):
+        return self.on_listen(api_name=self.api_name, name=self.name, listener=listener)
+
+    def fire(self, **kwargs):
+        return self.on_fire(api_name=self.api_name, name=self.name, kwargs=kwargs)
+
+    def ancestors(self, include_self=False):
+        parent = self
+        while parent is not None:
+            if parent != self or include_self:
+                yield parent
+            parent = parent.parent
+
+    @property
+    def api_name(self):
+        path = [node.name for node in self.ancestors(include_self=False)]
+        path.reverse()
+        return '.'.join(path[1:])
+
+    @property
+    def fully_qualified_name(self):
+        path = [node.name for node in reversed(self.ancestors(include_self=True))]
+        path.reverse()
+        return '.'.join(path[1:])

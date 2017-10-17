@@ -8,7 +8,7 @@ class InvalidRpcMessage(LightbusException):
     pass
 
 
-class InvalidClientNodeConfiguration(LightbusException):
+class InvalidBusNodeConfiguration(LightbusException):
     pass
 
 
@@ -34,3 +34,4 @@ class EventNotFound(LightbusException):
 
 class InvalidEventArguments(LightbusException):
     pass
+
