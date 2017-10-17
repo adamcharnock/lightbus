@@ -2,9 +2,7 @@ import asyncio
 import logging
 from typing import Optional, Callable
 
-import lightbus.transports.direct
 from lightbus.exceptions import InvalidClientNodeConfiguration
-from lightbus.log import L, Bold, escape_codes
 from lightbus.utilities import setup_dev_logging
 
 logger = logging.getLogger(__name__)
@@ -80,7 +78,8 @@ if __name__ == '__main__':
         result_transport=lightbus.transports.RedisResultTransport(),
     )
     client = bus.client()
-    client.my_company.auth.check_password(
-        username='admin',
-        password='secret'
-    )
+    client.my_company.auth.user_registered.fire(username='foo')
+    # client.my_company.auth.check_password(
+    #     username='admin',
+    #     password='secret'
+    # )

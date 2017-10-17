@@ -26,3 +26,11 @@ class InvalidApiRegistryEntry(LightbusException):
 
 class InvalidApiEventConfiguration(LightbusException):
     pass
+
+
+class EventNotFound(LightbusException):
+    pass
+
+
+class InvalidEventArguments(LightbusException):
+    pass

@@ -6,6 +6,7 @@ import asyncio
 import time
 
 from lightbus.client import ClientNode
+from lightbus.exceptions import InvalidEventArguments
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage
 from lightbus.api import registry
@@ -105,14 +106,21 @@ class Bus(object):
 
     # Events
 
-    def on_fire(self, api_name, name, kwargs):
-        raise NotImplementedError()
+    def on_fire(self, api_name, name, kwargs: dict):
+        api = registry.get(api_name)
+        event = api.get_event(name)
+        if set(event.arguments) != set(kwargs.keys()):
+            raise InvalidEventArguments(
+                "Invalid event arguments supplied. Attempted to fire event with "
+                "arguments: {}. Event expected: {}".format(
+                    sorted(kwargs.keys()),
+                    sorted(event.arguments),
+                )
+            )
+        return self.event_transport.send_event(api, name, kwargs)
 
     def on_listen(self, api_name, name, listener):
         raise NotImplementedError()
-
-    async def send_event(self, api, name, kwargs):
-        return await self.rpc_transport.send_event(api, name, kwargs)
 
     async def consume_events(self, api):
         return await self.rpc_transport.consume_events(api)
