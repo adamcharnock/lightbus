@@ -103,7 +103,7 @@ class RedisResultTransport(ResultTransport):
     def get_return_path(self, rpc_message: RpcMessage) -> str:
         return 'redis+key://{}.{}:result:{}'.format(rpc_message.api_name, rpc_message.procedure_name, uuid1().hex)
 
-    async def send(self, rpc_message: RpcMessage, result_message: ResultMessage):
+    async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
         logger.debug(L(
             "Sending result {} into Redis using return path {}",
             Bold(result_message), Bold(rpc_message.return_path)
@@ -123,7 +123,7 @@ class RedisResultTransport(ResultTransport):
             Bold(result_message), human_time(time.time() - start_time), Bold(rpc_message.return_path)
         ))
 
-    async def receive(self, rpc_message: RpcMessage) -> ResultMessage:
+    async def receive_result(self, rpc_message: RpcMessage) -> ResultMessage:
         logger.info(L("⌛ Awaiting Redis result for RPC message: {}", Bold(rpc_message)))
         redis = await self.get_redis()
         redis_key = self._parse_return_path(rpc_message.return_path)

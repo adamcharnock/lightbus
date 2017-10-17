@@ -27,7 +27,7 @@ class DirectRpcTransport(RpcTransport):
         )
 
         logger.debug("Sending result for message {}".format(rpc_message))
-        await self.result_transport.send(
+        await self.result_transport.send_result(
             rpc_message=rpc_message,
             result_message=ResultMessage(result=result)
         )
@@ -49,11 +49,11 @@ class DirectResultTransport(ResultTransport):
         rpc_message._direct_result_transport_future = asyncio.Future()
         return ''
 
-    async def send(self, rpc_message: RpcMessage, result_message: ResultMessage):
+    async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
         logger.info(L("⚡️  Directly sending RPC result: {}", Bold(result_message)))
         rpc_message._direct_result_transport_future.set_result(result_message)
 
-    async def receive(self, rpc_message: RpcMessage) -> ResultMessage:
+    async def receive_result(self, rpc_message: RpcMessage) -> ResultMessage:
         logger.info(L("⌛️  Awaiting result for RPC message: {}", Bold(rpc_message)))
         result = await rpc_message._direct_result_transport_future
         logger.info(L("⬅  Received result for RPC message {}: {}", rpc_message, Bold(result)))

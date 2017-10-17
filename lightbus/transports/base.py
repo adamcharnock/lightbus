@@ -20,7 +20,7 @@ class ResultTransport(object):
     def get_return_path(self, rpc_message: RpcMessage) -> str:
         raise NotImplementedError()
 
-    async def send(self, rpc_message: RpcMessage, result_message: ResultMessage):
+    async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
         """Send a result back to the caller
 
         Args:
@@ -29,7 +29,7 @@ class ResultTransport(object):
         """
         raise NotImplementedError()
 
-    async def receive(self, rpc_message: RpcMessage) -> ResultMessage:
+    async def receive_result(self, rpc_message: RpcMessage) -> ResultMessage:
         """Receive the response for the given message
 
         Args:
