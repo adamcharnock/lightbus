@@ -32,7 +32,6 @@ class RedisRpcTransport(RpcTransport):
         return self._redis
 
     async def call_rpc(self, rpc_message: RpcMessage):
-        # Direct RPC transport calls API method immediately
         stream = '{}:stream'.format(rpc_message.api_name)
         logger.debug(
             LBullets(
