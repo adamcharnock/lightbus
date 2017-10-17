@@ -25,7 +25,8 @@ class Bus(object):
         self.result_transport = result_transport
 
     def client(self):
-        return ClientNode(name='', bus=self, parent=None)
+        return ClientNode(name='', parent=None,
+                          on_fire=self.on_fire, on_listen=self.on_listen, on_call=self.call_rpc_remote)
 
     def serve(self, api, loop=None):
         logger.info(LBullets(
@@ -103,6 +104,12 @@ class Bus(object):
         return result
 
     # Events
+
+    def on_fire(self, api_name, name, kwargs):
+        raise NotImplementedError()
+
+    def on_listen(self, api_name, name, listener):
+        raise NotImplementedError()
 
     async def send_event(self, api, name, kwargs):
         return await self.rpc_transport.send_event(api, name, kwargs)
