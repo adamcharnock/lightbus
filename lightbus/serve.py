@@ -1,5 +1,4 @@
 import logging
-import weakref
 from contextlib import contextmanager
 
 import lightbus
@@ -37,7 +36,6 @@ class Event(object):
         pass
 
     def _bind_api(self, api_instance):
-        import pdb; pdb.set_trace()
         if not isinstance(api_instance, Api):
             raise InvalidApiEventConfiguration(
                 "It appears you are trying to use an event attached to "
@@ -52,7 +50,7 @@ class Event(object):
                 "should copy the event."
             )
         if self._api is None:
-            self._api = weakref.ref(api_instance)
+            self._api = api_instance
 
     @contextmanager
     def _bind_bus(self, bus):
