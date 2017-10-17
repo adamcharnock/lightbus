@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Sequence
 
-from lightbus.transports.base import ResultTransport, RpcTransport
+from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
 from lightbus.api import registry, Api
 from lightbus.exceptions import UnsupportedUse
 from lightbus.log import L, Bold
@@ -41,14 +41,6 @@ class DirectRpcTransport(RpcTransport):
             "in this context and is unsupported."
         )
 
-    async def send_event(self, api, name, kwargs):
-        """Publish an event"""
-        pass
-
-    async def consume_events(self, api) -> EventMessage:
-        """Consume RPC events for the given API"""
-        pass
-
 
 class DirectResultTransport(ResultTransport):
 
@@ -66,3 +58,13 @@ class DirectResultTransport(ResultTransport):
         result = await rpc_message._direct_result_transport_future
         logger.info(L("⬅  Received result for RPC message {}: {}", rpc_message, Bold(result)))
         return result
+
+
+class DirectEventTransport(EventTransport):
+    def send_event(self, api, name, kwargs):
+        """Publish an event"""
+        raise NotImplementedError()
+
+    async def consume_events(self, api) -> EventMessage:
+        """Consume RPC events for the given API"""
+        raise NotImplementedError()

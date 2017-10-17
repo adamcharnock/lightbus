@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Sequence
 
-from lightbus.transports.base import ResultTransport, RpcTransport
+from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 
 
@@ -25,14 +25,6 @@ class DebugRpcTransport(RpcTransport):
             password='secret',
         ))]
 
-    async def send_event(self, api, name, kwargs):
-        """Publish an event"""
-        pass
-
-    async def consume_events(self, api) -> EventMessage:
-        """Consume RPC events for the given API"""
-        pass
-
 
 class DebugResultTransport(ResultTransport):
 
@@ -48,3 +40,14 @@ class DebugResultTransport(ResultTransport):
         logger.debug('Faking received result')
 
         return ResultMessage(result='Fake result')
+
+
+class DebugEventTransport(EventTransport):
+
+    def send_event(self, api, name, kwargs):
+        """Publish an event"""
+        raise NotImplementedError()
+
+    async def consume_events(self, api) -> EventMessage:
+        """Consume RPC events for the given API"""
+        raise NotImplementedError()

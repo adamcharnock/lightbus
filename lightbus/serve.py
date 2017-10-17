@@ -19,7 +19,8 @@ def main():
 
     bus = lightbus.Bus(
         rpc_transport=lightbus.transports.RedisRpcTransport(),
-        result_transport=lightbus.transports.RedisResultTransport()
+        result_transport=lightbus.transports.RedisResultTransport(),
+        event_transport=lightbus.transports.RedisEventTransport(),
     )
     api = AuthApi()
     # api.user_registered.dispatch(foo=1)

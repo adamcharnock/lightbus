@@ -9,7 +9,7 @@ import aioredis
 import time
 from aioredis.util import decode
 
-from lightbus.transports.base import ResultTransport, RpcTransport
+from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
 from lightbus.api import Api
 from lightbus.log import L, Bold, LBullets
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
@@ -88,14 +88,6 @@ class RedisRpcTransport(RpcTransport):
             in fields.items()
         ])
 
-    async def send_event(self, api, name, kwargs):
-        """Publish an event"""
-        pass
-
-    async def consume_events(self, api) -> EventMessage:
-        """Consume RPC events for the given API"""
-        pass
-
 
 class RedisResultTransport(ResultTransport):
 
@@ -150,6 +142,17 @@ class RedisResultTransport(ResultTransport):
     def _parse_return_path(self, return_path: str) -> str:
         assert return_path.startswith('redis+key://')
         return return_path[12:]
+
+
+class RedisEventTransport(EventTransport):
+
+    def send_event(self, api, name, kwargs):
+        """Publish an event"""
+        raise NotImplementedError()
+
+    async def consume_events(self, api) -> EventMessage:
+        """Consume RPC events for the given API"""
+        raise NotImplementedError()
 
 
 def redis_encode(value):

@@ -20,9 +20,11 @@ logger = logging.getLogger(__name__)
 
 class Bus(object):
 
-    def __init__(self, rpc_transport: 'RpcTransport', result_transport: 'ResultTransport'):
+    def __init__(self, rpc_transport: 'RpcTransport', result_transport: 'ResultTransport',
+                 event_transport: 'event_transport'):
         self.rpc_transport = rpc_transport
         self.result_transport = result_transport
+        self.event_transport = event_transport
 
     def client(self):
         return BusNode(name='', parent=None,
@@ -39,6 +41,10 @@ class Bus(object):
                 "Result transport": L(
                     '{}.{}', self.result_transport.__module__,
                     Bold(self.result_transport.__class__.__name__)
+                ),
+                "Event transport": L(
+                    '{}.{}', self.event_transport.__module__,
+                    Bold(self.event_transport.__class__.__name__)
                 ),
             }
         ))
