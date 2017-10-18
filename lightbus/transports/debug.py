@@ -47,9 +47,8 @@ class DebugEventTransport(EventTransport):
     def __init__(self):
         self._task = None
         self._events = set()
-        self.restart_on_cancel = False
 
-    def send_event(self, event_message: EventMessage):
+    async def send_event(self, event_message: EventMessage):
         """Publish an event"""
         logger.info(" Faking sending of event {}.{} with kwargs: {}".format(
             event_message.api_name,

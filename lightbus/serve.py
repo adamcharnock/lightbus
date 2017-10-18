@@ -20,7 +20,7 @@ def main():
     bus = lightbus.Bus(
         rpc_transport=lightbus.transports.RedisRpcTransport(),
         result_transport=lightbus.transports.RedisResultTransport(),
-        event_transport=lightbus.transports.DebugEventTransport(),
+        event_transport=lightbus.transports.RedisEventTransport(),
     ).root()
     bus.my_company.auth.user_registered.fire(username='adam')
 

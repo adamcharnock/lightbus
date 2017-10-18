@@ -61,7 +61,7 @@ class DirectResultTransport(ResultTransport):
 
 
 class DirectEventTransport(EventTransport):
-    def send_event(self, api, name, kwargs):
+    async def send_event(self, api, name, kwargs):
         """Publish an event"""
         raise NotImplementedError()
 

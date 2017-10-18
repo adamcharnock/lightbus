@@ -11,11 +11,12 @@ if __name__ == '__main__':
     import lightbus.transports
     # import lightbus.serve
 
-    bus = lightbus.Bus(
+    bus_x = lightbus.Bus(
         rpc_transport=lightbus.transports.RedisRpcTransport(),
         result_transport=lightbus.transports.RedisResultTransport(),
-        event_transport=lightbus.transports.DebugEventTransport(),
-    ).root()
+        event_transport=lightbus.transports.RedisEventTransport(),
+    )
+    bus = bus_x.root()
 
     async def register_listener():
         await asyncio.sleep(1)
@@ -27,7 +28,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     asyncio.ensure_future(register_listener(), loop=loop)
 
-    bus.run()
+    bus_x.run()
 
     # client.my_company.auth.check_password(
     #     username='admin',

@@ -40,7 +40,7 @@ class ResultTransport(object):
 
 class EventTransport(object):
 
-    def send_event(self, event_message: EventMessage):
+    async def send_event(self, event_message: EventMessage):
         """Publish an event"""
         raise NotImplementedError()
 

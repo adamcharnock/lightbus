@@ -157,7 +157,7 @@ class Bus(object):
             )
 
         event_message = EventMessage(api_name=api.meta.name, event_name=name, kwargs=kwargs)
-        return self.event_transport.send_event(event_message)
+        await self.event_transport.send_event(event_message)
 
     async def on_listen(self, api_name, name, listener):
         key = (api_name, name)
