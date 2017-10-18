@@ -60,8 +60,8 @@ class DebugEventTransport(EventTransport):
     async def consume_events(self) -> Sequence[EventMessage]:
         """Consume RPC events for the given API"""
 
-        logger.info("⌛ Faking listening for events {}. Will issue a fake event in 10 seconds...".format(self._events))
-        self._task = asyncio.ensure_future(asyncio.sleep(10))
+        logger.info("⌛ Faking listening for events {}. Will issue a fake event in 2 seconds...".format(self._events))
+        self._task = asyncio.ensure_future(asyncio.sleep(2))
 
         try:
             await self._task
@@ -70,7 +70,10 @@ class DebugEventTransport(EventTransport):
             return []
         else:
             logger.debug('Faking received result')
-            return [EventMessage(api_name='foo.bar', event_name='fake_event', kwargs={'example': 'value'})]
+            return [
+                EventMessage(api_name='my_company.auth',
+                             event_name='user_registered', kwargs={'example': 'value'})
+            ]
 
     async def begin_listening_for(self, api_name, event_name):
         logger.info('Beginning to listen for {}.{}'.format(api_name, event_name))

@@ -23,7 +23,7 @@ if __name__ == '__main__':
         await asyncio.sleep(1)
 
         def test_listener(**kwargs):
-            logger.warning('Listener called!')
+            logger.warning('Listener called! {}'.format(kwargs))
         await client.my_company.auth.user_registered.listen_asyn(test_listener)
 
     loop = asyncio.get_event_loop()

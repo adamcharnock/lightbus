@@ -119,9 +119,11 @@ class Bus(object):
 
     async def consume_events(self):
         while True:
-            event_message = await self.event_transport.consume_events()
-            print(event_message)
-            # TODO: Execute event. self.execute_event_handlers()?
+            event_messages = await self.event_transport.consume_events()
+            for event_message in event_messages:
+                key = (event_message.api_name, event_message.event_name)
+                for listener in self._listeners.get(key, []):
+                    listener(**event_message.kwargs)
 
     async def on_fire(self, api_name, name, kwargs: dict):
         try:
