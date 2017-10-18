@@ -149,7 +149,7 @@ class RedisEventTransport(EventTransport):
         """Publish an event"""
         raise NotImplementedError()
 
-    async def consume_events(self) -> EventMessage:
+    async def consume_events(self) -> Sequence[EventMessage]:
         """Consume RPC events for the given API"""
         raise NotImplementedError()
 

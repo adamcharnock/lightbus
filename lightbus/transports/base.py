@@ -44,12 +44,12 @@ class EventTransport(object):
         """Publish an event"""
         raise NotImplementedError()
 
-    async def consume_events(self) -> EventMessage:
+    async def consume_events(self) -> Sequence[EventMessage]:
         """Consume RPC events for the given API"""
         raise NotImplementedError()
 
-    async def add_api(self, api_name):
+    async def begin_listening_for(self, api_name, event_name):
         raise NotImplementedError()
 
-    async def remove_api(self, api_name):
+    async def stop_listening_for(self, api_name, event_name):
         raise NotImplementedError()

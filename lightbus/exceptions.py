@@ -35,3 +35,6 @@ class EventNotFound(LightbusException):
 class InvalidEventArguments(LightbusException):
     pass
 
+
+class CannotBlockHere(LightbusException):
+    pass

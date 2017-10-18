@@ -22,9 +22,10 @@ def main():
         result_transport=lightbus.transports.RedisResultTransport(),
         event_transport=lightbus.transports.DebugEventTransport(),
     )
-    api = AuthApi()
-    # api.user_registered.dispatch(foo=1)
-    bus.run(api)
+    client = bus.client()
+    client.my_company.auth.user_registered.fire(username='adam')
+
+    # bus.run()
 
 
 if __name__ == '__main__':

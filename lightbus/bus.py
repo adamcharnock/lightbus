@@ -7,10 +7,10 @@ import time
 
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound
 from lightbus.log import LBullets, L, Bold
-from lightbus.message import RpcMessage, ResultMessage
+from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.api import registry
-from lightbus.transports import RpcTransport, ResultTransport
-from lightbus.utilities import handle_aio_exceptions, human_time
+from lightbus.transports import RpcTransport, ResultTransport, EventTransport
+from lightbus.utilities import handle_aio_exceptions, human_time, block
 
 __all__ = ['Bus']
 
@@ -21,10 +21,11 @@ logger = logging.getLogger(__name__)
 class Bus(object):
 
     def __init__(self, rpc_transport: 'RpcTransport', result_transport: 'ResultTransport',
-                 event_transport: 'event_transport'):
+                 event_transport: 'EventTransport'):
         self.rpc_transport = rpc_transport
         self.result_transport = result_transport
         self.event_transport = event_transport
+        self._listeners = {}
 
     def client(self):
         return BusNode(name='', parent=None,
@@ -55,12 +56,15 @@ class Bus(object):
                 items=registry.all()
             ))
         else:
-            logger.error("No APIs have been registered, lightbus has nothing to do. Exiting.")
-            exit(1)
+            logger.warning(
+                "No APIs have been registered, lightbus may still receive events "
+                "but it will not handle any incoming RPCs"
+            )
 
         loop = loop or asyncio.get_event_loop()
 
-        asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs), loop=loop)
+        if registry.all():
+            asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs), loop=loop)
         asyncio.ensure_future(handle_aio_exceptions(self.consume_events), loop=loop)
 
         try:
@@ -119,7 +123,7 @@ class Bus(object):
             print(event_message)
             # TODO: Execute event. self.execute_event_handlers()?
 
-    def on_fire(self, api_name, name, kwargs: dict):
+    async def on_fire(self, api_name, name, kwargs: dict):
         try:
             api = registry.get(api_name)
         except UnknownApi:
@@ -150,10 +154,14 @@ class Bus(object):
                 )
             )
 
-        return self.event_transport.send_event(api, name, kwargs)
+        event_message = EventMessage(api_name=api.meta.name, event_name=name, kwargs=kwargs)
+        return self.event_transport.send_event(event_message)
 
-    def on_listen(self, api_name, name, listener):
-        raise NotImplementedError()
+    async def on_listen(self, api_name, name, listener):
+        key = (api_name, name)
+        self._listeners.setdefault(key, [])
+        self._listeners[key].append(listener)
+        await self.event_transport.begin_listening_for(api_name, name)
 
     # Results
 
@@ -189,20 +197,22 @@ class BusNode(object):
 
     def __call__(self, **kwargs):
         coroutine = self.on_call(api_name=self.api_name, name=self.name, kwargs=kwargs)
-
-        # TODO: Make some utility code for this
-        loop = asyncio.get_event_loop()
-        val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=1))
-        return val
+        return block(coroutine, timeout=1)
 
     async def asyn(self, **kwargs):
         return await self.on_call(api_name=self.api_name, name=self.name, kwargs=kwargs)
 
+    async def listen_asyn(self, listener):
+        return await self.on_listen(api_name=self.api_name, name=self.name, listener=listener)
+
     def listen(self, listener):
-        return self.on_listen(api_name=self.api_name, name=self.name, listener=listener)
+        return block(self.listen_asyn(listener), timeout=5)
+
+    async def fire_asyn(self, **kwargs):
+        return await self.on_fire(api_name=self.api_name, name=self.name, kwargs=kwargs)
 
     def fire(self, **kwargs):
-        return self.on_fire(api_name=self.api_name, name=self.name, kwargs=kwargs)
+        return block(self.fire_asyn(**kwargs), timeout=5)
 
     def ancestors(self, include_self=False):
         parent = self

@@ -44,6 +44,11 @@ class DebugResultTransport(ResultTransport):
 
 class DebugEventTransport(EventTransport):
 
+    def __init__(self):
+        self._task = None
+        self._events = set()
+        self.restart_on_cancel = False
+
     def send_event(self, event_message: EventMessage):
         """Publish an event"""
         logger.info(" Faking sending of event {}.{} with kwargs: {}".format(
@@ -52,16 +57,27 @@ class DebugEventTransport(EventTransport):
             event_message.kwargs
         ))
 
-    async def consume_events(self) -> EventMessage:
+    async def consume_events(self) -> Sequence[EventMessage]:
         """Consume RPC events for the given API"""
-        logger.info("⌛ Faking listening for events. Will issue a fake event in 10 seconds...")
-        await asyncio.sleep(10)
-        logger.debug('Faking received result')
 
-        return EventMessage(api_name='foo.bar', event_name='fake_event', kwargs={'example': 'value'})
+        logger.info("⌛ Faking listening for events {}. Will issue a fake event in 10 seconds...".format(self._events))
+        self._task = asyncio.ensure_future(asyncio.sleep(10))
 
-    async def add_api(self, api_name):
-        pass
+        try:
+            await self._task
+        except asyncio.CancelledError as e:
+            logger.debug('Event consumption cancelled.')
+            return []
+        else:
+            logger.debug('Faking received result')
+            return [EventMessage(api_name='foo.bar', event_name='fake_event', kwargs={'example': 'value'})]
 
-    async def remove_api(self, api_name):
+    async def begin_listening_for(self, api_name, event_name):
+        logger.info('Beginning to listen for {}.{}'.format(api_name, event_name))
+        self._events.add('{}.{}'.format(api_name, event_name))
+        if self._task:
+            logger.debug('Existing consumer task running, cancelling')
+            self._task.cancel()
+
+    async def stop_listening_for(self, api_name, event_name):
         pass
