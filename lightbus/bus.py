@@ -27,7 +27,7 @@ class Bus(object):
         self.event_transport = event_transport
         self._listeners = {}
 
-    def client(self):
+    def root(self):
         return BusNode(name='', parent=None,
                        on_fire=self.on_fire, on_listen=self.on_listen, on_call=self.call_rpc_remote)
 

@@ -15,16 +15,14 @@ if __name__ == '__main__':
         rpc_transport=lightbus.transports.RedisRpcTransport(),
         result_transport=lightbus.transports.RedisResultTransport(),
         event_transport=lightbus.transports.DebugEventTransport(),
-    )
-
-    client = bus.client()
+    ).root()
 
     async def register_listener():
         await asyncio.sleep(1)
 
         def test_listener(**kwargs):
             logger.warning('Listener called! {}'.format(kwargs))
-        await client.my_company.auth.user_registered.listen_asyn(test_listener)
+        await bus.my_company.auth.user_registered.listen_asyn(test_listener)
 
     loop = asyncio.get_event_loop()
     asyncio.ensure_future(register_listener(), loop=loop)

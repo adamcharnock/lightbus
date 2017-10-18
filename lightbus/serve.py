@@ -21,9 +21,8 @@ def main():
         rpc_transport=lightbus.transports.RedisRpcTransport(),
         result_transport=lightbus.transports.RedisResultTransport(),
         event_transport=lightbus.transports.DebugEventTransport(),
-    )
-    client = bus.client()
-    client.my_company.auth.user_registered.fire(username='adam')
+    ).root()
+    bus.my_company.auth.user_registered.fire(username='adam')
 
     # bus.run()
 
