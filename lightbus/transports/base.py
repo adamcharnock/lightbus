@@ -40,10 +40,16 @@ class ResultTransport(object):
 
 class EventTransport(object):
 
-    def send_event(self, api, name, kwargs):
+    def send_event(self, event_message: EventMessage):
         """Publish an event"""
         raise NotImplementedError()
 
-    async def consume_events(self, api) -> EventMessage:
+    async def consume_events(self) -> EventMessage:
         """Consume RPC events for the given API"""
+        raise NotImplementedError()
+
+    async def add_api(self, api_name):
+        raise NotImplementedError()
+
+    async def remove_api(self, api_name):
         raise NotImplementedError()

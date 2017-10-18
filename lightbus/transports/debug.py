@@ -44,10 +44,24 @@ class DebugResultTransport(ResultTransport):
 
 class DebugEventTransport(EventTransport):
 
-    def send_event(self, api, name, kwargs):
+    def send_event(self, event_message: EventMessage):
         """Publish an event"""
-        raise NotImplementedError()
+        logger.info(" Faking sending of event {}.{} with kwargs: {}".format(
+            event_message.api_name,
+            event_message.event_name,
+            event_message.kwargs
+        ))
 
-    async def consume_events(self, api) -> EventMessage:
+    async def consume_events(self) -> EventMessage:
         """Consume RPC events for the given API"""
-        raise NotImplementedError()
+        logger.info("⌛ Faking listening for events. Will issue a fake event in 10 seconds...")
+        await asyncio.sleep(10)
+        logger.debug('Faking received result')
+
+        return EventMessage(api_name='foo.bar', event_name='fake_event', kwargs={'example': 'value'})
+
+    async def add_api(self, api_name):
+        pass
+
+    async def remove_api(self, api_name):
+        pass

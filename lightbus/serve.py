@@ -20,11 +20,11 @@ def main():
     bus = lightbus.Bus(
         rpc_transport=lightbus.transports.RedisRpcTransport(),
         result_transport=lightbus.transports.RedisResultTransport(),
-        event_transport=lightbus.transports.RedisEventTransport(),
+        event_transport=lightbus.transports.DebugEventTransport(),
     )
     api = AuthApi()
     # api.user_registered.dispatch(foo=1)
-    bus.serve(api)
+    bus.run(api)
 
 
 if __name__ == '__main__':

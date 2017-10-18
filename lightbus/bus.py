@@ -30,7 +30,7 @@ class Bus(object):
         return BusNode(name='', parent=None,
                        on_fire=self.on_fire, on_listen=self.on_listen, on_call=self.call_rpc_remote)
 
-    def serve(self, api, loop=None):
+    def run(self, loop=None):
         logger.info(LBullets(
             "Lightbus getting ready to serve. Brokers in use",
             items={
@@ -60,7 +60,9 @@ class Bus(object):
 
         loop = loop or asyncio.get_event_loop()
 
-        asyncio.ensure_future(handle_aio_exceptions(self.consume), loop=loop)
+        asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs), loop=loop)
+        asyncio.ensure_future(handle_aio_exceptions(self.consume_events), loop=loop)
+
         try:
             loop.run_forever()
         except KeyboardInterrupt:
@@ -71,7 +73,7 @@ class Bus(object):
 
     # RPCs
 
-    async def consume(self, apis=None):
+    async def consume_rpcs(self, apis=None):
         if apis is None:
             apis = registry.all()
 
@@ -111,6 +113,12 @@ class Bus(object):
 
     # Events
 
+    async def consume_events(self):
+        while True:
+            event_message = await self.event_transport.consume_events()
+            print(event_message)
+            # TODO: Execute event. self.execute_event_handlers()?
+
     def on_fire(self, api_name, name, kwargs: dict):
         try:
             api = registry.get(api_name)
@@ -146,9 +154,6 @@ class Bus(object):
 
     def on_listen(self, api_name, name, listener):
         raise NotImplementedError()
-
-    async def consume_events(self, api):
-        return await self.rpc_transport.consume_events(api)
 
     # Results
 

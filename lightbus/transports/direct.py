@@ -65,6 +65,6 @@ class DirectEventTransport(EventTransport):
         """Publish an event"""
         raise NotImplementedError()
 
-    async def consume_events(self, api) -> EventMessage:
+    async def consume_events(self) -> EventMessage:
         """Consume RPC events for the given API"""
         raise NotImplementedError()
