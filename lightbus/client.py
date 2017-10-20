@@ -9,12 +9,13 @@ if __name__ == '__main__':
     setup_dev_logging()
 
     import lightbus.transports
-    # import lightbus.serve
+    import lightbus.serve
 
+    rt = lightbus.transports.DirectResultTransport()
     bus_x = lightbus.Bus(
-        rpc_transport=lightbus.transports.RedisRpcTransport(),
-        result_transport=lightbus.transports.RedisResultTransport(),
-        event_transport=lightbus.transports.RedisEventTransport(),
+        rpc_transport=lightbus.transports.DirectRpcTransport(rt),
+        result_transport=rt,
+        event_transport=lightbus.transports.DirectEventTransport(),
     )
     bus = bus_x.root()
 
@@ -28,9 +29,9 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     asyncio.ensure_future(register_listener(), loop=loop)
 
-    bus_x.run()
+    # bus_x.run()
 
-    # client.my_company.auth.check_password(
-    #     username='admin',
-    #     password='secret'
-    # )
+    bus.my_company.auth.check_password(
+        username='admin',
+        password='secret'
+    )
