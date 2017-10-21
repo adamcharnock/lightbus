@@ -1,12 +1,12 @@
 import asyncio
 import logging
 
-from lightbus.utilities import setup_dev_logging
+from lightbus.utilities import configure_logging
 
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
-    setup_dev_logging()
+    configure_logging()
 
     import lightbus
     import lightbus.serve

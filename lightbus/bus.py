@@ -28,7 +28,7 @@ class BusClient(object):
         self.event_transport = event_transport
         self._listeners = {}
 
-    def run_forever(self, loop=None):
+    def run_forever(self, *, loop=None, consume_rpcs=True, consume_events=True):
         logger.info(LBullets(
             "Lightbus getting ready to serve. Brokers in use",
             items={
@@ -47,22 +47,31 @@ class BusClient(object):
             }
         ))
 
-        if registry.all():
-            logger.info(LBullets(
-                "APIs in registry ({})".format(len(registry.all())),
-                items=registry.all()
-            ))
-        else:
-            logger.warning(
-                "No APIs have been registered, lightbus may still receive events "
-                "but it will not handle any incoming RPCs"
-            )
+        if consume_rpcs:
+            if registry.all():
+                logger.info(LBullets(
+                    "APIs in registry ({})".format(len(registry.all())),
+                    items=registry.all()
+                ))
+            else:
+                if consume_events:
+                    logger.warning(
+                        "No APIs have been registered, lightbus may still receive events "
+                        "but Lightbus will not handle any incoming RPCs"
+                    )
+                else:
+                    logger.error(
+                        "No APIs have been registered, yet Lightbus has been configured to only "
+                        "handle RPCs. There is therefore nothing for lightbus to do. Exiting."
+                    )
+                    return
 
         loop = loop or asyncio.get_event_loop()
 
-        if registry.all():
+        if consume_rpcs and registry.all():
             asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs), loop=loop)
-        asyncio.ensure_future(handle_aio_exceptions(self.consume_events), loop=loop)
+        if consume_events:
+            asyncio.ensure_future(handle_aio_exceptions(self.consume_events), loop=loop)
 
         try:
             loop.run_forever()
@@ -225,8 +234,8 @@ class BusNode(object):
                 yield parent
             parent = parent.parent
 
-    def run_forever(self, loop=None):
-        self.bus_client.run_forever(loop=loop)
+    def run_forever(self, loop=None, consume_rpcs=True, consume_events=True):
+        self.bus_client.run_forever(loop=loop, consume_rpcs=consume_rpcs, consume_events=consume_events)
 
     @property
     def api_name(self):
@@ -249,10 +258,10 @@ def create(
         node_class=BusNode,
         **kwargs) -> BusNode:
 
-    coordinator = client_class(
+    bus_client = client_class(
         rpc_transport=rpc_transport or RedisRpcTransport(),
         result_transport=result_transport or RedisResultTransport(),
         event_transport=event_transport or RedisEventTransport(),
         **kwargs
     )
-    return node_class(name='', parent=None, bus=coordinator)
+    return node_class(name='', parent=None, bus_client=bus_client)

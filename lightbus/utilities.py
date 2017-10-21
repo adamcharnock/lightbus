@@ -14,7 +14,7 @@ async def handle_aio_exceptions(fn, *args, **kwargs):
         traceback.print_exc()
 
 
-def setup_dev_logging():
+def configure_logging():
     import logging
 
     logger = logging.getLogger('lightbus')
@@ -51,3 +51,11 @@ def block(coroutine, *, timeout):
         )
     val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
     return val
+
+
+def import_from_string(name):
+    components = name.split('.')
+    mod = __import__(components[0])
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod

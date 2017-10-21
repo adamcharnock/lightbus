@@ -1,7 +1,7 @@
 import lightbus
 import lightbus.transports.debug
 from lightbus.api import Api, Event
-from lightbus.utilities import setup_dev_logging
+from lightbus.utilities import configure_logging
 
 
 class AuthApi(Api):
@@ -15,7 +15,7 @@ class AuthApi(Api):
 
 
 def main():
-    setup_dev_logging()
+    configure_logging()
 
     bus = lightbus.create()
 

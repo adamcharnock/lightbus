@@ -17,4 +17,9 @@ setup(
     install_requires=[
     ],
     include_package_data=True,
+    entry_points={
+        'console_scripts': [
+            'lightbus = lightbus.commands:lightbus_entry_point'
+        ]
+    }
 )
