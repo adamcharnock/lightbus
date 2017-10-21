@@ -239,6 +239,7 @@ def create(
         result_transport: Optional['ResultTransport'] = None,
         event_transport: Optional['EventTransport'] = None,
         bus_class=Bus,
+        node_class=BusNode,
         **kwargs) -> BusNode:
 
     coordinator = bus_class(
@@ -247,4 +248,4 @@ def create(
         event_transport=event_transport or RedisEventTransport(),
         **kwargs
     )
-    return BusNode(name='', parent=None, bus=coordinator)
+    return node_class(name='', parent=None, bus=coordinator)
