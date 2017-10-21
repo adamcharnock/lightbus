@@ -31,10 +31,10 @@ class DebugResultTransport(ResultTransport):
     def get_return_path(self, rpc_message: RpcMessage) -> str:
         return 'debug://foo'
 
-    async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
+    async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: str):
         logger.info("Faking sending of result: {}".format(result_message))
 
-    async def receive_result(self, rpc_message: RpcMessage) -> ResultMessage:
+    async def receive_result(self, rpc_message: RpcMessage, return_path: str) -> ResultMessage:
         logger.info("⌛ Faking listening for results. Will issue fake result in 0.5 seconds...")
         await asyncio.sleep(0.5)
         logger.debug('Faking received result')
@@ -74,7 +74,7 @@ class DebugEventTransport(EventTransport):
                              event_name='user_registered', kwargs={'example': 'value'})
             ]
 
-    async def begin_listening_for(self, api_name, event_name):
+    async def start_listening_for(self, api_name, event_name):
         logger.info('Beginning to listen for {}.{}'.format(api_name, event_name))
         self._events.add('{}.{}'.format(api_name, event_name))
         if self._task:
