@@ -184,8 +184,8 @@ class BusNode(object):
         self.parent = parent
         self.bus = bus
 
-    def __getattr__(self, item):
-        return BusNode(name=item, parent=self, bus=self.bus)
+    def __getattr__(self, item) -> 'BusNode':
+        return self.__class__(name=item, parent=self, bus=self.bus)
 
     def __str__(self):
         return self.fully_qualified_name

@@ -61,10 +61,18 @@ class DirectResultTransport(ResultTransport):
 
 
 class DirectEventTransport(EventTransport):
-    async def send_event(self, api, name, kwargs):
+
+    def __init__(self):
+        self.queue = asyncio.Queue()
+
+    async def send_event(self, event_message: EventMessage):
         """Publish an event"""
-        raise NotImplementedError()
+        logger.info(L("⚡  Directly sending event: {}", Bold(event_message)))
+        await self.queue.put(event_message)
 
     async def consume_events(self) -> Sequence[EventMessage]:
         """Consume RPC events for the given API"""
-        raise NotImplementedError()
+        logger.info(L("⌛  Awaiting all events"))
+        event = await self.queue.get()
+        logger.info(L("⬅  Received event {}", Bold(event)))
+        return [event]
