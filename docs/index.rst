@@ -13,7 +13,7 @@ Introduction
     alternatives
     concerns
     implementation/index
-
+    proof-of-concept
 
 *Lightbus - Filling the gap between monolithic and microservice (design stage)*
 
@@ -106,7 +106,7 @@ Assumptions
 
 -  APIs exposed on a trusted network only
 -  Lightbus will use an off-the-shelf broker rather than anything
-   purpose-built (See also: :ref:`implementation/amqp:Why AMQP`).
+   purpose-built (See also: :ref:`implementation/amqp:Why AMQP (or not?)`).
 
 .. note::
 
