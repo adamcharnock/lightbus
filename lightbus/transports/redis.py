@@ -176,7 +176,7 @@ class RedisEventTransport(EventTransport):
 
         # TODO: Count/timeout
         if not self._streams:
-            logger.debug('Event backend has been giving no events to consume. Sleeping.')
+            logger.debug('Event backend has been given no events to consume. Sleeping.')
             self._task = asyncio.ensure_future(asyncio.sleep(3600 * 24 * 365))
         else:
             logger.info(LBullets('Consuming events from', items=self._streams.keys()))

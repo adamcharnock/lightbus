@@ -8,15 +8,9 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':
     setup_dev_logging()
 
-    import lightbus.transports
-    # import lightbus.serve
+    import lightbus
 
-    bus_x = lightbus.Bus(
-        rpc_transport=lightbus.transports.RedisRpcTransport(),
-        result_transport=lightbus.transports.RedisResultTransport(),
-        event_transport=lightbus.transports.RedisEventTransport(),
-    )
-    bus = bus_x.root()
+    bus = lightbus.create()
 
     async def register_listener():
         await asyncio.sleep(1)
@@ -28,9 +22,9 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     asyncio.ensure_future(register_listener(), loop=loop)
 
-    bus_x.run()
+    # bus.run_forever()
 
-    # client.my_company.auth.check_password(
-    #     username='admin',
-    #     password='secret'
-    # )
+    bus.my_company.auth.check_password(
+        username='admin',
+        password='secret'
+    )

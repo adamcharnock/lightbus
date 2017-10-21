@@ -9,16 +9,19 @@ from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfigurati
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.api import registry
-from lightbus.transports import RpcTransport, ResultTransport, EventTransport
+from lightbus.transports import RpcTransport, ResultTransport, EventTransport, RedisRpcTransport, \
+    RedisResultTransport, RedisEventTransport
 from lightbus.utilities import handle_aio_exceptions, human_time, block
 
-__all__ = ['Bus']
+__all__ = ['Bus', 'BusNode', 'create']
 
 
 logger = logging.getLogger(__name__)
 
 
 class Bus(object):
+    # TODO: Rename from Bus to something else. This is more of a coordinator,
+    #       and the BusNodes will be presented as the actual 'bus'
 
     def __init__(self, rpc_transport: 'RpcTransport', result_transport: 'ResultTransport',
                  event_transport: 'EventTransport'):
@@ -27,11 +30,7 @@ class Bus(object):
         self.event_transport = event_transport
         self._listeners = {}
 
-    def root(self):
-        return BusNode(name='', parent=None,
-                       on_fire=self.on_fire, on_listen=self.on_listen, on_call=self.call_rpc_remote)
-
-    def run(self, loop=None):
+    def run_forever(self, loop=None):
         logger.info(LBullets(
             "Lightbus getting ready to serve. Brokers in use",
             items={
@@ -177,19 +176,15 @@ class Bus(object):
 
 class BusNode(object):
 
-    def __init__(self, name: str, *, parent: Optional['BusNode'],
-                 on_call: Callable, on_listen: Callable, on_fire: Callable):
+    def __init__(self, name: str, *, parent: Optional['BusNode'], bus: Bus):
         if not parent and name:
             raise InvalidBusNodeConfiguration("Root client node may not have a name")
         self.name = name
         self.parent = parent
-        self.on_call = on_call
-        self.on_listen = on_listen
-        self.on_fire = on_fire
+        self.bus = bus
 
     def __getattr__(self, item):
-        return BusNode(name=item, parent=self,
-                       on_call=self.on_call, on_listen=self.on_listen, on_fire=self.on_fire)
+        return BusNode(name=item, parent=self, bus=self.bus)
 
     def __str__(self):
         return self.fully_qualified_name
@@ -198,20 +193,19 @@ class BusNode(object):
         return '<BusNode {}>'.format(self.fully_qualified_name)
 
     def __call__(self, **kwargs):
-        coroutine = self.on_call(api_name=self.api_name, name=self.name, kwargs=kwargs)
-        return block(coroutine, timeout=1)
+        return block(self.asyn(), timeout=1)
 
     async def asyn(self, **kwargs):
-        return await self.on_call(api_name=self.api_name, name=self.name, kwargs=kwargs)
+        return await self.bus.call_rpc_remote(api_name=self.api_name, name=self.name, kwargs=kwargs)
 
     async def listen_asyn(self, listener):
-        return await self.on_listen(api_name=self.api_name, name=self.name, listener=listener)
+        return await self.bus.on_listen(api_name=self.api_name, name=self.name, listener=listener)
 
     def listen(self, listener):
         return block(self.listen_asyn(listener), timeout=5)
 
     async def fire_asyn(self, **kwargs):
-        return await self.on_fire(api_name=self.api_name, name=self.name, kwargs=kwargs)
+        return await self.bus.on_fire(api_name=self.api_name, name=self.name, kwargs=kwargs)
 
     def fire(self, **kwargs):
         return block(self.fire_asyn(**kwargs), timeout=5)
@@ -222,6 +216,9 @@ class BusNode(object):
             if parent != self or include_self:
                 yield parent
             parent = parent.parent
+
+    def run_forever(self, loop=None):
+        self.bus.run_forever(loop=loop)
 
     @property
     def api_name(self):
@@ -234,3 +231,19 @@ class BusNode(object):
         path = [node.name for node in reversed(self.ancestors(include_self=True))]
         path.reverse()
         return '.'.join(path[1:])
+
+
+def create(
+        rpc_transport: Optional['RpcTransport'] = None,
+        result_transport: Optional['ResultTransport'] = None,
+        event_transport: Optional['EventTransport'] = None,
+        bus_class=Bus,
+        **kwargs) -> BusNode:
+
+    coordinator = bus_class(
+        rpc_transport=rpc_transport or RedisRpcTransport(),
+        result_transport=result_transport or RedisResultTransport(),
+        event_transport=event_transport or RedisEventTransport(),
+        **kwargs
+    )
+    return BusNode(name='', parent=None, bus=coordinator)

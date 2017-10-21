@@ -17,14 +17,9 @@ class AuthApi(Api):
 def main():
     setup_dev_logging()
 
-    bus = lightbus.Bus(
-        rpc_transport=lightbus.transports.RedisRpcTransport(),
-        result_transport=lightbus.transports.RedisResultTransport(),
-        event_transport=lightbus.transports.RedisEventTransport(),
-    ).root()
-    bus.my_company.auth.user_registered.fire(username='adam')
+    bus = lightbus.create()
 
-    # bus.run()
+    bus.run_forever()
 
 
 if __name__ == '__main__':
