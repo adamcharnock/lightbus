@@ -1,7 +1,11 @@
 import argparse
 
+import logging
+
 from lightbus.bus import create
-from lightbus.utilities import import_from_string, configure_logging
+from lightbus.utilities import import_from_string, configure_logging, autodiscover
+
+logger = logging.getLogger(__name__)
 
 
 def lightbus_entry_point():
@@ -14,6 +18,7 @@ def lightbus_entry_point():
     parser_start_action_group = parser_start.add_mutually_exclusive_group()
     parser_start_action_group.add_argument('--events-only', help='Start Lightbus, but only listen for and handle events', action='store_true')
     parser_start_action_group.add_argument('--rpcs-only', help='Start Lightbus, but only consume and handle RPCs', action='store_true')
+    parser_start_action_group.add_argument('--import', help='The Python module to import initially. If omited ')
     parser_start.set_defaults(func=command_start)
 
     parser_start_transport_group = parser_start.add_argument_group(title='Transport options')
@@ -47,11 +52,18 @@ def command_start(args):
         exit(1)
         return
 
+    bus_module = autodiscover()
     bus = create(
         rpc_transport=rpc_transport(),
         result_transport=result_transport(),
         event_transport=event_transport(),
     )
+
+    before_server_start = getattr(bus_module, 'before_server_start', None)
+    if before_server_start:
+        logger.debug('Calling {}.before_server_start() callback'.format(bus_module.__name__))
+        before_server_start(bus)
+
     if args.events_only:
         bus.run_forever(consume_rpcs=False)
     elif args.rpcs_only:

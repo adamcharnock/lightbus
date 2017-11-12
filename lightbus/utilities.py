@@ -1,8 +1,20 @@
 import asyncio
+
+import logging
+import os
+
+import importlib.util
 import traceback
+from glob import glob
+
+from pathlib import Path
+
+import sys
 
 from lightbus.exceptions import CannotBlockHere
-from lightbus.log import LightbusFormatter
+from lightbus.log import LightbusFormatter, L, Bold
+
+logger = logging.getLogger(__name__)
 
 
 async def handle_aio_exceptions(fn, *args, **kwargs):
@@ -59,3 +71,39 @@ def import_from_string(name):
     for comp in components[1:]:
         mod = getattr(mod, comp)
     return mod
+
+
+def discover_bus_py(directory='.'):
+    """Try discover a suitable bus.py file to import"""
+    lightbus_directory = Path(__file__).parent.resolve()
+    for root, dirs, files in os.walk(directory):
+        root = Path(root).resolve()
+        if 'bus.py' in files and lightbus_directory != root:
+            return root / 'bus.py'
+
+
+def get_module_name_from_file(bus_path, python_paths=sys.path):
+    """Gets the module name for the given python file
+
+    This is a pretty simple implementation and may not work in some cases.
+    """
+    for path in python_paths:
+        if str(bus_path).startswith(os.path.join(path, '')):
+            relative_path = bus_path.relative_to(path)
+            module_name = str(relative_path).rsplit('.', 1)[0].replace('/', '.')
+            return module_name
+
+
+def autodiscover(directory='.'):
+    logger.debug("Attempting to autodiscover bus.py file")
+    bus_path = discover_bus_py(directory)
+    logger.debug(L("Found bus.py file at: {}", Bold(bus_path)))
+    bus_module_name = get_module_name_from_file(bus_path)
+    logger.debug(L("Going to import {}", Bold(bus_module_name)))
+
+    spec = importlib.util.spec_from_file_location(bus_module_name, str(bus_path))
+    bus_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bus_module)
+    logger.info(L("No initial import was specified. Using autodiscovered module '{}'", Bold(bus_module_name)))
+
+    return bus_module

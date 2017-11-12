@@ -1,17 +1,6 @@
 import lightbus
 import lightbus.transports.debug
-from lightbus.api import Api, Event
 from lightbus.utilities import configure_logging
-
-
-class AuthApi(Api):
-    user_registered = Event(arguments=['username'])
-
-    class Meta:
-        name = 'my_company.auth'
-
-    def check_password(self, username, password):
-        return username == 'admin' and password == 'secret'
 
 
 def main():
