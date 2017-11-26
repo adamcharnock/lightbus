@@ -19,7 +19,8 @@ setup(
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'lightbus = lightbus.commands:lightbus_entry_point'
+            'lightbus = lightbus.commands:lightbus_entry_point',
+            'aioredis',
         ]
     }
 )
