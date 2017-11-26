@@ -1,6 +1,8 @@
 import asyncio
 
 import logging
+from threading import Thread
+
 import os
 
 import importlib.util
@@ -53,19 +55,34 @@ def human_time(seconds: float):
 
 
 def block(coroutine, *, timeout):
-    loop = asyncio.get_event_loop()
-    if loop.is_running():
-        raise CannotBlockHere(
-            "It appears you have tried to use a plain-old blocking method "
-            "from within an event loop. It is not actually possible to do this, "
-            "so try using the async version of the method instead (suitably "
-            "prefixed with the 'async' keyword)."
-        )
     try:
-        val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
-    except Exception as e:
-        # The intention here is to get sensible stack traces from exceptions within blocking calls
-        raise e
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    if not loop.is_running():
+        # No event loop running, so create one in the current thread
+        try:
+            val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
+        except Exception as e:
+            # The intention here is to get sensible stack traces from exceptions within blocking calls
+            raise e
+    else:
+        # We have an event loop already, so create a new one in a thread
+        def start_background_loop(loop):
+            asyncio.set_event_loop(loop)
+            loop.run_forever()
+
+        loop = asyncio.new_event_loop()
+        t = Thread(target=start_background_loop, args=(loop,))
+        t.start()
+
+        future = asyncio.run_coroutine_threadsafe(coroutine, loop=loop)
+        val = future.result(timeout=timeout)
+        loop.stop()
+        t.join()
+
     return val
 
 
