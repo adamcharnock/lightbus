@@ -28,11 +28,19 @@ class InvalidApiEventConfiguration(LightbusException):
     pass
 
 
+class MisconfiguredApiOptions(LightbusException):
+    pass
+
+
 class EventNotFound(LightbusException):
     pass
 
 
 class InvalidEventArguments(LightbusException):
+    pass
+
+
+class InvalidEventListener(LightbusException):
     pass
 
 

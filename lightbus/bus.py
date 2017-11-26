@@ -5,7 +5,8 @@ import asyncio
 
 import time
 
-from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound
+from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
+    InvalidEventListener
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.api import registry
@@ -214,6 +215,11 @@ class BusNode(object):
     # Events
 
     async def listen_asyn(self, listener):
+        if not callable(listener):
+            raise InvalidEventListener(
+                "The specified listener '{}' is not callable. Perhaps you called the function rather "
+                "than passing the function itself?".format(listener)
+            )
         return await self.bus_client.listen_for_event(api_name=self.api_name, name=self.name, listener=listener)
 
     def listen(self, listener):
