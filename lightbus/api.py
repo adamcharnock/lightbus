@@ -1,6 +1,8 @@
 from typing import Dict
 
-from lightbus.exceptions import UnknownApi, InvalidApiRegistryEntry, EventNotFound
+from lightbus.exceptions import UnknownApi, InvalidApiRegistryEntry, EventNotFound, MisconfiguredApiOptions
+
+__all__ = ['Api', 'Event']
 
 
 class Registry(object):
@@ -53,10 +55,27 @@ class ApiMetaclass(type):
         if is_api_base_class:
             super(ApiMetaclass, cls).__init__(name, bases, dict)
         else:
-            options = dict.get('Meta', object())
+            options = dict.get('Meta', None)
+            if options is None:
+                raise MisconfiguredApiOptions(
+                    "API class {} does not contain a class named 'Meta'. Each API definition "
+                    "must contain a child class named 'Meta' which can contain configurations options. "
+                    "For example, the 'name' option is required and specifies "
+                    "the name used to access the API on the bus."
+                    "".format(name)
+                )
+            cls.sanity_check_options(name, options)
             cls.meta = ApiOptions(cls.Meta.__dict__.copy())
             super(ApiMetaclass, cls).__init__(name, bases, dict)
             registry.add(options.name, cls())
+
+    def sanity_check_options(cls, name, options):
+        if not getattr(options, 'name', None):
+            raise MisconfiguredApiOptions(
+                "API class {} does not specify a name option with its "
+                "'Meta' options."
+                "".format(name)
+            )
 
 
 class Api(object, metaclass=ApiMetaclass):
