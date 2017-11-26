@@ -61,7 +61,11 @@ def block(coroutine, *, timeout):
             "so try using the async version of the method instead (suitably "
             "prefixed with the 'async' keyword)."
         )
-    val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
+    try:
+        val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
+    except Exception as e:
+        # The intention here is to get sensible stack traces from exceptions within blocking calls
+        raise e
     return val
 
 
