@@ -37,9 +37,9 @@ def configure_logging():
     formatter = LightbusFormatter(fmt={
         'DEBUG': '%(log_color)s%(name)s | %(msg)s',
         'INFO': '%(log_color)s%(name)s | %(msg)s',
-        'WARNING': '%(log_color)s%(name)s | WARNING: %(msg)s (%(module)s:%(lineno)d)',
+        'WARNING': '%(log_color)s%(name)s | %(msg)s',
         'ERROR': '%(log_color)s%(name)s | ERROR: %(msg)s (%(module)s:%(lineno)d)',
-        'CRITICAL': '%(log_color)s%(name)s | CRITICAL: %(msg)s (%(module)s:%(lineno)d)',
+        'CRITICAL': '%(log_color)s%(name)s | CRITICAL: %(msg)s',
     })
     handler.setFormatter(formatter)
 
@@ -95,25 +95,45 @@ def discover_bus_py(directory='.'):
             return root / 'bus.py'
 
 
-def get_module_name_from_file(bus_path, python_paths=sys.path):
-    """Gets the module name for the given python file
+def prepare_exec_for_file(file: Path):
+    """Given a filename this will try to calculate the python path, add it
+    to the search path and return the actual module name that is expected.
 
-    This is a pretty simple implementation and may not work in some cases.
+    Full credit to Flask: http://flask.pocoo.org
     """
-    for path in python_paths:
-        if str(bus_path).startswith(os.path.join(path, '')):
-            relative_path = bus_path.relative_to(path)
-            module_name = str(relative_path).rsplit('.', 1)[0].replace('/', '.')
-            return module_name
+    module = []
+
+    # Chop off file extensions or package markers
+    if file.name == '__init__.py':
+        file = file.parent
+    elif file.name.endswith('.py'):
+        file = file.parent / file.name[:-3]
+    else:
+        raise Exception('The file provided (%s) does exist but is not a '
+                             'valid Python file.  This means that it cannot '
+                             'be used as application.  Please change the '
+                             'extension to .py' % file)
+    file = file.resolve()
+
+    dirpath = file
+    while 1:
+        dirpath, extra = os.path.split(dirpath)
+        module.append(extra)
+        if not os.path.isfile(os.path.join(dirpath, '__init__.py')):
+            break
+
+    sys.path.insert(0, dirpath)
+    return '.'.join(module[::-1])
 
 
 def autodiscover(directory='.'):
     logger.debug("Attempting to autodiscover bus.py file")
     bus_path = discover_bus_py(directory)
+    if not bus_path:
+        return None
     logger.debug(L("Found bus.py file at: {}", Bold(bus_path)))
-    bus_module_name = get_module_name_from_file(bus_path)
+    bus_module_name = prepare_exec_for_file(bus_path)
     logger.debug(L("Going to import {}", Bold(bus_module_name)))
-
     spec = importlib.util.spec_from_file_location(bus_module_name, str(bus_path))
     bus_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(bus_module)

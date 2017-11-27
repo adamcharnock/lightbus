@@ -1,4 +1,5 @@
 import argparse
+import importlib.util
 
 import logging
 
@@ -13,27 +14,27 @@ def lightbus_entry_point():
     subparsers = parser.add_subparsers(help='Commands', dest='subcommand')
     subparsers.required = True
 
-    parser_start = subparsers.add_parser('start', help='Start Lightbus', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_run = subparsers.add_parser('run', help='Run Lightbus', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser_start_action_group = parser_start.add_mutually_exclusive_group()
-    parser_start_action_group.add_argument('--events-only', help='Start Lightbus, but only listen for and handle events', action='store_true')
-    parser_start_action_group.add_argument('--rpcs-only', help='Start Lightbus, but only consume and handle RPCs', action='store_true')
-    parser_start_action_group.add_argument('--import', help='The Python module to import initially. If omited ')
-    parser_start.set_defaults(func=command_start)
+    parser_run_action_group = parser_run.add_mutually_exclusive_group()
+    parser_run_action_group.add_argument('--events-only', help='Run Lightbus, but only listen for and handle events', action='store_true')
+    parser_run_action_group.add_argument('--rpcs-only', help='Run Lightbus, but only consume and handle RPCs', action='store_true')
+    parser_run_action_group.add_argument('--import', dest='imprt', help='The Python module to import initially. If omited ')
+    parser_run.set_defaults(func=command_run)
 
-    parser_start_transport_group = parser_start.add_argument_group(title='Transport options')
-    parser_start_transport_group.add_argument(
+    parser_run_transport_group = parser_run.add_argument_group(title='Transport options')
+    parser_run_transport_group.add_argument(
         '--rpc-transport', help='RPC transport class to use', default='lightbus.RedisRpcTransport'
     )
-    parser_start_transport_group.add_argument(
+    parser_run_transport_group.add_argument(
         '--result-transport', help='Result transport class to use', default='lightbus.RedisResultTransport'
     )
-    parser_start_transport_group.add_argument(
+    parser_run_transport_group.add_argument(
         '--event-transport', help='Event transport class to use', default='lightbus.RedisEventTransport'
     )
 
-    # parser_start_connection_group = parser_start.add_argument_group(title='Connection options')
-    # parser_start_connection_group.add_argument(
+    # parser_run_connection_group = parser_run.add_argument_group(title='Connection options')
+    # parser_run_connection_group.add_argument(
     #     '--redis-url', help='URL to Redis server when using Redis-based transports', default='redis://localhost:6379/0'
     # )
 
@@ -42,17 +43,28 @@ def lightbus_entry_point():
     args.func(args)
 
 
-def command_start(args):
+def command_run(args):
     try:
         rpc_transport = import_from_string(args.rpc_transport)
         result_transport = import_from_string(args.result_transport)
         event_transport = import_from_string(args.event_transport)
     except ImportError as e:
-        print("Error when trying to import transports: {}. Perhaps check your config for typos.".format(e))
-        exit(1)
+        logger.critical("Error when trying to import transports: {}. Perhaps check your config for typos.".format(e))
         return
 
-    bus_module = autodiscover()
+    if args.imprt:
+        spec = importlib.util.find_spec(args.imprt)
+        if not spec:
+            logger.critical("Could not find module '{}' as specified by --import. Ensure "
+                            "this module is available on your PYTHONPATH.".format(args.imprt))
+            return
+        bus_module = importlib.util.module_from_spec(spec)
+    else:
+        bus_module = autodiscover()
+
+    if bus_module is None:
+        logger.warning('Could not find a bus.py file, will listen for events only.')
+
     bus = create(
         rpc_transport=rpc_transport(),
         result_transport=result_transport(),
