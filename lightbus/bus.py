@@ -131,7 +131,8 @@ class BusClient(object):
             for event_message in event_messages:
                 key = (event_message.api_name, event_message.event_name)
                 for listener in self._listeners.get(key, []):
-                    listener(**event_message.kwargs)
+                    # TODO: Run in parallel/gathered?
+                    await listener(**event_message.kwargs)
 
     async def fire_event(self, api_name, name, kwargs: dict):
         try:
