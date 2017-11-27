@@ -250,7 +250,9 @@ class L(object):
             self.values
         ]
         if tty:
-            msg = str(self.log_message).format(*keys)
+            msg = str(self.log_message)
+            if keys:
+                msg = str(self.log_message).format(*keys)
             if msg_cb:
                 msg = msg_cb(msg, is_tty=tty)
             return style + msg + escape_codes['reset'] + parent_style
