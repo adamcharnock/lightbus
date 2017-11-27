@@ -31,7 +31,7 @@ class BusClient(object):
 
     def run_forever(self, *, loop=None, consume_rpcs=True, consume_events=True):
         logger.info(LBullets(
-            "Lightbus getting ready to serve. Brokers in use",
+            "Lightbus getting ready to run. Brokers in use",
             items={
                 "RPC transport": L(
                     '{}.{}',
