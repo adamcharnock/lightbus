@@ -139,19 +139,19 @@ class BusClient(object):
             api = registry.get(api_name)
         except UnknownApi:
             raise UnknownApi(
-                "I tried to fire the event {api_name}.{name}, but could not find API {api_name} in the registry. "
-                "An API being in the registry implies you are an authority on that API. Therefore, "
-                "I require the API to be in the registry as it seems like a bad idea to fire "
+                "Lightbus tried to fire the event {api_name}.{name}, but could not find API {api_name} in the "
+                "registry. An API being in the registry implies you are an authority on that API. Therefore, "
+                "Lightbus requires the API to be in the registry as it is a bad idea to fire "
                 "events on behalf of remote APIs. However, this could also be caused by a typo in the "
-                "API name or event name, or be because the API has not been "
-                "correctly registered.".format(**locals())
+                "API name or event name, or be because the API class has not been "
+                "imported. Note that API classes are auto-registered upon import.".format(**locals())
             )
 
         try:
             event = api.get_event(name)
         except EventNotFound:
             raise EventNotFound(
-                "I tried to fire the event {api_name}.{name}, but the API {api_name} does not "
+                "Lightbus tried to fire the event {api_name}.{name}, but the API {api_name} does not "
                 "seem to contain an event named {name}. You may need to define the event, you "
                 "may also be using the incorrect API. Also check for typos.".format(**locals())
             )
