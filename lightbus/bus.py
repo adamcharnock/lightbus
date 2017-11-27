@@ -144,7 +144,7 @@ class BusClient(object):
                 "Lightbus requires the API to be in the registry as it is a bad idea to fire "
                 "events on behalf of remote APIs. However, this could also be caused by a typo in the "
                 "API name or event name, or be because the API class has not been "
-                "imported. Note that API classes are auto-registered upon import.".format(**locals())
+                "imported. ".format(**locals())
             )
 
         try:
