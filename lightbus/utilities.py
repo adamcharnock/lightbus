@@ -61,28 +61,20 @@ def block(coroutine, *, timeout):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-    if not loop.is_running():
-        # No event loop running, so create one in the current thread
-        try:
-            val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
-        except Exception as e:
-            # The intention here is to get sensible stack traces from exceptions within blocking calls
-            raise e
-    else:
-        # We have an event loop already, so create a new one in a thread
-        def start_background_loop(loop):
-            asyncio.set_event_loop(loop)
-            loop.run_forever()
-
-        loop = asyncio.new_event_loop()
-        t = Thread(target=start_background_loop, args=(loop,))
-        t.start()
-
-        future = asyncio.run_coroutine_threadsafe(coroutine, loop=loop)
-        val = future.result(timeout=timeout)
-        loop.stop()
-        t.join()
-
+    if loop.is_running():
+        coroutine.close()
+        raise CannotBlockHere(
+            "It appears you have tried to use a blocking API method "
+            "from within an event loop. Unfortunately this is unsupported. "
+            "Instead, use the async version of the method. This commonly "
+            "occurs when calling bus methods from within a bus event listener. "
+            "In this case the only option is to define you listeners as async."
+        )
+    try:
+        val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
+    except Exception as e:
+        # The intention here is to get sensible stack traces from exceptions within blocking calls
+        raise e
     return val
 
 
