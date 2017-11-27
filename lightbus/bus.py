@@ -177,10 +177,10 @@ class BusClient(object):
 
     async def send_result(self, rpc_message: RpcMessage, result: Any):
         result_message = ResultMessage(result=result)
-        return await self.result_transport.send_result(rpc_message, result_message)
+        return await self.result_transport.send_result(rpc_message, result_message, rpc_message.return_path)
 
     async def receive_result(self, rpc_message: RpcMessage):
-        return await self.result_transport.receive_result(rpc_message)
+        return await self.result_transport.receive_result(rpc_message, rpc_message.return_path)
 
 
 class BusNode(object):
