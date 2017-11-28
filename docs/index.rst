@@ -29,6 +29,14 @@ communication between multiple applications/processes.
 
     </strong>
 
+Development Status
+------------------
+
+Work has begun on a proof-of-concept. You can
+`view progress in GitHub`_.
+
+Examples are also available in the `Lightbus Examples repository`_.
+
 Lightbus goals
 --------------
 
@@ -48,12 +56,6 @@ Initial goals are as follows:
 -  **Excellent tooling & documentation**
 -  **Targeting smaller teams**
 -  **High speed & low latency** (but not at the expense of other goals)
-
-Development Status
-------------------
-
-Work has begun on a proof-of-concept. You can
-`view progress in GitHub`_.
 
 Quick example
 -------------
@@ -163,3 +165,4 @@ Next up: :doc:`motivation`
 .. _Hacker News thread: https://news.ycombinator.com/item?id=14556988
 .. _new GitHub issue: https://github.com/adamcharnock/lightbus/issues/new
 .. _view progress in GitHub: https://github.com/adamcharnock/lightbus/issues/1
+.. _Lightbus Examples repository: https://github.com/adamcharnock/lightbus-examples
