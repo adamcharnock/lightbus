@@ -1,0 +1,36 @@
+lightbus:
+  transports:
+    # Urgh, lots of repeating
+    rpc:
+      redis:
+        name: "redis"
+        host: "127.0.0.1"
+        port: "6379"
+        username: "user"
+        password: "password"
+        db: "0"
+    result:
+      redis:
+        name: "redis"
+        host: "127.0.0.1"
+        port: "6379"
+        username: "user"
+        password: "password"
+        db: "0"
+    event:
+      redis:
+        name: "redis"
+        host: "127.0.0.1"
+        port: "6379"
+        username: "user"
+        password: "password"
+        db: "0"
+
+  apis:
+    default:
+      rpc_backend: "redis"
+      result_backend: "redis"
+      event_backend: "redis"
+
+    mycompany.auth:
+      event_backend: "something_else"
