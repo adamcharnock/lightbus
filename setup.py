@@ -15,12 +15,12 @@ setup(
     description='Filling the gap between monolithic and microservice',
     long_description=open('README.rst').read() if exists("README.rst") else "",
     install_requires=[
+        'aioredis',
     ],
     include_package_data=True,
     entry_points={
         'console_scripts': [
             'lightbus = lightbus.commands:lightbus_entry_point',
-            'aioredis',
         ]
     }
 )
