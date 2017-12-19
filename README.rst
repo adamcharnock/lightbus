@@ -9,6 +9,26 @@ Lightbus will be able to substitute for message queues such as Celery &
 Rq, but it will encourage a more extensible and loosely coupled
 architecture.
 
+Running tests
+-------------
+
+Lightbus must currently test against Redis unstable (in order to test the Redis
+backends). Once streams make it into Redis stable this process will become easier.
+
+Docker
+~~~~~~
+
+The docker image will automatically pull download and compile the redis
+unstable branch.
+
+    docker build -t lightbus-test -f tests/Dockerfile .
+    docker run lightbus-test
+
+Manually
+~~~~~~~~
+
+    py.test --redis-server=/path/to/unstable/build/of/redis-server
+
 `See lightbus.org`_
 -------------------
 
