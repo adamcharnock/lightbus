@@ -39,6 +39,7 @@ SentinelServer = namedtuple('SentinelServer',
 def loop():
     """Creates new event loop."""
     loop = asyncio.new_event_loop()
+    loop.set_debug(enabled=True)
     asyncio.set_event_loop(None)
 
     try:
@@ -77,18 +78,13 @@ def create_redis_connection(_closable, loop):
     return f
 
 
-@pytest.fixture(params=[
-    aioredis.create_redis,
-    aioredis.create_redis_pool],
-    ids=['single', 'pool'])
+@pytest.fixture()
 def create_redis_client(_closable, loop, request):
     """Wrapper around aioredis.create_redis."""
-    factory = request.param
-
     @asyncio.coroutine
     def f(*args, **kw):
         kw.setdefault('loop', loop)
-        redis = yield from factory(*args, **kw)
+        redis = yield from aioredis.create_redis(*args, **kw)
         _closable(redis)
         return redis
     return f
@@ -492,7 +488,7 @@ def pytest_pyfunc_call(pyfuncitem):
 
         loop.run_until_complete(
             _wait_coro(pyfuncitem.obj, testargs,
-                       timeout=marker.kwargs.get('timeout', 15),
+                       timeout=marker.kwargs.get('timeout', 5),
                        loop=loop))
         return True
 
@@ -625,3 +621,9 @@ def pytest_namespace():
         'redis_version': redis_version,
         'logs': logs,
     }
+
+
+@pytest.fixture
+def dummy_api():
+    from tests.dummy_api import DummyApi
+    return DummyApi()

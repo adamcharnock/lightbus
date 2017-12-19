@@ -1,0 +1,2 @@
+-e .
+https://github.com/adamcharnock/aioredis/archive/streams.zip#egg=aioredis
