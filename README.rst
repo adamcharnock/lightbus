@@ -4,6 +4,10 @@ Lightbus
 .. image:: https://travis-ci.org/adamcharnock/lightbus.svg?branch=master
     :target: https://travis-ci.org/adamcharnock/lightbus
 
+.. image:: https://coveralls.io/repos/github/adamcharnock/lightbus/badge.svg?branch=master
+    :target: https://coveralls.io/github/adamcharnock/lightbus?branch=master
+
+
 **Lightbus will be a new message bus for Python 3. The
 focus of Lightbus is providing conceptually simple communication between multiple
 applications/processes.**
