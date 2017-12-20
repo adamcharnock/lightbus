@@ -62,4 +62,4 @@ RUN pip install -r requirements.txt -r test-requirements.txt
 COPY lightbus ./lightbus
 COPY tests ./tests
 
-CMD py.test
+CMD py.test --cov=lightbus

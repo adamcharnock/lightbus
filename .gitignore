@@ -3,3 +3,4 @@ INTEREST
 /build
 /dist
 /.cache
+/.coverage
