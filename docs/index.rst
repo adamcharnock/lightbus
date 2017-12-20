@@ -15,7 +15,7 @@ Introduction
     implementation/index
     proof-of-concept
 
-*Lightbus - Filling the gap between monolithic and microservice (design stage)*
+*Lightbus - Filling the gap between monolithic and microservice (proof-of-concept stage)*
 
 .. raw:: html
 
@@ -31,6 +31,12 @@ communication between multiple applications/processes.
 
 Development Status
 ------------------
+
+.. image:: https://travis-ci.org/adamcharnock/lightbus.svg?branch=master
+    :target: https://travis-ci.org/adamcharnock/lightbus
+
+.. image:: https://coveralls.io/repos/github/adamcharnock/lightbus/badge.svg?branch=master
+    :target: https://coveralls.io/github/adamcharnock/lightbus?branch=master
 
 Work has begun on a proof-of-concept. You can
 `view progress in GitHub`_.
