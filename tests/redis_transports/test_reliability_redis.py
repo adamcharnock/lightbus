@@ -6,7 +6,11 @@ import lightbus
 from tests.dummy_api import DummyApi
 
 
+# Should actually test events for reliability. We want events to
+# be delivered AT LEAST ONCE. RPCs don't matter so much because
+# if they fail the caller will know about it.
 @pytest.mark.run_loop
+@pytest.mark.skip
 async def test_rpc(bus: lightbus.BusNode, mocker, dummy_api, caplog):
     """Full rpc call integration test"""
     caplog.set_level(logging.WARNING)

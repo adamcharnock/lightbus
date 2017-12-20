@@ -1,3 +1,5 @@
+from random import random
+
 from lightbus import Api, Event
 from lightbus.exceptions import SuddenDeathException
 
@@ -11,9 +13,10 @@ class DummyApi(Api):
     def my_proc(self, field):
         return 'value: {}'.format(field)
 
-    def sudden_death(self, n):
-        # Die when n is a multiple of 5
-        if int(n) % 5 == 0:
+    def sudden_death(self):
+        raise SuddenDeathException()
+
+    def random_death(self, n, death_probability=0.5):
+        if random() < death_probability:
             raise SuddenDeathException()
-        else:
-            return n
+        return n

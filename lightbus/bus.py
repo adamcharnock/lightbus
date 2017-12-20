@@ -125,7 +125,7 @@ class BusClient(object):
             future.cancel()
             raise LightbusTimeout('Timeout when calling RPC {} after {} seconds'.format(
                 rpc_message.canonical_name, timeout
-            ))
+            )) from None
 
         logger.info(L("⚡ Remote call of {} completed in {}", Bold(rpc_message.canonical_name), human_time(time.time() - start_time)))
 
