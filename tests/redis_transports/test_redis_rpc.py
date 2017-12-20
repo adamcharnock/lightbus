@@ -15,7 +15,7 @@ def redis_rpc_transport(create_redis_client, server, loop):
 
 
 @pytest.mark.run_loop
-async def test_get_redis(redis_rpc_transport, loop):
+async def test_get_redis(redis_rpc_transport):
     """Does get_redis() provide a working redis connection"""
     redis = await redis_rpc_transport.get_redis()
     assert await redis.info()
@@ -23,7 +23,7 @@ async def test_get_redis(redis_rpc_transport, loop):
 
 
 @pytest.mark.run_loop
-async def test_call_rpc(redis_rpc_transport, redis_client, loop):
+async def test_call_rpc(redis_rpc_transport, redis_client):
     """Does call_rpc() add a message to a stream"""
     rpc_message = RpcMessage(
         api_name='my.api',
@@ -49,7 +49,7 @@ async def test_consume_rpcs(redis_client, redis_rpc_transport, dummy_api):
 
     async def co_enqeue():
         await asyncio.sleep(0.01)
-        return await redis_client.xadd('dummy.api:stream', fields={
+        return await redis_client.xadd('my.dummy:stream', fields={
             b'api_name': b'my.api',
             b'procedure_name': b'my_proc',
             b'kw:field': b'value',

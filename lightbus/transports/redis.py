@@ -144,7 +144,7 @@ class RedisEventTransport(EventTransport):
 
         self._task = None
         self._streams = OrderedDict()
-        self._redis = None
+        self._redis = redis
 
     async def get_redis(self) -> 'aioredis.Redis':
         if self._redis is None:
@@ -221,7 +221,6 @@ class RedisEventTransport(EventTransport):
 
     async def stop_listening_for(self, api_name, event_name):
         raise NotImplementedError()
-
 
 
 def redis_encode(value):
