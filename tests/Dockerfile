@@ -1,5 +1,5 @@
-FROM alpine:3.6 as redis
-# Build redis unstable (until streams gets into a release)
+FROM alpine:3.6 as redis_etc
+# Build redis unstable (until streams gets into a release), plus get the cc-test-reporter
 
 ENV REDIS_VERSION 999.999.999
 ENV REDIS_DOWNLOAD_URL https://github.com/antirez/redis/archive/unstable.tar.gz
@@ -21,6 +21,7 @@ RUN set -ex; \
 	update-ca-certificates; \
 	\
 	wget -O redis.tar.gz "$REDIS_DOWNLOAD_URL"; \
+	wget -O /cc-test-reporter https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64; \
 	mkdir -p /usr/src/redis; \
 	tar -xzf redis.tar.gz -C /usr/src/redis --strip-components=1; \
 	rm redis.tar.gz; \
@@ -43,17 +44,18 @@ RUN set -ex; \
 	apk del .build-deps
 
 
-
-
 FROM python:3.6-alpine3.6
 
 RUN \
-    apk add -U gcc python3-dev musl-dev && \
+    apk add -U gcc python3-dev musl-dev git && \
     rm -rf /var/cache/apk/*
 
-COPY --from=redis /usr/local/bin/redis-* /usr/bin/
-
 WORKDIR /lightbus
+
+COPY --from=redis_etc /usr/local/bin/redis-* /usr/bin/
+COPY --from=redis_etc /cc-test-reporter /cc-test-reporter
+RUN chmod +x /cc-test-reporter
+
 COPY setup.py VERSION requirements.txt ./
 COPY tests/requirements.txt ./test-requirements.txt
 
@@ -62,4 +64,4 @@ RUN pip install -r requirements.txt -r test-requirements.txt
 COPY lightbus ./lightbus
 COPY tests ./tests
 
-CMD py.test --cov=lightbus
+CMD py.test
