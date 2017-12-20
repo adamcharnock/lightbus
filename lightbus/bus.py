@@ -7,7 +7,7 @@ import asyncio
 import time
 
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
-    InvalidEventListener
+    InvalidEventListener, SuddenDeathException, LightbusTimeout
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.api import registry
@@ -92,14 +92,19 @@ class BusClient(object):
         while True:
             rpc_messages = await self.rpc_transport.consume_rpcs(apis)
             for rpc_message in rpc_messages:
-                result = await self.call_rpc_local(
-                    api_name=rpc_message.api_name,
-                    name=rpc_message.procedure_name,
-                    kwargs=rpc_message.kwargs
-                )
-                await self.send_result(rpc_message=rpc_message, result=result)
+                try:
+                    result = await self.call_rpc_local(
+                        api_name=rpc_message.api_name,
+                        name=rpc_message.procedure_name,
+                        kwargs=rpc_message.kwargs
+                    )
+                except SuddenDeathException:
+                    # Used to simulate message failure for testing
+                    pass
+                else:
+                    await self.send_result(rpc_message=rpc_message, result=result)
 
-    async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict):
+    async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict, timeout=0.1):
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)
         return_path = self.result_transport.get_return_path(rpc_message)
         rpc_message.return_path = return_path
@@ -108,10 +113,19 @@ class BusClient(object):
 
         start_time = time.time()
         # TODO: It is possible that the RPC will be called before we start waiting for the response. This is bad.
-        result, _ = await asyncio.wait_for(asyncio.gather(
+
+        future = asyncio.gather(
             self.result_transport.receive_result(rpc_message, return_path),
             self.rpc_transport.call_rpc(rpc_message),
-        ), timeout=10)
+            return_exceptions=True
+        )
+        try:
+            result, _ = await asyncio.wait_for(future, timeout=timeout)
+        except asyncio.TimeoutError:
+            future.cancel()
+            raise LightbusTimeout('Timeout when calling RPC {} after {} seconds'.format(
+                rpc_message.canonical_name, timeout
+            ))
 
         logger.info(L("⚡ Remote call of {} completed in {}", Bold(rpc_message.canonical_name), human_time(time.time() - start_time)))
 

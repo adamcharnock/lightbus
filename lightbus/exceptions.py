@@ -50,3 +50,12 @@ class CannotBlockHere(LightbusException):
 
 class InvalidRedisPool(LightbusException):
     pass
+
+
+class LightbusTimeout(LightbusException):
+    pass
+
+
+class SuddenDeathException(LightbusException):
+    """Used to kill an invocation for testing purposes"""
+    pass
