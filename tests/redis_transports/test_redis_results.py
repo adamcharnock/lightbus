@@ -1,0 +1,77 @@
+import asyncio
+import json
+from uuid import UUID
+
+import pytest
+
+from lightbus.message import RpcMessage, ResultMessage
+from lightbus.transports.redis import RedisResultTransport
+
+
+@pytest.fixture
+def redis_result_transport(create_redis_client, server, loop):
+    """Get a redis transport backed by a running redis server."""
+    return RedisResultTransport(redis=loop.run_until_complete(
+        create_redis_client(server.tcp_address, loop=loop)
+    ))
+
+
+@pytest.mark.run_loop
+async def test_get_redis(redis_result_transport: RedisResultTransport):
+    """Does get_redis() provide a working redis connection"""
+    redis = await redis_result_transport.get_redis()
+    assert await redis.info()
+    redis.close()
+
+
+@pytest.mark.run_loop
+async def test_get_return_path(redis_result_transport: RedisResultTransport):
+    return_path = redis_result_transport.get_return_path(RpcMessage(
+        api_name='my.api',
+        procedure_name='my_proc',
+        kwargs={'field': 'value'},
+        return_path='abc',
+    ))
+    assert return_path.startswith('redis+key://my.api.my_proc:result:')
+    result_uuid = return_path.split(':')[-1]
+    assert UUID(hex=result_uuid)
+
+
+@pytest.mark.run_loop
+async def test_send_result(redis_result_transport: RedisResultTransport, redis_client):
+    await redis_result_transport.send_result(
+        rpc_message=RpcMessage(
+            api_name='my.api',
+            procedure_name='my_proc',
+            kwargs={'field': 'value'},
+            return_path='abc',
+        ),
+        result_message=ResultMessage(
+            result='All done! 😎',
+        ),
+        return_path='redis+key://my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e',
+    )
+    assert await redis_client.keys('*') == [b'my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e']
+
+    result = await redis_client.lpop('my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e')
+    assert json.loads(result) == 'All done! 😎'
+
+
+@pytest.mark.run_loop
+async def test_receive_result(redis_result_transport: RedisResultTransport, redis_client):
+
+    redis_client.lpush(
+        key='my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e',
+        value=json.dumps('All done! 😎'),
+    )
+
+    result = await redis_result_transport.receive_result(
+        rpc_message=RpcMessage(
+            api_name='my.api',
+            procedure_name='my_proc',
+            kwargs={'field': 'value'},
+            return_path='abc',
+        ),
+        return_path='redis+key://my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e',
+    )
+    assert result == 'All done! 😎'

@@ -23,7 +23,7 @@ async def test_get_redis(redis_rpc_transport, loop):
 
 
 @pytest.mark.run_loop
-async def test_call_rpc(redis_rpc_transport, loop):
+async def test_call_rpc(redis_rpc_transport, redis_client, loop):
     """Does call_rpc() add a message to a stream"""
     rpc_message = RpcMessage(
         api_name='my.api',
@@ -32,10 +32,9 @@ async def test_call_rpc(redis_rpc_transport, loop):
         return_path='abc',
     )
     await redis_rpc_transport.call_rpc(rpc_message)
-    redis = await redis_rpc_transport.get_redis()
-    assert await redis.keys('*') == [b'my.api:stream']
+    assert await redis_client.keys('*') == [b'my.api:stream']
 
-    messages = await redis.xrange('my.api:stream')
+    messages = await redis_client.xrange('my.api:stream')
     assert len(messages) == 1
     assert messages[0][1] == {
         b'api_name': b'my.api',
@@ -43,8 +42,6 @@ async def test_call_rpc(redis_rpc_transport, loop):
         b'kw:field': b'value',
         b'return_path': b'abc'
     }
-
-    redis.close()
 
 
 @pytest.mark.run_loop
