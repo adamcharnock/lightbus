@@ -230,7 +230,15 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             message_id = decode(message_id, 'utf8')
             decoded_fields = decode_message_fields(fields)
 
+            # NO! This violates the 'at least once' principle. If we pull
+            # back lots of messages and die half way though processing them
+            # then we'll end up ignoring the other half as we've already updated
+            # our ID. Of course, as the latest ID is not persisted then this is mute
+            # (the process will start again and just begin from the current time).
+            # However, this will be very important when we persist IDs for things
+            # like event sourcing.
             self._streams[stream] = message_id
+
             event_messages.append(
                 EventMessage.from_dict(decoded_fields)
             )
