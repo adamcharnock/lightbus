@@ -19,9 +19,9 @@ from lightbus.log import LightbusFormatter, L, Bold
 logger = logging.getLogger(__name__)
 
 
-async def handle_aio_exceptions(fn, *args, **kwargs):
+async def handle_aio_exceptions(fn):
     try:
-        await fn(*args, **kwargs)
+        await fn
     except asyncio.CancelledError:
         pass
     except Exception:

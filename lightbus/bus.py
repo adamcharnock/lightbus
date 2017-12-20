@@ -142,9 +142,9 @@ class BusClient(object):
 
     async def consume_events(self):
         while True:
-            self._consume_event()
+            await self._consume_events_once()
 
-    async def _consume_event(self):
+    async def _consume_events_once(self):
         event_messages = await self.event_transport.consume_events()
         for event_message in event_messages:
             key = (event_message.api_name, event_message.event_name)
