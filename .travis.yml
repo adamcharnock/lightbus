@@ -3,8 +3,10 @@ sudo: required
 env:
 - CC_TEST_REPORTER_ID=e0d94e367b5a4a0aeb1b06bd7a1335eac602df0e5fa38557d6a6cffb2b501426
 
+# The python language specified here is only used for combining & submitting
+# the coverage reports. The testing environment is provided by the docker image
+# built below.
 language: python
-
 python:
 - "3.6"
 
@@ -25,4 +27,5 @@ script:
 
 after_script:
 - coverage combine .coverage
-- ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+- ./cc-test-reporter format-coverage --input-type coverage.py .coverage
+- ./cc-test-reporter upload-coverage
