@@ -24,6 +24,7 @@ from async_timeout import timeout as async_timeout
 import aioredis
 import aioredis.sentinel
 
+import lightbus
 
 TCPAddress = namedtuple('TCPAddress', 'host port')
 
@@ -168,6 +169,17 @@ def server(start_redis_server):
 def redis_server_b(start_redis_server):
     """Starts redis-server instance."""
     return start_redis_server('B')
+
+# Lightbus fixtures
+
+@pytest.fixture
+def dummy_bus():
+    return lightbus.create(
+        rpc_transport=lightbus.DebugRpcTransport(),
+        result_transport=lightbus.DebugResultTransport(),
+        event_transport=lightbus.DebugEventTransport(),
+    )
+
 
 
 # Internal stuff #

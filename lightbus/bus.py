@@ -140,7 +140,8 @@ class BusClient(object):
                 if isinstance(co, (CoroWrapper, asyncio.Future)):
                     await co
 
-    async def fire_event(self, api_name, name, kwargs: dict):
+    async def fire_event(self, api_name, name, kwargs: dict=None):
+        kwargs = kwargs or {}
         try:
             api = registry.get(api_name)
         except UnknownApi:
