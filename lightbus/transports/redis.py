@@ -173,6 +173,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         # NOTE: Each transport needs two redis connections. One for
         # sending and one for consuming
         self._task = None
+        self._reload = False
         self._streams = OrderedDict()
 
     async def send_event(self, event_message: EventMessage):
@@ -213,8 +214,15 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             try:
                 stream_messages = await self._task or []
             except asyncio.CancelledError as e:
-                logger.debug('Event consumption cancelled.')
-                stream_messages = []
+                if self._reload:
+                    # Streams to listen on have changed.
+                    # Bail out and let consume_events() get called again,
+                    # at which point we'll pickup the new streams.
+                    logger.debug('Event consumption cancelled.')
+                    stream_messages = []
+                    self._reload = False
+                else:
+                    raise
 
         event_messages = []
         for stream, message_id, fields in stream_messages:
@@ -247,6 +255,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
             if self._task:
                 logger.debug('Existing consumer task running, cancelling')
+                self._reload = True
                 self._task.cancel()
 
     async def stop_listening_for(self, api_name, event_name):

@@ -7,11 +7,8 @@ from lightbus.utilities import handle_aio_exceptions
 from tests.dummy_api import DummyApi
 
 
-# Should actually test events for reliability. We want events to
-# be delivered AT LEAST ONCE. RPCs don't matter so much because
-# if they fail the caller will know about it.
 @pytest.mark.run_loop
-async def test_event(bus: lightbus.BusNode, mocker, dummy_api, caplog):
+async def test_event(bus: lightbus.BusNode, redis_pool, caplog):
     """Full rpc call integration test"""
     caplog.set_level(logging.WARNING)
 
@@ -31,18 +28,24 @@ async def test_event(bus: lightbus.BusNode, mocker, dummy_api, caplog):
         await bus.my.dummy.my_event.listen_async(listener)
         await bus.bus_client.consume_events()
 
-    (fire_task,), (listen_task,) = await asyncio.wait(
+    async def co_cause_mayhem():
+        # This is not how we should cause mayhem. But what mayhem
+        # should we cause and how should we do it?
+        while True:
+            await redis_pool.flushdb()
+            await asyncio.sleep(0.2)
+
+    done, pending = await asyncio.wait(
         [
             handle_aio_exceptions(co_fire_event()),
             handle_aio_exceptions(co_listen_for_events()),
+            handle_aio_exceptions(co_cause_mayhem()),
         ],
         return_when=asyncio.FIRST_COMPLETED,
         timeout=10
     )
-
-    fire_task.cancel()
-    listen_task.cancel()
-    await fire_task
-    await listen_task
+    for task in list(done) + list(pending):
+        task.cancel()
+        await task
 
     assert len(received_kwargs) == 100
