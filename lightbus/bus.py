@@ -1,4 +1,5 @@
 import logging
+from asyncio.coroutines import CoroWrapper
 from typing import Any, Optional, Callable
 
 import asyncio
@@ -127,12 +128,17 @@ class BusClient(object):
 
     async def consume_events(self):
         while True:
-            event_messages = await self.event_transport.consume_events()
-            for event_message in event_messages:
-                key = (event_message.api_name, event_message.event_name)
-                for listener in self._listeners.get(key, []):
-                    # TODO: Run in parallel/gathered?
-                    await listener(**event_message.kwargs)
+            self._consume_event()
+
+    async def _consume_event(self):
+        event_messages = await self.event_transport.consume_events()
+        for event_message in event_messages:
+            key = (event_message.api_name, event_message.event_name)
+            for listener in self._listeners.get(key, []):
+                # TODO: Run in parallel/gathered?
+                co = listener(**event_message.kwargs)
+                if isinstance(co, (CoroWrapper, asyncio.Future)):
+                    await co
 
     async def fire_event(self, api_name, name, kwargs: dict):
         try:
@@ -215,7 +221,7 @@ class BusNode(object):
 
     # Events
 
-    async def listen_asyn(self, listener):
+    async def listen_async(self, listener):
         if not callable(listener):
             raise InvalidEventListener(
                 "The specified listener '{}' is not callable. Perhaps you called the function rather "
@@ -226,7 +232,7 @@ class BusNode(object):
     def listen(self, listener):
         return block(self.listen_asyn(listener), timeout=5)
 
-    async def fire_asyn(self, **kwargs):
+    async def fire_async(self, **kwargs):
         return await self.bus_client.fire_event(api_name=self.api_name, name=self.name, kwargs=kwargs)
 
     def fire(self, **kwargs):

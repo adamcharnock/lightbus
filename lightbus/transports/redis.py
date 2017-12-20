@@ -176,23 +176,24 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         ))
 
     async def consume_events(self) -> Sequence[EventMessage]:
-        # TODO: Count/timeout
-        if not self._streams:
-            logger.debug('Event backend has been given no events to consume. Sleeping.')
-            self._task = asyncio.ensure_future(asyncio.sleep(3600 * 24 * 365))
-        else:
-            logger.info(LBullets('Consuming events from', items=self._streams.keys()))
-            pool = await self.get_redis_pool()
-            with await pool as redis:
+
+        pool = await self.get_redis_pool()
+        with await pool as redis:
+            if not self._streams:
+                logger.debug('Event backend has been given no events to consume. Sleeping.')
+                self._task = asyncio.ensure_future(asyncio.sleep(3600 * 24 * 365))
+            else:
+                logger.info(LBullets('Consuming events from', items=self._streams.keys()))
+                # TODO: Count/timeout
                 self._task = asyncio.ensure_future(
                     redis.xread(list(self._streams.keys()), latest_ids=list(self._streams.values()))
                 )
 
-        try:
-            stream_messages = await self._task or []
-        except asyncio.CancelledError as e:
-            logger.debug('Event consumption cancelled.')
-            stream_messages = []
+            try:
+                stream_messages = await self._task or []
+            except asyncio.CancelledError as e:
+                logger.debug('Event consumption cancelled.')
+                stream_messages = []
 
         event_messages = []
         for stream, message_id, fields in stream_messages:
@@ -216,7 +217,11 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         if stream_name in self._streams:
             logger.debug('Already listening on event stream {}. Doing nothing.'.format(stream_name))
         else:
-            logger.info('Beginning to listen on event stream {}'.format(stream_name))
+            logger.info(L(
+                'Will to listen on event stream {} {}',
+                Bold(stream_name),
+                'starting now' if self._task else 'once event consumption begins',
+            ))
             self._streams[stream_name] = '$'
 
             if self._task:

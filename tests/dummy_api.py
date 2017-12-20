@@ -1,7 +1,8 @@
-from lightbus import Api
+from lightbus import Api, Event
 
 
 class DummyApi(Api):
+    my_event = Event(['field'])
 
     class Meta:
         name = 'my.dummy'

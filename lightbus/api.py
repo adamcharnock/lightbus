@@ -88,7 +88,7 @@ class Api(object, metaclass=ApiMetaclass):
         return getattr(self, procedure_name)(**kwargs)
 
     def get_event(self, name) -> 'Event':
-        event = getattr(self, name)
+        event = getattr(self, name, None)
         if isinstance(event, Event):
             return event
         else:
