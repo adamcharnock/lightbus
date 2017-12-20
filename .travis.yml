@@ -15,6 +15,7 @@ before_install:
 - docker build -t lightbus-test -f tests/Dockerfile .
 - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
 - chmod +x ./cc-test-reporter
+- pip install coverage
 
 before_script:
 - ./cc-test-reporter before-build
@@ -23,4 +24,5 @@ script:
 - docker run -v `pwd`:/lightbus lightbus-test
 
 after_script:
+- coverage combine .coverage
 - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
