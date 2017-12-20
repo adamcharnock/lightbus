@@ -176,6 +176,12 @@ class BusClient(object):
         await self.event_transport.send_event(event_message)
 
     async def listen_for_event(self, api_name, name, listener):
+        if not callable(listener):
+            raise InvalidEventListener(
+                "The specified listener '{}' is not callable. Perhaps you called the function rather "
+                "than passing the function itself?".format(listener)
+            )
+
         key = (api_name, name)
         self._listeners.setdefault(key, [])
         self._listeners[key].append(listener)
@@ -223,11 +229,6 @@ class BusNode(object):
     # Events
 
     async def listen_async(self, listener):
-        if not callable(listener):
-            raise InvalidEventListener(
-                "The specified listener '{}' is not callable. Perhaps you called the function rather "
-                "than passing the function itself?".format(listener)
-            )
         return await self.bus_client.listen_for_event(api_name=self.api_name, name=self.name, listener=listener)
 
     def listen(self, listener):
