@@ -46,3 +46,7 @@ class InvalidEventListener(LightbusException):
 
 class CannotBlockHere(LightbusException):
     pass
+
+
+class InvalidRedisPool(LightbusException):
+    pass

@@ -10,9 +10,9 @@ from lightbus.transports.redis import RedisResultTransport
 @pytest.mark.run_loop
 async def test_get_redis(redis_result_transport: RedisResultTransport):
     """Does get_redis() provide a working redis connection"""
-    redis = await redis_result_transport.get_redis()
-    assert await redis.info()
-    redis.close()
+    pool = await redis_result_transport.get_redis_pool()
+    with await pool as redis:
+        assert await redis.info()
 
 
 @pytest.mark.run_loop

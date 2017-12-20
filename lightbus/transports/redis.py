@@ -1,14 +1,18 @@
 import asyncio
 import json
 import logging
+
 from collections import OrderedDict
 from typing import Sequence, Tuple, Optional
 from uuid import uuid1
 
-import aioredis
 import time
 from aioredis.util import decode
+from aioredis.pool import ConnectionsPool
+import aioredis
+from aioredis import Redis
 
+from lightbus.exceptions import InvalidRedisPool
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
 from lightbus.api import Api
 from lightbus.log import L, Bold, LBullets
@@ -19,15 +23,32 @@ logger = logging.getLogger(__name__)
 
 # TODO: There is a lot of duplicated code here, particularly between the RPC transport & event transport
 
-Pool = aioredis.ConnectionsPool
-OptionalPool = Optional[aioredis.ConnectionsPool]
-
 
 class RedisTransportMixin(object):
     connection_kwargs: {}
-    _redis_pool: OptionalPool = None
+    _redis_pool: Optional[Redis] = None
 
-    async def get_redis_pool(self) -> Pool:
+    def set_redis_pool(self, redis_pool: Optional[Redis]):
+        if redis_pool:
+            if isinstance(redis_pool, (ConnectionsPool,)):
+                # If they've passed a raw pool then wrap it up in a Redis object.
+                # aioredis.create_redis_pool() normally does this for us.
+                redis_pool = Redis(redis_pool)
+            if not isinstance(redis_pool, (Redis,)):
+                raise InvalidRedisPool(
+                    'Invalid Redis connection provided: {}. If unsure, use aioredis.create_redis_pool() to '
+                    'create your redis connection.'.format(redis_pool)
+                )
+            if not isinstance(redis_pool._pool_or_conn, (ConnectionsPool,)):
+                raise InvalidRedisPool(
+                    'The provided redis connection is backed by a single connection, rather than a '
+                    'pool of connections. This will lead to lightbus deadlocks and is unsupported. '
+                    'If unsure, use aioredis.create_redis_pool() to create your redis connection.'
+                )
+
+            self._redis_pool = redis_pool
+
+    async def get_redis_pool(self) -> Redis:
         if self._redis_pool is None:
             self._redis_pool = await aioredis.create_redis_pool(**self.connection_kwargs)
         return self._redis_pool
@@ -35,8 +56,8 @@ class RedisTransportMixin(object):
 
 class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
-    def __init__(self, redis_pool: OptionalPool=None, *, track_consumption_progress=False, **connection_kwargs):
-        self._redis_pool = redis_pool
+    def __init__(self, redis_pool=None, *, track_consumption_progress=False, **connection_kwargs):
+        self.set_redis_pool(redis_pool)
         self.connection_kwargs = connection_kwargs or dict(address=('localhost', 6379))
         self._latest_ids = {}
         self.track_consumption_progress = track_consumption_progress  # TODO: Implement (rename: replay?)
@@ -93,7 +114,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 class RedisResultTransport(RedisTransportMixin, ResultTransport):
 
     def __init__(self, redis_pool=None, **connection_kwargs):
-        self._redis_pool = redis_pool
+        self.set_redis_pool(redis_pool)
         self.connection_kwargs = connection_kwargs or dict(address=('localhost', 6379))
 
     def get_return_path(self, rpc_message: RpcMessage) -> str:
@@ -145,7 +166,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
 class RedisEventTransport(RedisTransportMixin, EventTransport):
 
     def __init__(self, redis_pool=None, *, track_consumption_progress=False, **connection_kwargs):
-        self._redis_pool = redis_pool
+        self.set_redis_pool(redis_pool)
         self.connection_kwargs = connection_kwargs or dict(address=('localhost', 6379))
         self.track_consumption_progress = track_consumption_progress  # TODO: Implement (rename: replay?)
 

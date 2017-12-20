@@ -8,9 +8,9 @@ from lightbus.message import RpcMessage
 @pytest.mark.run_loop
 async def test_get_redis(redis_rpc_transport):
     """Does get_redis() provide a working redis connection"""
-    redis = await redis_rpc_transport.get_redis()
-    assert await redis.info()
-    redis.close()
+    pool = await redis_rpc_transport.get_redis_pool()
+    with await pool as redis:
+        assert await redis.info()
 
 
 @pytest.mark.run_loop
@@ -54,5 +54,5 @@ async def test_consume_rpcs(redis_client, redis_rpc_transport, dummy_api):
     message = messages[0]
     assert message.api_name == 'my.api'
     assert message.procedure_name == 'my_proc'
-    assert message.kwargs == {'field': b'value'}
+    assert message.kwargs == {'field': 'value'}
     assert message.return_path == 'abc'

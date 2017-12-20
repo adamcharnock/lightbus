@@ -9,9 +9,9 @@ from lightbus.transports.redis import RedisEventTransport
 @pytest.mark.run_loop
 async def test_get_redis(redis_event_transport):
     """Does get_redis() provide a working redis connection"""
-    redis = await redis_event_transport.get_redis()
-    assert await redis.info()
-    redis.close()
+    pool = await redis_event_transport.get_redis_pool()
+    with await pool as redis:
+        assert await redis.info()
 
 
 @pytest.mark.run_loop
@@ -48,4 +48,4 @@ async def test_consume_events(redis_event_transport: RedisEventTransport, redis_
     message = messages[0]
     assert message.api_name == 'my.dummy'
     assert message.event_name == 'my_event'
-    assert message.kwargs == {'field': b'value'}
+    assert message.kwargs == {'field': 'value'}
