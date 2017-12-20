@@ -3,6 +3,13 @@ sudo: required
 env:
 - CMD="docker run -v `pwd`:/lightbus lightbus-test"
 
+# The python language specified here is only used for combining & submitting
+# the coverage reports. The testing environment is provided by the docker image
+# built below.
+language: python
+python:
+- "3.6"
+
 services:
 - docker
 
@@ -13,4 +20,5 @@ script:
 - $CMD pytest --cov=lightbus
 
 after_script:
-- $CMD coveralls
+- coverage combine .coverage
+- coveralls
