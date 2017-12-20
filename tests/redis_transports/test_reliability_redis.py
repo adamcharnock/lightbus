@@ -8,6 +8,7 @@ from tests.dummy_api import DummyApi
 
 
 @pytest.mark.run_loop
+@pytest.mark.skip
 async def test_event(bus: lightbus.BusNode, redis_pool, caplog):
     """Full rpc call integration test"""
     caplog.set_level(logging.WARNING)
