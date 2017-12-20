@@ -1,6 +1,9 @@
 Lightbus
 ========
 
+.. image:: https://travis-ci.org/adamcharnock/lightbus.svg?branch=master
+    :target: https://travis-ci.org/adamcharnock/lightbus
+
 **Lightbus will be a new message bus for Python 3. The
 focus of Lightbus is providing conceptually simple communication between multiple
 applications/processes.**
