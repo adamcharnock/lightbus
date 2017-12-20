@@ -19,21 +19,27 @@ logger = logging.getLogger(__name__)
 
 # TODO: There is a lot of duplicated code here, particularly between the RPC transport & event transport
 
-class RedisRpcTransport(RpcTransport):
+Pool = aioredis.ConnectionsPool
+OptionalPool = Optional[aioredis.ConnectionsPool]
 
-    def __init__(self,
-                 redis_pool: Optional[aioredis.ConnectionsPool]=None,
-                 *, track_consumption_progress=False, **connection_kwargs
-                 ):
+
+class RedisTransportMixin(object):
+    connection_kwargs: {}
+    _redis_pool: OptionalPool = None
+
+    async def get_redis_pool(self) -> Pool:
+        if self._redis_pool is None:
+            self._redis_pool = await aioredis.create_redis_pool(**self.connection_kwargs)
+        return self._redis_pool
+
+
+class RedisRpcTransport(RedisTransportMixin, RpcTransport):
+
+    def __init__(self, redis_pool: OptionalPool=None, *, track_consumption_progress=False, **connection_kwargs):
         self._redis_pool = redis_pool
         self.connection_kwargs = connection_kwargs or dict(address=('localhost', 6379))
         self._latest_ids = {}
         self.track_consumption_progress = track_consumption_progress  # TODO: Implement (rename: replay?)
-
-    async def get_redis_pool(self) -> aioredis.ConnectionsPool:
-        if self._redis_pool is None:
-            self._redis_pool = await aioredis.create_redis_pool(**self.connection_kwargs)
-        return self._redis_pool
 
     async def call_rpc(self, rpc_message: RpcMessage):
         stream = '{}:stream'.format(rpc_message.api_name)
@@ -84,16 +90,11 @@ class RedisRpcTransport(RpcTransport):
         return rpc_messages
 
 
-class RedisResultTransport(ResultTransport):
+class RedisResultTransport(RedisTransportMixin, ResultTransport):
 
     def __init__(self, redis_pool=None, **connection_kwargs):
         self._redis_pool = redis_pool
         self.connection_kwargs = connection_kwargs or dict(address=('localhost', 6379))
-
-    async def get_redis_pool(self) -> aioredis.ConnectionsPool:
-        if self._redis_pool is None:
-            self._redis_pool = await aioredis.create_redis_pool(**self.connection_kwargs)
-        return self._redis_pool
 
     def get_return_path(self, rpc_message: RpcMessage) -> str:
         return 'redis+key://{}.{}:result:{}'.format(rpc_message.api_name, rpc_message.procedure_name, uuid1().hex)
@@ -141,7 +142,7 @@ class RedisResultTransport(ResultTransport):
         return return_path[12:]
 
 
-class RedisEventTransport(EventTransport):
+class RedisEventTransport(RedisTransportMixin, EventTransport):
 
     def __init__(self, redis_pool=None, *, track_consumption_progress=False, **connection_kwargs):
         self._redis_pool = redis_pool
@@ -152,11 +153,6 @@ class RedisEventTransport(EventTransport):
         # sending and one for consuming
         self._task = None
         self._streams = OrderedDict()
-
-    async def get_redis_pool(self) -> aioredis.ConnectionsPool:
-        if self._redis_pool is None:
-            self._redis_pool = await aioredis.create_redis_pool(**self.connection_kwargs)
-        return self._redis_pool
 
     async def send_event(self, event_message: EventMessage):
         """Publish an event"""
