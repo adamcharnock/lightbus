@@ -1,4 +1,3 @@
-import asyncio
 import json
 from uuid import UUID
 
@@ -6,14 +5,6 @@ import pytest
 
 from lightbus.message import RpcMessage, ResultMessage
 from lightbus.transports.redis import RedisResultTransport
-
-
-@pytest.fixture
-def redis_result_transport(create_redis_client, server, loop):
-    """Get a redis transport backed by a running redis server."""
-    return RedisResultTransport(redis=loop.run_until_complete(
-        create_redis_client(server.tcp_address, loop=loop)
-    ))
 
 
 @pytest.mark.run_loop

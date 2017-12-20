@@ -92,12 +92,12 @@ def create_redis_client(_closable, loop, request):
 
 @pytest.fixture
 def create_redis_pool(_closable, loop):
-    """Wrapper around aioredis.create_pool."""
+    """Wrapper around aioredis.create_redis_pool."""
 
     @asyncio.coroutine
     def f(*args, **kw):
         kw.setdefault('loop', loop)
-        redis = yield from aioredis.create_pool(*args, **kw)
+        redis = yield from aioredis.create_redis_pool(*args, **kw)
         _closable(redis)
         return redis
     return f
@@ -118,6 +118,28 @@ def redis_client(create_redis_client, server, loop):
         create_redis_client(server.tcp_address, loop=loop))
     loop.run_until_complete(redis.flushall())
     return redis
+
+
+@pytest.fixture
+def new_redis_client(create_redis_client, server, loop):
+    """Useful when you need multiple redis connections."""
+    def make_new():
+        redis = loop.run_until_complete(
+            create_redis_client(server.tcp_address, loop=loop))
+        loop.run_until_complete(redis.flushall())
+        return redis
+    return make_new
+
+
+@pytest.fixture
+def new_redis_pool(create_redis_pool, server, loop):
+    """Useful when you need multiple redis connections."""
+    def make_new():
+        redis = loop.run_until_complete(
+            create_redis_pool(server.tcp_address, loop=loop))
+        loop.run_until_complete(redis.flushall())
+        return redis
+    return make_new
 
 
 @pytest.yield_fixture

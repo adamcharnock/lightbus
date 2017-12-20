@@ -6,14 +6,6 @@ from lightbus.message import EventMessage
 from lightbus.transports.redis import RedisEventTransport
 
 
-@pytest.fixture
-def redis_event_transport(create_redis_client, server, loop):
-    """Get a redis transport backed by a running redis server."""
-    return RedisEventTransport(redis=loop.run_until_complete(
-        create_redis_client(server.tcp_address, loop=loop)
-    ))
-
-
 @pytest.mark.run_loop
 async def test_get_redis(redis_event_transport):
     """Does get_redis() provide a working redis connection"""

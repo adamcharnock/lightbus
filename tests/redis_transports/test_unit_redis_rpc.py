@@ -3,15 +3,6 @@ import asyncio
 import pytest
 
 from lightbus.message import RpcMessage
-from lightbus.transports.redis import RedisRpcTransport
-
-
-@pytest.fixture
-def redis_rpc_transport(create_redis_client, server, loop):
-    """Get a redis transport backed by a running redis server."""
-    return RedisRpcTransport(redis=loop.run_until_complete(
-        create_redis_client(server.tcp_address, loop=loop)
-    ))
 
 
 @pytest.mark.run_loop

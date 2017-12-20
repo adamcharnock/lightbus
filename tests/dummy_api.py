@@ -7,4 +7,4 @@ class DummyApi(Api):
         name = 'my.dummy'
 
     def my_proc(self, field):
-        return 'value: '.format(field)
+        return 'value: {}'.format(field)
