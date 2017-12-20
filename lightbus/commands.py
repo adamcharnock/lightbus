@@ -3,13 +3,21 @@ import importlib.util
 
 import logging
 
+import sys
+
 from lightbus.bus import create
 from lightbus.utilities import import_from_string, configure_logging, autodiscover
 
 logger = logging.getLogger(__name__)
 
 
-def lightbus_entry_point():
+def lightbus_entry_point():  # pragma: no cover
+    configure_logging()
+    args = parse_args()
+    args.func(args)
+
+
+def parse_args(args=None):
     parser = argparse.ArgumentParser(description='Lightbus management command.')
     subparsers = parser.add_subparsers(help='Commands', dest='subcommand')
     subparsers.required = True
@@ -38,12 +46,10 @@ def lightbus_entry_point():
     #     '--redis-url', help='URL to Redis server when using Redis-based transports', default='redis://localhost:6379/0'
     # )
 
-    args = parser.parse_args()
-    configure_logging()
-    args.func(args)
+    return parser.parse_args(sys.argv if args is None else args)
 
 
-def command_run(args):
+def command_run(args, dry_run=False):
     try:
         rpc_transport = import_from_string(args.rpc_transport)
         result_transport = import_from_string(args.result_transport)
@@ -75,6 +81,9 @@ def command_run(args):
     if before_server_start:
         logger.debug('Calling {}.before_server_start() callback'.format(bus_module.__name__))
         before_server_start(bus)
+
+    if dry_run:
+        return
 
     if args.events_only:
         bus.run_forever(consume_rpcs=False)

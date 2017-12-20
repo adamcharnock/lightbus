@@ -260,7 +260,7 @@ class BusNode(object):
 
     @property
     def fully_qualified_name(self):
-        path = [node.name for node in reversed(self.ancestors(include_self=True))]
+        path = [node.name for node in self.ancestors(include_self=True)]
         path.reverse()
         return '.'.join(path[1:])
 
