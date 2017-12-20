@@ -23,7 +23,7 @@ async def handle_aio_exceptions(fn):
     try:
         await fn
     except asyncio.CancelledError:
-        pass
+        raise  # Note: Changed to 'raise' rather than pass recently (20/12/2017)
     except Exception:
         traceback.print_exc()
 
