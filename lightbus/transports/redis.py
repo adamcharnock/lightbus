@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 
+import asyncio_extras
 from collections import OrderedDict
 from typing import Sequence, Tuple, Optional
 from uuid import uuid1
@@ -171,8 +172,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self.connection_kwargs = connection_kwargs or dict(address=('localhost', 6379))
         self.track_consumption_progress = track_consumption_progress  # TODO: Implement (rename: replay?)
 
-        # NOTE: Each transport needs two redis connections. One for
-        # sending and one for consuming
         self._task = None
         self._reload = False
         self._streams = OrderedDict()
@@ -198,7 +197,13 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             Bold(event_message), human_time(time.time() - start_time), Bold(stream)
         ))
 
+    @asyncio_extras.async_contextmanager
     async def consume_events(self) -> Sequence[EventMessage]:
+        # Consider making this not a context manager, yielding a list
+        # seems odd and is likely it will trip people up when implementing backends.
+        # Consider creating a new consume_complete(extra), and updating this method
+        # to return (event_messages, extra). This may also let us remove the
+        # asyncio_extras dependency.
 
         pool = await self.get_redis_pool()
         with await pool as redis:
@@ -226,19 +231,13 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     raise
 
         event_messages = []
+        latest_ids = {}
         for stream, message_id, fields in stream_messages:
             stream = decode(stream, 'utf8')
             message_id = decode(message_id, 'utf8')
             decoded_fields = decode_message_fields(fields)
 
-            # NO! This violates the 'at least once' principle. If we pull
-            # back lots of messages and die half way though processing them
-            # then we'll end up ignoring the other half as we've already updated
-            # our ID. Of course, as the latest ID is not persisted then this is mute
-            # (the process will start again and just begin from the current time).
-            # However, this will be very important when we persist IDs for things
-            # like event sourcing.
-            self._streams[stream] = message_id
+            latest_ids[stream] = message_id
 
             event_messages.append(
                 EventMessage.from_dict(decoded_fields)
@@ -248,7 +247,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 items=decoded_fields
             ))
 
-        return event_messages
+        yield event_messages
+
+        # Everything ran fine, so update our stream ids safe in the knowledge
+        # that everything that should be processed has been processed.
+        # This helps ensure at-least-once delivery.
+        self._streams.update(latest_ids)
 
     async def start_listening_for(self, api_name, event_name):
         stream_name = '{}.{}:stream'.format(api_name, event_name)

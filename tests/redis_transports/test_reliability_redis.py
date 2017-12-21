@@ -27,7 +27,8 @@ async def test_event(bus: lightbus.BusNode, redis_pool, caplog):
 
     async def co_listen_for_events():
         await bus.my.dummy.my_event.listen_async(listener)
-        await bus.bus_client.consume_events()
+        async with bus.bus_client.consume_events():
+            pass
 
     async def co_cause_mayhem():
         # This is not how we should cause mayhem. But what mayhem

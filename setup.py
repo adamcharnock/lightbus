@@ -15,6 +15,7 @@ setup(
     description='Filling the gap between monolithic and microservice',
     long_description=open('README.rst').read() if exists("README.rst") else "",
     install_requires=[
+        'asyncio_extras>=1.3.0,<1.4.0',
         'aioredis',
     ],
     include_package_data=True,

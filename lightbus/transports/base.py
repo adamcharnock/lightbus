@@ -1,5 +1,7 @@
 from typing import Sequence
 
+import asyncio_extras
+
 from lightbus.api import Api
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 
@@ -74,6 +76,7 @@ class EventTransport(object):
         """Publish an event"""
         raise NotImplementedError()
 
+    @asyncio_extras.async_contextmanager
     async def consume_events(self) -> Sequence[EventMessage]:
         """Consume RPC events for the given API
 

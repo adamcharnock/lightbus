@@ -2,6 +2,8 @@ import asyncio
 import logging
 from typing import Sequence
 
+import asyncio_extras
+
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
 from lightbus.api import registry, Api
 from lightbus.exceptions import UnsupportedUse
@@ -70,9 +72,10 @@ class DirectEventTransport(EventTransport):
         logger.info(L("⚡  Directly sending event: {}", Bold(event_message)))
         await self.queue.put(event_message)
 
+    @asyncio_extras.async_contextmanager
     async def consume_events(self) -> Sequence[EventMessage]:
         """Consume RPC events for the given API"""
         logger.info(L("⌛  Awaiting all events"))
         event = await self.queue.get()
         logger.info(L("⬅  Received event {}", Bold(event)))
-        return [event]
+        yield [event]

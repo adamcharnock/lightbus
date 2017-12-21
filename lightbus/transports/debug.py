@@ -2,6 +2,8 @@ import asyncio
 import logging
 from typing import Sequence
 
+import asyncio_extras
+
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 
@@ -56,6 +58,7 @@ class DebugEventTransport(EventTransport):
             event_message.kwargs
         ))
 
+    @asyncio_extras.async_contextmanager
     async def consume_events(self) -> Sequence[EventMessage]:
         """Consume RPC events for the given API"""
 
@@ -66,10 +69,10 @@ class DebugEventTransport(EventTransport):
             await self._task
         except asyncio.CancelledError as e:
             logger.debug('Event consumption cancelled.')
-            return []
+            yield []
         else:
             logger.debug('Faking received result')
-            return [
+            yield [
                 EventMessage(api_name='my_company.auth',
                              event_name='user_registered', kwargs={'example': 'value'})
             ]
