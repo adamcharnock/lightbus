@@ -252,6 +252,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         # Everything ran fine, so update our stream ids safe in the knowledge
         # that everything that should be processed has been processed.
         # This helps ensure at-least-once delivery.
+        # NOPE! Won't work as this runs in any case (which, let's face it, you kind of
+        # knew already). Time full a full-blown context manager and to probably
+        # implement the suggestion at the start of this method.
         self._streams.update(latest_ids)
 
     async def start_listening_for(self, api_name, event_name):
