@@ -42,7 +42,7 @@ async def test_consume_events(redis_event_transport: RedisEventTransport, redis_
 
     async def co_consume():
         await redis_event_transport.start_listening_for(dummy_api, 'my_event')
-        async with redis_event_transport.consume_events() as messages:
+        async with redis_event_transport.fetch_events() as messages:
             return messages
 
     enqueue_result, messages = await asyncio.gather(co_enqeue(), co_consume())

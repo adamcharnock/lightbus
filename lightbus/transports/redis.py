@@ -91,8 +91,8 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
         pool = await self.get_redis_pool()
         with await pool as redis:
-            # TODO: Count/timeout
-            stream_messages = await redis.xread(streams, latest_ids=latest_ids)
+            # TODO: Count/timeout configurable
+            stream_messages = await redis.xread(streams, latest_ids=latest_ids, count=10)
 
         rpc_messages = []
         for stream, message_id, fields in stream_messages:
@@ -197,8 +197,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             Bold(event_message), human_time(time.time() - start_time), Bold(stream)
         ))
 
-    @asyncio_extras.async_contextmanager
-    async def consume_events(self) -> Sequence[EventMessage]:
+    async def fetch_events(self) -> Tuple[Sequence[EventMessage], ...]:
         # Consider making this not a context manager, yielding a list
         # seems odd and is likely it will trip people up when implementing backends.
         # Consider creating a new consume_complete(extra), and updating this method
@@ -211,10 +210,18 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 logger.debug('Event backend has been given no events to consume. Sleeping.')
                 self._task = asyncio.ensure_future(asyncio.sleep(3600 * 24 * 365))
             else:
-                logger.info(LBullets('Consuming events from', items=self._streams.keys()))
+                logger.info(LBullets(
+                    'Consuming events from', items={
+                        '{} ({})'.format(*v) for v in self._streams.items()
+                    }
+                ))
                 # TODO: Count/timeout
                 self._task = asyncio.ensure_future(
-                    redis.xread(list(self._streams.keys()), latest_ids=list(self._streams.values()))
+                    redis.xread(
+                        streams=list(self._streams.keys()),
+                        latest_ids=list(self._streams.values()),
+                        count=10,  # TODO: Make configurable, add timeout too
+                    )
                 )
 
             try:
@@ -227,6 +234,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     logger.debug('Event consumption cancelled.')
                     stream_messages = []
                     self._reload = False
+                    import pdb; pdb.set_trace()
                 else:
                     raise
 
@@ -247,14 +255,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 items=decoded_fields
             ))
 
-        yield event_messages
+        return event_messages, latest_ids
 
-        # Everything ran fine, so update our stream ids safe in the knowledge
-        # that everything that should be processed has been processed.
-        # This helps ensure at-least-once delivery.
-        # NOPE! Won't work as this runs in any case (which, let's face it, you kind of
-        # knew already). Time full a full-blown context manager and to probably
-        # implement the suggestion at the start of this method.
+    async def consumption_complete(self, latest_ids):
         self._streams.update(latest_ids)
 
     async def start_listening_for(self, api_name, event_name):

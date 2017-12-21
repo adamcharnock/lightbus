@@ -2,6 +2,7 @@ import asyncio
 
 import logging
 from threading import Thread
+from typing import Callable
 
 import os
 
@@ -140,3 +141,18 @@ def autodiscover(directory='.'):
     logger.info(L("No initial import was specified. Using autodiscovered module '{}'", Bold(bus_module_name)))
 
     return bus_module
+
+
+class MessageConsumptionContext(object):
+
+    def __init__(self, fetch: Callable, on_consumed: Callable):
+        self.fetch = fetch
+        self.on_consumed = on_consumed
+
+    async def __aenter__(self):
+        messages, self.extra = await self.fetch()
+        return messages
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if not exc_val:
+            await self.on_consumed(self.extra)

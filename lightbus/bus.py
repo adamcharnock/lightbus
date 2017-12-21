@@ -145,18 +145,20 @@ class BusClient(object):
             await self._consume_events_once()
 
     async def _consume_events_once(self):
-        async with self.event_transport.consume_events() as event_messages:
-            for event_message in event_messages:
-                key = (event_message.api_name, event_message.event_name)
-                for listener in self._listeners.get(key, []):
-                    try:
+        try:
+            async with self.event_transport.consume_events() as event_messages:
+                for event_message in event_messages:
+                    key = (event_message.api_name, event_message.event_name)
+                    for listener in self._listeners.get(key, []):
                         # TODO: Run in parallel/gathered?
                         co = listener(**event_message.kwargs)
                         if isinstance(co, (CoroWrapper, asyncio.Future)):
                             await co
-                    except SuddenDeathException:
-                        # Useful for simulating crashes in testing.
-                        return
+
+        except SuddenDeathException:
+            # Useful for simulating crashes in testing.
+            logger.warning('Sudden death while holding {} messages'.format(len(event_messages)))
+            return
 
     async def fire_event(self, api_name, name, kwargs: dict=None):
         kwargs = kwargs or {}

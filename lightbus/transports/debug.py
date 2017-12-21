@@ -58,8 +58,7 @@ class DebugEventTransport(EventTransport):
             event_message.kwargs
         ))
 
-    @asyncio_extras.async_contextmanager
-    async def consume_events(self) -> Sequence[EventMessage]:
+    async def fetch_events(self) -> Sequence[EventMessage]:
         """Consume RPC events for the given API"""
 
         logger.info("⌛ Faking listening for events {}. Will issue a fake event in 2 seconds...".format(self._events))

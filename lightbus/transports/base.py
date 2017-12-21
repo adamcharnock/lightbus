@@ -4,6 +4,7 @@ import asyncio_extras
 
 from lightbus.api import Api
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
+from lightbus.utilities import MessageConsumptionContext
 
 
 class RpcTransport(object):
@@ -76,13 +77,21 @@ class EventTransport(object):
         """Publish an event"""
         raise NotImplementedError()
 
-    @asyncio_extras.async_contextmanager
-    async def consume_events(self) -> Sequence[EventMessage]:
+    def consume_events(self):
+        return MessageConsumptionContext(
+            fetch=self.fetch_events,
+            on_consumed=self.consumption_complete,
+        )
+
+    async def fetch_events(self) -> Sequence[EventMessage]:
         """Consume RPC events for the given API
 
         Events that the bus is not listening for may be returned, they
         will simply be ignored.
         """
+        raise NotImplementedError()
+
+    async def consumption_complete(self, extra):
         raise NotImplementedError()
 
     async def start_listening_for(self, api_name, event_name):
