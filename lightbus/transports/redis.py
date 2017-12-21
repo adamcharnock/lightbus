@@ -99,6 +99,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             message_id = decode(message_id, 'utf8')
             decoded_fields = decode_message_fields(fields)
 
+            # See comment on events transport re updating message_id
             self._latest_ids[stream] = message_id
             rpc_messages.append(
                 RpcMessage.from_dict(decoded_fields)
