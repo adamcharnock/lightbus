@@ -234,7 +234,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     logger.debug('Event consumption cancelled.')
                     stream_messages = []
                     self._reload = False
-                    import pdb; pdb.set_trace()
                 else:
                     raise
 

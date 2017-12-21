@@ -15,7 +15,7 @@ from tests.dummy_api import DummyApi
 @pytest.mark.run_loop  # TODO: Have test repeat a few times
 async def test_event(bus: lightbus.BusNode, redis_pool, caplog):
     """Full rpc call integration test"""
-    caplog.set_level(logging.INFO)
+    caplog.set_level(logging.WARNING)
 
     event_ok_ids = dict()
     event_mayhem_ids = dict()
@@ -43,21 +43,27 @@ async def test_event(bus: lightbus.BusNode, redis_pool, caplog):
 
     async def co_listen_for_events():
         await bus.my.dummy.my_event.listen_async(listener)
-        while len(event_ok_ids) < 100:
-            logging.info("Listening. Seen {} so far".format(len(event_ok_ids)))
-            await bus.bus_client._consume_events_once()
+        await bus.bus_client.consume_events()
 
     done, pending = await asyncio.wait(
         [
             handle_aio_exceptions(co_fire_event()),
             handle_aio_exceptions(co_listen_for_events()),
         ],
-        # return_when=asyncio.FIRST_COMPLETED,
+        return_when=asyncio.FIRST_COMPLETED,
         timeout=10
     )
 
+    # FIXME: Sometimes this just seems to run slow and dies.
+
+    # Wait until we done handling the events
+    for _ in range(0, 10):
+        await asyncio.sleep(1)
+        if len(event_ok_ids) == 100:
+            break
+
+    # Cleanup the tasks
     for task in list(pending):
-        import pdb; pdb.set_trace()
         task.cancel()
         try:
             await task
@@ -66,3 +72,7 @@ async def test_event(bus: lightbus.BusNode, redis_pool, caplog):
 
     assert len(event_ok_ids) == 100
     assert set(event_ok_ids.keys()) == set(range(0, 100))
+
+    duplicate_calls = sum([n - 1 for n in event_ok_ids.values()])
+    assert duplicate_calls > 30
+    assert len(event_mayhem_ids) > 0

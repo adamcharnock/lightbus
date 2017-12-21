@@ -522,7 +522,7 @@ def pytest_pyfunc_call(pyfuncitem):
 
         loop.run_until_complete(
             _wait_coro(pyfuncitem.obj, testargs,
-                       timeout=marker.kwargs.get('timeout', 5),
+                       timeout=marker.kwargs.get('timeout', 10),
                        loop=loop))
         return True
 
