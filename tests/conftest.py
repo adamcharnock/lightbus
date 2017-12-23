@@ -190,15 +190,9 @@ def pytest_addoption(parser):
                      action="append",
                      help="Path to redis-server executable,"
                           " defaults to `%(default)s`")
-    parser.addoption('--ssl-cafile', default='tests/ssl/cafile.crt',
-                     help="Path to testing SSL CA file")
-    parser.addoption('--ssl-dhparam', default='tests/ssl/dhparam.pem',
-                     help="Path to testing SSL DH params file")
-    parser.addoption('--ssl-cert', default='tests/ssl/cert.pem',
-                     help="Path to testing SSL CERT file")
-    parser.addoption('--uvloop', default=False,
-                     action='store_true',
-                     help="Run tests with uvloop")
+    parser.addoption('--test-timeout', default=30,
+                     type=int,
+                     help="The timeout for each individual test")
 
 
 def _read_server_version(redis_bin):
@@ -223,11 +217,12 @@ def config_writer(path):
 
 
 REDIS_SERVERS = []
-VERSIONS = {}
+REDIS_VERSIONS = {}
+TEST_TIMEOUT = 30
 
 
 def format_version(srv):
-    return 'redis_v{}'.format('.'.join(map(str, VERSIONS[srv])))
+    return 'redis_v{}'.format('.'.join(map(str, REDIS_VERSIONS[srv])))
 
 
 @pytest.fixture(scope='session', params=REDIS_SERVERS, ids=format_version)
@@ -519,10 +514,10 @@ def pytest_pyfunc_call(pyfuncitem):
         loop = funcargs['loop']
         testargs = {arg: funcargs[arg]
                     for arg in pyfuncitem._fixtureinfo.argnames}
-
+        
         loop.run_until_complete(
             _wait_coro(pyfuncitem.obj, testargs,
-                       timeout=marker.kwargs.get('timeout', 10),
+                       timeout=marker.kwargs.get('timeout', TEST_TIMEOUT),
                        loop=loop))
         return True
 
@@ -544,7 +539,7 @@ def pytest_collection_modifyitems(session, config, items):
         if 'redis_version' in item.keywords:
             marker = item.keywords['redis_version']
             try:
-                version = VERSIONS[item.callspec.getparam('redis_server_bin')]
+                version = REDIS_VERSIONS[item.callspec.getparam('redis_server_bin')]
             except (KeyError, ValueError, AttributeError):
                 # TODO: throw noisy warning
                 continue
@@ -554,11 +549,13 @@ def pytest_collection_modifyitems(session, config, items):
 
 
 def pytest_configure(config):
+    global TEST_TIMEOUT
+    TEST_TIMEOUT = config.getoption('--test-timeout')
     bins = config.getoption('--redis-server')[:]
     REDIS_SERVERS[:] = bins or ['/usr/bin/redis-server']
-    VERSIONS.update({srv: _read_server_version(srv)
-                     for srv in REDIS_SERVERS})
-    assert VERSIONS, ("Expected to detect redis versions", REDIS_SERVERS)
+    REDIS_VERSIONS.update({srv: _read_server_version(srv)
+                           for srv in REDIS_SERVERS})
+    assert REDIS_VERSIONS, ("Expected to detect redis versions", REDIS_SERVERS)
 
 
 def logs(logger, level=None):
