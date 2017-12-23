@@ -238,7 +238,22 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             message_id = decode(message_id, 'utf8')
             decoded_fields = decode_message_fields(fields)
 
+            # Keep track of which event ID we are up to. We will store these
+            # in consumption_complete(), once we know the events have definitely
+            # been consumed.
             latest_ids[stream] = message_id
+
+            # Unfortunately, these is an edge-case when BOTH:
+            #  1. We are consuming events from 'now' (i.e. event ID '$'), the default
+            #  2. There is an unhandled error when processing the FIRST batch of events
+            # In which case, the next iteration would start again from '$', in which
+            # case we would loose events. Therefore 'subtract one' from the message ID
+            # and store that immediately. Subtracting one is imprecise, as there is a SLIM
+            # chance we could grab another event in the process. However, if events are
+            # being consumed from 'now' then the developer presumably doesn't care about
+            # a high level of precision.
+            if self._streams[stream] == '$':
+                self._streams[stream] = redis_stream_id_subtract_one(message_id)
 
             event_messages.append(
                 EventMessage.from_dict(decoded_fields)
@@ -293,3 +308,23 @@ def decode_message_fields(fields):
         for k, v
         in fields.items()
     ])
+
+
+def redis_stream_id_subtract_one(message_id):
+    """Subtract one from the message ID
+
+    This is useful when we need to xread() events inclusive of the given ID,
+    rather than exclusive of the given ID (which is the sensible default).
+    Only use when one can tolerate the slim risk of grabbing extra events.
+    """
+    milliseconds, n = map(int, message_id.split('-'))
+    if n > 0:
+        n = n - 1
+    elif milliseconds > 0:
+        milliseconds = milliseconds - 1
+        n = 9999
+    else:
+        # message_id is '0000000000000-0'. Subtracting one
+        # from this is neither possible, desirable or useful.
+        return message_id
+    return '{:13d}-{}'.format(milliseconds, n)
