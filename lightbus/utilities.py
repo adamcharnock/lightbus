@@ -14,7 +14,7 @@ from pathlib import Path
 
 import sys
 
-from lightbus.exceptions import CannotBlockHere
+from lightbus.exceptions import CannotBlockHere, SuddenDeathException
 from lightbus.log import LightbusFormatter, L, Bold
 
 logger = logging.getLogger(__name__)
@@ -156,3 +156,9 @@ class MessageConsumptionContext(object):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if not exc_val:
             await self.on_consumed(self.extra)
+        else:
+            if exc_type != SuddenDeathException:
+                logging.warning(
+                    'Consuming messages failed due to error: {}. Transport '
+                    'should roll back and re-attempt.'.format(exc_val)
+                )

@@ -1,6 +1,11 @@
+import asyncio
+import logging
+
 import pytest
 
 import lightbus
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
@@ -29,3 +34,23 @@ def bus(redis_rpc_transport, redis_result_transport, redis_event_transport):
         result_transport=redis_result_transport,
         event_transport=redis_event_transport,
     )
+
+
+@pytest.fixture(name='fire_dummy_events')
+def fire_dummy_events_fixture(bus):
+    async def fire_dummy_events(total, initial_delay=0.1):
+        await asyncio.sleep(initial_delay)
+        for x in range(0, total):
+            await bus.my.dummy.my_event.fire_async(field=x)
+        logger.warning('TEST: co_fire_event() completed')
+    return fire_dummy_events
+
+
+@pytest.fixture(name='listen_for_events')
+def listen_for_events_fixture(bus):
+    # Note: You'll have to cancel this manually as it'll run forever
+    async def listen_for_events(listener):
+        await bus.my.dummy.my_event.listen_async(listener)
+        await bus.bus_client.consume_events()
+        logging.warning('TEST: co_listen_for_events() completed (should not happen, should get cancelled)')
+    return listen_for_events

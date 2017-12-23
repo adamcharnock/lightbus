@@ -5,6 +5,7 @@ pytest==3.2.3
 pytest-cov==2.5.1
 pytest-xdist==1.20.1
 pytest-mock==1.6.3
+pytest-repeat==0.4.1
 async-timeout==1.4.0
 pytest-catchlog==1.2.2
 coveralls==1.2.0

@@ -157,7 +157,7 @@ class BusClient(object):
 
         except SuddenDeathException:
             # Useful for simulating crashes in testing.
-            logger.warning('Sudden death while holding {} messages'.format(len(event_messages)))
+            logger.info('Sudden death while holding {} messages'.format(len(event_messages)))
             return
 
     async def fire_event(self, api_name, name, kwargs: dict=None):

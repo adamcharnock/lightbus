@@ -198,12 +198,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         ))
 
     async def fetch_events(self) -> Tuple[Sequence[EventMessage], ...]:
-        # Consider making this not a context manager, yielding a list
-        # seems odd and is likely it will trip people up when implementing backends.
-        # Consider creating a new consume_complete(extra), and updating this method
-        # to return (event_messages, extra). This may also let us remove the
-        # asyncio_extras dependency.
-
         pool = await self.get_redis_pool()
         with await pool as redis:
             if not self._streams:
