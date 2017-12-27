@@ -12,19 +12,19 @@ logger = logging.getLogger(__name__)
 @pytest.fixture
 def redis_rpc_transport(new_redis_pool, server, loop):
     """Get a redis transport backed by a running redis server."""
-    return lightbus.RedisRpcTransport(redis_pool=new_redis_pool())
+    return lightbus.RedisRpcTransport(redis_pool=new_redis_pool(maxsize=500))
 
 
 @pytest.fixture
 def redis_result_transport(new_redis_pool, server, loop):
     """Get a redis transport backed by a running redis server."""
-    return lightbus.RedisResultTransport(redis_pool=new_redis_pool())
+    return lightbus.RedisResultTransport(redis_pool=new_redis_pool(maxsize=500))
 
 
 @pytest.fixture
 def redis_event_transport(new_redis_pool, server, loop):
     """Get a redis transport backed by a running redis server."""
-    return lightbus.RedisEventTransport(redis_pool=new_redis_pool())
+    return lightbus.RedisEventTransport(redis_pool=new_redis_pool(maxsize=500))
 
 
 @pytest.fixture

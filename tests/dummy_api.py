@@ -17,6 +17,6 @@ class DummyApi(Api):
         raise SuddenDeathException()
 
     def random_death(self, n, death_probability=0.5):
-        if random() < death_probability:
+        if random() < float(death_probability):
             raise SuddenDeathException()
         return n

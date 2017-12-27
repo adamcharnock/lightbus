@@ -104,7 +104,7 @@ class BusClient(object):
                 else:
                     await self.send_result(rpc_message=rpc_message, result=result)
 
-    async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict, timeout=0.1):
+    async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict, timeout=5):
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)
         return_path = self.result_transport.get_return_path(rpc_message)
         rpc_message.return_path = return_path
