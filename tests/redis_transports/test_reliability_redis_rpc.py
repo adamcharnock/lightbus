@@ -7,60 +7,40 @@ from random import random
 
 import pytest
 import lightbus
-from lightbus.exceptions import SuddenDeathException
+from lightbus.exceptions import SuddenDeathException, LightbusTimeout
 from lightbus.utilities import handle_aio_exceptions
 from tests.dummy_api import DummyApi
 
 
 @pytest.mark.run_loop  # TODO: Have test repeat a few times
-async def test_random_failures(bus: lightbus.BusNode, caplog, consume_rpcs, call_rpc, mocker, loop):
-    caplog.set_level(logging.DEBUG)
+async def test_random_failures(bus: lightbus.BusNode, caplog, consume_rpcs, call_rpc, mocker, dummy_api, loop):
+    caplog.set_level(logging.WARNING)
     loop.slow_callback_duration = 0.01
 
-    rpc_ok_ids = dict()
-    rpc_mayhem_ids = dict()
+    async def co_call_rpc():
+        asyncio.sleep(0.1)
+        results = []
+        for n in range(0, 100):
+            try:
+                results.append(
+                    await bus.my.dummy.random_death.call_async(n=n)
+                )
+            except LightbusTimeout:
+                results.append(None)
+        return results
 
-    def mock_sudden_death(api_self, n):
-        import pdb; pdb.set_trace()
-        call_id = int(n)
-        if random() < 0.3:  # SIMULATE RANDOM RPCs DYING
-            rpc_mayhem_ids.setdefault(call_id, 0)
-            rpc_mayhem_ids[call_id] += 1
-            raise SuddenDeathException()
-        else:
-            rpc_ok_ids.setdefault(call_id, 0)
-            rpc_ok_ids[call_id] += 1
-    mocker.patch.object(DummyApi, 'sudden_death', mock_sudden_death)
+    async def co_consume_rpcs():
+        return await bus.bus_client.consume_rpcs(apis=[dummy_api])
 
-    done, (listen_task, ) = await asyncio.wait(
-        [
-            handle_aio_exceptions(call_rpc(bus.my.dummy.my_proc, total=100, initial_delay=0.1)),
-            handle_aio_exceptions(consume_rpcs()),
-        ],
-        return_when=asyncio.FIRST_COMPLETED,
-        timeout=10
-    )
+    (call_task, ), (consume_task, ) = await asyncio.wait([co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED)
+    consume_task.cancel()
 
-    # Wait until we are done handling the RPCs (up to 5 seconds)
-    for _ in range(1, 5):
-        await asyncio.sleep(1)
-        logging.warning('TEST: Still waiting for RPCs to finish. {} so far'.format(len(rpc_ok_ids)))
-        if len(rpc_ok_ids) == 100:
-            logging.warning('TEST: RPCs finished')
-            break
-
-    # Cleanup the tasks
-    listen_task.cancel()
-    try:
-        await listen_task
-    except CancelledError:
-        pass
-
-    assert set(rpc_ok_ids.keys()) == set(range(0, 100))
-
-    duplicate_calls = sum([n - 1 for n in rpc_ok_ids.values()])
-    assert duplicate_calls > 0
-    assert len(rpc_mayhem_ids) > 0
+    results = call_task.result()
+    total_successful = len([r for r in results if r is not None])
+    total_timeouts = len([r for r in results if r is None])
+    assert len(results) == 100
+    assert total_successful > 0
+    assert total_timeouts > 0
 
 
 @pytest.mark.run_loop  # TODO: Have test repeat a few times

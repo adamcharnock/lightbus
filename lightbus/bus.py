@@ -123,6 +123,9 @@ class BusClient(object):
             result, _ = await asyncio.wait_for(future, timeout=timeout)
         except asyncio.TimeoutError:
             future.cancel()
+            # TODO: Include description of possible causes and how to increase the timeout.
+            # TODO: Remove RPC from queue. Perhaps add a RpcBackend.cancel() method. Optional,
+            #       as not all backends will support it. No point processing calls which have timed out.
             raise LightbusTimeout('Timeout when calling RPC {} after {} seconds'.format(
                 rpc_message.canonical_name, timeout
             )) from None
