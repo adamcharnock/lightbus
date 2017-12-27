@@ -89,6 +89,12 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         # Get where we last left off in each stream
         latest_ids = [self._latest_ids.get(stream, '$') for stream in streams]
 
+        logger.debug(LBullets(
+            'Consuming RPCs from', items=[
+                '{} ({})'.format(s, self._latest_ids.get(s, '$')) for s in streams
+            ]
+        ))
+
         pool = await self.get_redis_pool()
         with await pool as redis:
             # TODO: Count/timeout configurable

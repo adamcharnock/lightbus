@@ -4,6 +4,7 @@ import logging
 import pytest
 
 import lightbus
+from lightbus import BusNode
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ def fire_dummy_events_fixture(bus):
         await asyncio.sleep(initial_delay)
         for x in range(0, total):
             await bus.my.dummy.my_event.fire_async(field=x)
-        logger.warning('TEST: co_fire_event() completed')
+        logger.warning('TEST: fire_dummy_events() completed')
     return fire_dummy_events
 
 
@@ -52,5 +53,28 @@ def listen_for_events_fixture(bus):
     async def listen_for_events(listener):
         await bus.my.dummy.my_event.listen_async(listener)
         await bus.bus_client.consume_events()
-        logging.warning('TEST: co_listen_for_events() completed (should not happen, should get cancelled)')
+        logging.warning('TEST: listen_for_events() completed (should not happen, should get cancelled)')
     return listen_for_events
+
+
+@pytest.fixture(name='call_rpc')
+def call_rpc_fixture(bus):
+    results = []
+    async def call_rpc(rpc: BusNode, total, initial_delay=0.1, kwargs=None):
+        await asyncio.sleep(initial_delay)
+        for n in range(0, total):
+            results.append(
+                await rpc.call_async(kwargs=dict(n=n))
+            )
+        logger.warning('TEST: call_rpc() completed')
+        return results
+    return call_rpc
+
+
+@pytest.fixture(name='consume_rpcs')
+def consume_rpcs_fixture(bus):
+    # Note: You'll have to cancel this manually as it'll run forever
+    async def consume_rpcs():
+        await bus.bus_client.consume_rpcs()
+        logging.warning('TEST: consume_rpcs() completed (should not happen, should get cancelled)')
+    return consume_rpcs

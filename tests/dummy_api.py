@@ -13,7 +13,7 @@ class DummyApi(Api):
     def my_proc(self, field):
         return 'value: {}'.format(field)
 
-    def sudden_death(self):
+    def sudden_death(self, n):
         raise SuddenDeathException()
 
     def random_death(self, n, death_probability=0.5):

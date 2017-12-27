@@ -43,7 +43,7 @@ async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events,
         timeout=10
     )
 
-    # Wait until we are done handling the events (up to 10 seconds)
+    # Wait until we are done handling the events (up to 5 seconds)
     for _ in range(1, 5):
         await asyncio.sleep(1)
         logging.warning('TEST: Still waiting for events to finish. {} so far'.format(len(event_ok_ids)))

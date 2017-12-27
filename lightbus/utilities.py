@@ -25,7 +25,8 @@ async def handle_aio_exceptions(fn):
         await fn
     except asyncio.CancelledError:
         raise  # Note: Changed to 'raise' rather than pass recently (20/12/2017)
-    except Exception:
+    except Exception as e:
+        logger.exception(e)
         traceback.print_exc()
 
 
