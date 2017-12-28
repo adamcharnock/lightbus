@@ -13,6 +13,7 @@ from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.api import registry
+from lightbus.plugins import load_plugins, plugin_hook
 from lightbus.transports import RpcTransport, ResultTransport, EventTransport, RedisRpcTransport, \
     RedisResultTransport, RedisEventTransport
 from lightbus.utilities import handle_aio_exceptions, human_time, block
@@ -51,6 +52,13 @@ class BusClient(object):
             }
         ))
 
+        logger.debug("Loading plugins...")
+        plugins = load_plugins()
+        if plugins:
+            logger.info(LBullets("Loaded the following plugins ({})".format(len(plugins)), items=plugins))
+        else:
+            logger.info("No plugins installed")
+
         registry.add(LightbusStateApi())
         registry.add(LightbusMetricsApi())
 
@@ -80,16 +88,7 @@ class BusClient(object):
         if consume_events:
             asyncio.ensure_future(handle_aio_exceptions(self.consume_events()), loop=loop)
 
-        # TODO: Move elsewhere, perhaps to a plugin of some sort
-        asyncio.ensure_future(handle_aio_exceptions(self.event_transport.send_event(
-            EventMessage(api_name='internal.state', event_name='server_started', kwargs=dict(
-                process_name='foo',
-                metrics_enabled=True,
-                api_names=[api.meta.name for api in registry.public()],
-                listening_for=['{}.{}'.format(api_name, event_name) for api_name, event_name in self._listeners.keys()],
-                timestamp=datetime.utcnow().timestamp(),
-            ))
-        )), loop=loop)
+        plugin_hook('server_started', bus_client=self, loop=loop)
 
         try:
             loop.run_forever()
@@ -98,6 +97,8 @@ class BusClient(object):
         finally:
             for task in asyncio.Task.all_tasks():
                 task.cancel()
+
+            plugin_hook('server_stopped', bus_client=self, loop=loop)
 
     # RPCs
 

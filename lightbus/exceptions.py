@@ -59,3 +59,11 @@ class LightbusTimeout(LightbusException):
 class SuddenDeathException(LightbusException):
     """Used to kill an invocation for testing purposes"""
     pass
+
+
+class PluginsNotLoaded(LightbusException):
+    pass
+
+
+class PluginHookNotFound(LightbusException):
+    pass

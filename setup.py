@@ -22,6 +22,9 @@ setup(
     entry_points={
         'console_scripts': [
             'lightbus = lightbus.commands:lightbus_entry_point',
+        ],
+        'lightbus_plugins': [
+            'foo = lightbus.plugins.state:StatePlugin'
         ]
     }
 )
