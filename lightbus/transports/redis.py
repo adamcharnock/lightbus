@@ -68,7 +68,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         logger.debug(
             LBullets(
                 L("Enqueuing message {} in Redis stream {}", Bold(rpc_message), Bold(stream)),
-                items=rpc_message.to_dict()
+                items=encode_message_fields(rpc_message.to_dict())
             )
         )
 
@@ -196,7 +196,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         with await pool as redis:
             start_time = time.time()
             # TODO: MAXLEN
-            await redis.xadd(stream=stream, fields=event_message.to_dict())
+            await redis.xadd(stream=stream, fields=encode_message_fields(event_message.to_dict()))
 
         logger.info(L(
             "Enqueued event message {} in Redis in {} stream {}",
@@ -308,8 +308,19 @@ def redis_decode(data):
 def decode_message_fields(fields):
     return OrderedDict([
         (
-            decode(k, encoding='utf8'),
-            decode(v, encoding='utf8'),
+            k if isinstance(k, bytes) else k.encode('utf8'),
+            redis_decode(v),
+        )
+        for k, v
+        in fields.items()
+    ])
+
+
+def encode_message_fields(fields):
+    return OrderedDict([
+        (
+            k if isinstance(k, bytes) else k.encode('utf8'),
+            redis_encode(v),
         )
         for k, v
         in fields.items()

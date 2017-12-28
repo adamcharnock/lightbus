@@ -1,5 +1,6 @@
 import logging
 from asyncio.coroutines import CoroWrapper
+from datetime import datetime
 from typing import Any, Optional, Callable
 
 import asyncio
@@ -78,6 +79,17 @@ class BusClient(object):
             asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs()), loop=loop)
         if consume_events:
             asyncio.ensure_future(handle_aio_exceptions(self.consume_events()), loop=loop)
+
+        # TODO: Move elsewhere, perhaps to a plugin of some sort
+        asyncio.ensure_future(handle_aio_exceptions(self.event_transport.send_event(
+            EventMessage(api_name='internal.state', event_name='server_started', kwargs=dict(
+                process_name='foo',
+                metrics_enabled=True,
+                api_names=[api.meta.name for api in registry.public()],
+                listening_for=['{}.{}'.format(api_name, event_name) for api_name, event_name in self._listeners.keys()],
+                timestamp=datetime.utcnow().timestamp(),
+            ))
+        )), loop=loop)
 
         try:
             loop.run_forever()
