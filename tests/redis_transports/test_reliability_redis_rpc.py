@@ -11,8 +11,8 @@ from lightbus.exceptions import SuddenDeathException, LightbusTimeout
 from lightbus.utilities import handle_aio_exceptions
 
 
-@pytest.mark.run_loop  # TODO: Have test repeat a few times
-async def test_random_failures(bus: lightbus.BusNode, caplog, consume_rpcs, call_rpc, mocker, dummy_api, loop):
+@pytest.mark.run_loop
+async def test_timeouts(bus: lightbus.BusNode, caplog, consume_rpcs, call_rpc, mocker, dummy_api, loop):
     caplog.set_level(logging.WARNING)
     loop.slow_callback_duration = 0.01
     results = []
