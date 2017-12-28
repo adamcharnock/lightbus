@@ -51,7 +51,7 @@ async def test_rpc_timeout(bus: lightbus.BusNode, dummy_api):
 
     async def co_call_rpc():
         asyncio.sleep(0.1)
-        return await bus.my.dummy.sudden_death.call_async()
+        return await bus.my.dummy.sudden_death.call_async(n=0)
 
     async def co_consume_rpcs():
         return await bus.bus_client.consume_rpcs(apis=[dummy_api])
