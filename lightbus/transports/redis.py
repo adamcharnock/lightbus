@@ -207,7 +207,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         pool = await self.get_redis_pool()
         with await pool as redis:
             if not self._streams:
-                logger.debug('Event backend has been given no events to consume. Sleeping.')
+                logger.debug('Event backend has been given no events to consume. Event backend will sleep.')
                 self._task = asyncio.ensure_future(asyncio.sleep(3600 * 24 * 365))
             else:
                 logger.info(LBullets(

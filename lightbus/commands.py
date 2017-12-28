@@ -46,7 +46,7 @@ def parse_args(args=None):
     #     '--redis-url', help='URL to Redis server when using Redis-based transports', default='redis://localhost:6379/0'
     # )
 
-    return parser.parse_args(sys.argv if args is None else args)
+    return parser.parse_args(sys.argv[1:] if args is None else args)
 
 
 def command_run(args, dry_run=False):

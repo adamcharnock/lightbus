@@ -8,6 +8,7 @@ import time
 
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
     InvalidEventListener, SuddenDeathException, LightbusTimeout
+from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.api import registry
@@ -49,8 +50,11 @@ class BusClient(object):
             }
         ))
 
+        registry.add(LightbusStateApi())
+        registry.add(LightbusMetricsApi())
+
         if consume_rpcs:
-            if registry.all():
+            if registry.public():
                 logger.info(LBullets(
                     "APIs in registry ({})".format(len(registry.all())),
                     items=registry.all()
@@ -71,9 +75,9 @@ class BusClient(object):
         loop = loop or asyncio.get_event_loop()
 
         if consume_rpcs and registry.all():
-            asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs), loop=loop)
+            asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs()), loop=loop)
         if consume_events:
-            asyncio.ensure_future(handle_aio_exceptions(self.consume_events), loop=loop)
+            asyncio.ensure_future(handle_aio_exceptions(self.consume_events()), loop=loop)
 
         try:
             loop.run_forever()

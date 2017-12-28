@@ -9,7 +9,7 @@ class Registry(object):
     def __init__(self):
         self._apis: Dict[str, Api] = dict()
 
-    def add(self, name: str, api: 'Api'):
+    def add(self, api: 'Api'):
         if isinstance(api, type):
             raise InvalidApiRegistryEntry(
                 "An attempt was made to add a type to the API registry. This "
@@ -17,7 +17,7 @@ class Registry(object):
                 "than an instance of the API class."
             )
 
-        self._apis[name] = api
+        self._apis[api.meta.name] = api
 
     def get(self, name) -> 'Api':
         try:
@@ -29,8 +29,11 @@ class Registry(object):
                 "was specified, or maybe the API has not been registered.".format(name)
             )
 
-    def __iter__(self):
-        return iter(self._apis.values())
+    def public(self):
+        return [api for api in self._apis.values() if not api.meta.internal]
+
+    def internal(self):
+        return [api for api in self._apis.values() if api.meta.internal]
 
     def all(self):
         return self._apis.values()
@@ -41,6 +44,8 @@ registry = Registry()
 
 class ApiOptions(object):
     name: str
+    internal: bool = False
+    auto_register: bool = True
 
     def __init__(self, options):
         for k, v in options.items():
@@ -67,7 +72,9 @@ class ApiMetaclass(type):
             cls.sanity_check_options(name, options)
             cls.meta = ApiOptions(cls.Meta.__dict__.copy())
             super(ApiMetaclass, cls).__init__(name, bases, dict)
-            registry.add(options.name, cls())
+
+            if cls.meta.auto_register:
+                registry.add(cls())
 
     def sanity_check_options(cls, name, options):
         if not getattr(options, 'name', None):
