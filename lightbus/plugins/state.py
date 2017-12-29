@@ -13,7 +13,7 @@ from lightbus.utilities import handle_aio_exceptions, block
 class StatePlugin(LightbusPlugin):
     priority = 100
 
-    def server_started(self, *, bus_client: BusClient, loop):
+    def before_server_start(self, *, bus_client: BusClient, loop):
         asyncio.ensure_future(handle_aio_exceptions(bus_client.event_transport.send_event(
             EventMessage(api_name='internal.state', event_name='server_started', kwargs=dict(
                 process_name='foo',
@@ -24,7 +24,7 @@ class StatePlugin(LightbusPlugin):
             ))
         )), loop=loop)
 
-    def server_stopped(self, *, bus_client: BusClient, loop):
+    def after_server_stopped(self, *, bus_client: BusClient, loop):
         block(bus_client.event_transport.send_event(
             EventMessage(api_name='internal.state', event_name='server_stopped', kwargs=dict(
                 process_name='foo',

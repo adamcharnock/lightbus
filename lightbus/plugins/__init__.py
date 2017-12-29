@@ -1,4 +1,5 @@
 from asyncio import AbstractEventLoop
+from typing import Sequence, Dict
 
 from collections import OrderedDict
 
@@ -18,17 +19,16 @@ class LightbusPlugin(object):
     def __str__(self):
         return '{}.{}'.format(self.__class__.__module__, self.__class__.__name__)
 
-    def server_started(self, *, bus_client: 'lightbus.bus.BusClient', loop: AbstractEventLoop):
+    def before_server_start(self, *, bus_client: 'lightbus.bus.BusClient', loop: AbstractEventLoop):
         pass
 
-    def server_stopped(self, *, bus_client: 'lightbus.bus.BusClient', loop: AbstractEventLoop):
+    def after_server_stopped(self, *, bus_client: 'lightbus.bus.BusClient', loop: AbstractEventLoop):
         pass
 
 
-def load_plugins():
+def autoload_plugins():
     global _plugins, _hooks_names
-
-    _hooks_names = [k for k in LightbusPlugin.__dict__ if not k.startswith('_')]
+    load_hook_names()
 
     found_plugins = []
     for entrypoint in pkg_resources.iter_entry_points(ENTRYPOINT_NAME):
@@ -42,6 +42,29 @@ def load_plugins():
             pass
         _plugins[name] = plugin
 
+    return _plugins
+
+
+def manually_set_plugins(plugins: Dict[str, LightbusPlugin]):
+    global _plugins
+    load_hook_names()
+    _plugins = plugins
+
+
+def load_hook_names():
+    """Load a list of valid hook names"""
+    global _hooks_names
+    _hooks_names = [k for k in LightbusPlugin.__dict__ if not k.startswith('_')]
+
+
+def remove_all_plugins():
+    """Remove all plugins. Useful for testing"""
+    global _plugins
+    _plugins = []
+
+
+def get_plugins() -> Dict[str, LightbusPlugin]:
+    global _plugins
     return _plugins
 
 

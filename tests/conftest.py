@@ -25,6 +25,7 @@ import aioredis
 import aioredis.sentinel
 
 import lightbus
+from lightbus.plugins import remove_all_plugins
 
 TCPAddress = namedtuple('TCPAddress', 'host port')
 
@@ -530,6 +531,9 @@ def _wait_coro(corofunc, kwargs, timeout, loop):
 
 
 def pytest_runtest_setup(item):
+    # Clear out any plugins
+    remove_all_plugins()
+
     if 'run_loop' in item.keywords and 'loop' not in item.fixturenames:
         # inject an event loop fixture for all async tests
         item.fixturenames.append('loop')

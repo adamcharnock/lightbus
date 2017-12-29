@@ -13,7 +13,7 @@ from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.api import registry
-from lightbus.plugins import load_plugins, plugin_hook
+from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
 from lightbus.transports import RpcTransport, ResultTransport, EventTransport, RedisRpcTransport, \
     RedisResultTransport, RedisEventTransport
 from lightbus.utilities import handle_aio_exceptions, human_time, block
@@ -33,7 +33,7 @@ class BusClient(object):
         self.event_transport = event_transport
         self._listeners = {}
 
-    def run_forever(self, *, loop=None, consume_rpcs=True, consume_events=True):
+    def run_forever(self, *, loop=None, consume_rpcs=True, consume_events=True, plugins=None):
         logger.info(LBullets(
             "Lightbus getting ready to run. Brokers in use",
             items={
@@ -52,12 +52,17 @@ class BusClient(object):
             }
         ))
 
-        logger.debug("Loading plugins...")
-        plugins = load_plugins()
+        if plugins is None:
+            logger.debug("Auto-loading any installed Lightbus plugins...")
+            plugins = autoload_plugins()
+        else:
+            logger.debug("Loading explicitly specified Lightbus plugins....")
+            manually_set_plugins(plugins)
+
         if plugins:
             logger.info(LBullets("Loaded the following plugins ({})".format(len(plugins)), items=plugins))
         else:
-            logger.info("No plugins installed")
+            logger.info("No plugins loaded")
 
         registry.add(LightbusStateApi())
         registry.add(LightbusMetricsApi())
@@ -81,14 +86,14 @@ class BusClient(object):
                     )
                     return
 
+        plugin_hook('before_server_start', bus_client=self, loop=loop)
+
         loop = loop or asyncio.get_event_loop()
 
         if consume_rpcs and registry.all():
             asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs()), loop=loop)
         if consume_events:
             asyncio.ensure_future(handle_aio_exceptions(self.consume_events()), loop=loop)
-
-        plugin_hook('server_started', bus_client=self, loop=loop)
 
         try:
             loop.run_forever()
@@ -98,7 +103,7 @@ class BusClient(object):
             for task in asyncio.Task.all_tasks():
                 task.cancel()
 
-            plugin_hook('server_stopped', bus_client=self, loop=loop)
+            plugin_hook('after_server_stopped', bus_client=self, loop=loop)
 
     # RPCs
 
@@ -289,8 +294,8 @@ class BusNode(object):
                 yield parent
             parent = parent.parent
 
-    def run_forever(self, loop=None, consume_rpcs=True, consume_events=True):
-        self.bus_client.run_forever(loop=loop, consume_rpcs=consume_rpcs, consume_events=consume_events)
+    def run_forever(self, loop=None, consume_rpcs=True, consume_events=True, plugins=None):
+        self.bus_client.run_forever(loop=loop, consume_rpcs=consume_rpcs, consume_events=consume_events, plugins=None)
 
     @property
     def api_name(self):
