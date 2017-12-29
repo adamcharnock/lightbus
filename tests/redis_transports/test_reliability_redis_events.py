@@ -13,7 +13,7 @@ from tests.dummy_api import DummyApi
 
 
 @pytest.mark.run_loop  # TODO: Have test repeat a few times
-async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events, listen_for_events):
+async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events, listen_for_events, dummy_api):
     caplog.set_level(logging.WARNING)
 
     event_ok_ids = dict()
@@ -66,7 +66,7 @@ async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events,
 
 
 @pytest.mark.run_loop  # TODO: Have test repeat a few times
-async def test_first_event_fails(bus: lightbus.BusNode, caplog, fire_dummy_events, listen_for_events):
+async def test_first_event_fails(bus: lightbus.BusNode, caplog, fire_dummy_events, listen_for_events, dummy_api):
     caplog.set_level(logging.WARNING)
 
     event_ok_ids = dict()
@@ -113,7 +113,7 @@ async def test_first_event_fails(bus: lightbus.BusNode, caplog, fire_dummy_event
 
 
 @pytest.mark.run_loop  # TODO: Have test repeat a few times
-async def test_last_event_fails(bus: lightbus.BusNode, caplog, fire_dummy_events, listen_for_events):
+async def test_last_event_fails(bus: lightbus.BusNode, caplog, fire_dummy_events, listen_for_events, dummy_api):
     caplog.set_level(logging.WARNING)
 
     event_ok_ids = dict()

@@ -666,4 +666,6 @@ def pytest_namespace():
 @pytest.fixture
 def dummy_api():
     from tests.dummy_api import DummyApi
-    return DummyApi()
+    dummy_api = DummyApi()
+    registry.add(dummy_api)
+    return dummy_api
