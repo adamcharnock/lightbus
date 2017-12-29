@@ -20,3 +20,6 @@ class DummyApi(Api):
         if random() < float(death_probability):
             raise SuddenDeathException()
         return n
+
+    def general_error(self):
+        raise RuntimeError('Oh no, there was some kind of error')

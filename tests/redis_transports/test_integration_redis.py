@@ -2,8 +2,7 @@ import asyncio
 
 import pytest
 import lightbus
-from lightbus.exceptions import LightbusTimeout
-
+from lightbus.exceptions import LightbusTimeout, LightbusServerError
 
 pytestmark = pytest.mark.integration
 
@@ -62,6 +61,23 @@ async def test_rpc_timeout(bus: lightbus.BusNode, dummy_api):
     consume_task.cancel()
     with pytest.raises(LightbusTimeout):
         call_task.result()
+
+
+@pytest.mark.run_loop
+async def test_rpc_error(bus: lightbus.BusNode, dummy_api):
+    """Test what happens when the remote procedure throws an error"""
+
+    async def co_call_rpc():
+        asyncio.sleep(0.1)
+        return await bus.my.dummy.general_error.call_async()
+
+    async def co_consume_rpcs():
+        return await bus.bus_client.consume_rpcs(apis=[dummy_api])
+
+    (call_task, ), (consume_task, ) = await asyncio.wait([co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED)
+    consume_task.cancel()
+    with pytest.raises(LightbusServerError):
+        assert call_task.result()
 
 
 @pytest.mark.run_loop

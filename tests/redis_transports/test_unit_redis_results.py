@@ -48,7 +48,10 @@ async def test_send_result(redis_result_transport: RedisResultTransport, redis_c
     assert await redis_client.keys('*') == [b'my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e']
 
     result = await redis_client.lpop('my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e')
-    assert json.loads(result) == 'All done! 😎'
+    assert json.loads(result) == {
+        'error': False,
+        'result': 'All done! 😎',
+    }
 
 
 @pytest.mark.run_loop

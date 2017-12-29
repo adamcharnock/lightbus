@@ -1,3 +1,4 @@
+import traceback
 from typing import Optional, Dict, Any
 
 from lightbus.exceptions import InvalidRpcMessage
@@ -79,18 +80,36 @@ class RpcMessage(Message):
 
 class ResultMessage(Message):
 
-    def __init__(self, *, result: str):
-        # TODO: Handle different result types
+    def __init__(self, *, result):
         self.result = result
+        self.error = isinstance(result, BaseException)
 
     def __repr__(self):
-        return '<{}: {}>'.format(self.__class__.__name__, self.result)
+        if self.error:
+            return '<{} (ERROR): {}>'.format(self.__class__.__name__, self.result)
+        else:
+            return '<{} (SUCCESS): {}>'.format(self.__class__.__name__, self.result)
 
     def __str__(self):
         return str(self.result)
 
     def to_dict(self) -> dict:
-        return {'result': self.result}
+        if self.error:
+            trace = ''.join(traceback.format_exception(
+                etype=type(self.result),
+                value=self.result,
+                tb=self.result.__traceback__
+            ))
+            return {
+                'result': str(self.result),
+                'error': True,
+                'trace': trace
+            }
+        else:
+            return {
+                'result': self.result,
+                'error': False
+            }
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> 'ResultMessage':

@@ -1,5 +1,6 @@
 import logging
 from asyncio.coroutines import CoroWrapper
+from asyncio.futures import CancelledError
 from datetime import datetime
 from typing import Any, Optional, Callable
 
@@ -8,7 +9,7 @@ import asyncio
 import time
 
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
-    InvalidEventListener, SuddenDeathException, LightbusTimeout
+    InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
@@ -152,16 +153,37 @@ class BusClient(object):
                 rpc_message.canonical_name, timeout
             )) from None
 
-        logger.info(L("⚡ Remote call of {} completed in {}", Bold(rpc_message.canonical_name), human_time(time.time() - start_time)))
+        if not result.get('error'):
+            logger.info(L("⚡ Remote call of {} completed in {}", Bold(rpc_message.canonical_name), human_time(time.time() - start_time)))
+        else:
+            logger.warning(
+                L("⚡ Server error during remote call of {}. Took {}: {}",
+                  Bold(rpc_message.canonical_name),
+                  human_time(time.time() - start_time),
+                  result.get('result'),
+                ),
+            )
+            raise LightbusServerError('Error while calling {}: {}\nRemote stack trace:\n{}'.format(
+                rpc_message.canonical_name,
+                result.get('result'),
+                result.get('trace'),
+            ))
 
-        return result
+        return result.get('result')
 
     async def call_rpc_local(self, api_name: str, name: str, kwargs: dict):
         api = registry.get(api_name)
         start_time = time.time()
-        result = await api.call(name, kwargs)
-        logger.info(L("⚡ Executed {}.{} in {}", Bold(api_name), Bold(name), human_time(time.time() - start_time)))
-        return result
+        try:
+            result = await api.call(name, kwargs)
+        except (CancelledError, SuddenDeathException):
+            raise
+        except Exception as e:
+            logger.warning(L("⚡ Error while executing {}.{}. Took {}", Bold(api_name), Bold(name), human_time(time.time() - start_time)))
+            return e
+        else:
+            logger.info(L("⚡ Executed {}.{} in {}", Bold(api_name), Bold(name), human_time(time.time() - start_time)))
+            return result
 
     # Events
 

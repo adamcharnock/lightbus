@@ -139,7 +139,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         with await pool as redis:
             start_time = time.time()
             p = redis.pipeline()
-            p.lpush(redis_key, redis_encode(result_message.result))
+            p.lpush(redis_key, redis_encode(result_message.to_dict()))
             # TODO: Make result expiry configurable
             p.expire(redis_key, timeout=60)
             await p.execute()
