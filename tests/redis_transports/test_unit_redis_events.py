@@ -24,9 +24,9 @@ async def test_send_event(redis_event_transport: RedisEventTransport, redis_clie
     messages = await redis_client.xrange('my.api.my_event:stream')
     assert len(messages) == 1
     assert messages[0][1] == {
-        b'api_name': b'my.api',
-        b'event_name': b'my_event',
-        b'kw:field': b'value',
+        b'api_name': b'"my.api"',
+        b'event_name': b'"my_event"',
+        b'kw:field': b'"value"',
     }
 
 
@@ -35,9 +35,9 @@ async def test_consume_events(redis_event_transport: RedisEventTransport, redis_
     async def co_enqeue():
         await asyncio.sleep(0.1)
         return await redis_client.xadd('my.dummy.my_event:stream', fields={
-            b'api_name': b'my.dummy',
-            b'event_name': b'my_event',
-            b'kw:field': b'value',
+            b'api_name': b'"my.dummy"',
+            b'event_name': b'"my_event"',
+            b'kw:field': b'"value"',
         })
 
     async def co_consume():

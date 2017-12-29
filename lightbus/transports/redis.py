@@ -68,7 +68,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         logger.debug(
             LBullets(
                 L("Enqueuing message {} in Redis stream {}", Bold(rpc_message), Bold(stream)),
-                items=encode_message_fields(rpc_message.to_dict())
+                items=rpc_message.to_dict()
             )
         )
 
@@ -76,7 +76,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         with await pool as redis:
             start_time = time.time()
             # TODO: MAXLEN
-            await redis.xadd(stream=stream, fields=rpc_message.to_dict())
+            await redis.xadd(stream=stream, fields=encode_message_fields(rpc_message.to_dict()))
 
         logger.info(L(
             "Enqueued message {} in Redis in {} stream {}",
@@ -229,7 +229,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             except asyncio.CancelledError as e:
                 if self._reload:
                     # Streams to listen on have changed.
-                    # Bail out and let consume_events() get called again,
+                    # Bail out and let this method get called again,
                     # at which point we'll pickup the new streams.
                     logger.debug('Event consumption cancelled.')
                     stream_messages = []
@@ -308,7 +308,7 @@ def redis_decode(data):
 def decode_message_fields(fields):
     return OrderedDict([
         (
-            k if isinstance(k, bytes) else k.encode('utf8'),
+            k if isinstance(k, str) else k.decode('utf8'),
             redis_decode(v),
         )
         for k, v
