@@ -1,5 +1,5 @@
 from asyncio import AbstractEventLoop
-from typing import Sequence, Dict
+from typing import Sequence, Dict, Type
 
 from collections import OrderedDict
 
@@ -36,7 +36,7 @@ def autoload_plugins():
         plugin = plugin_class()
         found_plugins.append((plugin.priority, entrypoint.module_name, entrypoint.name, plugin))
 
-        _plugins = OrderedDict()
+    _plugins = OrderedDict()
     for priority, module_name, name, plugin in sorted(found_plugins):
         if name in _plugins:
             pass
@@ -46,6 +46,7 @@ def autoload_plugins():
 
 
 def manually_set_plugins(plugins: Dict[str, LightbusPlugin]):
+    """Manually set the plugins in the global plugin registry"""
     global _plugins
     load_hook_names()
     _plugins = plugins
@@ -60,12 +61,20 @@ def load_hook_names():
 def remove_all_plugins():
     """Remove all plugins. Useful for testing"""
     global _plugins
-    _plugins = []
+    _plugins = OrderedDict()
 
 
 def get_plugins() -> Dict[str, LightbusPlugin]:
+    """Get all plugins as an ordered dictionary"""
     global _plugins
     return _plugins
+
+
+def is_plugin_loaded(plugin_class: Type[LightbusPlugin]):
+    global _plugins
+    if not _plugins:
+        return False
+    return plugin_class in [type(p) for p in _plugins.values()]
 
 
 def plugin_hook(name, **kwargs):

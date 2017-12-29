@@ -277,7 +277,7 @@ class BusNode(object):
         return await self.bus_client.listen_for_event(api_name=self.api_name, name=self.name, listener=listener)
 
     def listen(self, listener):
-        return block(self.listen_asyn(listener), timeout=5)
+        return block(self.listen_async(listener), timeout=5)
 
     async def fire_async(self, **kwargs):
         return await self.bus_client.fire_event(api_name=self.api_name, name=self.name, kwargs=kwargs)

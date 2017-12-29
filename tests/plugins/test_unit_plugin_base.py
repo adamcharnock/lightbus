@@ -1,12 +1,12 @@
 from collections import OrderedDict
 
 from lightbus.plugins import get_plugins, manually_set_plugins, LightbusPlugin, autoload_plugins, plugin_hook, \
-    remove_all_plugins
+    remove_all_plugins, is_plugin_loaded
 from lightbus.plugins.state import StatePlugin
 
 
 def test_manually_set_plugins():
-    assert get_plugins() == []
+    assert get_plugins() == OrderedDict()
     p1 = LightbusPlugin()
     p2 = LightbusPlugin()
     manually_set_plugins(OrderedDict([
@@ -20,7 +20,7 @@ def test_manually_set_plugins():
 
 
 def test_autoload_plugins():
-    assert get_plugins() == []
+    assert get_plugins() == OrderedDict()
     assert autoload_plugins()
     assert [(name, p.__class__) for name, p in get_plugins().items()] == [
         ('foo', StatePlugin),
@@ -29,7 +29,7 @@ def test_autoload_plugins():
 
 def test_plugin_hook(mocker):
     """Ensure calling plugin_hook() calls the method on the plugin"""
-    assert get_plugins() == []
+    assert get_plugins() == OrderedDict()
     plugin = LightbusPlugin()
     manually_set_plugins(OrderedDict([
         ('p1', plugin),
@@ -40,9 +40,18 @@ def test_plugin_hook(mocker):
 
 
 def test_remove_all_plugins():
-    assert get_plugins() == []
+    assert get_plugins() == OrderedDict()
     manually_set_plugins(OrderedDict([
         ('p1', LightbusPlugin()),
     ]))
     remove_all_plugins()
-    assert get_plugins() == []
+    assert get_plugins() == OrderedDict()
+
+
+def test_is_plugin_loaded():
+    assert get_plugins() == OrderedDict()
+    assert is_plugin_loaded(LightbusPlugin) == False
+    manually_set_plugins(OrderedDict([
+        ('p1', LightbusPlugin()),
+    ]))
+    assert is_plugin_loaded(LightbusPlugin) == True
