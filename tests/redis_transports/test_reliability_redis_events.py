@@ -9,7 +9,8 @@ import pytest
 import lightbus
 from lightbus.exceptions import SuddenDeathException
 from lightbus.utilities import handle_aio_exceptions
-from tests.dummy_api import DummyApi
+
+pytestmark = pytest.mark.reliability
 
 
 @pytest.mark.run_loop  # TODO: Have test repeat a few times

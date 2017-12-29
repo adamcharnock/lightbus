@@ -1,9 +1,9 @@
-import asyncio
-
 import pytest
 
-from lightbus.message import RpcMessage
 from lightbus.transports.redis import redis_stream_id_subtract_one
+
+
+pytestmark = pytest.mark.unit
 
 
 def test_redis_stream_id_subtract_one():

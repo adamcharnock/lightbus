@@ -1,8 +1,12 @@
+import pytest
+
 from lightbus.api import registry, Api, Event
 from lightbus.bus import BusNode
-from lightbus.internal_apis import LightbusStateApi
 from lightbus.plugins.state import StatePlugin
 from lightbus.transports.debug import DebugEventTransport
+
+
+pytestmark = pytest.mark.unit
 
 
 class TestApi(Api):

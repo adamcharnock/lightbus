@@ -1,9 +1,9 @@
 import pytest
 
-import lightbus
 from lightbus import commands
-from lightbus.bus import BusNode
-from lightbus.exceptions import InvalidBusNodeConfiguration
+
+
+pytestmark = pytest.mark.unit
 
 
 @pytest.mark.run_loop

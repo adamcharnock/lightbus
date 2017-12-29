@@ -4,6 +4,9 @@ import lightbus
 from lightbus.exceptions import UnknownApi, EventNotFound, InvalidEventArguments, InvalidEventListener
 
 
+pytestmark = pytest.mark.unit
+
+
 @pytest.mark.run_loop
 async def test_fire_event_api_doesnt_exist(dummy_bus: lightbus.BusNode):
     with pytest.raises(UnknownApi):

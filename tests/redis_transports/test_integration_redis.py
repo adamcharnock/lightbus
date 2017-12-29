@@ -1,9 +1,11 @@
 import asyncio
 
-import logging
 import pytest
 import lightbus
 from lightbus.exceptions import LightbusTimeout
+
+
+pytestmark = pytest.mark.integration
 
 
 @pytest.mark.run_loop

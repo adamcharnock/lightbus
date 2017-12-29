@@ -1,8 +1,12 @@
+import pytest
 from collections import OrderedDict
 
 from lightbus.plugins import get_plugins, manually_set_plugins, LightbusPlugin, autoload_plugins, plugin_hook, \
     remove_all_plugins, is_plugin_loaded
 from lightbus.plugins.state import StatePlugin
+
+
+pytestmark = pytest.mark.unit
 
 
 def test_manually_set_plugins():

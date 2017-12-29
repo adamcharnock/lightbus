@@ -3,12 +3,12 @@ import asyncio
 import logging
 from asyncio.futures import CancelledError
 
-from random import random
-
 import pytest
 import lightbus
 from lightbus.exceptions import SuddenDeathException, LightbusTimeout
-from lightbus.utilities import handle_aio_exceptions
+
+
+pytestmark = pytest.mark.reliability
 
 
 @pytest.mark.run_loop

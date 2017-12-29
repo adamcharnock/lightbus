@@ -5,6 +5,9 @@ import pytest
 from lightbus.message import RpcMessage
 
 
+pytestmark = pytest.mark.unit
+
+
 @pytest.mark.run_loop
 async def test_get_redis(redis_rpc_transport):
     """Does get_redis() provide a working redis connection"""

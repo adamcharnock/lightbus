@@ -7,6 +7,9 @@ from lightbus.message import RpcMessage, ResultMessage
 from lightbus.transports.redis import RedisResultTransport
 
 
+pytestmark = pytest.mark.unit
+
+
 @pytest.mark.run_loop
 async def test_get_redis(redis_result_transport: RedisResultTransport):
     """Does get_redis() provide a working redis connection"""
