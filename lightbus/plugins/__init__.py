@@ -6,6 +6,7 @@ from collections import OrderedDict
 import pkg_resources
 import lightbus
 from lightbus.exceptions import PluginsNotLoaded, PluginHookNotFound
+from lightbus.message import RpcMessage, EventMessage
 
 _plugins = None
 _hooks_names = []
@@ -24,6 +25,29 @@ class LightbusPlugin(object):
 
     def after_server_stopped(self, *, bus_client: 'lightbus.bus.BusClient', loop: AbstractEventLoop):
         pass
+
+    def before_rpc_call(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):
+        pass
+
+    def after_rpc_call(self, *, rpc_message: RpcMessage, result: dict, bus_client: 'lightbus.bus.BusClient'):
+        pass
+
+    def before_rpc_execution(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):
+        pass
+
+    def after_rpc_execution(self, *, rpc_message: RpcMessage, result: dict, bus_client: 'lightbus.bus.BusClient'):
+        pass
+
+    def before_event_sent(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
+        pass
+
+    def before_event_execution(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
+        pass
+
+    def after_event_execution(self, *, event_message: EventMessage, result: dict, bus_client: 'lightbus.bus.BusClient'):
+        pass
+
+
 
 
 def autoload_plugins():

@@ -115,6 +115,7 @@ class BusClient(object):
         while True:
             rpc_messages = await self.rpc_transport.consume_rpcs(apis)
             for rpc_message in rpc_messages:
+                plugin_hook('before_rpc_execution', rpc_message=rpc_message, bus_client=self)
                 try:
                     result = await self.call_rpc_local(
                         api_name=rpc_message.api_name,
@@ -125,6 +126,7 @@ class BusClient(object):
                     # Used to simulate message failure for testing
                     pass
                 else:
+                    plugin_hook('after_rpc_execution', rpc_message=rpc_message, result=result, bus_client=self)
                     await self.send_result(rpc_message=rpc_message, result=result)
 
     async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict, timeout=5):
@@ -142,6 +144,9 @@ class BusClient(object):
             self.rpc_transport.call_rpc(rpc_message),
             return_exceptions=True
         )
+
+        plugin_hook('before_rpc_call', rpc_message=rpc_message, bus_client=self)
+
         try:
             result, _ = await asyncio.wait_for(future, timeout=timeout)
         except asyncio.TimeoutError:
@@ -152,6 +157,8 @@ class BusClient(object):
             raise LightbusTimeout('Timeout when calling RPC {} after {} seconds'.format(
                 rpc_message.canonical_name, timeout
             )) from None
+
+        plugin_hook('after_rpc_call', rpc_message=rpc_message, result=result, bus_client=self)
 
         if not result.get('error'):
             logger.info(L("⚡ Remote call of {} completed in {}", Bold(rpc_message.canonical_name), human_time(time.time() - start_time)))
@@ -195,12 +202,14 @@ class BusClient(object):
         try:
             async with self.event_transport.consume_events() as event_messages:
                 for event_message in event_messages:
+                    plugin_hook('before_event_execution', event_message=event_message, bus_client=self)
                     key = (event_message.api_name, event_message.event_name)
                     for listener in self._listeners.get(key, []):
                         # TODO: Run in parallel/gathered?
                         co = listener(**event_message.kwargs)
                         if isinstance(co, (CoroWrapper, asyncio.Future)):
                             await co
+                    plugin_hook('after_event_execution', event_message=event_message, bus_client=self)
 
         except SuddenDeathException:
             # Useful for simulating crashes in testing.
@@ -240,6 +249,7 @@ class BusClient(object):
             )
 
         event_message = EventMessage(api_name=api.meta.name, event_name=name, kwargs=kwargs)
+        plugin_hook('before_event_sent', event_message=event_message, bus_client=self)
         await self.event_transport.send_event(event_message)
 
     async def listen_for_event(self, api_name, name, listener):
