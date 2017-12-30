@@ -31,15 +31,20 @@ def test_autoload_plugins():
     ]
 
 
-def test_plugin_hook(mocker):
+@pytest.mark.run_loop
+async def test_plugin_hook(mocker):
     """Ensure calling plugin_hook() calls the method on the plugin"""
     assert get_plugins() == OrderedDict()
     plugin = LightbusPlugin()
     manually_set_plugins(OrderedDict([
         ('p1', plugin),
     ]))
-    m = mocker.patch.object(plugin, 'before_server_start')
-    plugin_hook('before_server_start', bus_client=None, loop=None)
+
+    async def dummy_coroutine(*args, **kwargs):
+        pass
+    m = mocker.patch.object(plugin, 'before_server_start', return_value=dummy_coroutine())
+
+    await plugin_hook('before_server_start', bus_client=None, loop=None)
     assert m.called
 
 

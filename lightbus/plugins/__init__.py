@@ -20,34 +20,32 @@ class LightbusPlugin(object):
     def __str__(self):
         return '{}.{}'.format(self.__class__.__module__, self.__class__.__name__)
 
-    def before_server_start(self, *, bus_client: 'lightbus.bus.BusClient', loop: AbstractEventLoop):
+    async def before_server_start(self, *, bus_client: 'lightbus.bus.BusClient', loop: AbstractEventLoop):
         pass
 
-    def after_server_stopped(self, *, bus_client: 'lightbus.bus.BusClient', loop: AbstractEventLoop):
+    async def after_server_stopped(self, *, bus_client: 'lightbus.bus.BusClient', loop: AbstractEventLoop):
         pass
 
-    def before_rpc_call(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def before_rpc_call(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):
         pass
 
-    def after_rpc_call(self, *, rpc_message: RpcMessage, result: dict, bus_client: 'lightbus.bus.BusClient'):
+    async def after_rpc_call(self, *, rpc_message: RpcMessage, result: dict, bus_client: 'lightbus.bus.BusClient'):
         pass
 
-    def before_rpc_execution(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def before_rpc_execution(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):
         pass
 
-    def after_rpc_execution(self, *, rpc_message: RpcMessage, result: dict, bus_client: 'lightbus.bus.BusClient'):
+    async def after_rpc_execution(self, *, rpc_message: RpcMessage, result: dict, bus_client: 'lightbus.bus.BusClient'):
         pass
 
-    def before_event_sent(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def before_event_sent(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
         pass
 
-    def before_event_execution(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def before_event_execution(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
         pass
 
-    def after_event_execution(self, *, event_message: EventMessage, result: dict, bus_client: 'lightbus.bus.BusClient'):
+    async def after_event_execution(self, *, event_message: EventMessage, result: dict, bus_client: 'lightbus.bus.BusClient'):
         pass
-
-
 
 
 def autoload_plugins():
@@ -101,10 +99,10 @@ def is_plugin_loaded(plugin_class: Type[LightbusPlugin]):
     return plugin_class in [type(p) for p in _plugins.values()]
 
 
-def plugin_hook(name, **kwargs):
+async def plugin_hook(name, **kwargs):
     global _plugins
     if _plugins is None:
-        raise PluginsNotLoaded("You must call load_plugins() before calling plugin_hook().")
+        raise PluginsNotLoaded("You must call load_plugins() before calling plugin_hook('{}').".format(name))
     if name not in _hooks_names:
         raise PluginHookNotFound("Plugin hook '{}' could not be found. Must be one of: {}".format(
             name,
@@ -116,6 +114,6 @@ def plugin_hook(name, **kwargs):
         handler = getattr(plugin, name, None)
         if handler:
             return_values.append(
-                handler(**kwargs)
+                await handler(**kwargs)
             )
     return return_values

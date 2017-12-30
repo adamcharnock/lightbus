@@ -34,6 +34,19 @@ class BusClient(object):
         self.event_transport = event_transport
         self._listeners = {}
 
+    def setup(self, plugins: dict=None):
+        if plugins is None:
+            logger.debug("Auto-loading any installed Lightbus plugins...")
+            plugins = autoload_plugins()
+        else:
+            logger.debug("Loading explicitly specified Lightbus plugins....")
+            manually_set_plugins(plugins)
+
+        if plugins:
+            logger.info(LBullets("Loaded the following plugins ({})".format(len(plugins)), items=plugins))
+        else:
+            logger.info("No plugins loaded")
+
     def run_forever(self, *, loop=None, consume_rpcs=True, consume_events=True, plugins=None):
         logger.info(LBullets(
             "Lightbus getting ready to run. Brokers in use",
@@ -53,18 +66,7 @@ class BusClient(object):
             }
         ))
 
-        if plugins is None:
-            logger.debug("Auto-loading any installed Lightbus plugins...")
-            plugins = autoload_plugins()
-        else:
-            logger.debug("Loading explicitly specified Lightbus plugins....")
-            manually_set_plugins(plugins)
-
-        if plugins:
-            logger.info(LBullets("Loaded the following plugins ({})".format(len(plugins)), items=plugins))
-        else:
-            logger.info("No plugins loaded")
-
+        self.setup(plugins=plugins)
         registry.add(LightbusStateApi())
         registry.add(LightbusMetricsApi())
 
@@ -87,9 +89,11 @@ class BusClient(object):
                     )
                     return
 
-        plugin_hook('before_server_start', bus_client=self, loop=loop)
 
         loop = loop or asyncio.get_event_loop()
+        loop.run_until_complete(handle_aio_exceptions(
+            plugin_hook('before_server_start', bus_client=self, loop=loop)
+        ))
 
         if consume_rpcs and registry.all():
             asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs()), loop=loop)
@@ -104,7 +108,9 @@ class BusClient(object):
             for task in asyncio.Task.all_tasks():
                 task.cancel()
 
+        loop.run_until_complete(handle_aio_exceptions(
             plugin_hook('after_server_stopped', bus_client=self, loop=loop)
+        ))
 
     # RPCs
 
@@ -115,7 +121,7 @@ class BusClient(object):
         while True:
             rpc_messages = await self.rpc_transport.consume_rpcs(apis)
             for rpc_message in rpc_messages:
-                plugin_hook('before_rpc_execution', rpc_message=rpc_message, bus_client=self)
+                await plugin_hook('before_rpc_execution', rpc_message=rpc_message, bus_client=self)
                 try:
                     result = await self.call_rpc_local(
                         api_name=rpc_message.api_name,
@@ -126,7 +132,7 @@ class BusClient(object):
                     # Used to simulate message failure for testing
                     pass
                 else:
-                    plugin_hook('after_rpc_execution', rpc_message=rpc_message, result=result, bus_client=self)
+                    await plugin_hook('after_rpc_execution', rpc_message=rpc_message, result=result, bus_client=self)
                     await self.send_result(rpc_message=rpc_message, result=result)
 
     async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict, timeout=5):
@@ -145,7 +151,7 @@ class BusClient(object):
             return_exceptions=True
         )
 
-        plugin_hook('before_rpc_call', rpc_message=rpc_message, bus_client=self)
+        await plugin_hook('before_rpc_call', rpc_message=rpc_message, bus_client=self)
 
         try:
             result, _ = await asyncio.wait_for(future, timeout=timeout)
@@ -158,7 +164,7 @@ class BusClient(object):
                 rpc_message.canonical_name, timeout
             )) from None
 
-        plugin_hook('after_rpc_call', rpc_message=rpc_message, result=result, bus_client=self)
+        await plugin_hook('after_rpc_call', rpc_message=rpc_message, result=result, bus_client=self)
 
         if not result.get('error'):
             logger.info(L("⚡ Remote call of {} completed in {}", Bold(rpc_message.canonical_name), human_time(time.time() - start_time)))
@@ -202,14 +208,14 @@ class BusClient(object):
         try:
             async with self.event_transport.consume_events() as event_messages:
                 for event_message in event_messages:
-                    plugin_hook('before_event_execution', event_message=event_message, bus_client=self)
+                    await plugin_hook('before_event_execution', event_message=event_message, bus_client=self)
                     key = (event_message.api_name, event_message.event_name)
                     for listener in self._listeners.get(key, []):
                         # TODO: Run in parallel/gathered?
                         co = listener(**event_message.kwargs)
                         if isinstance(co, (CoroWrapper, asyncio.Future)):
                             await co
-                    plugin_hook('after_event_execution', event_message=event_message, bus_client=self)
+                    await plugin_hook('after_event_execution', event_message=event_message, bus_client=self)
 
         except SuddenDeathException:
             # Useful for simulating crashes in testing.
@@ -249,7 +255,7 @@ class BusClient(object):
             )
 
         event_message = EventMessage(api_name=api.meta.name, event_name=name, kwargs=kwargs)
-        plugin_hook('before_event_sent', event_message=event_message, bus_client=self)
+        await plugin_hook('before_event_sent', event_message=event_message, bus_client=self)
         await self.event_transport.send_event(event_message)
 
     async def listen_for_event(self, api_name, name, listener):
