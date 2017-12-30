@@ -35,6 +35,12 @@ class BusClient(object):
         self._listeners = {}
 
     def setup(self, plugins: dict=None):
+        """Setup lightbus and get it ready to consume events and/or RPCs
+
+        You should call this manually if you are calling `consume_rpcs()` or
+        `consume_events()` directly. This you be handled for you if you are
+        calling `run_forever()`.
+        """
         if plugins is None:
             logger.debug("Auto-loading any installed Lightbus plugins...")
             plugins = autoload_plugins()
