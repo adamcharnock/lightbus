@@ -16,13 +16,13 @@ class TestApi(Api):
         name = 'example.test'
 
 
-def test_before_server_start(dummy_bus: BusNode, loop, mocker):
+async def test_before_server_start(dummy_bus: BusNode, loop, mocker):
     m = mocker.patch.object(DebugEventTransport, 'send_event')
 
     registry.add(TestApi())
     dummy_bus.example.test.my_event.listen(lambda: None)
 
-    StatePlugin().before_server_start(bus_client=dummy_bus.bus_client, loop=loop)
+    await StatePlugin().before_server_start(bus_client=dummy_bus.bus_client, loop=loop)
     assert m.called
     (event_message, ), _ = m.call_args
     assert event_message.api_name == 'internal.state'
@@ -33,7 +33,7 @@ def test_before_server_start(dummy_bus: BusNode, loop, mocker):
     assert event_message.kwargs['metrics_enabled'] == False
 
 
-def test_after_server_stopped(dummy_bus: BusNode, loop, mocker):
+async def test_after_server_stopped(dummy_bus: BusNode, loop, mocker):
     async def dummy_coroutine(*args, **kwargs):
         pass
     m = mocker.patch.object(DebugEventTransport, 'send_event', return_value=dummy_coroutine())
@@ -41,7 +41,7 @@ def test_after_server_stopped(dummy_bus: BusNode, loop, mocker):
     registry.add(TestApi())
     dummy_bus.example.test.my_event.listen(lambda: None)
 
-    StatePlugin().after_server_stopped(bus_client=dummy_bus.bus_client, loop=loop)
+    await StatePlugin().after_server_stopped(bus_client=dummy_bus.bus_client, loop=loop)
     assert m.called
     (event_message, ), _ = m.call_args
     assert event_message.api_name == 'internal.state'
