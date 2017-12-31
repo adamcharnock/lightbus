@@ -158,13 +158,14 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
             start_time = time.time()
             # TODO: Make timeout configurable
             _, result = await redis.blpop(redis_key, timeout=5)
-            result = redis_decode(result)
+            result_dictionary = redis_decode(result)
 
         logger.info(L(
             "⬅ Received Redis result in {} for RPC message {}: {}",
             human_time(time.time() - start_time), rpc_message, Bold(result)
         ))
-        return result
+
+        return ResultMessage.from_dict(result_dictionary)
 
     def _parse_return_path(self, return_path: str) -> str:
         assert return_path.startswith('redis+key://')

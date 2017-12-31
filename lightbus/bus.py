@@ -101,6 +101,13 @@ class BusClient(object):
             plugin_hook('before_server_start', bus_client=self, loop=loop)
         ))
 
+        self._run_forever(loop, consume_rpcs, consume_events)
+
+        loop.run_until_complete(handle_aio_exceptions(
+            plugin_hook('after_server_stopped', bus_client=self, loop=loop)
+        ))
+
+    def _run_forever(self, loop, consume_rpcs, consume_events):
         if consume_rpcs and registry.all():
             asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs()), loop=loop)
         if consume_events:
@@ -113,10 +120,6 @@ class BusClient(object):
         finally:
             for task in asyncio.Task.all_tasks():
                 task.cancel()
-
-        loop.run_until_complete(handle_aio_exceptions(
-            plugin_hook('after_server_stopped', bus_client=self, loop=loop)
-        ))
 
     # RPCs
 
@@ -154,13 +157,12 @@ class BusClient(object):
         future = asyncio.gather(
             self.result_transport.receive_result(rpc_message, return_path),
             self.rpc_transport.call_rpc(rpc_message),
-            return_exceptions=True
         )
 
         await plugin_hook('before_rpc_call', rpc_message=rpc_message, bus_client=self)
 
         try:
-            result, _ = await asyncio.wait_for(future, timeout=timeout)
+            result_message, _ = await asyncio.wait_for(future, timeout=timeout)
         except asyncio.TimeoutError:
             future.cancel()
             # TODO: Include description of possible causes and how to increase the timeout.
@@ -170,25 +172,25 @@ class BusClient(object):
                 rpc_message.canonical_name, timeout
             )) from None
 
-        await plugin_hook('after_rpc_call', rpc_message=rpc_message, result=result, bus_client=self)
+        await plugin_hook('after_rpc_call', rpc_message=rpc_message, result_message=result_message, bus_client=self)
 
-        if not result.get('error'):
+        if not result_message.error:
             logger.info(L("⚡ Remote call of {} completed in {}", Bold(rpc_message.canonical_name), human_time(time.time() - start_time)))
         else:
             logger.warning(
                 L("⚡ Server error during remote call of {}. Took {}: {}",
                   Bold(rpc_message.canonical_name),
                   human_time(time.time() - start_time),
-                  result.get('result'),
+                  result_message.result,
                 ),
             )
             raise LightbusServerError('Error while calling {}: {}\nRemote stack trace:\n{}'.format(
                 rpc_message.canonical_name,
-                result.get('result'),
-                result.get('trace'),
+                result_message.result,
+                result_message.trace,
             ))
 
-        return result.get('result')
+        return result_message.result
 
     async def call_rpc_local(self, api_name: str, name: str, kwargs: dict):
         api = registry.get(api_name)
@@ -360,6 +362,7 @@ def create(
         event_transport: Optional['EventTransport'] = None,
         client_class=BusClient,
         node_class=BusNode,
+        plugins=None,
         **kwargs) -> BusNode:
 
     bus_client = client_class(
@@ -368,4 +371,5 @@ def create(
         event_transport=event_transport or RedisEventTransport(),
         **kwargs
     )
+    bus_client.setup(plugins=plugins)
     return node_class(name='', parent=None, bus_client=bus_client)

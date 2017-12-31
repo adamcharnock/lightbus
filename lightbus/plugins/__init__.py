@@ -6,7 +6,7 @@ from collections import OrderedDict
 import pkg_resources
 import lightbus
 from lightbus.exceptions import PluginsNotLoaded, PluginHookNotFound
-from lightbus.message import RpcMessage, EventMessage
+from lightbus.message import RpcMessage, EventMessage, ResultMessage
 
 _plugins = None
 _hooks_names = []
@@ -29,7 +29,7 @@ class LightbusPlugin(object):
     async def before_rpc_call(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):
         pass
 
-    async def after_rpc_call(self, *, rpc_message: RpcMessage, result: dict, bus_client: 'lightbus.bus.BusClient'):
+    async def after_rpc_call(self, *, rpc_message: RpcMessage, result_message: ResultMessage, bus_client: 'lightbus.bus.BusClient'):
         pass
 
     async def before_rpc_execution(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):
@@ -44,7 +44,7 @@ class LightbusPlugin(object):
     async def before_event_execution(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
         pass
 
-    async def after_event_execution(self, *, event_message: EventMessage, result: dict, bus_client: 'lightbus.bus.BusClient'):
+    async def after_event_execution(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
         pass
 
 

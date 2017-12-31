@@ -8,7 +8,6 @@ from lightbus.api import registry
 from lightbus.message import EventMessage
 from lightbus.plugins import LightbusPlugin, is_plugin_loaded
 from lightbus.plugins.metrics import MetricsPlugin
-from lightbus.utilities import handle_aio_exceptions, block
 
 
 class StatePlugin(LightbusPlugin):

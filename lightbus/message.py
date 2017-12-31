@@ -80,9 +80,19 @@ class RpcMessage(Message):
 
 class ResultMessage(Message):
 
-    def __init__(self, *, result):
-        self.result = result
-        self.error = isinstance(result, BaseException)
+    def __init__(self, *, result, error: bool=False, trace: str=None):
+        if isinstance(result, BaseException):
+            self.result = str(result)
+            self.error = True
+            self.trace = ''.join(traceback.format_exception(
+                etype=type(result),
+                value=result,
+                tb=result.__traceback__
+            ))
+        else:
+            self.result = result
+            self.error = error
+            self.trace = trace
 
     def __repr__(self):
         if self.error:
@@ -95,15 +105,10 @@ class ResultMessage(Message):
 
     def to_dict(self) -> dict:
         if self.error:
-            trace = ''.join(traceback.format_exception(
-                etype=type(self.result),
-                value=self.result,
-                tb=self.result.__traceback__
-            ))
             return {
                 'result': str(self.result),
                 'error': True,
-                'trace': trace
+                'trace': self.trace
             }
         else:
             return {
@@ -118,11 +123,12 @@ class ResultMessage(Message):
                 "Required key 'result' not present in ResultMessage data. "
                 "Found keys: {}".format(', '.join(dictionary.keys()))
             )
-        result = dictionary.get('result')
-        if not result:
-            raise InvalidRpcMessage("Required key 'result' is present in message data, but is empty")
 
-        return cls(result=result)
+        return cls(
+            result=dictionary.get('result'),
+            error=dictionary.get('error', False),
+            trace=dictionary.get('trace', None),
+        )
 
 
 class EventMessage(Message):

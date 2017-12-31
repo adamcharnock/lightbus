@@ -16,11 +16,14 @@ class TestApi(Api):
         name = 'example.test'
 
 
+@pytest.mark.run_loop
 async def test_before_server_start(dummy_bus: BusNode, loop, mocker):
-    m = mocker.patch.object(DebugEventTransport, 'send_event')
+    async def dummy_coroutine(*args, **kwargs):
+        pass
+    m = mocker.patch.object(DebugEventTransport, 'send_event', return_value=dummy_coroutine())
 
     registry.add(TestApi())
-    dummy_bus.example.test.my_event.listen(lambda: None)
+    await dummy_bus.example.test.my_event.listen_async(lambda: None)
 
     await StatePlugin().before_server_start(bus_client=dummy_bus.bus_client, loop=loop)
     assert m.called
@@ -33,13 +36,14 @@ async def test_before_server_start(dummy_bus: BusNode, loop, mocker):
     assert event_message.kwargs['metrics_enabled'] == False
 
 
+@pytest.mark.run_loop
 async def test_after_server_stopped(dummy_bus: BusNode, loop, mocker):
     async def dummy_coroutine(*args, **kwargs):
         pass
     m = mocker.patch.object(DebugEventTransport, 'send_event', return_value=dummy_coroutine())
 
     registry.add(TestApi())
-    dummy_bus.example.test.my_event.listen(lambda: None)
+    await dummy_bus.example.test.my_event.listen_async(lambda: None)
 
     await StatePlugin().after_server_stopped(bus_client=dummy_bus.bus_client, loop=loop)
     assert m.called

@@ -59,10 +59,13 @@ async def test_receive_result(redis_result_transport: RedisResultTransport, redi
 
     redis_client.lpush(
         key='my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e',
-        value=json.dumps('All done! 😎'),
+        value=json.dumps({
+            'result': 'All done! 😎',
+            'error': False,
+        }),
     )
 
-    result = await redis_result_transport.receive_result(
+    result_message = await redis_result_transport.receive_result(
         rpc_message=RpcMessage(
             api_name='my.api',
             procedure_name='my_proc',
@@ -71,4 +74,5 @@ async def test_receive_result(redis_result_transport: RedisResultTransport, redi
         ),
         return_path='redis+key://my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e',
     )
-    assert result == 'All done! 😎'
+    assert result_message.result == 'All done! 😎'
+    assert result_message.error == False

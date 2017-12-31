@@ -135,13 +135,14 @@ def new_redis_client(create_redis_client, server, loop):
 
 
 @pytest.fixture
-def new_redis_pool(create_redis_pool, server, loop):
+def new_redis_pool(_closable, create_redis_pool, server, loop):
     """Useful when you need multiple redis connections."""
     def make_new(**kwargs):
         redis = loop.run_until_complete(
             create_redis_pool(server.tcp_address, loop=loop, **kwargs)
         )
         loop.run_until_complete(redis.flushall())
+        # TODO: Tests that error often claim redis tasks are still running.
         return redis
     return make_new
 
