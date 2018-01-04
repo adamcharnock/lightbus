@@ -1,4 +1,4 @@
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Any
 
 import asyncio_extras
 
@@ -83,7 +83,7 @@ class EventTransport(object):
             on_consumed=self.consumption_complete,
         )
 
-    async def fetch_events(self) -> Tuple[Sequence[EventMessage], ...]:
+    async def fetch_events(self) -> Tuple[Sequence[EventMessage], Any]:
         """Consume RPC events for the given API
 
         Must return a tuple, where the first item is a iterable of

@@ -4,7 +4,7 @@ import logging
 
 import asyncio_extras
 from collections import OrderedDict
-from typing import Sequence, Tuple, Optional
+from typing import Sequence, Tuple, Optional, Any
 from uuid import uuid1
 
 import time
@@ -204,7 +204,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             Bold(event_message), human_time(time.time() - start_time), Bold(stream)
         ))
 
-    async def fetch_events(self) -> Tuple[Sequence[EventMessage], ...]:
+    async def fetch_events(self) -> Tuple[Sequence[EventMessage], Any]:
         pool = await self.get_redis_pool()
         with await pool as redis:
             if not self._streams:

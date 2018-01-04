@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Any
 
 import asyncio_extras
 
@@ -58,7 +58,7 @@ class DebugEventTransport(EventTransport):
             event_message.kwargs
         ))
 
-    async def fetch_events(self) -> Tuple[Sequence[EventMessage], ...]:
+    async def fetch_events(self) -> Tuple[Sequence[EventMessage], Any]:
         """Consume RPC events for the given API"""
 
         logger.info("⌛ Faking listening for events {}. Will issue a fake event in 2 seconds...".format(self._events))
