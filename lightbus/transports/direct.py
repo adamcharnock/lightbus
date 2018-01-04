@@ -2,8 +2,6 @@ import asyncio
 import logging
 from typing import Sequence
 
-import asyncio_extras
-
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
 from lightbus.api import registry, Api
 from lightbus.exceptions import UnsupportedUse

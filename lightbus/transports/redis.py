@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 
-import asyncio_extras
 from collections import OrderedDict
 from typing import Sequence, Tuple, Optional, Any
 from uuid import uuid1

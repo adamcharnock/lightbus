@@ -1,7 +1,5 @@
 from typing import Sequence, Tuple, Any
 
-import asyncio_extras
-
 from lightbus.api import Api
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 from lightbus.utilities import MessageConsumptionContext
