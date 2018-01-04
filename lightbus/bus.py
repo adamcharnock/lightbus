@@ -329,7 +329,7 @@ class BusNode(object):
         return await self.bus_client.fire_event(api_name=self.api_name, name=self.name, kwargs=kwargs)
 
     def fire(self, **kwargs):
-        return block(self.fire_asyn(**kwargs), timeout=5)
+        return block(self.fire_async(**kwargs), timeout=5)
 
     # Utilities
 

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Sequence
+from typing import Sequence, Tuple
 
 import asyncio_extras
 
@@ -20,7 +20,7 @@ class DebugRpcTransport(RpcTransport):
     async def consume_rpcs(self, api) -> Sequence[RpcMessage]:
         """Consume RPC calls for the given API"""
         logger.debug("Faking consumption of RPCs. Waiting 1 second before issuing fake RPC call...")
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.1)
         logger.debug("Issuing fake RPC call")
         return [RpcMessage(api_name='my_company.auth', procedure_name='check_password', kwargs=dict(
             username='admin',
@@ -38,7 +38,7 @@ class DebugResultTransport(ResultTransport):
 
     async def receive_result(self, rpc_message: RpcMessage, return_path: str) -> ResultMessage:
         logger.info("⌛ Faking listening for results. Will issue fake result in 0.5 seconds...")
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.1)
         logger.debug('Faking received result')
 
         return ResultMessage(result='Fake result')
@@ -58,23 +58,25 @@ class DebugEventTransport(EventTransport):
             event_message.kwargs
         ))
 
-    async def fetch_events(self) -> Sequence[EventMessage]:
+    async def fetch_events(self) -> Tuple[Sequence[EventMessage], ...]:
         """Consume RPC events for the given API"""
 
         logger.info("⌛ Faking listening for events {}. Will issue a fake event in 2 seconds...".format(self._events))
-        self._task = asyncio.ensure_future(asyncio.sleep(2))
+        self._task = asyncio.ensure_future(asyncio.sleep(0.1))
 
         try:
             await self._task
         except asyncio.CancelledError as e:
             logger.debug('Event consumption cancelled.')
-            yield []
+            event_messages = []
         else:
             logger.debug('Faking received result')
-            yield [
+            event_messages = [
                 EventMessage(api_name='my_company.auth',
                              event_name='user_registered', kwargs={'example': 'value'})
             ]
+
+        return event_messages, None
 
     async def start_listening_for(self, api_name, event_name):
         logger.info('Beginning to listen for {}.{}'.format(api_name, event_name))

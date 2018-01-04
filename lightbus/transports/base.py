@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Tuple
 
 import asyncio_extras
 
@@ -83,16 +83,22 @@ class EventTransport(object):
             on_consumed=self.consumption_complete,
         )
 
-    async def fetch_events(self) -> Sequence[EventMessage]:
+    async def fetch_events(self) -> Tuple[Sequence[EventMessage], ...]:
         """Consume RPC events for the given API
+
+        Must return a tuple, where the first item is a iterable of
+        event messages and the second item is an arbitrary value which will
+        be passed to consumption_complete() (below) should the events
+        be executed successfully.
 
         Events that the bus is not listening for may be returned, they
         will simply be ignored.
+
         """
         raise NotImplementedError()
 
     async def consumption_complete(self, extra):
-        raise NotImplementedError()
+        pass
 
     async def start_listening_for(self, api_name, event_name):
         """Instruct this transport to start listening for the given event"""

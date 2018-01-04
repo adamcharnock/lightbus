@@ -26,6 +26,9 @@ def called_hooks(mocker):
 
 @pytest.fixture
 def add_base_plugin():
+    # Add the base plugin so that the plugins framework has something to call
+    # None of the base plugin's methods do anything, but it allows our
+    # called_hooks() fixture above to detch the call
     def do_add_base_plugin():
         manually_set_plugins(plugins={'base': LightbusPlugin()})
     return do_add_base_plugin
@@ -67,3 +70,16 @@ async def test_rpc_execution(called_hooks, dummy_bus: BusNode, loop, mocker, add
         pass
 
     assert called_hooks() == ['before_rpc_execution', 'after_rpc_execution']
+
+
+def test_event_sent(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dummy_api):
+    add_base_plugin()
+    dummy_bus.my.dummy.my_event.fire(field='foo')
+    assert called_hooks() == ['before_event_sent']
+
+
+@pytest.mark.run_loop
+async def test_event_execution(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dummy_api):
+    add_base_plugin()
+    await dummy_bus.bus_client._consume_events_once()
+    assert called_hooks() == ['before_event_execution', 'after_event_execution']
