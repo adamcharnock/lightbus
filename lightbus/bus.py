@@ -210,7 +210,15 @@ class BusClient(object):
 
     async def consume_events(self):
         while True:
-            await self._consume_events_once()
+            try:
+                logging.warning("Calling _consume_events_once()")
+                await self._consume_events_once()
+            except BaseException as e:
+                logging.warning("Exception calling _consume_events_once()")
+                logging.exception(e)
+                raise
+            else:
+                logging.warning("Done calling _consume_events_once()")
 
     async def _consume_events_once(self):
         try:
