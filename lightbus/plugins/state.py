@@ -114,5 +114,7 @@ class StatePlugin(LightbusPlugin):
             api_names=[api.meta.name for api in registry.public()],
             listening_for=['{}.{}'.format(api_name, event_name) for api_name, event_name in bus_client._listeners.keys()],
             timestamp=datetime.utcnow().timestamp(),
+            ping_enabled=self.do_ping,
+            ping_interval=self.ping_interval,
         )
 
