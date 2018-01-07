@@ -17,6 +17,28 @@ logger = logging.getLogger(__name__)
 
 
 class StatePlugin(LightbusPlugin):
+    """Fire events to the bus regarding the state of this Lightbus server
+
+    This plugin allows the state of each Lightbus server to be monitored
+    via the bus itself. This is provided by the `internal.state` API.
+
+    This plugin provides coarse monitoring in the following form:
+
+      - Server started events
+      - Server ping events - indicate the server is alive. Sent every 60 seconds by default
+      - Server shutdown events
+      - Metrics enabled/disabled
+      - Api registered/deregistered
+      - Event listening started/stopped
+
+    See `lightbus.internal_apis.LightbusStateApi` for more details on the events provided.
+
+    Note that this plugin provides the basic events required in order for the
+    Lightbus admin interface to function. It is therefore suggested that you leave
+    it in operation as the traffic generated should be minimal.
+
+    Per-message events are available via the MetricsPlugin, which is substantially higher volume.
+    """
     priority = 100
 
     def __init__(self):
