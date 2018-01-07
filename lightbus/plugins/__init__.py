@@ -1,3 +1,4 @@
+from argparse import ArgumentParser, _ArgumentGroup, Namespace
 from asyncio import AbstractEventLoop
 from typing import Sequence, Dict, Type
 
@@ -19,6 +20,12 @@ class LightbusPlugin(object):
 
     def __str__(self):
         return '{}.{}'.format(self.__class__.__module__, self.__class__.__name__)
+
+    async def before_parse_args(self, *, parser: ArgumentParser, subparsers: _ArgumentGroup):
+        pass
+
+    async def after_parse_args(self, args: Namespace):
+        pass
 
     async def before_server_start(self, *, bus_client: 'lightbus.bus.BusClient', loop: AbstractEventLoop):
         pass
@@ -48,9 +55,14 @@ class LightbusPlugin(object):
         pass
 
 
-def autoload_plugins():
+def autoload_plugins(force=False):
     global _plugins, _hooks_names
     load_hook_names()
+
+    if force:
+        remove_all_plugins()
+    if _plugins:
+        return _plugins
 
     found_plugins = []
     for entrypoint in pkg_resources.iter_entry_points(ENTRYPOINT_NAME):

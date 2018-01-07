@@ -95,12 +95,11 @@ class BusClient(object):
                     )
                     return
 
+        block(handle_aio_exceptions(
+            plugin_hook('before_server_start', bus_client=self, loop=loop)
+        ), timeout=5)
 
         loop = loop or asyncio.get_event_loop()
-        loop.run_until_complete(handle_aio_exceptions(
-            plugin_hook('before_server_start', bus_client=self, loop=loop)
-        ))
-
         self._run_forever(loop, consume_rpcs, consume_events)
 
         loop.run_until_complete(handle_aio_exceptions(

@@ -6,7 +6,8 @@ import logging
 import sys
 
 from lightbus.bus import create
-from lightbus.utilities import import_from_string, configure_logging, autodiscover
+from lightbus.plugins import autoload_plugins, plugin_hook
+from lightbus.utilities import import_from_string, configure_logging, autodiscover, block
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +42,18 @@ def parse_args(args=None):
         '--event-transport', help='Event transport class to use', default='lightbus.RedisEventTransport'
     )
 
+    autoload_plugins()
+    block(plugin_hook('before_parse_args', parser=parser, subparsers=subparsers), timeout=5)
+
     # parser_run_connection_group = parser_run.add_argument_group(title='Connection options')
     # parser_run_connection_group.add_argument(
     #     '--redis-url', help='URL to Redis server when using Redis-based transports', default='redis://localhost:6379/0'
     # )
 
-    return parser.parse_args(sys.argv[1:] if args is None else args)
+    args = parser.parse_args(sys.argv[1:] if args is None else args)
+    block(plugin_hook('after_parse_args', args=args), timeout=5)
+
+    return args
 
 
 def command_run(args, dry_run=False):
