@@ -1,6 +1,6 @@
 from argparse import ArgumentParser, _ArgumentGroup, Namespace
 from asyncio import AbstractEventLoop
-from typing import Sequence, Dict, Type
+from typing import Sequence, Dict, Type, Any
 
 from collections import OrderedDict
 
@@ -42,7 +42,7 @@ class LightbusPlugin(object):
     async def before_rpc_execution(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):
         pass
 
-    async def after_rpc_execution(self, *, rpc_message: RpcMessage, result: dict, bus_client: 'lightbus.bus.BusClient'):
+    async def after_rpc_execution(self, *, rpc_message: RpcMessage, result: Any, bus_client: 'lightbus.bus.BusClient'):
         pass
 
     async def before_event_sent(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):

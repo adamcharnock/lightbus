@@ -26,10 +26,10 @@ class LightbusStateApi(Api):
 
 
 class LightbusMetricsApi(Api):
-    rpc_call_sent = Event(arguments=['process_name', 'rpc_id', 'api_name', 'rpc_name', 'kwargs', 'timestamp'])
-    rpc_call_received = Event(arguments=['process_name', 'rpc_id', 'api_name', 'rpc_name', 'timestamp'])
-    rpc_response_sent = Event(arguments=['process_name', 'rpc_id', 'api_name', 'rpc_name', 'response', 'timestamp'])
-    rpc_response_received = Event(arguments=['process_name', 'rpc_id', 'api_name', 'rpc_name', 'timestamp'])
+    rpc_call_sent = Event(arguments=['process_name', 'rpc_id', 'api_name', 'procedure_name', 'kwargs', 'timestamp'])
+    rpc_call_received = Event(arguments=['process_name', 'rpc_id', 'api_name', 'procedure_name', 'timestamp'])
+    rpc_response_sent = Event(arguments=['process_name', 'rpc_id', 'api_name', 'procedure_name', 'result', 'timestamp'])
+    rpc_response_received = Event(arguments=['process_name', 'rpc_id', 'api_name', 'procedure_name', 'timestamp'])
 
     event_fired = Event(arguments=['process_name', 'event_id', 'api_name', 'event_name', 'kwargs', 'timestamp'])
     event_received = Event(arguments=['process_name', 'event_id', 'api_name', 'event_name', 'kwargs', 'timestamp'])
