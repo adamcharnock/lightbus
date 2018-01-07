@@ -3,6 +3,7 @@ from lightbus.api import Api, Event
 
 class LightbusStateApi(Api):
     server_started = Event(arguments=['process_name', 'metrics_enabled', 'api_names', 'listening_for', 'timestamp'])
+    server_ping = Event(arguments=['process_name', 'metrics_enabled', 'api_names', 'listening_for', 'timestamp'])
     server_stopped = Event(arguments=['process_name', 'timestamp'])
 
     metrics_enabled = Event(arguments=['process_name', 'timestamp'])
