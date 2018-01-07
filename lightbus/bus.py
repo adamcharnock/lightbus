@@ -213,6 +213,8 @@ class BusClient(object):
             try:
                 logging.warning("Calling _consume_events_once()")
                 await self._consume_events_once()
+            except CancelledError:
+                return
             except BaseException as e:
                 logging.warning("Exception calling _consume_events_once()")
                 logging.exception(e)
