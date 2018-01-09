@@ -93,7 +93,7 @@ class MetricsPlugin(LightbusPlugin):
         kwargs.setdefault('timestamp', datetime.utcnow().timestamp())
         return bus_client.event_transport.send_event(
             EventMessage(
-                api_name='internal.state',
+                api_name='internal.metrics',
                 event_name=event_name,
                 kwargs=kwargs
             )

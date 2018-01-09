@@ -1,3 +1,4 @@
+"""Test the infrastructure for loading and calling plugins"""
 import pytest
 from collections import OrderedDict
 
