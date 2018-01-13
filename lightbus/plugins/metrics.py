@@ -44,13 +44,13 @@ class MetricsPlugin(LightbusPlugin):
                               procedure_name=rpc_message.procedure_name,
                               )
 
-    async def after_rpc_execution(self, *, rpc_message: RpcMessage, result: Any, bus_client: 'lightbus.bus.BusClient'):
+    async def after_rpc_execution(self, *, rpc_message: RpcMessage, result_message: ResultMessage, bus_client: 'lightbus.bus.BusClient'):
         await self.send_event(bus_client, 'rpc_response_sent',
                               process_name='foo',
                               rpc_id='rpc_id',
                               api_name=rpc_message.api_name,
                               procedure_name=rpc_message.procedure_name,
-                              result=result,
+                              result=result_message.result,
                               )
 
     # Client-side event hooks

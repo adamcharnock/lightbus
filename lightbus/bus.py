@@ -140,8 +140,10 @@ class BusClient(object):
                     # Used to simulate message failure for testing
                     pass
                 else:
-                    await plugin_hook('after_rpc_execution', rpc_message=rpc_message, result=result, bus_client=self)
-                    await self.send_result(rpc_message=rpc_message, result=result)
+                    result_message = ResultMessage(result=result, rpc_id=rpc_message.rpc_id)
+                    await plugin_hook('after_rpc_execution', rpc_message=rpc_message, result_message=result_message,
+                                      bus_client=self)
+                    await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
     async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict, timeout=5):
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)
@@ -290,8 +292,7 @@ class BusClient(object):
 
     # Results
 
-    async def send_result(self, rpc_message: RpcMessage, result: Any):
-        result_message = ResultMessage(result=result)
+    async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
         return await self.result_transport.send_result(rpc_message, result_message, rpc_message.return_path)
 
     async def receive_result(self, rpc_message: RpcMessage):

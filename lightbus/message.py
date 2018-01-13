@@ -1,5 +1,8 @@
 import traceback
 from typing import Optional, Dict, Any
+from uuid import uuid1
+
+from base64 import b64encode
 
 from lightbus.exceptions import InvalidRpcMessage
 
@@ -18,7 +21,8 @@ class Message(object):
 
 class RpcMessage(Message):
 
-    def __init__(self, *, api_name: str, procedure_name: str, kwargs: dict=Optional[None], return_path: Any=None):
+    def __init__(self, *, api_name: str, procedure_name: str, kwargs: dict=Optional[None], return_path: Any=None, rpc_id: str=''):
+        self.rpc_id = rpc_id or b64encode(uuid1().bytes).decode('utf8')
         self.api_name = api_name
         self.procedure_name = procedure_name
         self.kwargs = kwargs
@@ -39,6 +43,7 @@ class RpcMessage(Message):
 
     def to_dict(self) -> dict:
         dictionary = {
+            'rpc_id': self.rpc_id,
             'api_name': self.api_name,
             'procedure_name': self.procedure_name,
             'return_path': self.return_path or '',
@@ -53,17 +58,22 @@ class RpcMessage(Message):
         # TODO: Consider moving this encoding/decoding logic elsewhere
         # TODO: Handle non-string types for kwargs values (schema, encoding?)
         # TODO: Let's face it, this can all be neatened up quite a lot
-        for required_key in ('api_name', 'procedure_name'):
+        for required_key in ('api_name', 'procedure_name', 'rpc_id'):
             if required_key not in dictionary:
                 raise InvalidRpcMessage(
                     "Required key {} missing in RpcMessage data. "
                     "Found keys: {}".format(required_key, ', '.join(dictionary.keys()))
                 )
 
+        rpc_id = dictionary.get('rpc_id')
         api_name = dictionary.get('api_name')
         procedure_name = dictionary.get('procedure_name')
         return_path = dictionary.get('return_path')
 
+        if not rpc_id:
+            raise InvalidRpcMessage(
+                "Required key 'rpc_id' is present in {} data, but is empty.".format(cls.__name__)
+            )
         if not api_name:
             raise InvalidRpcMessage(
                 "Required key 'api_name' is present in {} data, but is empty.".format(cls.__name__)
@@ -75,12 +85,15 @@ class RpcMessage(Message):
 
         kwargs = {k[3:]: v for k, v in dictionary.items() if k.startswith('kw:')}
 
-        return cls(api_name=api_name, procedure_name=procedure_name, return_path=return_path, kwargs=kwargs)
+        return cls(api_name=api_name, procedure_name=procedure_name,
+                   return_path=return_path, kwargs=kwargs, rpc_id=rpc_id)
 
 
 class ResultMessage(Message):
 
-    def __init__(self, *, result, error: bool=False, trace: str=None):
+    def __init__(self, *, result, rpc_id, error: bool=False, trace: str=None):
+        self.rpc_id = rpc_id
+        
         if isinstance(result, BaseException):
             self.result = str(result)
             self.error = True
@@ -107,12 +120,14 @@ class ResultMessage(Message):
         if self.error:
             return {
                 'result': str(self.result),
+                'rpc_id': self.rpc_id,
                 'error': True,
                 'trace': self.trace
             }
         else:
             return {
                 'result': self.result,
+                'rpc_id': self.rpc_id,
                 'error': False
             }
 
@@ -123,9 +138,15 @@ class ResultMessage(Message):
                 "Required key 'result' not present in ResultMessage data. "
                 "Found keys: {}".format(', '.join(dictionary.keys()))
             )
+        if 'rpc_id' not in dictionary:
+            raise InvalidRpcMessage(
+                "Required key 'rpc_id' not present in ResultMessage data. "
+                "Found keys: {}".format(', '.join(dictionary.keys()))
+            )
 
         return cls(
-            result=dictionary.get('result'),
+            result=dictionary['result'],
+            rpc_id=dictionary['rpc_id'],
             error=dictionary.get('error', False),
             trace=dictionary.get('trace', None),
         )

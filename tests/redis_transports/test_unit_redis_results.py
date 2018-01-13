@@ -35,12 +35,14 @@ async def test_get_return_path(redis_result_transport: RedisResultTransport):
 async def test_send_result(redis_result_transport: RedisResultTransport, redis_client):
     await redis_result_transport.send_result(
         rpc_message=RpcMessage(
+            rpc_id='123abc',
             api_name='my.api',
             procedure_name='my_proc',
             kwargs={'field': 'value'},
             return_path='abc',
         ),
         result_message=ResultMessage(
+            rpc_id='123abc',
             result='All done! 😎',
         ),
         return_path='redis+key://my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e',
@@ -50,6 +52,7 @@ async def test_send_result(redis_result_transport: RedisResultTransport, redis_c
     result = await redis_client.lpop('my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e')
     assert json.loads(result) == {
         'error': False,
+        'rpc_id': '123abc',
         'result': 'All done! 😎',
     }
 
@@ -61,12 +64,14 @@ async def test_receive_result(redis_result_transport: RedisResultTransport, redi
         key='my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e',
         value=json.dumps({
             'result': 'All done! 😎',
+            'rpc_id': '123abc',
             'error': False,
         }),
     )
 
     result_message = await redis_result_transport.receive_result(
         rpc_message=RpcMessage(
+            rpc_id='123abc',
             api_name='my.api',
             procedure_name='my_proc',
             kwargs={'field': 'value'},
@@ -75,4 +80,5 @@ async def test_receive_result(redis_result_transport: RedisResultTransport, redi
         return_path='redis+key://my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e',
     )
     assert result_message.result == 'All done! 😎'
+    assert result_message.rpc_id == '123abc'
     assert result_message.error == False

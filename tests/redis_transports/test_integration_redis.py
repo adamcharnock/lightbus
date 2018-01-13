@@ -75,7 +75,10 @@ async def test_rpc_error(bus: lightbus.BusNode, dummy_api):
         return await bus.bus_client.consume_rpcs(apis=[dummy_api])
 
     (call_task, ), (consume_task, ) = await asyncio.wait([co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED)
+
     consume_task.cancel()
+    call_task.cancel()
+
     with pytest.raises(LightbusServerError):
         assert call_task.result()
 
@@ -100,3 +103,28 @@ async def test_event(bus: lightbus.BusNode, dummy_api):
 
     await asyncio.gather(co_fire_event(), co_listen_for_events())
     assert received_kwargs == [{'field': 'Hello! 😎'}]
+
+
+@pytest.mark.run_loop
+async def test_rpc_ids(bus: lightbus.BusNode, dummy_api, mocker):
+    """Ensure the rpc_id comes back correctly"""
+
+    async def co_call_rpc():
+        asyncio.sleep(0.1)
+        return await bus.my.dummy.my_proc.call_async(field='foo')
+
+    async def co_consume_rpcs():
+        return await bus.bus_client.consume_rpcs(apis=[dummy_api])
+
+    mocker.spy(bus.bus_client, 'send_result')
+
+    (call_task, ), (consume_task, ) = await asyncio.wait([co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED)
+    _, kw = bus.bus_client.send_result.call_args
+    rpc_message = kw['rpc_message']
+    result_message = kw['result_message']
+    consume_task.cancel()
+
+    assert rpc_message.rpc_id
+    assert result_message.rpc_id
+    assert rpc_message.rpc_id == result_message.rpc_id
+

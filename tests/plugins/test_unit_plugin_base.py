@@ -4,6 +4,7 @@ from collections import OrderedDict
 
 from lightbus.plugins import get_plugins, manually_set_plugins, LightbusPlugin, autoload_plugins, plugin_hook, \
     remove_all_plugins, is_plugin_loaded
+from lightbus.plugins.metrics import MetricsPlugin
 from lightbus.plugins.state import StatePlugin
 
 
@@ -28,7 +29,8 @@ def test_autoload_plugins():
     assert get_plugins() == OrderedDict()
     assert autoload_plugins()
     assert [(name, p.__class__) for name, p in get_plugins().items()] == [
-        ('foo', StatePlugin),
+        ('internal_state', StatePlugin),
+        ('internal_metrics', MetricsPlugin),
     ]
 
 

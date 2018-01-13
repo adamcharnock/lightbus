@@ -42,7 +42,7 @@ class DebugResultTransport(ResultTransport):
         await asyncio.sleep(0.1)  # This is relied upon in testing
         logger.debug('Faking received result')
 
-        return ResultMessage(result='Fake result')
+        return ResultMessage(result='Fake result', rpc_id=rpc_message.rpc_id)
 
 
 class DebugEventTransport(EventTransport):

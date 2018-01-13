@@ -184,6 +184,7 @@ def dummy_bus():
         rpc_transport=lightbus.DebugRpcTransport(),
         result_transport=lightbus.DebugResultTransport(),
         event_transport=lightbus.DebugEventTransport(),
+        plugins=[],
     )
 
 
