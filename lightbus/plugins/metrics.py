@@ -55,12 +55,12 @@ class MetricsPlugin(LightbusPlugin):
 
     # Client-side event hooks
 
-    async def before_event_sent(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def after_event_sent(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
         await self.send_event(bus_client, 'event_fired',
                               process_name='foo',
                               event_id='event_id',
                               api_name=event_message.api_name,
-                              procedure_name=event_message.procedure_name,
+                              event_name=event_message.event_name,
                               kwargs=event_message.kwargs,
                               )
 
@@ -84,7 +84,7 @@ class MetricsPlugin(LightbusPlugin):
                               kwargs=event_message.kwargs,
                               )
 
-    def send_event(self, bus_client, event_name, **kwargs) -> Coroutine:
+    def send_event(self, bus_client, event_name_, **kwargs) -> Coroutine:
         """Send an event to the bus
 
         Note that we bypass using BusClient directly, otherwise we would trigger this
@@ -94,7 +94,7 @@ class MetricsPlugin(LightbusPlugin):
         return bus_client.event_transport.send_event(
             EventMessage(
                 api_name='internal.metrics',
-                event_name=event_name,
+                event_name=event_name_,
                 kwargs=kwargs
             )
         )

@@ -75,7 +75,7 @@ async def test_rpc_execution(called_hooks, dummy_bus: BusNode, loop, mocker, add
 def test_event_sent(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dummy_api):
     add_base_plugin()
     dummy_bus.my.dummy.my_event.fire(field='foo')
-    assert called_hooks() == ['before_event_sent']
+    assert called_hooks() == ['before_event_sent', 'after_event_sent']
 
 
 @pytest.mark.run_loop

@@ -274,6 +274,7 @@ class BusClient(object):
         event_message = EventMessage(api_name=api.meta.name, event_name=name, kwargs=kwargs)
         await plugin_hook('before_event_sent', event_message=event_message, bus_client=self)
         await self.event_transport.send_event(event_message)
+        await plugin_hook('after_event_sent', event_message=event_message, bus_client=self)
 
     async def listen_for_event(self, api_name, name, listener):
         if not callable(listener):

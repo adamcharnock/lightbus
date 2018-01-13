@@ -77,10 +77,7 @@ class DebugEventTransport(EventTransport):
                 raise
         else:
             logger.debug('Faking received result')
-            event_messages = [
-                EventMessage(api_name='my_company.auth',
-                             event_name='user_registered', kwargs={'example': 'value'})
-            ]
+            event_messages = self._get_fake_messages()
 
         return event_messages, None
 
@@ -98,3 +95,9 @@ class DebugEventTransport(EventTransport):
 
     async def stop_listening_for(self, api_name, event_name):
         pass
+
+    def _get_fake_messages(self):
+        return [
+            EventMessage(api_name='my_company.auth',
+                         event_name='user_registered', kwargs={'example': 'value'})
+        ]
