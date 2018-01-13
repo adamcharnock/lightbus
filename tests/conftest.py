@@ -26,6 +26,8 @@ import aioredis.sentinel
 
 import lightbus
 from lightbus.api import registry
+from lightbus.bus import BusNode
+from lightbus.message import EventMessage
 from lightbus.plugins import remove_all_plugins
 
 TCPAddress = namedtuple('TCPAddress', 'host port')
@@ -184,6 +186,33 @@ def dummy_bus():
         event_transport=lightbus.DebugEventTransport(),
     )
 
+
+@pytest.yield_fixture
+def event_consumer(dummy_bus: BusNode, loop, mocker):
+    task = None
+
+    async def dummy_coroutine(*args, **kwargs):
+        pass
+
+    m = mocker.patch.object(dummy_bus.bus_client.event_transport.__class__, 'send_event', return_value=dummy_coroutine())
+
+    def get_events():
+        events = []
+        for args, kwargs in m.call_args_list:
+            assert isinstance(args[0], EventMessage), 'Argument passed to send_event was not an EventMessage'
+            events.append(args[0])
+        return events
+
+    try:
+        task = asyncio.ensure_future(
+            dummy_bus.bus_client.consume_events(),
+            loop=loop
+        )
+        yield get_events
+    finally:
+        if task is not None:
+            task.cancel()
+            loop.run_until_complete(task)
 
 
 # Internal stuff #

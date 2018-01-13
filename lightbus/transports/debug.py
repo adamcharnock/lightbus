@@ -46,6 +46,7 @@ class DebugEventTransport(EventTransport):
 
     def __init__(self):
         self._task = None
+        self._reload = False
         self._events = set()
 
     async def send_event(self, event_message: EventMessage):
@@ -59,14 +60,18 @@ class DebugEventTransport(EventTransport):
     async def fetch_events(self) -> Tuple[Sequence[EventMessage], Any]:
         """Consume RPC events for the given API"""
 
-        logger.info("⌛ Faking listening for events {}. Will issue a fake event in 2 seconds...".format(self._events))
-        self._task = asyncio.ensure_future(asyncio.sleep(0.1))
+        logger.info("⌛ Faking listening for events {}.".format(self._events))
 
         try:
+            self._task = asyncio.ensure_future(asyncio.sleep(0.1))
             await self._task
         except asyncio.CancelledError as e:
-            logger.debug('Event consumption cancelled.')
-            event_messages = []
+            if self._reload:
+                logger.debug('Event transport reloading.')
+                event_messages = []
+                self._reload = False
+            else:
+                raise
         else:
             logger.debug('Faking received result')
             event_messages = [
@@ -81,7 +86,12 @@ class DebugEventTransport(EventTransport):
         self._events.add('{}.{}'.format(api_name, event_name))
         if self._task:
             logger.debug('Existing consumer task running, cancelling')
+            self._reload = True
             self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError as e:
+                pass
 
     async def stop_listening_for(self, api_name, event_name):
         pass

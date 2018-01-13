@@ -18,19 +18,18 @@ class TestApi(Api):
 
 
 @pytest.mark.run_loop
-async def test_before_server_start(dummy_bus: BusNode, loop, mocker):
-    async def dummy_coroutine(*args, **kwargs):
-        pass
-    m = mocker.patch.object(DebugEventTransport, 'send_event', return_value=dummy_coroutine())
-
+async def test_before_server_start(dummy_bus: BusNode, loop, event_consumer):
     registry.add(TestApi())
     await dummy_bus.example.test.my_event.listen_async(lambda: None)
 
     state_plugin = StatePlugin()
     state_plugin.do_ping = False
     await state_plugin.before_server_start(bus_client=dummy_bus.bus_client, loop=loop)
-    assert m.called
-    (event_message, ), _ = m.call_args
+
+    event_messages = event_consumer()
+    assert len(event_messages) == 1
+    event_message = event_messages[0]
+
     assert event_message.api_name == 'internal.state'
     assert event_message.event_name == 'server_started'
 
@@ -42,14 +41,13 @@ async def test_before_server_start(dummy_bus: BusNode, loop, mocker):
 
 
 @pytest.mark.run_loop
-async def test_ping(dummy_bus: BusNode, loop, mocker):
-    async def dummy_coroutine(*args, **kwargs):
-        pass
-    m = mocker.patch.object(DebugEventTransport, 'send_event', return_value=dummy_coroutine())
-
+async def test_ping(dummy_bus: BusNode, loop, event_consumer):
+    # We check the pings message contains a list of registries, so register one
     registry.add(TestApi())
+    # Likewise for event listeners
     await dummy_bus.example.test.my_event.listen_async(lambda: None)
 
+    # Let the state plugin send a ping then cancel it
     state_plugin = StatePlugin()
     state_plugin.ping_interval = 0.1
     task = asyncio.ensure_future(
@@ -59,8 +57,11 @@ async def test_ping(dummy_bus: BusNode, loop, mocker):
     await asyncio.sleep(0.15)
     task.cancel()
 
-    assert m.called
-    (event_message, ), _ = m.call_args
+    event_messages = event_consumer()
+
+    assert len(event_messages) == 1
+    event_message = event_messages[0]
+
     assert event_message.api_name == 'internal.state'
     assert event_message.event_name == 'server_ping'
 

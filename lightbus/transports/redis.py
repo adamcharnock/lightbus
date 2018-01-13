@@ -231,7 +231,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     # Streams to listen on have changed.
                     # Bail out and let this method get called again,
                     # at which point we'll pickup the new streams.
-                    logger.debug('Event consumption cancelled.')
+                    logger.debug('Event transport reloading.')
                     stream_messages = []
                     self._reload = False
                 else:
