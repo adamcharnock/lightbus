@@ -38,8 +38,8 @@ async def test_remote_rpc_call(dummy_bus: BusNode, get_dummy_events):
     # Pop these next two as the values are variable
     assert event_messages[0].kwargs.pop('timestamp')
     assert event_messages[0].kwargs.pop('rpc_id')
+    assert event_messages[0].kwargs.pop('process_name')
     assert event_messages[0].kwargs == {
-        'process_name': 'foo',
         'api_name': 'example.test',
         'procedure_name': 'my_method',
         'kwargs': {'f': 123},
@@ -51,8 +51,8 @@ async def test_remote_rpc_call(dummy_bus: BusNode, get_dummy_events):
     # Pop these next two as the values are variable
     assert event_messages[1].kwargs.pop('timestamp')
     assert event_messages[1].kwargs.pop('rpc_id')
+    assert event_messages[1].kwargs.pop('process_name')
     assert event_messages[1].kwargs == {
-        'process_name': 'foo',
         'api_name': 'example.test',
         'procedure_name': 'my_method',
     }
@@ -78,8 +78,8 @@ async def test_local_rpc_call(dummy_bus: BusNode, rpc_consumer, get_dummy_events
     assert event_messages[0].api_name == 'internal.metrics'
     assert event_messages[0].event_name == 'rpc_call_received'
     assert event_messages[0].kwargs.pop('timestamp')
+    assert event_messages[0].kwargs.pop('process_name')
     assert event_messages[0].kwargs == {
-        'process_name': 'foo',
         'api_name': 'example.test',
         'procedure_name': 'my_method',
         'rpc_id': '123abc',
@@ -89,8 +89,8 @@ async def test_local_rpc_call(dummy_bus: BusNode, rpc_consumer, get_dummy_events
     assert event_messages[1].api_name == 'internal.metrics'
     assert event_messages[1].event_name == 'rpc_response_sent'
     assert event_messages[1].kwargs.pop('timestamp')
+    assert event_messages[1].kwargs.pop('process_name')
     assert event_messages[1].kwargs == {
-        'process_name': 'foo',
         'api_name': 'example.test',
         'procedure_name': 'my_method',
         'rpc_id': '123abc',
@@ -112,8 +112,8 @@ async def test_send_event(dummy_bus: BusNode, get_dummy_events):
     assert event_messages[1].api_name == 'internal.metrics'
     assert event_messages[1].event_name == 'event_fired'
     assert event_messages[1].kwargs.pop('timestamp')
+    assert event_messages[1].kwargs.pop('process_name')
     assert event_messages[1].kwargs == {
-        'process_name': 'foo',
         'api_name': 'example.test',
         'event_name': 'my_event',
         'event_id': 'event_id',
@@ -141,8 +141,8 @@ async def test_execute_events(dummy_bus: BusNode, event_consumer, get_dummy_even
     assert event_messages[0].api_name == 'internal.metrics'
     assert event_messages[0].event_name == 'event_received'
     assert event_messages[0].kwargs.pop('timestamp')
+    assert event_messages[0].kwargs.pop('process_name')
     assert event_messages[0].kwargs == {
-        'process_name': 'foo',
         'api_name': 'example.test',
         'event_name': 'my_event',
         'event_id': 'event_id',
@@ -153,8 +153,8 @@ async def test_execute_events(dummy_bus: BusNode, event_consumer, get_dummy_even
     assert event_messages[1].api_name == 'internal.metrics'
     assert event_messages[1].event_name == 'event_processed'
     assert event_messages[1].kwargs.pop('timestamp')
+    assert event_messages[1].kwargs.pop('process_name')
     assert event_messages[1].kwargs == {
-        'process_name': 'foo',
         'api_name': 'example.test',
         'event_name': 'my_event',
         'event_id': 'event_id',

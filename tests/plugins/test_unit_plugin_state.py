@@ -37,6 +37,7 @@ async def test_before_server_start(dummy_bus: BusNode, loop, get_dummy_events):
     assert event_message.kwargs['metrics_enabled'] == False
     assert event_message.kwargs['ping_enabled'] == False
     assert event_message.kwargs['ping_interval'] == 60
+    assert event_message.kwargs['process_name']
 
 
 @pytest.mark.run_loop
@@ -68,6 +69,7 @@ async def test_ping(dummy_bus: BusNode, loop, get_dummy_events):
     assert event_message.kwargs['metrics_enabled'] == False
     assert event_message.kwargs['ping_enabled'] == True
     assert event_message.kwargs['ping_interval'] == 0.1
+    assert event_message.kwargs['process_name']
 
 
 @pytest.mark.run_loop
@@ -83,4 +85,4 @@ async def test_after_server_stopped(dummy_bus: BusNode, loop, get_dummy_events):
 
     assert event_message.api_name == 'internal.state'
     assert event_message.event_name == 'server_stopped'
-    assert event_message.kwargs['process_name'] == 'foo'
+    assert event_message.kwargs['process_name']

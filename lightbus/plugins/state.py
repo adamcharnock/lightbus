@@ -1,9 +1,15 @@
 """Plugin to broadcast Lightbus' state on the internal.state API"""
 import asyncio
 import logging
+import socket
 from argparse import ArgumentParser, _ArgumentGroup, Namespace
 
 from datetime import datetime
+
+import os
+import resource
+
+import sys
 
 from lightbus import BusClient
 from lightbus.api import registry
@@ -91,7 +97,7 @@ class StatePlugin(LightbusPlugin):
     async def after_server_stopped(self, *, bus_client: BusClient, loop):
         await bus_client.event_transport.send_event(
             EventMessage(api_name='internal.state', event_name='server_stopped', kwargs=dict(
-                process_name='foo',
+                process_name=bus_client.process_name,
             ))
         )
 
@@ -108,13 +114,20 @@ class StatePlugin(LightbusPlugin):
 
     def get_state_kwargs(self, bus_client: BusClient):
         """Get the kwargs for a server_started or ping message"""
+        max_memory_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        if sys.platform == 'darwin':
+            max_memory_use = max_memory_use * 1024
+
         return dict(
-            process_name='foo',
+            process_name=bus_client.process_name,
             metrics_enabled=is_plugin_loaded(MetricsPlugin),
             api_names=[api.meta.name for api in registry.public()],
             listening_for=['{}.{}'.format(api_name, event_name) for api_name, event_name in bus_client._listeners.keys()],
             timestamp=datetime.utcnow().timestamp(),
             ping_enabled=self.do_ping,
             ping_interval=self.ping_interval,
+            hostname=socket.gethostname(),
+            pid=os.getpid(),
+            max_memory_use=max_memory_use
         )
 

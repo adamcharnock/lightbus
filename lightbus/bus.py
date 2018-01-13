@@ -17,7 +17,7 @@ from lightbus.api import registry
 from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
 from lightbus.transports import RpcTransport, ResultTransport, EventTransport, RedisRpcTransport, \
     RedisResultTransport, RedisEventTransport
-from lightbus.utilities import handle_aio_exceptions, human_time, block
+from lightbus.utilities import handle_aio_exceptions, human_time, block, generate_process_name
 
 __all__ = ['BusClient', 'BusNode', 'create']
 
@@ -28,10 +28,11 @@ logger = logging.getLogger(__name__)
 class BusClient(object):
 
     def __init__(self, rpc_transport: 'RpcTransport', result_transport: 'ResultTransport',
-                 event_transport: 'EventTransport'):
+                 event_transport: 'EventTransport', process_name: str=''):
         self.rpc_transport = rpc_transport
         self.result_transport = result_transport
         self.event_transport = event_transport
+        self.process_name = process_name or generate_process_name()
         self._listeners = {}
 
     def setup(self, plugins: dict=None):
