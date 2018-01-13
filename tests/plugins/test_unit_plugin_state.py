@@ -4,7 +4,6 @@ import pytest
 from lightbus.api import registry, Api, Event
 from lightbus.bus import BusNode
 from lightbus.plugins.state import StatePlugin
-from lightbus.transports.debug import DebugEventTransport
 
 
 pytestmark = pytest.mark.unit
@@ -18,7 +17,7 @@ class TestApi(Api):
 
 
 @pytest.mark.run_loop
-async def test_before_server_start(dummy_bus: BusNode, loop, event_consumer):
+async def test_before_server_start(dummy_bus: BusNode, loop, get_dummy_events):
     registry.add(TestApi())
     await dummy_bus.example.test.my_event.listen_async(lambda: None)
 
@@ -26,9 +25,9 @@ async def test_before_server_start(dummy_bus: BusNode, loop, event_consumer):
     state_plugin.do_ping = False
     await state_plugin.before_server_start(bus_client=dummy_bus.bus_client, loop=loop)
 
-    event_messages = event_consumer()
-    assert len(event_messages) == 1
-    event_message = event_messages[0]
+    dummy_events = get_dummy_events()
+    assert len(dummy_events) == 1
+    event_message = dummy_events[0]
 
     assert event_message.api_name == 'internal.state'
     assert event_message.event_name == 'server_started'
@@ -41,7 +40,7 @@ async def test_before_server_start(dummy_bus: BusNode, loop, event_consumer):
 
 
 @pytest.mark.run_loop
-async def test_ping(dummy_bus: BusNode, loop, event_consumer):
+async def test_ping(dummy_bus: BusNode, loop, get_dummy_events):
     # We check the pings message contains a list of registries, so register one
     registry.add(TestApi())
     # Likewise for event listeners
@@ -57,10 +56,9 @@ async def test_ping(dummy_bus: BusNode, loop, event_consumer):
     await asyncio.sleep(0.15)
     task.cancel()
 
-    event_messages = event_consumer()
-
-    assert len(event_messages) == 1
-    event_message = event_messages[0]
+    dummy_events = get_dummy_events()
+    assert len(dummy_events) == 1
+    event_message = dummy_events[0]
 
     assert event_message.api_name == 'internal.state'
     assert event_message.event_name == 'server_ping'
@@ -73,15 +71,15 @@ async def test_ping(dummy_bus: BusNode, loop, event_consumer):
 
 
 @pytest.mark.run_loop
-async def test_after_server_stopped(dummy_bus: BusNode, loop, mocker, event_consumer):
+async def test_after_server_stopped(dummy_bus: BusNode, loop, get_dummy_events):
     registry.add(TestApi())
     await dummy_bus.example.test.my_event.listen_async(lambda: None)
 
     await StatePlugin().after_server_stopped(bus_client=dummy_bus.bus_client, loop=loop)
 
-    event_messages = event_consumer()
-    assert len(event_messages) == 1
-    event_message = event_messages[0]
+    dummy_events = get_dummy_events()
+    assert len(dummy_events) == 1
+    event_message = dummy_events[0]
 
     assert event_message.api_name == 'internal.state'
     assert event_message.event_name == 'server_stopped'

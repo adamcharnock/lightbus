@@ -189,30 +189,58 @@ def dummy_bus():
 
 @pytest.yield_fixture
 def event_consumer(dummy_bus: BusNode, loop, mocker):
+    """Start the dummy bus consuming events"""
     task = None
-
-    async def dummy_coroutine(*args, **kwargs):
-        pass
-
-    m = mocker.patch.object(dummy_bus.bus_client.event_transport.__class__, 'send_event', return_value=dummy_coroutine())
-
-    def get_events():
-        events = []
-        for args, kwargs in m.call_args_list:
-            assert isinstance(args[0], EventMessage), 'Argument passed to send_event was not an EventMessage'
-            events.append(args[0])
-        return events
 
     try:
         task = asyncio.ensure_future(
             dummy_bus.bus_client.consume_events(),
             loop=loop
         )
-        yield get_events
+        yield
     finally:
         if task is not None:
             task.cancel()
-            loop.run_until_complete(task)
+            try:
+                loop.run_until_complete(task)
+            except asyncio.CancelledError:
+                pass
+
+
+@pytest.fixture
+def get_dummy_events(mocker, dummy_bus: BusNode):
+    """Get events sent on the dummy bus"""
+    mocker.spy(dummy_bus.bus_client.event_transport, 'send_event')
+
+    def get_events():
+        events = []
+        send_event_calls = dummy_bus.bus_client.event_transport.send_event.call_args_list
+        for args, kwargs in send_event_calls:
+            assert isinstance(args[0], EventMessage), 'Argument passed to send_event was not an EventMessage'
+            events.append(args[0])
+        return events
+
+    return get_events
+
+
+@pytest.yield_fixture
+def rpc_consumer(dummy_bus: BusNode, loop, mocker):
+    """Start the dummy bus consuming RPCs"""
+    task = None
+
+    try:
+        task = asyncio.ensure_future(
+            dummy_bus.bus_client.consume_rpcs(),
+            loop=loop
+        )
+        yield
+    finally:
+        if task is not None:
+            task.cancel()
+            try:
+                loop.run_until_complete(task)
+            except asyncio.CancelledError:
+                pass
 
 
 # Internal stuff #

@@ -20,6 +20,9 @@ class DebugRpcTransport(RpcTransport):
         logger.debug("Faking consumption of RPCs. Waiting 1 second before issuing fake RPC call...")
         await asyncio.sleep(0.1)
         logger.debug("Issuing fake RPC call")
+        return self._get_fake_messages()
+
+    def _get_fake_messages(self):
         return [RpcMessage(api_name='my_company.auth', procedure_name='check_password', kwargs=dict(
             username='admin',
             password='secret',
@@ -36,7 +39,7 @@ class DebugResultTransport(ResultTransport):
 
     async def receive_result(self, rpc_message: RpcMessage, return_path: str) -> ResultMessage:
         logger.info("⌛ Faking listening for results. Will issue fake result in 0.5 seconds...")
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.1)  # This is relied upon in testing
         logger.debug('Faking received result')
 
         return ResultMessage(result='Fake result')

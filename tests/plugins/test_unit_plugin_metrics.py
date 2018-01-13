@@ -3,9 +3,9 @@ import pytest
 
 from lightbus.api import registry, Api, Event
 from lightbus.bus import BusNode
+from lightbus.message import RpcMessage
 from lightbus.plugins import manually_set_plugins
 from lightbus.plugins.metrics import MetricsPlugin
-from lightbus.transports.debug import DebugEventTransport
 
 
 pytestmark = pytest.mark.unit
@@ -21,33 +21,15 @@ class TestApi(Api):
         name = 'example.test'
 
 
-@pytest.fixture
-def dummy_events(mocker, dummy_bus: BusNode):
-    """Get events sent on the dummy bus"""
-    mocker.spy(dummy_bus.bus_client.event_transport, 'send_event')
-
-    def get_events():
-        return [
-            args[0]
-            for args, kwargs
-            in dummy_bus.bus_client.event_transport.send_event.call_args_list
-        ]
-
-    return get_events
-
-
 @pytest.mark.run_loop
-async def test_remote_rpc_call(dummy_bus: BusNode, dummy_events):
-    async def dummy_coroutine(*args, **kwargs):
-        pass
-
+async def test_remote_rpc_call(dummy_bus: BusNode, get_dummy_events):
     # Setup the bus and do the call
     manually_set_plugins(plugins={'metrics': MetricsPlugin()})
     registry.add(TestApi())
     await dummy_bus.example.test.my_method.call_async(f=123)
 
     # What events were fired?
-    event_messages = dummy_events()
+    event_messages = get_dummy_events()
     assert len(event_messages) == 2
 
     # rpc_call_sent
@@ -74,3 +56,41 @@ async def test_remote_rpc_call(dummy_bus: BusNode, dummy_events):
     }
 
 
+@pytest.mark.run_loop
+async def test_local_rpc_call(dummy_bus: BusNode, rpc_consumer, get_dummy_events, mocker):
+    mocker.patch.object(dummy_bus.bus_client.rpc_transport, '_get_fake_messages', return_value=[
+        RpcMessage(api_name='example.test', procedure_name='my_method', kwargs={'f': 123})
+    ])
+
+    # Setup the bus and do the call
+    manually_set_plugins(plugins={'metrics': MetricsPlugin()})
+    registry.add(TestApi())
+
+    # The dummy transport will fire an every every 0.1 seconds
+    await asyncio.sleep(0.15)
+
+    event_messages = get_dummy_events()
+    assert len(event_messages) == 2, event_messages
+
+    # before_rpc_execution
+    assert event_messages[0].api_name == 'internal.metrics'
+    assert event_messages[0].event_name == 'rpc_call_received'
+    assert event_messages[0].kwargs.pop('timestamp')
+    assert event_messages[0].kwargs == {
+        'process_name': 'foo',
+        'api_name': 'example.test',
+        'procedure_name': 'my_method',
+        'rpc_id': 'rpc_id',
+    }
+
+    # after_rpc_execution
+    assert event_messages[1].api_name == 'internal.metrics'
+    assert event_messages[1].event_name == 'rpc_response_sent'
+    assert event_messages[1].kwargs.pop('timestamp')
+    assert event_messages[1].kwargs == {
+        'process_name': 'foo',
+        'api_name': 'example.test',
+        'procedure_name': 'my_method',
+        'rpc_id': 'rpc_id',
+        'result': 'value',
+    }
