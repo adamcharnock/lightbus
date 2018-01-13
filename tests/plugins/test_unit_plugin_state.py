@@ -73,16 +73,16 @@ async def test_ping(dummy_bus: BusNode, loop, event_consumer):
 
 
 @pytest.mark.run_loop
-async def test_after_server_stopped(dummy_bus: BusNode, loop, mocker):
-    async def dummy_coroutine(*args, **kwargs):
-        pass
-    m = mocker.patch.object(DebugEventTransport, 'send_event', return_value=dummy_coroutine())
-
+async def test_after_server_stopped(dummy_bus: BusNode, loop, mocker, event_consumer):
     registry.add(TestApi())
     await dummy_bus.example.test.my_event.listen_async(lambda: None)
 
     await StatePlugin().after_server_stopped(bus_client=dummy_bus.bus_client, loop=loop)
-    assert m.called
-    (event_message, ), _ = m.call_args
+
+    event_messages = event_consumer()
+    assert len(event_messages) == 1
+    event_message = event_messages[0]
+
     assert event_message.api_name == 'internal.state'
     assert event_message.event_name == 'server_stopped'
+    assert event_message.kwargs['process_name'] == 'foo'
