@@ -23,7 +23,8 @@ setup(
             'lightbus = lightbus.commands:lightbus_entry_point',
         ],
         'lightbus_plugins': [
-            'foo = lightbus.plugins.state:StatePlugin'
+            'internal_state = lightbus.plugins.state:StatePlugin',
+            'internal_metrics = lightbus.plugins.metrics:MetricsPlugin',
         ]
     }
 )
