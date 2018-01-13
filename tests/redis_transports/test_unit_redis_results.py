@@ -2,6 +2,7 @@ import json
 from uuid import UUID
 
 import pytest
+from base64 import b64decode
 
 from lightbus.message import RpcMessage, ResultMessage
 from lightbus.transports.redis import RedisResultTransport
@@ -27,8 +28,8 @@ async def test_get_return_path(redis_result_transport: RedisResultTransport):
         return_path='abc',
     ))
     assert return_path.startswith('redis+key://my.api.my_proc:result:')
-    result_uuid = return_path.split(':')[-1]
-    assert UUID(hex=result_uuid)
+    result_uuid = b64decode(return_path.split(':')[-1])
+    assert UUID(bytes=result_uuid)
 
 
 @pytest.mark.run_loop

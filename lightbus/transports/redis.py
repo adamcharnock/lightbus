@@ -125,7 +125,11 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         self.connection_kwargs = connection_kwargs or dict(address=('localhost', 6379))
 
     def get_return_path(self, rpc_message: RpcMessage) -> str:
-        return 'redis+key://{}.{}:result:{}'.format(rpc_message.api_name, rpc_message.procedure_name, uuid1().hex)
+        return 'redis+key://{}.{}:result:{}'.format(
+            rpc_message.api_name,
+            rpc_message.procedure_name,
+            rpc_message.rpc_id,
+        )
 
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: str):
         logger.debug(L(
