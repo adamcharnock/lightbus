@@ -35,31 +35,33 @@ async def test_remote_rpc_call(dummy_bus: BusNode, get_dummy_events):
     # rpc_call_sent
     assert event_messages[0].api_name == 'internal.metrics'
     assert event_messages[0].event_name == 'rpc_call_sent'
+    # Pop these next two as the values are variable
     assert event_messages[0].kwargs.pop('timestamp')
+    assert event_messages[0].kwargs.pop('rpc_id')
     assert event_messages[0].kwargs == {
         'process_name': 'foo',
         'api_name': 'example.test',
         'procedure_name': 'my_method',
-        'rpc_id': 'rpc_id',
         'kwargs': {'f': 123},
     }
 
     # rpc_response_received
     assert event_messages[1].api_name == 'internal.metrics'
     assert event_messages[1].event_name == 'rpc_response_received'
+    # Pop these next two as the values are variable
     assert event_messages[1].kwargs.pop('timestamp')
+    assert event_messages[1].kwargs.pop('rpc_id')
     assert event_messages[1].kwargs == {
         'process_name': 'foo',
         'api_name': 'example.test',
         'procedure_name': 'my_method',
-        'rpc_id': 'rpc_id',
     }
 
 
 @pytest.mark.run_loop
 async def test_local_rpc_call(dummy_bus: BusNode, rpc_consumer, get_dummy_events, mocker):
     mocker.patch.object(dummy_bus.bus_client.rpc_transport, '_get_fake_messages', return_value=[
-        RpcMessage(api_name='example.test', procedure_name='my_method', kwargs={'f': 123})
+        RpcMessage(rpc_id='123abc', api_name='example.test', procedure_name='my_method', kwargs={'f': 123})
     ])
 
     # Setup the bus and do the call
@@ -80,7 +82,7 @@ async def test_local_rpc_call(dummy_bus: BusNode, rpc_consumer, get_dummy_events
         'process_name': 'foo',
         'api_name': 'example.test',
         'procedure_name': 'my_method',
-        'rpc_id': 'rpc_id',
+        'rpc_id': '123abc',
     }
 
     # after_rpc_execution
@@ -91,7 +93,7 @@ async def test_local_rpc_call(dummy_bus: BusNode, rpc_consumer, get_dummy_events
         'process_name': 'foo',
         'api_name': 'example.test',
         'procedure_name': 'my_method',
-        'rpc_id': 'rpc_id',
+        'rpc_id': '123abc',
         'result': 'value',
     }
 
