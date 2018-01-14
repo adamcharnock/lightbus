@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from datetime import datetime
 
 from collections import OrderedDict
 from typing import Sequence, Tuple, Optional, Any
@@ -280,15 +281,36 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
     async def start_listening_for(self, api_name, event_name, options: dict):
         stream_name = '{}.{}:stream'.format(api_name, event_name)
+        options = options or {}
+        since = options.get('since')
+
         if stream_name in self._streams:
-            logger.debug('Already listening on event stream {}. Doing nothing.'.format(stream_name))
+            if since:
+                # We could probably handle this by starting up a new Redis connection
+                # just for this listener. Let's see if this is needed.
+                logger.warning(
+                    'Cannot start listening on {}.{} as it is already being listened for. '
+                    'You also specified a "since" value, so be warned you are probably not '
+                    'going to be getting the history of messages you expect. Consider '
+                    'calling stop_listening_for() first.'.format(api_name, event_name)
+                )
+            else:
+                logger.debug('Already listening on event stream {}. Doing nothing.'.format(stream_name))
         else:
+            if not since:
+                latest_id = '$'
+            elif hasattr(since, 'timestamp'):  # datetime
+                # Create message ID: "<milliseconds-timestamp>-<sequence-number>"
+                latest_id = '{}-0'.format(round(since.timestamp() * 1000))
+            else:
+                latest_id = since
+
             logger.info(L(
                 'Will to listen on event stream {} {}',
                 Bold(stream_name),
                 'starting now' if self._task else 'once event consumption begins',
             ))
-            self._streams[stream_name] = '$'
+            self._streams[stream_name] = latest_id
 
             if self._task:
                 logger.debug('Existing consumer task running, cancelling')

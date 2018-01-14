@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 
 import pytest
 
@@ -53,3 +54,84 @@ async def test_consume_events(redis_event_transport: RedisEventTransport, redis_
     assert message.api_name == 'my.dummy'
     assert message.event_name == 'my_event'
     assert message.kwargs == {'field': 'value'}
+
+
+@pytest.mark.run_loop
+async def test_consume_events_since_id(redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+    await redis_client.xadd(
+        'my.dummy.my_event:stream',
+        fields={
+            b'api_name': b'"my.dummy"',
+            b'event_name': b'"my_event"',
+            b'kw:field': b'"1"',
+        },
+        message_id='1515000001000-0',
+    )
+    await redis_client.xadd(
+        'my.dummy.my_event:stream',
+        fields={
+            b'api_name': b'"my.dummy"',
+            b'event_name': b'"my_event"',
+            b'kw:field': b'"2"',
+        },
+        message_id='1515000002000-0',
+    )
+    await redis_client.xadd(
+        'my.dummy.my_event:stream',
+        fields={
+            b'api_name': b'"my.dummy"',
+            b'event_name': b'"my_event"',
+            b'kw:field': b'"3"',
+        },
+        message_id='1515000003000-0',
+    )
+
+    await redis_event_transport.start_listening_for(dummy_api, 'my_event', options={
+        'since': '1515000001500-0',
+    })
+
+    async with redis_event_transport.consume_events() as messages:
+        assert len(messages) == 2
+        assert messages[0].kwargs['field'] == '2'
+        assert messages[1].kwargs['field'] == '3'
+
+
+@pytest.mark.run_loop
+async def test_consume_events_since_datetime(redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+    await redis_client.xadd(
+        'my.dummy.my_event:stream',
+        fields={
+            b'api_name': b'"my.dummy"',
+            b'event_name': b'"my_event"',
+            b'kw:field': b'"1"',
+        },
+        message_id='1515000001000-0',
+    )
+    await redis_client.xadd(
+        'my.dummy.my_event:stream',
+        fields={
+            b'api_name': b'"my.dummy"',
+            b'event_name': b'"my_event"',
+            b'kw:field': b'"2"',
+        },
+        message_id='1515000002000-0',
+    )
+    await redis_client.xadd(
+        'my.dummy.my_event:stream',
+        fields={
+            b'api_name': b'"my.dummy"',
+            b'event_name': b'"my_event"',
+            b'kw:field': b'"3"',
+        },
+        message_id='1515000003000-0',
+    )
+
+    await redis_event_transport.start_listening_for(dummy_api, 'my_event', options={
+        # 1515000001500-0 -> 2018-01-03T17:20:01.500Z
+        'since': datetime(2018, 1, 3, 17, 20, 1, 500),
+    })
+
+    async with redis_event_transport.consume_events() as messages:
+        assert len(messages) == 2
+        assert messages[0].kwargs['field'] == '2'
+        assert messages[1].kwargs['field'] == '3'
