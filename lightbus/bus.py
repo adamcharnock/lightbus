@@ -159,7 +159,7 @@ class BusClient(object):
         # TODO: It is possible that the RPC will be called before we start waiting for the response. This is bad.
 
         future = asyncio.gather(
-            self.result_transport.receive_result(rpc_message, return_path, options=options),
+            self.receive_result(rpc_message, return_path, options=options),
             self.rpc_transport.call_rpc(rpc_message, options=options),
         )
 
@@ -298,8 +298,8 @@ class BusClient(object):
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
         return await self.result_transport.send_result(rpc_message, result_message, rpc_message.return_path)
 
-    async def receive_result(self, rpc_message: RpcMessage):
-        return await self.result_transport.receive_result(rpc_message, rpc_message.return_path)
+    async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict):
+        return await self.result_transport.receive_result(rpc_message, return_path, options)
 
 
 class BusNode(object):
