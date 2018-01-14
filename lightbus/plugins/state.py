@@ -115,9 +115,6 @@ class StatePlugin(LightbusPlugin):
     def get_state_kwargs(self, bus_client: BusClient):
         """Get the kwargs for a server_started or ping message"""
         max_memory_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        if sys.platform == 'darwin':
-            max_memory_use = max_memory_use * 1024
-
         return dict(
             process_name=bus_client.process_name,
             metrics_enabled=is_plugin_loaded(MetricsPlugin),
