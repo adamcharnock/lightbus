@@ -146,10 +146,12 @@ class BusClient(object):
                                       bus_client=self)
                     await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
-    async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict, timeout=5):
+    async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict, options: dict):
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)
         return_path = self.result_transport.get_return_path(rpc_message)
         rpc_message.return_path = return_path
+        options = options or {}
+        timeout = options.get('timeout', 5)
 
         logger.info("➡ Calling remote RPC ".format(rpc_message))
 
@@ -157,8 +159,8 @@ class BusClient(object):
         # TODO: It is possible that the RPC will be called before we start waiting for the response. This is bad.
 
         future = asyncio.gather(
-            self.result_transport.receive_result(rpc_message, return_path),
-            self.rpc_transport.call_rpc(rpc_message),
+            self.result_transport.receive_result(rpc_message, return_path, options=options),
+            self.rpc_transport.call_rpc(rpc_message, options=options),
         )
 
         await plugin_hook('before_rpc_call', rpc_message=rpc_message, bus_client=self)
@@ -242,7 +244,7 @@ class BusClient(object):
             logger.info('Sudden death while holding {} messages'.format(len(event_messages)))
             return
 
-    async def fire_event(self, api_name, name, kwargs: dict=None):
+    async def fire_event(self, api_name, name, kwargs: dict=None, options: dict=None):
         kwargs = kwargs or {}
         try:
             api = registry.get(api_name)
@@ -276,10 +278,10 @@ class BusClient(object):
 
         event_message = EventMessage(api_name=api.meta.name, event_name=name, kwargs=kwargs)
         await plugin_hook('before_event_sent', event_message=event_message, bus_client=self)
-        await self.event_transport.send_event(event_message)
+        await self.event_transport.send_event(event_message, options=options)
         await plugin_hook('after_event_sent', event_message=event_message, bus_client=self)
 
-    async def listen_for_event(self, api_name, name, listener):
+    async def listen_for_event(self, api_name, name, listener, options: dict=None):
         if not callable(listener):
             raise InvalidEventListener(
                 "The specified listener '{}' is not callable. Perhaps you called the function rather "
@@ -289,7 +291,7 @@ class BusClient(object):
         key = (api_name, name)
         self._listeners.setdefault(key, [])
         self._listeners[key].append(listener)
-        await self.event_transport.start_listening_for(api_name, name)
+        await self.event_transport.start_listening_for(api_name, name, options=options)
 
     # Results
 
@@ -323,25 +325,31 @@ class BusNode(object):
     def __call__(self, **kwargs):
         return self.call(**kwargs)
 
-    def call(self, **kwargs):
-        return block(self.call_async(**kwargs), timeout=1)
+    def call(self, *, bus_options=None, **kwargs):
+        return block(self.call_async(**kwargs, bus_options=bus_options), timeout=1)
 
-    async def call_async(self, **kwargs):
-        return await self.bus_client.call_rpc_remote(api_name=self.api_name, name=self.name, kwargs=kwargs)
+    async def call_async(self, *, bus_options=None, **kwargs):
+        return await self.bus_client.call_rpc_remote(
+            api_name=self.api_name, name=self.name, kwargs=kwargs, options=bus_options
+        )
 
     # Events
 
-    async def listen_async(self, listener):
-        return await self.bus_client.listen_for_event(api_name=self.api_name, name=self.name, listener=listener)
+    async def listen_async(self, listener, *, bus_options: dict=None):
+        return await self.bus_client.listen_for_event(
+            api_name=self.api_name, name=self.name, listener=listener, options=bus_options
+        )
 
-    def listen(self, listener):
-        return block(self.listen_async(listener), timeout=5)
+    def listen(self, listener, *, bus_options: dict=None):
+        return block(self.listen_async(listener, bus_options=bus_options), timeout=5)
 
-    async def fire_async(self, **kwargs):
-        return await self.bus_client.fire_event(api_name=self.api_name, name=self.name, kwargs=kwargs)
+    async def fire_async(self, *, bus_options: dict=None, **kwargs):
+        return await self.bus_client.fire_event(
+            api_name=self.api_name, name=self.name, kwargs=kwargs, options=bus_options
+        )
 
-    def fire(self, **kwargs):
-        return block(self.fire_async(**kwargs), timeout=5)
+    def fire(self, *, bus_options: dict=None, **kwargs):
+        return block(self.fire_async(**kwargs, bus_options=bus_options), timeout=5)
 
     # Utilities
 

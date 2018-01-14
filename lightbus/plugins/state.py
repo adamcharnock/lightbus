@@ -81,7 +81,8 @@ class StatePlugin(LightbusPlugin):
                 api_name='internal.state',
                 event_name='server_started',
                 kwargs=self.get_state_kwargs(bus_client)
-            )
+            ),
+            options={},
         )
         if self.do_ping:
             logger.info(
@@ -98,7 +99,8 @@ class StatePlugin(LightbusPlugin):
         await bus_client.event_transport.send_event(
             EventMessage(api_name='internal.state', event_name='server_stopped', kwargs=dict(
                 process_name=bus_client.process_name,
-            ))
+            )),
+            options={},
         )
 
     async def _send_ping(self, bus_client: BusClient):
@@ -109,7 +111,8 @@ class StatePlugin(LightbusPlugin):
                     api_name='internal.state',
                     event_name='server_ping',
                     kwargs=self.get_state_kwargs(bus_client)
-                )
+                ),
+                options={},
             )
 
     def get_state_kwargs(self, bus_client: BusClient):

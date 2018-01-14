@@ -79,6 +79,7 @@ async def test_receive_result(redis_result_transport: RedisResultTransport, redi
             return_path='abc',
         ),
         return_path='redis+key://my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e',
+        options = {},
     )
     assert result_message.result == 'All done! 😎'
     assert result_message.rpc_id == '123abc'

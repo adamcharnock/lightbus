@@ -23,7 +23,7 @@ async def test_send_event(redis_event_transport: RedisEventTransport, redis_clie
         api_name='my.api',
         event_name='my_event',
         kwargs={'field': 'value'},
-    ))
+    ), options={})
     messages = await redis_client.xrange('my.api.my_event:stream')
     assert len(messages) == 1
     assert messages[0][1] == {
@@ -44,7 +44,7 @@ async def test_consume_events(redis_event_transport: RedisEventTransport, redis_
         })
 
     async def co_consume():
-        await redis_event_transport.start_listening_for(dummy_api, 'my_event')
+        await redis_event_transport.start_listening_for(dummy_api, 'my_event', options={})
         async with redis_event_transport.consume_events() as messages:
             return messages
 

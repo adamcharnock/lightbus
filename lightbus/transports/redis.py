@@ -62,7 +62,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         self._latest_ids = {}
         self.track_consumption_progress = track_consumption_progress  # TODO: Implement (rename: replay?)
 
-    async def call_rpc(self, rpc_message: RpcMessage):
+    async def call_rpc(self, rpc_message: RpcMessage, options: dict):
         stream = '{}:stream'.format(rpc_message.api_name)
         logger.debug(
             LBullets(
@@ -152,7 +152,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
             Bold(result_message), human_time(time.time() - start_time), Bold(return_path)
         ))
 
-    async def receive_result(self, rpc_message: RpcMessage, return_path: str) -> ResultMessage:
+    async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict) -> ResultMessage:
         logger.info(L("⌛ Awaiting Redis result for RPC message: {}", Bold(rpc_message)))
         redis_key = self._parse_return_path(return_path)
 
@@ -186,7 +186,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self._reload = False
         self._streams = OrderedDict()
 
-    async def send_event(self, event_message: EventMessage):
+    async def send_event(self, event_message: EventMessage, options: dict):
         """Publish an event"""
         stream = '{}.{}:stream'.format(event_message.api_name, event_message.event_name)
         logger.debug(
@@ -278,7 +278,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
     async def consumption_complete(self, latest_ids):
         self._streams.update(latest_ids)
 
-    async def start_listening_for(self, api_name, event_name):
+    async def start_listening_for(self, api_name, event_name, options: dict):
         stream_name = '{}.{}:stream'.format(api_name, event_name)
         if stream_name in self._streams:
             logger.debug('Already listening on event stream {}. Doing nothing.'.format(stream_name))

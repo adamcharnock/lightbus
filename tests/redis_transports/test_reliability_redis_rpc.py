@@ -51,4 +51,3 @@ async def test_timeouts(bus: lightbus.BusNode, caplog, consume_rpcs, call_rpc, m
     assert len(results) == 100
     assert total_successful > 0
     assert total_timeouts > 0
-

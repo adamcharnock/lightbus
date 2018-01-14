@@ -17,7 +17,7 @@ class DirectRpcTransport(RpcTransport):
     def __init__(self, result_transport: 'DirectResultTransport'):
         self.result_transport = result_transport
 
-    async def call_rpc(self, rpc_message: RpcMessage):
+    async def call_rpc(self, rpc_message: RpcMessage, options: dict):
         # Direct RPC transport calls API method immediately
         logger.debug("Directly executing RPC call for message {}".format(rpc_message))
         api = registry.get(rpc_message.api_name)
@@ -53,7 +53,7 @@ class DirectResultTransport(ResultTransport):
         logger.info(L("⚡️  Directly sending RPC result: {}", Bold(result_message)))
         return_path.set_result(result_message)
 
-    async def receive_result(self, rpc_message: RpcMessage, return_path: asyncio.Future) -> ResultMessage:
+    async def receive_result(self, rpc_message: RpcMessage, return_path: asyncio.Future, options: dict) -> ResultMessage:
         logger.info(L("⌛️  Awaiting result for RPC message: {}", Bold(rpc_message)))
         result = await return_path
         logger.info(L("⬅  Received result for RPC message {}: {}", rpc_message, Bold(result)))
@@ -65,7 +65,7 @@ class DirectEventTransport(EventTransport):
     def __init__(self):
         self.queue = asyncio.Queue()
 
-    async def send_event(self, event_message: EventMessage):
+    async def send_event(self, event_message: EventMessage, options: dict):
         """Publish an event"""
         logger.info(L("⚡  Directly sending event: {}", Bold(event_message)))
         await self.queue.put(event_message)

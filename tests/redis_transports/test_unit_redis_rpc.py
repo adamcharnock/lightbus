@@ -26,7 +26,7 @@ async def test_call_rpc(redis_rpc_transport, redis_client):
         kwargs={'field': 'value'},
         return_path='abc',
     )
-    await redis_rpc_transport.call_rpc(rpc_message)
+    await redis_rpc_transport.call_rpc(rpc_message, options={})
     assert await redis_client.keys('*') == [b'my.api:stream']
 
     messages = await redis_client.xrange('my.api:stream')

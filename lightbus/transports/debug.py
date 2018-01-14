@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class DebugRpcTransport(RpcTransport):
 
-    async def call_rpc(self, rpc_message: RpcMessage):
+    async def call_rpc(self, rpc_message: RpcMessage, options: dict):
         """Publish a call to a remote procedure"""
         logger.debug("Faking dispatch of message {}".format(rpc_message))
 
@@ -37,7 +37,7 @@ class DebugResultTransport(ResultTransport):
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: str):
         logger.info("Faking sending of result: {}".format(result_message))
 
-    async def receive_result(self, rpc_message: RpcMessage, return_path: str) -> ResultMessage:
+    async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict) -> ResultMessage:
         logger.info("⌛ Faking listening for results. Will issue fake result in 0.5 seconds...")
         await asyncio.sleep(0.1)  # This is relied upon in testing
         logger.debug('Faking received result')
@@ -52,7 +52,7 @@ class DebugEventTransport(EventTransport):
         self._reload = False
         self._events = set()
 
-    async def send_event(self, event_message: EventMessage):
+    async def send_event(self, event_message: EventMessage, options: dict):
         """Publish an event"""
         logger.info(" Faking sending of event {}.{} with kwargs: {}".format(
             event_message.api_name,
@@ -81,7 +81,7 @@ class DebugEventTransport(EventTransport):
 
         return event_messages, None
 
-    async def start_listening_for(self, api_name, event_name):
+    async def start_listening_for(self, api_name, event_name, options: dict):
         logger.info('Beginning to listen for {}.{}'.format(api_name, event_name))
         self._events.add('{}.{}'.format(api_name, event_name))
         if self._task:
