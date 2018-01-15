@@ -148,7 +148,7 @@ class EventTransport(object):
 
         The default implementation simply returns a random UUID in all cases, therefore
         no grouping will occur. This is the safest option, but also will not provide any
-        of the performance benefits details above.
+        of the performance benefits detailed above.
 
         """
         return uuid1()
