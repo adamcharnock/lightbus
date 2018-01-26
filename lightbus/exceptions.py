@@ -44,11 +44,11 @@ class InvalidEventListener(LightbusException):
     pass
 
 
-class CannotBlockHere(LightbusException):
+class NothingToListenFor(LightbusException):
     pass
 
 
-class InvalidRedisPool(LightbusException):
+class CannotBlockHere(LightbusException):
     pass
 
 

@@ -14,8 +14,9 @@ pytestmark = pytest.mark.reliability
 
 logger = logging.getLogger(__name__)
 
+
 @pytest.mark.run_loop  # TODO: Have test repeat a few times
-async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events, listen_for_events, dummy_api):
+async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events, dummy_api):
     # Use test_history() (below) to repeat any cases which fail
     caplog.set_level(logging.WARNING)
 
@@ -40,14 +41,8 @@ async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events,
             event_ok_ids[call_id] += 1
             history.append((call_id, 'S'))
 
-    done, (listen_task, ) = await asyncio.wait(
-        [
-            handle_aio_exceptions(fire_dummy_events(total=100, initial_delay=0.1)),
-            handle_aio_exceptions(listen_for_events(listener=listener)),
-        ],
-        return_when=asyncio.FIRST_COMPLETED,
-        timeout=20
-    )
+    listen_task = asyncio.ensure_future(bus.my.dummy.my_event.listen_async(listener))
+    await handle_aio_exceptions(fire_dummy_events(total=100, initial_delay=0.1))
 
     # Wait until we are done handling the events (up to 20 seconds)
     for _ in range(1, 20):

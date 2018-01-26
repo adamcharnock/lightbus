@@ -1,19 +1,17 @@
-import logging
-from asyncio.coroutines import CoroWrapper
-from asyncio.futures import CancelledError
-from datetime import datetime
-from typing import Any, Optional, Callable
-
 import asyncio
-
+import inspect
+import logging
 import time
+import traceback
+from asyncio.futures import CancelledError
+from typing import Optional
 
+from lightbus.api import registry
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
     InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
-from lightbus.api import registry
 from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
 from lightbus.transports import RpcTransport, ResultTransport, EventTransport, RedisRpcTransport, \
     RedisResultTransport, RedisEventTransport
@@ -33,13 +31,12 @@ class BusClient(object):
         self.result_transport = result_transport
         self.event_transport = event_transport
         self.process_name = process_name or generate_process_name()
-        self._listeners = {}
 
     def setup(self, plugins: dict=None):
         """Setup lightbus and get it ready to consume events and/or RPCs
 
-        You should call this manually if you are calling `consume_rpcs()` or
-        `consume_events()` directly. This you be handled for you if you are
+        You should call this manually if you are calling `consume_rpcs()`
+        directly. This you be handled for you if you are
         calling `run_forever()`.
         """
         if plugins is None:
@@ -54,7 +51,7 @@ class BusClient(object):
         else:
             logger.info("No plugins loaded")
 
-    def run_forever(self, *, loop=None, consume_rpcs=True, consume_events=True, plugins=None):
+    def run_forever(self, *, loop=None, consume_rpcs=True, plugins=None):
         logger.info(LBullets(
             "Lightbus getting ready to run. Brokers in use",
             items={
@@ -78,40 +75,25 @@ class BusClient(object):
         registry.add(LightbusMetricsApi())
 
         if consume_rpcs:
-            if registry.public():
-                logger.info(LBullets(
-                    "APIs in registry ({})".format(len(registry.all())),
-                    items=registry.all()
-                ))
-            else:
-                if consume_events:
-                    logger.warning(
-                        "No APIs have been registered, lightbus may still receive events "
-                        "but Lightbus will not handle any incoming RPCs"
-                    )
-                else:
-                    logger.error(
-                        "No APIs have been registered, yet Lightbus has been configured to only "
-                        "handle RPCs. There is therefore nothing for lightbus to do. Exiting."
-                    )
-                    return
+            logger.info(LBullets(
+                "APIs in registry ({})".format(len(registry.all())),
+                items=registry.all()
+            ))
 
         block(handle_aio_exceptions(
             plugin_hook('before_server_start', bus_client=self, loop=loop)
         ), timeout=5)
 
         loop = loop or asyncio.get_event_loop()
-        self._run_forever(loop, consume_rpcs, consume_events)
+        self._run_forever(loop, consume_rpcs)
 
         loop.run_until_complete(handle_aio_exceptions(
             plugin_hook('after_server_stopped', bus_client=self, loop=loop)
         ))
 
-    def _run_forever(self, loop, consume_rpcs, consume_events):
+    def _run_forever(self, loop, consume_rpcs):
         if consume_rpcs and registry.all():
             asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs()), loop=loop)
-        if consume_events:
-            asyncio.ensure_future(handle_aio_exceptions(self.consume_events()), loop=loop)
 
         try:
             loop.run_forever()
@@ -212,38 +194,6 @@ class BusClient(object):
 
     # Events
 
-    async def consume_events(self):
-        while True:
-            try:
-                logging.warning("Calling _consume_events_once()")
-                await self._consume_events_once()
-            except CancelledError:
-                return
-            except BaseException as e:
-                logging.warning("Exception calling _consume_events_once()")
-                logging.exception(e)
-                raise
-            else:
-                logging.warning("Done calling _consume_events_once()")
-
-    async def _consume_events_once(self):
-        try:
-            async with self.event_transport.consume_events() as event_messages:
-                for event_message in event_messages:
-                    await plugin_hook('before_event_execution', event_message=event_message, bus_client=self)
-                    key = (event_message.api_name, event_message.event_name)
-                    for listener in self._listeners.get(key, []):
-                        # TODO: Run in parallel/gathered?
-                        co = listener(**event_message.kwargs)
-                        if isinstance(co, (CoroWrapper, asyncio.Future)):
-                            await co
-                    await plugin_hook('after_event_execution', event_message=event_message, bus_client=self)
-
-        except SuddenDeathException:
-            # Useful for simulating crashes in testing.
-            logger.info('Sudden death while holding {} messages'.format(len(event_messages)))
-            return
-
     async def fire_event(self, api_name, name, kwargs: dict=None, options: dict=None):
         kwargs = kwargs or {}
         try:
@@ -287,11 +237,22 @@ class BusClient(object):
                 "The specified listener '{}' is not callable. Perhaps you called the function rather "
                 "than passing the function itself?".format(listener)
             )
+        options = options or {}
 
-        key = (api_name, name)
-        self._listeners.setdefault(key, [])
-        self._listeners[key].append(listener)
-        await self.event_transport.start_listening_for(api_name, name, options=options)
+        async def listen_for_event_task():
+            while True:
+                try:
+                    async for event_message in self.event_transport.consume(listen_for=[(api_name, name)], **options):
+                            co = listener(**event_message.kwargs)
+                            if inspect.isawaitable(co):
+                                await co
+                    return
+                except SuddenDeathException:
+                    continue
+
+        return asyncio.ensure_future(
+            handle_aio_exceptions(listen_for_event_task())
+        )
 
     # Results
 
@@ -360,8 +321,8 @@ class BusNode(object):
                 yield parent
             parent = parent.parent
 
-    def run_forever(self, loop=None, consume_rpcs=True, consume_events=True, plugins=None):
-        self.bus_client.run_forever(loop=loop, consume_rpcs=consume_rpcs, consume_events=consume_events, plugins=None)
+    def run_forever(self, loop=None, consume_rpcs=True, plugins=None):
+        self.bus_client.run_forever(loop=loop, consume_rpcs=consume_rpcs, plugins=plugins)
 
     @property
     def api_name(self):

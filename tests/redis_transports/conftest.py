@@ -47,16 +47,6 @@ def fire_dummy_events_fixture(bus):
     return fire_dummy_events
 
 
-@pytest.fixture(name='listen_for_events')
-def listen_for_events_fixture(bus):
-    # Note: You'll have to cancel this manually as it'll run forever
-    async def listen_for_events(listener):
-        await bus.my.dummy.my_event.listen_async(listener)
-        await bus.bus_client.consume_events()
-        logging.warning('TEST: listen_for_events() completed (should not happen, should get cancelled)')
-    return listen_for_events
-
-
 @pytest.fixture(name='call_rpc')
 def call_rpc_fixture(bus):
     results = []

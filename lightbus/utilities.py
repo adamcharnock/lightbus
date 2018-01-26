@@ -175,26 +175,5 @@ def autodiscover(directory='.'):
     return bus_module
 
 
-class MessageConsumptionContext(object):
-
-    def __init__(self, fetch: Callable, on_consumed: Callable):
-        self.fetch = fetch
-        self.on_consumed = on_consumed
-
-    async def __aenter__(self):
-        messages, self.extra = await self.fetch()
-        return messages
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if not exc_val:
-            await self.on_consumed(self.extra)
-        else:
-            if exc_type != SuddenDeathException:
-                logging.warning(
-                    'Consuming messages failed due to error: {}. Transport '
-                    'should roll back and re-attempt.'.format(exc_val)
-                )
-
-
 def generate_process_name():
     return '{}-{}-{}'.format(random.choice(_adjectives), random.choice(_nouns), random.randint(1, 1000))

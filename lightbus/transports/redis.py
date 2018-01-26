@@ -1,29 +1,27 @@
-import asyncio
 import json
 import logging
-from datetime import datetime
-
-from collections import OrderedDict
-from typing import Sequence, Tuple, Optional, Any
-from uuid import uuid1
-
 import time
-from aioredis.util import decode
-from aioredis.pool import ConnectionsPool
+from datetime import datetime
+from typing import Sequence, Optional, Union, Generator
+
 import aioredis
 from aioredis import Redis
+from aioredis.pool import ConnectionsPool
+from aioredis.util import decode
+from collections import OrderedDict
 
-from lightbus.exceptions import InvalidRedisPool
-from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
 from lightbus.api import Api
+from lightbus.exceptions import LightbusException
 from lightbus.log import L, Bold, LBullets
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
+from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
 from lightbus.utilities import human_time
 
 logger = logging.getLogger(__name__)
 
 # TODO: There is a lot of duplicated code here, particularly between the RPC transport & event transport
 
+Since = Union[str, datetime, None]
 
 class RedisTransportMixin(object):
     connection_kwargs: {}
@@ -185,7 +183,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         self._task = None
         self._reload = False
-        self._streams = OrderedDict()
 
     async def send_event(self, event_message: EventMessage, options: dict):
         """Publish an event"""
@@ -208,117 +205,67 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             Bold(event_message), human_time(time.time() - start_time), Bold(stream)
         ))
 
-    async def fetch_events(self) -> Tuple[Sequence[EventMessage], Any]:
-        pool = await self.get_redis_pool()
-        with await pool as redis:
-            if not self._streams:
-                logger.debug('Event backend has been given no events to consume. Event backend will sleep.')
-                self._task = asyncio.ensure_future(asyncio.sleep(3600 * 24 * 365))
-            else:
+    async def fetch(self, listen_for, since: Union[Since, Sequence[Since]] = '$', forever=True) -> Generator[EventMessage, None, None]:
+        if not isinstance(since, (list, tuple)):
+            since = [since] * len(listen_for)
+        since = map(normalise_since_value, since)
+
+        # Keys are stream names, values as the latest ID consumed from that stream
+        stream_names = ['{}.{}:stream'.format(api, name) for api, name in listen_for]
+        streams = OrderedDict(zip(stream_names, since))
+
+        while True:
+            # Fetch some messages
+            pool = await self.get_redis_pool()
+            with await pool as redis:
                 logger.info(LBullets(
                     'Consuming events from', items={
-                        '{} ({})'.format(*v) for v in self._streams.items()
+                        '{} ({})'.format(*v) for v in streams.items()
                     }
                 ))
-                # TODO: Count/timeout
-                self._task = asyncio.ensure_future(
-                    redis.xread(
-                        streams=list(self._streams.keys()),
-                        latest_ids=list(self._streams.values()),
-                        count=10,  # TODO: Make configurable, add timeout too
-                    )
+                # This will block until there are some messages available
+                stream_messages = await redis.xread(
+                    streams=list(streams.keys()),
+                    latest_ids=list(streams.values()),
+                    count=10,  # TODO: Make configurable, add timeout too
                 )
 
-            try:
-                stream_messages = await self._task or []
-            except asyncio.CancelledError as e:
-                if self._reload:
-                    # Streams to listen on have changed.
-                    # Bail out and let this method get called again,
-                    # at which point we'll pickup the new streams.
-                    logger.debug('Event transport reloading.')
-                    stream_messages = []
-                    self._reload = False
-                else:
-                    raise
+            # Handle the messages we have received
+            latest_ids = {}
+            for stream, message_id, fields in stream_messages:
+                stream = decode(stream, 'utf8')
+                message_id = decode(message_id, 'utf8')
+                decoded_fields = decode_message_fields(fields)
 
-        event_messages = []
-        latest_ids = {}
-        for stream, message_id, fields in stream_messages:
-            stream = decode(stream, 'utf8')
-            message_id = decode(message_id, 'utf8')
-            decoded_fields = decode_message_fields(fields)
+                # Keep track of which event ID we are up to. We will store these
+                # in consumption_complete(), once we know the events have definitely
+                # been consumed.
+                latest_ids[stream] = message_id
 
-            # Keep track of which event ID we are up to. We will store these
-            # in consumption_complete(), once we know the events have definitely
-            # been consumed.
-            latest_ids[stream] = message_id
+                # Unfortunately, there is an edge-case when BOTH:
+                #  1. We are consuming events from 'now' (i.e. event ID '$'), the default
+                #  2. There is an unhandled error when processing the FIRST batch of events
+                # In which case, the next iteration would start again from '$', in which
+                # case we would loose events. Therefore 'subtract one' from the message ID
+                # and store that immediately. Subtracting one is imprecise, as there is a SLIM
+                # chance we could grab another event in the process. However, if events are
+                # being consumed from 'now' then the developer presumably doesn't care about
+                # a high level of precision.
+                if streams[stream] == '$':
+                    streams[stream] = redis_stream_id_subtract_one(message_id)
 
-            # Unfortunately, these is an edge-case when BOTH:
-            #  1. We are consuming events from 'now' (i.e. event ID '$'), the default
-            #  2. There is an unhandled error when processing the FIRST batch of events
-            # In which case, the next iteration would start again from '$', in which
-            # case we would loose events. Therefore 'subtract one' from the message ID
-            # and store that immediately. Subtracting one is imprecise, as there is a SLIM
-            # chance we could grab another event in the process. However, if events are
-            # being consumed from 'now' then the developer presumably doesn't care about
-            # a high level of precision.
-            if self._streams[stream] == '$':
-                self._streams[stream] = redis_stream_id_subtract_one(message_id)
+                logger.debug(LBullets(
+                    L("⬅ Received event {} on stream {}", Bold(message_id), Bold(stream)),
+                    items=decoded_fields
+                ))
 
-            event_messages.append(
-                EventMessage.from_dict(decoded_fields)
-            )
-            logger.debug(LBullets(
-                L("⬅ Received event {} on stream {}", Bold(message_id), Bold(stream)),
-                items=decoded_fields
-            ))
+                event_message = EventMessage.from_dict(decoded_fields)
+                yield event_message
 
-        return event_messages, latest_ids
+            streams.update(latest_ids)
 
-    async def consumption_complete(self, latest_ids):
-        self._streams.update(latest_ids)
-
-    async def start_listening_for(self, api_name, event_name, options: dict):
-        stream_name = '{}.{}:stream'.format(api_name, event_name)
-        options = options or {}
-        since = options.get('since')
-
-        if stream_name in self._streams:
-            if since:
-                # We could probably handle this by starting up a new Redis connection
-                # just for this listener. Let's see if this is needed.
-                logger.warning(
-                    'Cannot start listening on {}.{} as it is already being listened for. '
-                    'You also specified a "since" value, so be warned you are probably not '
-                    'going to be getting the history of messages you expect. Consider '
-                    'calling stop_listening_for() first.'.format(api_name, event_name)
-                )
-            else:
-                logger.debug('Already listening on event stream {}. Doing nothing.'.format(stream_name))
-        else:
-            if not since:
-                latest_id = '$'
-            elif hasattr(since, 'timestamp'):  # datetime
-                # Create message ID: "<milliseconds-timestamp>-<sequence-number>"
-                latest_id = '{}-0'.format(round(since.timestamp() * 1000))
-            else:
-                latest_id = since
-
-            logger.info(L(
-                'Will to listen on event stream {} {}',
-                Bold(stream_name),
-                'starting now' if self._task else 'once event consumption begins',
-            ))
-            self._streams[stream_name] = latest_id
-
-            if self._task:
-                logger.debug('Existing consumer task running, cancelling')
-                self._reload = True
-                self._task.cancel()
-
-    async def stop_listening_for(self, api_name, event_name):
-        raise NotImplementedError()
+            if not forever:
+                return
 
 
 def redis_encode(value):
@@ -371,3 +318,18 @@ def redis_stream_id_subtract_one(message_id):
         # from this is neither possible, desirable or useful.
         return message_id
     return '{:13d}-{}'.format(milliseconds, n)
+
+
+def normalise_since_value(since):
+    """Take a 'since' value and normalise it to be a redis message ID"""
+    if not since:
+        return '$'
+    elif hasattr(since, 'timestamp'):  # datetime
+        # Create message ID: "<milliseconds-timestamp>-<sequence-number>"
+        return '{}-0'.format(round(since.timestamp() * 1000))
+    else:
+        return since
+
+
+class InvalidRedisPool(LightbusException):
+    pass

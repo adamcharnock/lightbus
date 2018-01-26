@@ -45,12 +45,10 @@ async def test_consume_events(redis_event_transport: RedisEventTransport, redis_
         })
 
     async def co_consume():
-        await redis_event_transport.start_listening_for(dummy_api, 'my_event', options={})
-        async with redis_event_transport.consume_events() as messages:
-            return messages
+        async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')]):
+            return message_
 
-    enqueue_result, messages = await asyncio.gather(co_enqeue(), co_consume())
-    message = messages[0]
+    enqueue_result, message = await asyncio.gather(co_enqeue(), co_consume())
     assert message.api_name == 'my.dummy'
     assert message.event_name == 'my_event'
     assert message.kwargs == {'field': 'value'}
@@ -86,14 +84,12 @@ async def test_consume_events_since_id(redis_event_transport: RedisEventTranspor
         message_id='1515000003000-0',
     )
 
-    await redis_event_transport.start_listening_for(dummy_api, 'my_event', options={
-        'since': '1515000001500-0',
-    })
+    consumer = redis_event_transport.consume([('my.dummy', 'my_event')], since='1515000001500-0', forever=False)
+    messages = [m async for m in consumer]
 
-    async with redis_event_transport.consume_events() as messages:
-        assert len(messages) == 2
-        assert messages[0].kwargs['field'] == '2'
-        assert messages[1].kwargs['field'] == '3'
+    assert len(messages) == 2
+    assert messages[0].kwargs['field'] == '2'
+    assert messages[1].kwargs['field'] == '3'
 
 
 @pytest.mark.run_loop
@@ -126,12 +122,11 @@ async def test_consume_events_since_datetime(redis_event_transport: RedisEventTr
         message_id='1515000003000-0',
     )
 
-    await redis_event_transport.start_listening_for(dummy_api, 'my_event', options={
-        # 1515000001500-0 -> 2018-01-03T17:20:01.500Z
-        'since': datetime(2018, 1, 3, 17, 20, 1, 500),
-    })
+    # 1515000001500-0 -> 2018-01-03T17:20:01.500Z
+    since_datetime = datetime(2018, 1, 3, 17, 20, 1, 500)
+    consumer = redis_event_transport.consume([('my.dummy', 'my_event')], since=since_datetime, forever=False)
+    messages = [m async for m in consumer]
 
-    async with redis_event_transport.consume_events() as messages:
-        assert len(messages) == 2
-        assert messages[0].kwargs['field'] == '2'
-        assert messages[1].kwargs['field'] == '3'
+    assert len(messages) == 2
+    assert messages[0].kwargs['field'] == '2'
+    assert messages[1].kwargs['field'] == '3'

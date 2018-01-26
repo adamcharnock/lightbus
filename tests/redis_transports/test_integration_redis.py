@@ -92,16 +92,11 @@ async def test_event(bus: lightbus.BusNode, dummy_api):
     async def listener(**kwargs):
         received_kwargs.append(kwargs)
 
-    async def co_fire_event():
-        await asyncio.sleep(0.01)
-        return await bus.my.dummy.my_event.fire_async(field='Hello! 😎')
+    await bus.my.dummy.my_event.listen_async(listener)
+    await asyncio.sleep(0.01)
+    await bus.my.dummy.my_event.fire_async(field='Hello! 😎')
 
-    async def co_listen_for_events():
-        await bus.my.dummy.my_event.listen_async(listener)
-        # Consume a single event, rather than loop forever using consume_events()
-        await bus.bus_client._consume_events_once()
-
-    await asyncio.gather(co_fire_event(), co_listen_for_events())
+    # await asyncio.gather(co_fire_event(), co_listen_for_events())
     assert received_kwargs == [{'field': 'Hello! 😎'}]
 
 
