@@ -11,10 +11,10 @@ pytestmark = pytest.mark.unit
 
 
 @pytest.mark.run_loop
-async def test_get_redis(redis_event_transport):
+async def test_connection_manager(redis_event_transport):
     """Does get_redis() provide a working redis connection"""
-    pool = await redis_event_transport.get_redis_pool()
-    with await pool as redis:
+    connection_manager = await redis_event_transport.connection_manager()
+    with await connection_manager as redis:
         assert await redis.info()
 
 
