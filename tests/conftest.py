@@ -55,7 +55,8 @@ def loop():
 
         for task in asyncio.Task.all_tasks(loop):
             try:
-                loop.run_until_complete(task)
+                if not task.done():
+                    loop.run_until_complete(task)
             except asyncio.CancelledError:
                 pass
 

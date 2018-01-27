@@ -45,7 +45,7 @@ async def test_consume_events(redis_event_transport: RedisEventTransport, redis_
         })
 
     async def co_consume():
-        async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')]):
+        async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')], {}):
             return message_
 
     enqueue_result, message = await asyncio.gather(co_enqeue(), co_consume())
@@ -84,7 +84,7 @@ async def test_consume_events_since_id(redis_event_transport: RedisEventTranspor
         message_id='1515000003000-0',
     )
 
-    consumer = redis_event_transport.consume([('my.dummy', 'my_event')], since='1515000001500-0', forever=False)
+    consumer = redis_event_transport.consume([('my.dummy', 'my_event')], {}, since='1515000001500-0', forever=False)
     messages = [m async for m in consumer]
 
     assert len(messages) == 2
@@ -124,7 +124,7 @@ async def test_consume_events_since_datetime(redis_event_transport: RedisEventTr
 
     # 1515000001500-0 -> 2018-01-03T17:20:01.500Z
     since_datetime = datetime(2018, 1, 3, 17, 20, 1, 500)
-    consumer = redis_event_transport.consume([('my.dummy', 'my_event')], since=since_datetime, forever=False)
+    consumer = redis_event_transport.consume([('my.dummy', 'my_event')], {}, since=since_datetime, forever=False)
     messages = [m async for m in consumer]
 
     assert len(messages) == 2

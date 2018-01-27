@@ -80,7 +80,7 @@ async def test_rpc_error(bus: lightbus.BusNode, dummy_api):
     call_task.cancel()
 
     with pytest.raises(LightbusServerError):
-        assert call_task.result()
+        await call_task.result()
 
 
 @pytest.mark.run_loop
