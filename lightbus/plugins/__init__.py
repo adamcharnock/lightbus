@@ -152,7 +152,7 @@ async def plugin_hook(name, **kwargs):
             except Exception as e:
                 logger.error('Exception while executing plugin hook {}.{}.{}'.format(
                     plugin.__module__,
-                    plugin.__class__.name,
+                    plugin.__class__.__name__,
                     name
                 ))
                 logger.exception(e)
