@@ -11,7 +11,7 @@ from aioredis.util import decode
 from collections import OrderedDict
 
 from lightbus.api import Api
-from lightbus.exceptions import LightbusException
+from lightbus.exceptions import LightbusException, LightbusShutdownInProgress
 from lightbus.log import L, Bold, LBullets
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 # TODO: There is a lot of duplicated code here, particularly between the RPC transport & event transport
 
 Since = Union[str, datetime, None]
+
 
 class RedisTransportMixin(object):
     connection_kwargs: {}
@@ -47,10 +48,13 @@ class RedisTransportMixin(object):
 
             self._redis_pool = redis_pool
 
-    async def get_redis_pool(self) -> Redis:
+    async def connection_manager(self) -> Redis:
         if self._redis_pool is None:
             self._redis_pool = await aioredis.create_redis_pool(**self.connection_kwargs)
-        return self._redis_pool
+        try:
+            return await self._redis_pool
+        except aioredis.PoolClosedError:
+            raise LightbusShutdownInProgress('Redis connection pool has been closed. Assuming shutdown in progress.')
 
 
 class RedisRpcTransport(RedisTransportMixin, RpcTransport):
@@ -70,8 +74,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             )
         )
 
-        pool = await self.get_redis_pool()
-        with await pool as redis:
+        with await self.connection_manager() as redis:
             start_time = time.time()
             # TODO: MAXLEN
             await redis.xadd(stream=stream, fields=encode_message_fields(rpc_message.to_dict()))
@@ -93,8 +96,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             ]
         ))
 
-        pool = await self.get_redis_pool()
-        with await pool as redis:
+        with await self.connection_manager() as redis:
             # TODO: Count/timeout configurable
             stream_messages = await redis.xread(streams, latest_ids=latest_ids, count=10)
 
@@ -137,8 +139,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         ))
         redis_key = self._parse_return_path(return_path)
 
-        pool = await self.get_redis_pool()
-        with await pool as redis:
+        with await self.connection_manager() as redis:
             start_time = time.time()
             p = redis.pipeline()
             p.lpush(redis_key, redis_encode(result_message.to_dict()))
@@ -155,8 +156,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         logger.info(L("⌛ Awaiting Redis result for RPC message: {}", Bold(rpc_message)))
         redis_key = self._parse_return_path(return_path)
 
-        pool = await self.get_redis_pool()
-        with await pool as redis:
+        with await self.connection_manager() as redis:
             start_time = time.time()
             # TODO: Make timeout configurable
             _, result = await redis.blpop(redis_key, timeout=5)
@@ -194,8 +194,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             )
         )
 
-        pool = await self.get_redis_pool()
-        with await pool as redis:
+        with await self.connection_manager() as redis:
             start_time = time.time()
             # TODO: MAXLEN
             await redis.xadd(stream=stream, fields=encode_message_fields(event_message.to_dict()))
@@ -223,8 +222,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         while True:
             # Fetch some messages
-            pool = await self.get_redis_pool()
-            with await pool as redis:
+            with await self.connection_manager() as redis:
                 logger.info(LBullets(
                     'Consuming events from', items={
                         '{} ({})'.format(*v) for v in streams.items()

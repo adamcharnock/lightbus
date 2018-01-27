@@ -5,6 +5,9 @@ from asyncio.futures import CancelledError
 import pytest
 
 import lightbus
+from lightbus.plugins import remove_all_plugins, get_plugins, manually_set_plugins
+from lightbus.plugins.metrics import MetricsPlugin
+from lightbus.plugins.state import StatePlugin
 from lightbus.utilities import handle_aio_exceptions
 
 pytestmark = pytest.mark.reliability
@@ -16,6 +19,9 @@ logger = logging.getLogger(__name__)
 async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events, dummy_api, mocker):
     # Use test_history() (below) to repeat any cases which fail
     caplog.set_level(logging.WARNING)
+
+    # The metrics plugins will add too much overhead to this test
+    remove_all_plugins()
 
     event_ok_ids = dict()
     history = []
@@ -31,9 +37,9 @@ async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events,
     for _ in range(0, 20):
         logging.warning('TEST: Still waiting for events to finish. {} so far'.format(len(event_ok_ids)))
         for _ in range(0, 5):
-            listen_task = asyncio.ensure_future(handle_aio_exceptions(
+            listen_task = asyncio.ensure_future(
                 bus.my.dummy.my_event.listen_async(listener)
-            ))
+            )
             await asyncio.sleep(0.2)
             listen_task.cancel()
             await listen_task
@@ -49,10 +55,12 @@ async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events,
     except CancelledError:
         pass
 
+    duplicate_calls = sum([n - 1 for n in event_ok_ids.values()])
+
     logger.warning("History: {}".format(','.join('{}{}'.format(*x) for x in history)))
+    logger.warning('Finished with {}/100 events processed, {} duplicated calls'.format(len(event_ok_ids), duplicate_calls))
 
     assert set(event_ok_ids.keys()) == set(range(0, 100))
 
-    duplicate_calls = sum([n - 1 for n in event_ok_ids.values()])
     assert duplicate_calls > 0
 

@@ -15,7 +15,7 @@ from pathlib import Path
 
 import sys
 
-from lightbus.exceptions import CannotBlockHere, SuddenDeathException
+from lightbus.exceptions import CannotBlockHere, SuddenDeathException, LightbusShutdownInProgress
 from lightbus.log import LightbusFormatter, L, Bold
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,9 @@ async def handle_aio_exceptions(fn):
     try:
         await fn
     except asyncio.CancelledError:
-        raise  # Note: Changed to 'raise' rather than pass recently (20/12/2017)
+        raise
+    except LightbusShutdownInProgress as e:
+        logger.info('Shutdown in progress: {}'.format(e))
     except Exception as e:
         logger.exception(e)
         traceback.print_exc()

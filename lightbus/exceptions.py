@@ -75,3 +75,7 @@ class PluginHookNotFound(LightbusException):
 
 class LightbusServerError(LightbusException):
     pass
+
+
+class LightbusShutdownInProgress(LightbusException):
+    pass

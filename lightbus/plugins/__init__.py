@@ -10,7 +10,7 @@ from collections import OrderedDict
 
 import pkg_resources
 import lightbus
-from lightbus.exceptions import PluginsNotLoaded, PluginHookNotFound, InvalidPlugins
+from lightbus.exceptions import PluginsNotLoaded, PluginHookNotFound, InvalidPlugins, LightbusShutdownInProgress
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 
 _plugins = None
@@ -149,6 +149,8 @@ async def plugin_hook(name, **kwargs):
                 )
             except asyncio.CancelledError:
                 raise
+            except LightbusShutdownInProgress as e:
+                logger.info('Shutdown in progress: {}'.format(e))
             except Exception as e:
                 logger.error('Exception while executing plugin hook {}.{}.{}'.format(
                     plugin.__module__,
