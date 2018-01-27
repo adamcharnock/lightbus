@@ -1,7 +1,11 @@
+import traceback
 from argparse import ArgumentParser, _ArgumentGroup, Namespace
 from asyncio import AbstractEventLoop
 from typing import Sequence, Dict, Type, Any
 
+import asyncio
+
+import logging
 from collections import OrderedDict
 
 import pkg_resources
@@ -12,6 +16,9 @@ from lightbus.message import RpcMessage, EventMessage, ResultMessage
 _plugins = None
 _hooks_names = []
 ENTRYPOINT_NAME = 'lightbus_plugins'
+
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: Document plugins in docs (and reference those docs here)
@@ -136,7 +143,19 @@ async def plugin_hook(name, **kwargs):
     for plugin in _plugins.values():
         handler = getattr(plugin, name, None)
         if handler:
-            return_values.append(
-                await handler(**kwargs)
-            )
+            try:
+                return_values.append(
+                    await handler(**kwargs)
+                )
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                logger.error('Exception while executing plugin hook {}.{}.{}'.format(
+                    plugin.__module__,
+                    plugin.__class__.name,
+                    name
+                ))
+                logger.exception(e)
+                traceback.print_exc()
+
     return return_values

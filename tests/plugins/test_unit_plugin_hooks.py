@@ -93,4 +93,7 @@ async def test_event_execution(called_hooks, dummy_bus: BusNode, loop, add_base_
 
     assert called_hooks() == ['before_event_execution', 'after_event_execution']
     task.cancel()
-    await task
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass

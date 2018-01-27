@@ -65,8 +65,9 @@ class DebugEventTransport(EventTransport):
 
         logger.info("⌛ Faking listening for events {}.".format(self._events))
 
-        self._task = asyncio.ensure_future(asyncio.sleep(0.1))
-        yield self._get_fake_message()
+        while True:
+            await asyncio.sleep(0.1)
+            yield self._get_fake_message()
 
     def _get_fake_message(self):
         return EventMessage(api_name='my_company.auth', event_name='user_registered', kwargs={'example': 'value'})

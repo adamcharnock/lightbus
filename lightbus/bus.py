@@ -264,7 +264,6 @@ class BusClient(object):
                     # Let the event transport know that it can consider the
                     # event message to have been successfully consumed
                     await self.event_transport.consumption_complete(event_message, listener_context)
-
                     await plugin_hook('after_event_execution', event_message=event_message, bus_client=self)
 
         return asyncio.ensure_future(
