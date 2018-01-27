@@ -76,7 +76,7 @@ class EventTransport(object):
         """Publish an event"""
         raise NotImplementedError()
 
-    def consume(self, listen_for: List[Tuple[str, str]], **kwargs):
+    def consume(self, listen_for: List[Tuple[str, str]], context: dict, **kwargs):
         """Consume messages for the given APIs
 
         Examples:
@@ -96,9 +96,9 @@ class EventTransport(object):
                 'EventTransport.consume() was called without providing anything '
                 'to listen for in the "listen_for" argument.'
             )
-        return self.fetch(listen_for, **kwargs)
+        return self.fetch(listen_for, context, **kwargs)
 
-    async def fetch(self, listen_for: List[Tuple[str, str]], **kwargs) -> Generator[EventMessage, None, None]:
+    async def fetch(self, listen_for: List[Tuple[str, str]], context:dict, **kwargs) -> Generator[EventMessage, None, None]:
         """Consume RPC messages for the given events
 
         Must return a tuple, where the first item is a iterable of
@@ -110,3 +110,6 @@ class EventTransport(object):
         will simply be ignored.
         """
         raise NotImplementedError()
+
+    async def consumption_complete(self, event_message: EventMessage, context: dict):
+        pass

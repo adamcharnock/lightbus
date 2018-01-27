@@ -50,6 +50,15 @@ def loop():
     try:
         yield loop
     finally:
+        for task in asyncio.Task.all_tasks(loop):
+            task.cancel()
+
+        for task in asyncio.Task.all_tasks(loop):
+            try:
+                loop.run_until_complete(task)
+            except asyncio.CancelledError:
+                pass
+
         if hasattr(loop, 'is_closed'):
             closed = loop.is_closed()
         else:

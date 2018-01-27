@@ -205,14 +205,21 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             Bold(event_message), human_time(time.time() - start_time), Bold(stream)
         ))
 
-    async def fetch(self, listen_for, since: Union[Since, Sequence[Since]] = '$', forever=True) -> Generator[EventMessage, None, None]:
+    async def fetch(self, listen_for, context: dict, since: Union[Since, Sequence[Since]] = '$', forever=True) -> Generator[EventMessage, None, None]:
         if not isinstance(since, (list, tuple)):
             since = [since] * len(listen_for)
         since = map(normalise_since_value, since)
 
         # Keys are stream names, values as the latest ID consumed from that stream
         stream_names = ['{}.{}:stream'.format(api, name) for api, name in listen_for]
-        streams = OrderedDict(zip(stream_names, since))
+
+        # Setup our context to have sensible defaults
+        context.setdefault('streams', OrderedDict())
+        # We'll use the `streams` variable as shorthand for `context['streams']`
+        streams = context['streams']
+
+        for stream_name, stream_since in zip(stream_names, since):
+            streams.setdefault(stream_name, stream_since)
 
         while True:
             # Fetch some messages
@@ -223,24 +230,21 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         '{} ({})'.format(*v) for v in streams.items()
                     }
                 ))
-                # This will block until there are some messages available
-                stream_messages = await redis.xread(
-                    streams=list(streams.keys()),
-                    latest_ids=list(streams.values()),
-                    count=10,  # TODO: Make configurable, add timeout too
-                )
+                try:
+                    # This will block until there are some messages available
+                    stream_messages = await redis.xread(
+                        streams=list(streams.keys()),
+                        latest_ids=list(streams.values()),
+                        count=10,  # TODO: Make configurable, add timeout too
+                    )
+                except aioredis.ConnectionForcedCloseError:
+                    return
 
             # Handle the messages we have received
-            latest_ids = {}
             for stream, message_id, fields in stream_messages:
                 stream = decode(stream, 'utf8')
                 message_id = decode(message_id, 'utf8')
                 decoded_fields = decode_message_fields(fields)
-
-                # Keep track of which event ID we are up to. We will store these
-                # in consumption_complete(), once we know the events have definitely
-                # been consumed.
-                latest_ids[stream] = message_id
 
                 # Unfortunately, there is an edge-case when BOTH:
                 #  1. We are consuming events from 'now' (i.e. event ID '$'), the default
@@ -260,12 +264,18 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 ))
 
                 event_message = EventMessage.from_dict(decoded_fields)
-                yield event_message
 
-            streams.update(latest_ids)
+                # TODO: Consider subclassing EventMessage as RedisEventMessage
+                event_message.redis_id = message_id
+                event_message.redis_stream = stream
+
+                yield event_message
 
             if not forever:
                 return
+
+    async def consumption_complete(self, event_message: EventMessage, context: dict):
+        context['streams'][event_message.redis_stream] = event_message.redis_id
 
 
 def redis_encode(value):

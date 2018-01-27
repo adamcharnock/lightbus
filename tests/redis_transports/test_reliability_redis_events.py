@@ -16,46 +16,39 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.mark.run_loop  # TODO: Have test repeat a few times
-async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events, dummy_api):
+async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events, dummy_api, mocker):
     # Use test_history() (below) to repeat any cases which fail
     caplog.set_level(logging.WARNING)
 
     event_ok_ids = dict()
-    event_mayhem_ids = dict()
     history = []
 
-    # A listener that artificially simulates the process
-    # dieing through use of the SuddenDeathException()
-    async def listener(**kwargs):
-        call_id = int(kwargs['field'])
-        # Die randomly, except for the first and last calls
-        # which we'll test separately
-        if random() < 0.3 and call_id not in (0, 99):  # SIMULATE RANDOM EVENT DYING
-            # Cause some mayhem
-            event_mayhem_ids.setdefault(call_id, 0)
-            event_mayhem_ids[call_id] += 1
-            history.append((call_id, 'E'))
-            raise SuddenDeathException()
-        else:
-            event_ok_ids.setdefault(call_id, 0)
-            event_ok_ids[call_id] += 1
-            history.append((call_id, 'S'))
+    async def listener(field, **kwargs):
+        call_id = field
+        event_ok_ids.setdefault(call_id, 0)
+        event_ok_ids[call_id] += 1
+        await asyncio.sleep(0.01)
 
-    listen_task = asyncio.ensure_future(bus.my.dummy.my_event.listen_async(listener))
-    await handle_aio_exceptions(fire_dummy_events(total=100, initial_delay=0.1))
+    fire_task = asyncio.ensure_future(handle_aio_exceptions(fire_dummy_events(total=100, initial_delay=0.1)))
 
-    # Wait until we are done handling the events (up to 20 seconds)
-    for _ in range(1, 20):
-        await asyncio.sleep(1)
+    for _ in range(0, 20):
         logging.warning('TEST: Still waiting for events to finish. {} so far'.format(len(event_ok_ids)))
+        for _ in range(0, 5):
+            listen_task = asyncio.ensure_future(handle_aio_exceptions(
+                bus.my.dummy.my_event.listen_async(listener)
+            ))
+            await asyncio.sleep(0.2)
+            listen_task.cancel()
+            await listen_task
+
         if len(event_ok_ids) == 100:
             logging.warning('TEST: Events finished')
             break
 
     # Cleanup the tasks
-    listen_task.cancel()
+    fire_task.cancel()
     try:
-        await listen_task
+        await fire_task
     except CancelledError:
         pass
 
@@ -65,7 +58,6 @@ async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events,
 
     duplicate_calls = sum([n - 1 for n in event_ok_ids.values()])
     assert duplicate_calls > 0
-    assert len(event_mayhem_ids) > 0
 
 
 @pytest.mark.run_loop  # TODO: Have test repeat a few times

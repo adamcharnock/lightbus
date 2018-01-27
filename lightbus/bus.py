@@ -238,17 +238,28 @@ class BusClient(object):
                 "than passing the function itself?".format(listener)
             )
         options = options or {}
+        listener_context = {}
 
         async def listen_for_event_task():
-            while True:
-                try:
-                    async for event_message in self.event_transport.consume(listen_for=[(api_name, name)], **options):
-                            co = listener(**event_message.kwargs)
-                            if inspect.isawaitable(co):
-                                await co
-                    return
-                except SuddenDeathException:
-                    continue
+            # event_transport.consume() returns an asynchronous generator
+            # which will provide us with messages
+            consumer = self.event_transport.consume(
+                listen_for=[(api_name, name)],
+                context=listener_context,
+                **options
+            )
+            async for event_message in consumer:
+                # Call the listener
+                co = listener(**event_message.kwargs)
+
+                # Await it if necessary
+                if inspect.isawaitable(co):
+                    await co
+
+                # Let the event transport know that it can consider the
+                # event message to have been successfully consumed
+                await self.event_transport.consumption_complete(event_message, listener_context)
+            return
 
         return asyncio.ensure_future(
             handle_aio_exceptions(listen_for_event_task())
