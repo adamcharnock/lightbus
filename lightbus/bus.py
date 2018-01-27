@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import inspect
 import logging
 import time
@@ -31,6 +32,7 @@ class BusClient(object):
         self.result_transport = result_transport
         self.event_transport = event_transport
         self.process_name = process_name or generate_process_name()
+        self._listeners = {}
 
     def setup(self, plugins: dict=None):
         """Setup lightbus and get it ready to consume events and/or RPCs
@@ -231,7 +233,7 @@ class BusClient(object):
         await self.event_transport.send_event(event_message, options=options)
         await plugin_hook('after_event_sent', event_message=event_message, bus_client=self)
 
-    async def listen_for_event(self, api_name, name, listener, options: dict=None):
+    async def listen_for_event(self, api_name, name, listener, options: dict=None) -> asyncio.Task:
         if not callable(listener):
             raise InvalidEventListener(
                 "The specified listener '{}' is not callable. Perhaps you called the function rather "
@@ -248,18 +250,22 @@ class BusClient(object):
                 context=listener_context,
                 **options
             )
-            async for event_message in consumer:
-                # Call the listener
-                co = listener(**event_message.kwargs)
+            with self._register_listener(api_name, name):
+                async for event_message in consumer:
+                    await plugin_hook('before_event_execution', event_message=event_message, bus_client=self)
 
-                # Await it if necessary
-                if inspect.isawaitable(co):
-                    await co
+                    # Call the listener
+                    co = listener(**event_message.kwargs)
 
-                # Let the event transport know that it can consider the
-                # event message to have been successfully consumed
-                await self.event_transport.consumption_complete(event_message, listener_context)
-            return
+                    # Await it if necessary
+                    if inspect.isawaitable(co):
+                        await co
+
+                    # Let the event transport know that it can consider the
+                    # event message to have been successfully consumed
+                    await self.event_transport.consumption_complete(event_message, listener_context)
+
+                    await plugin_hook('after_event_execution', event_message=event_message, bus_client=self)
 
         return asyncio.ensure_future(
             handle_aio_exceptions(listen_for_event_task())
@@ -272,6 +278,17 @@ class BusClient(object):
 
     async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict):
         return await self.result_transport.receive_result(rpc_message, return_path, options)
+
+    @contextlib.contextmanager
+    def _register_listener(self, api_name, event_name):
+        """A context manager to help keep track of what the bus is listening for"""
+        key = (api_name, event_name)
+        self._listeners.setdefault(key, 0)
+        self._listeners[key] += 1
+        yield
+        self._listeners[key] -= 1
+        if not self._listeners[key]:
+            self._listeners.pop(key)
 
 
 class BusNode(object):

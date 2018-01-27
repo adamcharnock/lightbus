@@ -1,10 +1,11 @@
 """ Test each plugin hook is called at the correct time
 
 """
+import asyncio
 import pytest
 
 from lightbus import BusNode, BusClient
-from lightbus.message import RpcMessage
+from lightbus.message import RpcMessage, EventMessage
 from lightbus.plugins import manually_set_plugins, LightbusPlugin
 
 pytestmark = pytest.mark.unit
@@ -81,5 +82,15 @@ def test_event_sent(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dum
 @pytest.mark.run_loop
 async def test_event_execution(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dummy_api):
     add_base_plugin()
-    await dummy_bus.bus_client._consume_events_once()
+    task = await dummy_bus.bus_client.listen_for_event('my.dummy', 'my_event', lambda **kw: None)
+    await asyncio.sleep(0.1)
+
+    # Send the event message using a lower-level API to avoid triggering the
+    # before_event_sent & after_event_sent plugin hooks. We don't care about those here
+    event_message = EventMessage(api_name='my.dummy', event_name='my_event', kwargs={'field': 1})
+    await dummy_bus.bus_client.event_transport.send_event(event_message, options={})
+    await asyncio.sleep(0.1)
+
     assert called_hooks() == ['before_event_execution', 'after_event_execution']
+    task.cancel()
+    await task

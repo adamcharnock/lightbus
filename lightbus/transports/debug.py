@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Sequence, Tuple, Any
+from typing import Sequence, Tuple, Any, Generator, List
 
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
@@ -60,44 +60,13 @@ class DebugEventTransport(EventTransport):
             event_message.kwargs
         ))
 
-    async def fetch_events(self) -> Tuple[Sequence[EventMessage], Any]:
+    async def fetch(self, listen_for: List[Tuple[str, str]], context: dict, **kwargs) -> Generator[EventMessage, None, None]:
         """Consume RPC events for the given API"""
 
         logger.info("⌛ Faking listening for events {}.".format(self._events))
 
-        try:
-            self._task = asyncio.ensure_future(asyncio.sleep(0.1))
-            await self._task
-        except asyncio.CancelledError as e:
-            if self._reload:
-                logger.debug('Event transport reloading.')
-                event_messages = []
-                self._reload = False
-            else:
-                raise
-        else:
-            logger.debug('Faking received result')
-            event_messages = self._get_fake_messages()
+        self._task = asyncio.ensure_future(asyncio.sleep(0.1))
+        yield self._get_fake_message()
 
-        return event_messages, None
-
-    async def start_listening_for(self, api_name, event_name, options: dict):
-        logger.info('Beginning to listen for {}.{}'.format(api_name, event_name))
-        self._events.add('{}.{}'.format(api_name, event_name))
-        if self._task:
-            logger.debug('Existing consumer task running, cancelling')
-            self._reload = True
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError as e:
-                pass
-
-    async def stop_listening_for(self, api_name, event_name):
-        pass
-
-    def _get_fake_messages(self):
-        return [
-            EventMessage(api_name='my_company.auth',
-                         event_name='user_registered', kwargs={'example': 'value'})
-        ]
+    def _get_fake_message(self):
+        return EventMessage(api_name='my_company.auth', event_name='user_registered', kwargs={'example': 'value'})

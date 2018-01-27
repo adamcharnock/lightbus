@@ -20,6 +20,7 @@ class TestApi(Api):
 async def test_before_server_start(dummy_bus: BusNode, loop, get_dummy_events):
     registry.add(TestApi())
     await dummy_bus.example.test.my_event.listen_async(lambda: None)
+    await asyncio.sleep(0.1)  # Give the bus a moment to kick up the listener
 
     state_plugin = StatePlugin()
     state_plugin.do_ping = False

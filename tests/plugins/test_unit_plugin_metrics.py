@@ -122,10 +122,12 @@ async def test_send_event(dummy_bus: BusNode, get_dummy_events):
 
 
 @pytest.mark.run_loop
-async def test_execute_events(dummy_bus: BusNode, event_consumer, get_dummy_events, mocker):
-    mocker.patch.object(dummy_bus.bus_client.event_transport, '_get_fake_messages', return_value=[
-        EventMessage(api_name='example.test', event_name='my_event', kwargs={'f': 123})
-    ])
+async def test_execute_events(dummy_bus: BusNode, dummy_listener, get_dummy_events, mocker):
+    mocker.patch.object(dummy_bus.bus_client.event_transport, '_get_fake_message',
+                        return_value=EventMessage(api_name='example.test', event_name='my_event', kwargs={'f': 123})
+    )
+
+    await dummy_listener('example.test', 'my_event')
 
     # Setup the bus and do the call
     manually_set_plugins(plugins={'metrics': MetricsPlugin()})

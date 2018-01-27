@@ -194,28 +194,30 @@ def dummy_bus():
         rpc_transport=lightbus.DebugRpcTransport(),
         result_transport=lightbus.DebugResultTransport(),
         event_transport=lightbus.DebugEventTransport(),
-        plugins=[],
+        plugins={},
     )
 
 
 @pytest.yield_fixture
-def event_consumer(dummy_bus: BusNode, loop, mocker):
+def dummy_listener(dummy_bus: BusNode, loop):
     """Start the dummy bus consuming events"""
-    task = None
+    tasks = []
+
+    async def listen(api_name, event_name):
+        def pass_listener(*args, **kwargs): pass
+        task = await dummy_bus.bus_client.listen_for_event(api_name, event_name, pass_listener)
+        tasks.append(task)
 
     try:
-        task = asyncio.ensure_future(
-            dummy_bus.bus_client.consume_events(),
-            loop=loop
-        )
-        yield
+        yield listen
     finally:
-        if task is not None:
-            task.cancel()
-            try:
-                loop.run_until_complete(task)
-            except asyncio.CancelledError:
-                pass
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+                try:
+                    loop.run_until_complete(task)
+                except asyncio.CancelledError:
+                    pass
 
 
 @pytest.fixture

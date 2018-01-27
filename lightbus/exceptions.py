@@ -65,6 +65,10 @@ class PluginsNotLoaded(LightbusException):
     pass
 
 
+class InvalidPlugins(LightbusException):
+    pass
+
+
 class PluginHookNotFound(LightbusException):
     pass
 

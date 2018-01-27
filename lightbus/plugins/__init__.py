@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 import pkg_resources
 import lightbus
-from lightbus.exceptions import PluginsNotLoaded, PluginHookNotFound
+from lightbus.exceptions import PluginsNotLoaded, PluginHookNotFound, InvalidPlugins
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 
 _plugins = None
@@ -85,6 +85,14 @@ def autoload_plugins(force=False):
 def manually_set_plugins(plugins: Dict[str, LightbusPlugin]):
     """Manually set the plugins in the global plugin registry"""
     global _plugins
+    if not isinstance(plugins, dict):
+        raise InvalidPlugins(
+            "You have attempted to specify your desired plugins as a {} ({}). This is not supported. "
+            "Plugins must be specified as a dictionary, where the key is the plugin name.".format(
+                type(plugins).__name__, plugins
+            )
+        )
+
     load_hook_names()
     _plugins = plugins
 
