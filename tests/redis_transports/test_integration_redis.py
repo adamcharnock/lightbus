@@ -11,11 +11,14 @@ pytestmark = pytest.mark.integration
 async def test_bus_fixture(bus: lightbus.BusNode):
     """Just sanity check the fixture"""
 
-    pool_rpc = await bus.bus_client.rpc_transport.get_redis_pool()
-    pool_result = await bus.bus_client.result_transport.get_redis_pool()
-    pool_event = await bus.bus_client.event_transport.get_redis_pool()
+    connection_manager_rpc = await bus.bus_client.rpc_transport.connection_manager()
+    connection_manager_result = await bus.bus_client.result_transport.connection_manager()
+    connection_manager_event = await bus.bus_client.event_transport.connection_manager()
 
-    with await pool_rpc as redis_rpc, await pool_result as redis_result, await pool_event as redis_event:
+    with await connection_manager_rpc as redis_rpc, \
+            await connection_manager_result as redis_result, \
+            await connection_manager_event as redis_event:
+
         # Each transport should have its own connection
         assert redis_rpc is not redis_result
         assert redis_result is not redis_event
