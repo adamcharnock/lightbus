@@ -130,3 +130,30 @@ async def test_consume_events_since_datetime(redis_event_transport: RedisEventTr
     assert len(messages) == 2
     assert messages[0].kwargs['field'] == '2'
     assert messages[1].kwargs['field'] == '3'
+
+
+@pytest.mark.run_loop
+async def test_consume_events_starts_from_fixed_point(redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+    """Ensure we track our event consumption from a fixed point, not from '$'
+
+    Tracking from '$' results in lost messages should an error occur
+    when fetching the initial batch of messages. See the comment within
+    RedisEventTransport.fetch() for further details
+    """
+    async def co_enqeue():
+        await asyncio.sleep(0.1)
+        return await redis_client.xadd('my.dummy.my_event:stream', fields={
+            b'api_name': b'"my.dummy"',
+            b'event_name': b'"my_event"',
+            b'kw:field': b'"value"',
+        })
+
+    context = {}
+    async def co_consume():
+        async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')], context):
+            return message_
+
+    await asyncio.gather(co_enqeue(), co_consume())
+    assert 'streams' in context
+    assert 'my.dummy.my_event:stream' in context['streams']
+    assert context['streams']['my.dummy.my_event:stream'].endswith('-9999')
