@@ -101,11 +101,6 @@ class EventTransport(object):
     async def fetch(self, listen_for: List[Tuple[str, str]], context:dict, **kwargs) -> Generator[EventMessage, None, None]:
         """Consume RPC messages for the given events
 
-        Must return a tuple, where the first item is a iterable of
-        EventMessages and the second item is an arbitrary value which will
-        be passed to consumption_complete() (below) should the events
-        be executed successfully.
-
         Events the bus is not listening for may be returned, they
         will simply be ignored.
         """
