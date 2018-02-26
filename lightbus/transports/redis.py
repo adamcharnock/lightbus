@@ -25,7 +25,10 @@ Since = Union[str, datetime, None]
 
 
 class RedisTransportMixin(object):
-    connection_kwargs: {}
+    connection_kwargs: dict = {
+        'address': ('localhost', 6379),
+        'maxsize': 100,
+    }
     _redis_pool: Optional[Redis] = None
 
     def set_redis_pool(self, redis_pool: Optional[Redis]):
@@ -48,10 +51,27 @@ class RedisTransportMixin(object):
 
             self._redis_pool = redis_pool
 
+    def set_connection_kwargs(self, connection_kwargs: dict):
+        # Apply sensible default values from above
+        connection_kwargs = connection_kwargs.copy()
+        connection_kwargs.update(**self.connection_kwargs)
+        self.connection_kwargs = connection_kwargs
+
     async def connection_manager(self) -> Redis:
         if self._redis_pool is None:
             self._redis_pool = await aioredis.create_redis_pool(**self.connection_kwargs)
         try:
+            internal_pool = self._redis_pool._pool_or_conn
+            if hasattr(internal_pool, 'size') and hasattr(internal_pool, 'maxsize'):
+                if internal_pool.size == internal_pool.maxsize:
+                    logging.critical(
+                        "Redis pool has reached maximum size. It is possible that this will recover normally, "
+                        "but may be you have more event listeners than connections available to the Redis pool. "
+                        "You can increase the redis pull size by specifying the `maxsize` "
+                        "parameter when instantiating each Redis transport. Current maxsize is: "
+                        "".format(self.connection_kwargs.get('maxsize'))
+                    )
+
             return await self._redis_pool
         except aioredis.PoolClosedError:
             raise LightbusShutdownInProgress('Redis connection pool has been closed. Assuming shutdown in progress.')
@@ -61,7 +81,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
     def __init__(self, redis_pool=None, *, track_consumption_progress=False, **connection_kwargs):
         self.set_redis_pool(redis_pool)
-        self.connection_kwargs = connection_kwargs or dict(address=('localhost', 6379))
+        self.set_connection_kwargs(connection_kwargs)
         self._latest_ids = {}
         self.track_consumption_progress = track_consumption_progress  # TODO: Implement (rename: replay?)
 
@@ -123,7 +143,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
 
     def __init__(self, redis_pool=None, **connection_kwargs):
         self.set_redis_pool(redis_pool)
-        self.connection_kwargs = connection_kwargs or dict(address=('localhost', 6379))
+        self.set_connection_kwargs(connection_kwargs)
 
     def get_return_path(self, rpc_message: RpcMessage) -> str:
         return 'redis+key://{}.{}:result:{}'.format(
@@ -178,7 +198,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
     def __init__(self, redis_pool=None, *, track_consumption_progress=False, **connection_kwargs):
         self.set_redis_pool(redis_pool)
-        self.connection_kwargs = connection_kwargs or dict(address=('localhost', 6379))
+        self.set_connection_kwargs(connection_kwargs)
         self.track_consumption_progress = track_consumption_progress  # TODO: Implement (rename: replay?)
 
         self._task = None
