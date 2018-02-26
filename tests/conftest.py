@@ -260,10 +260,15 @@ def rpc_consumer(dummy_bus: BusNode, loop, mocker):
 
 
 def pytest_addoption(parser):
-    parser.addoption('--redis-server', default=[],
+    if os.environ.get('REDIS_SERVER'):
+        default_redis_server = [os.environ.get('REDIS_SERVER')]
+    else:
+        default_redis_server = []
+
+    parser.addoption('--redis-server', default=default_redis_server,
                      action="append",
                      help="Path to redis-server executable,"
-                          " defaults to `%(default)s`")
+                          " defaults to value REDIS_SERVER environment variable, else `%(default)s`")
     parser.addoption('--test-timeout', default=30,
                      type=int,
                      help="The timeout for each individual test")
