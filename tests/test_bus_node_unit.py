@@ -34,3 +34,15 @@ async def test_fully_qualified_name():
     assert root_node.fully_qualified_name == ''
     assert child_node1.fully_qualified_name == 'my_api'
     assert child_node2.fully_qualified_name == 'my_api.auth'
+
+
+@pytest.mark.run_loop
+async def test_dir(dummy_bus: lightbus.BusNode, dummy_api):
+    assert 'my' in dir(dummy_bus)
+    assert 'dummy' in dir(dummy_bus.my)
+    assert 'my_event' in dir(dummy_bus.my.dummy)
+    assert 'my_proc' in dir(dummy_bus.my.dummy)
+
+    # Make sure we don't error if the api/rpc/event doesn't exist
+    dir(dummy_bus.foo)
+    dir(dummy_bus.foo.bar)

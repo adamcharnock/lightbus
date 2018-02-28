@@ -308,6 +308,28 @@ class BusNode(object):
     def __repr__(self):
         return '<BusNode {}>'.format(self.fully_qualified_name)
 
+    def __dir__(self):
+        path = [node.name for node in self.ancestors(include_self=True)]
+        path.reverse()
+
+        api_names = [[''] + n.split('.') for n in registry.names()]
+
+        matches = []
+        apis = []
+        for api_name in api_names:
+            if api_name == path:
+                # Api name matches exactly
+                apis.append(api_name)
+            elif api_name[:len(path)] == path:
+                # Partial API match
+                matches.append(api_name[len(path)])
+
+        for api_name in apis:
+            api = registry.get('.'.join(api_name[1:]))
+            matches.extend(dir(api))
+
+        return matches
+
     # RPC
 
     def __call__(self, **kwargs):

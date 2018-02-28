@@ -38,6 +38,9 @@ class Registry(object):
     def all(self):
         return self._apis.values()
 
+    def names(self):
+        return list(self._apis.keys())
+
 
 registry = Registry()
 
