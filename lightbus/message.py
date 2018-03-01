@@ -4,7 +4,7 @@ from uuid import uuid1
 
 from base64 import b64encode
 
-__all__ = ['Message']
+__all__ = ['Message', 'RpcMessage', 'ResultMessage', 'EventMessage']
 
 
 class Message(object):
@@ -75,7 +75,7 @@ class RpcMessage(Message):
 
 
 class ResultMessage(Message):
-    required_metadata = ['result', 'rpc_id']
+    required_metadata = ['rpc_id']
 
     def __init__(self, *, result, rpc_id, error: bool=False, trace: str=None):
         self.rpc_id = rpc_id
@@ -102,25 +102,14 @@ class ResultMessage(Message):
     def __str__(self):
         return str(self.result)
 
-    def to_dict(self) -> dict:
-        if self.error:
-            return {
-                'result': str(self.result),
-                'rpc_id': self.rpc_id,
-                'error': True,
-                'trace': self.trace
-            }
-        else:
-            return {
-                'result': self.result,
-                'rpc_id': self.rpc_id,
-                'error': False
-            }
-
     def get_metadata(self) -> dict:
-        return {
+        metadata = {
             'rpc_id': self.rpc_id,
+            'error': self.error,
         }
+        if self.error:
+            metadata['trace'] = self.trace
+        return metadata
 
     def get_kwargs(self):
         return {
@@ -129,7 +118,7 @@ class ResultMessage(Message):
 
     @classmethod
     def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> 'ResultMessage':
-        return cls(**metadata, kwargs=kwargs)
+        return cls(**metadata, result=kwargs.get('result'))
 
 
 class EventMessage(Message):
@@ -152,16 +141,6 @@ class EventMessage(Message):
     @property
     def canonical_name(self):
         return "{}.{}".format(self.api_name, self.event_name)
-
-    def to_dict(self) -> dict:
-        dictionary = {
-            'api_name': self.api_name,
-            'event_name': self.event_name,
-        }
-        dictionary.update(
-            **{'kw:{}'.format(k): v for k, v in self.kwargs.items()}
-        )
-        return dictionary
 
     def get_metadata(self) -> dict:
         return {

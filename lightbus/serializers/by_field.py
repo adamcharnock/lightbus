@@ -15,21 +15,13 @@ format. The format looks like this::
 
 """
 
-import inspect
-import json
-
-from typing import Type
-
-from lightbus import Message
-from lightbus.exceptions import InvalidSerializerConfiguration, InvalidMessage
+import lightbus
+from lightbus.serializers import decode_bytes, sanity_check_metadata, MessageSerializer, MessageDeserializer
 
 
-class ByFieldMessageSerializer(object):
+class ByFieldMessageSerializer(MessageSerializer):
 
-    def __init__(self, encoder=json.dumps):
-        self.encoder = encoder
-
-    def __call__(self, message: Message) -> dict:
+    def __call__(self, message: 'lightbus.Message') -> dict:
         """Takes a message object and returns a serialised dictionary representation
 
         See the module-level docs (above) for further details
@@ -40,17 +32,7 @@ class ByFieldMessageSerializer(object):
         return serialized
 
 
-class ByFieldMessageDeserializer(object):
-
-    def __init__(self, message_class: Type[Message], decoder=json.loads):
-        if not inspect.isclass(message_class):
-            raise InvalidSerializerConfiguration(
-                "The message_class value provided to JsonMessageDeserializer was not a class, "
-                "it was actually: {}".format(message_class)
-            )
-
-        self.message_class = message_class
-        self.decoder = decoder
+class ByFieldMessageDeserializer(MessageDeserializer):
 
     def __call__(self, serialized: dict):
         """Takes a dictionary of serialised fields and returns a Message object
@@ -61,8 +43,10 @@ class ByFieldMessageDeserializer(object):
         kwargs = {}
 
         for k, v in serialized.items():
-            # kwarg fields start with a ':', everything else
-            # is metadata
+            k = decode_bytes(k)
+            v = decode_bytes(v)
+
+            # kwarg fields start with a ':', everything else is metadata
             if k[0] == ':':
                 # kwarg values need decoding
                 kwargs[k[1:]] = self.decoder(v)
@@ -70,34 +54,13 @@ class ByFieldMessageDeserializer(object):
                 # metadata args are implicitly strings, so we don't need to decode them
                 metadata[k] = v
 
-        self.sanity_check_metadata(metadata)
+        sanity_check_metadata(self.message_class, metadata)
 
         return self.message_class.from_dict(
             metadata=metadata,
             kwargs=kwargs,
         )
 
-    def sanity_check_metadata(self, metadata):
-        """Takes unserialized metadata and checks it looks sane
 
-        This relies upon the required_metadata of each Message class
-        to provide a list of metadata fields that are required.
-        """
-        for required_key in self.message_class.required_metadata:
-            if required_key not in metadata:
-                raise InvalidMessage(
-                    "Required key {key} missing in {cls} metadata. "
-                    "Found keys: {keys}".format(
-                        key=required_key,
-                        keys=', '.join(metadata.keys()),
-                        cls=self.message_class.__name__
-                    )
-                )
-            elif not metadata.get(required_key):
-                raise InvalidMessage(
-                    "Required key {key} present in {cls} metadata but value was empty"
-                    "".format(
-                        key=required_key,
-                        cls=self.message_class.__name__
-                    )
-                )
+
+

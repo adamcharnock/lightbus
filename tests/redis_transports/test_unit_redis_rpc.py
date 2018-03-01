@@ -32,11 +32,11 @@ async def test_call_rpc(redis_rpc_transport, redis_client):
     messages = await redis_client.xrange('my.api:stream')
     assert len(messages) == 1
     assert messages[0][1] == {
-        b'rpc_id': b'"123abc"',
-        b'api_name': b'"my.api"',
-        b'procedure_name': b'"my_proc"',
-        b'kw:field': b'"value"',
-        b'return_path': b'"abc"',
+        b'rpc_id': b'123abc',
+        b'api_name': b'my.api',
+        b'procedure_name': b'my_proc',
+        b':field': b'"value"',
+        b'return_path': b'abc',
     }
 
 
@@ -46,11 +46,11 @@ async def test_consume_rpcs(redis_client, redis_rpc_transport, dummy_api):
     async def co_enqeue():
         await asyncio.sleep(0.01)
         return await redis_client.xadd('my.dummy:stream', fields={
-            b'rpc_id': b'"123abc"',
-            b'api_name': b'"my.api"',
-            b'procedure_name': b'"my_proc"',
-            b'kw:field': b'"value"',
-            b'return_path': b'"abc"',
+            'rpc_id': '123abc',
+            'api_name': 'my.api',
+            'procedure_name': 'my_proc',
+            'return_path': 'abc',
+            ':field': '"value"',
         })
 
     async def co_consume():

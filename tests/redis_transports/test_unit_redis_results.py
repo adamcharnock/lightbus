@@ -52,9 +52,13 @@ async def test_send_result(redis_result_transport: RedisResultTransport, redis_c
 
     result = await redis_client.lpop('my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e')
     assert json.loads(result) == {
-        'error': False,
-        'rpc_id': '123abc',
-        'result': 'All done! 😎',
+        'metadata': {
+            'error': False,
+            'rpc_id': '123abc',
+        },
+        'kwargs': {
+            'result': 'All done! 😎',
+        }
     }
 
 
@@ -64,9 +68,13 @@ async def test_receive_result(redis_result_transport: RedisResultTransport, redi
     redis_client.lpush(
         key='my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e',
         value=json.dumps({
-            'result': 'All done! 😎',
-            'rpc_id': '123abc',
-            'error': False,
+            'metadata': {
+                'rpc_id': '123abc',
+                'error': False,
+            },
+            'kwargs': {
+                'result': 'All done! 😎',
+            }
         }),
     )
 
