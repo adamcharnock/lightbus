@@ -4,11 +4,15 @@ class LightbusException(Exception):
     pass
 
 
-class InvalidRpcMessage(LightbusException):
+class InvalidMessage(LightbusException):
     pass
 
 
 class InvalidBusNodeConfiguration(LightbusException):
+    pass
+
+
+class InvalidSerializerConfiguration(LightbusException):
     pass
 
 

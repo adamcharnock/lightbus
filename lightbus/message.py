@@ -1,27 +1,44 @@
 import traceback
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Sequence
 from uuid import uuid1
 
 from base64 import b64encode
-
-from lightbus.exceptions import InvalidRpcMessage
 
 __all__ = ['Message']
 
 
 class Message(object):
+    required_metadata: Sequence
 
-    def to_dict(self) -> dict:
+    def get_metadata(self) -> dict:
+        """Get the non-kwarg fields of this message
+
+        Will be used by the serializers
+        """
+        raise NotImplementedError()
+
+    def get_kwargs(self) -> dict:
+        """Get the kwarg fields of this message
+
+        Will be used by the serializers
+        """
         raise NotImplementedError()
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> 'Message':
+    def from_dict(cls, metadata: dict, kwargs: dict) -> 'Message':
+        """Create a message instance given the metadata and kwargs
+
+        Will be used by the serializers
+        """
         raise NotImplementedError()
 
 
 class RpcMessage(Message):
+    required_metadata = ['rpc_id', 'api_name', 'procedure_name', 'return_path']
 
-    def __init__(self, *, api_name: str, procedure_name: str, kwargs: dict=Optional[None], return_path: Any=None, rpc_id: str=''):
+    def __init__(self, *, api_name: str, procedure_name: str, kwargs: dict=Optional[None],
+                 return_path: Any=None, rpc_id: str=''):
+
         self.rpc_id = rpc_id or b64encode(uuid1().bytes).decode('utf8')
         self.api_name = api_name
         self.procedure_name = procedure_name
@@ -41,55 +58,24 @@ class RpcMessage(Message):
     def canonical_name(self):
         return "{}.{}".format(self.api_name, self.procedure_name)
 
-    def to_dict(self) -> dict:
-        dictionary = {
+    def get_metadata(self) -> dict:
+        return {
             'rpc_id': self.rpc_id,
             'api_name': self.api_name,
             'procedure_name': self.procedure_name,
             'return_path': self.return_path or '',
         }
-        dictionary.update(
-            **{'kw:{}'.format(k): v for k, v in self.kwargs.items()}
-        )
-        return dictionary
+
+    def get_kwargs(self):
+        return self.kwargs
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str, str]) -> 'RpcMessage':
-        # TODO: Consider moving this encoding/decoding logic elsewhere
-        # TODO: Handle non-string types for kwargs values (schema, encoding?)
-        # TODO: Let's face it, this can all be neatened up quite a lot
-        for required_key in ('api_name', 'procedure_name', 'rpc_id'):
-            if required_key not in dictionary:
-                raise InvalidRpcMessage(
-                    "Required key {} missing in RpcMessage data. "
-                    "Found keys: {}".format(required_key, ', '.join(dictionary.keys()))
-                )
-
-        rpc_id = dictionary.get('rpc_id')
-        api_name = dictionary.get('api_name')
-        procedure_name = dictionary.get('procedure_name')
-        return_path = dictionary.get('return_path')
-
-        if not rpc_id:
-            raise InvalidRpcMessage(
-                "Required key 'rpc_id' is present in {} data, but is empty.".format(cls.__name__)
-            )
-        if not api_name:
-            raise InvalidRpcMessage(
-                "Required key 'api_name' is present in {} data, but is empty.".format(cls.__name__)
-            )
-        if not procedure_name:
-            raise InvalidRpcMessage(
-                "Required key 'procedure_name' is present in {} data, but is empty.".format(cls.__name__)
-            )
-
-        kwargs = {k[3:]: v for k, v in dictionary.items() if k.startswith('kw:')}
-
-        return cls(api_name=api_name, procedure_name=procedure_name,
-                   return_path=return_path, kwargs=kwargs, rpc_id=rpc_id)
+    def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> 'RpcMessage':
+        return cls(**metadata, kwargs=kwargs)
 
 
 class ResultMessage(Message):
+    required_metadata = ['result', 'rpc_id']
 
     def __init__(self, *, result, rpc_id, error: bool=False, trace: str=None):
         self.rpc_id = rpc_id
@@ -131,28 +117,23 @@ class ResultMessage(Message):
                 'error': False
             }
 
-    @classmethod
-    def from_dict(cls, dictionary: dict) -> 'ResultMessage':
-        if 'result' not in dictionary:
-            raise InvalidRpcMessage(
-                "Required key 'result' not present in ResultMessage data. "
-                "Found keys: {}".format(', '.join(dictionary.keys()))
-            )
-        if 'rpc_id' not in dictionary:
-            raise InvalidRpcMessage(
-                "Required key 'rpc_id' not present in ResultMessage data. "
-                "Found keys: {}".format(', '.join(dictionary.keys()))
-            )
+    def get_metadata(self) -> dict:
+        return {
+            'rpc_id': self.rpc_id,
+        }
 
-        return cls(
-            result=dictionary['result'],
-            rpc_id=dictionary['rpc_id'],
-            error=dictionary.get('error', False),
-            trace=dictionary.get('trace', None),
-        )
+    def get_kwargs(self):
+        return {
+            'result': self.result
+        }
+
+    @classmethod
+    def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> 'ResultMessage':
+        return cls(**metadata, kwargs=kwargs)
 
 
 class EventMessage(Message):
+    required_metadata = ['api_name', 'event_name']
 
     def __init__(self, *, api_name: str, event_name: str, kwargs: dict=Optional[None]):
         self.api_name = api_name
@@ -182,29 +163,15 @@ class EventMessage(Message):
         )
         return dictionary
 
+    def get_metadata(self) -> dict:
+        return {
+            'api_name': self.api_name,
+            'event_name': self.event_name,
+        }
+
+    def get_kwargs(self):
+        return self.kwargs
+
     @classmethod
-    def from_dict(cls, dictionary: dict):
-        # TODO: This has a lot in common with RpcMessage, consider refactoring
-        #       *IF* it will reduce complexity.
-        for required_key in ('api_name', 'event_name'):
-            if required_key not in dictionary:
-                raise InvalidRpcMessage(
-                    "Required key {} missing in RpcMessage data. "
-                    "Found keys: {}".format(required_key, ', '.join(dictionary.keys()))
-                )
-
-        api_name = dictionary.get('api_name')
-        event_name = dictionary.get('event_name')
-
-        if not api_name:
-            raise InvalidRpcMessage(
-                "Required key 'api_name' is present in {} data, but is empty.".format(cls.__name__)
-            )
-        if not event_name:
-            raise InvalidRpcMessage(
-                "Required key 'event_name' is present in {} data, but is empty.".format(cls.__name__)
-            )
-
-        kwargs = {k[3:]: v for k, v in dictionary.items() if k.startswith('kw:')}
-
-        return cls(api_name=api_name, event_name=event_name, kwargs=kwargs)
+    def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> 'EventMessage':
+        return cls(**metadata, kwargs=kwargs)
