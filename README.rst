@@ -26,13 +26,15 @@ Docker
 ~~~~~~
 
 The docker image will automatically pull download and compile the redis
-unstable branch.
+unstable branch::
 
     docker build -t lightbus-test -f tests/Dockerfile .
     docker run lightbus-test
 
 Manually
 ~~~~~~~~
+
+You can run tests outside of docker as follows::
 
     py.test --redis-server=/path/to/unstable/build/of/redis-server
 
