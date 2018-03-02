@@ -9,6 +9,7 @@ import inspect
 import json
 
 from decimal import Decimal
+from textwrap import indent
 
 from typing import Union, Optional, Tuple
 
@@ -156,6 +157,40 @@ def make_response_schema(f):
     )
     logging.info(json.dumps(response_schema, indent=4))
     return response_schema
+
+
+if __name__ == '__main__':
+    class User(object):
+        username: str
+        password: str
+        is_admin: bool = False
+
+    def show(f):
+        print('// Example:')
+        print('//    {}\n'.format(inspect.getsource(f).strip()))
+
+        print('// Parameter schema:\n'.format(f.__name__))
+        print(indent(json.dumps(make_parameter_schema(f), indent=4), prefix='    '  ))
+        print('\n// Response schema:\n'.format(f.__name__))
+        print(indent(json.dumps(make_response_schema(f), indent=4), prefix='    '))
+        print('\n')
+
+    def check_password(username: str, password: str) -> bool: pass
+    show(check_password)
+
+    def get_user(username: str) -> User: pass
+    show(get_user)
+
+    def get_user(username: str) -> User: pass
+    show(get_user)
+
+    def tuple_return_type(username: str) -> Tuple[str, int, bool]: pass
+    show(tuple_return_type)
+
+    def union_parameter(weird_value: Union[str, int]) -> list: pass
+    show(union_parameter)
+
+
 
 
 def test_no_types():
