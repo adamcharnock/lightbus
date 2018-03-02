@@ -11,11 +11,13 @@ import json
 from decimal import Decimal
 from textwrap import indent
 
-from typing import Union, Optional, Tuple
+from typing import Union, Optional, Tuple, NamedTuple
 
 import itertools
 
 import logging
+
+from collections import namedtuple
 
 EMPTY = inspect.Signature.empty
 NoneType = type(None)
@@ -28,22 +30,41 @@ def wrap_with_one_of(schemas):
         return {'oneOf': schemas}
 
 
-def make_custom_object_schema(type_):
-    property_names = list(set(list(type_.__annotations__.keys()) + dir(type_)))
+def make_custom_object_schema(type_, property_names=None):
+    if property_names is None:
+        property_names = [p for p in set(list(type_.__annotations__.keys()) + dir(type_)) if p[0] != '_']
+
     properties = {}
     required = []
     for property_name in property_names:
-        if not property_name.startswith('_'):
+        default = EMPTY
+
+        if issubclass(type_, tuple):
+            # namedtuple
+            if hasattr(type_, '_field_defaults'):
+                default = type_._field_defaults.get(property_name, EMPTY)
+        else:
+            default = getattr(type_, property_name, EMPTY)
+
+        if callable(default):
+            default = EMPTY
+
+        if hasattr(type_, '__annotations__'):
             properties[property_name] = wrap_with_one_of(
                 python_type_to_json_schemas(
                     type_.__annotations__.get(property_name, None)
                 )
             )
-            default = getattr(type_, property_name, EMPTY)
-            if default is not EMPTY:
-                properties[property_name]['default'] = default
-            else:
-                required.append(property_name)
+        elif default is not EMPTY:
+            properties[property_name] = wrap_with_one_of(python_type_to_json_schemas(type(default)))
+        else:
+            properties[property_name] = {}
+
+        if default is EMPTY:
+            required.append(property_name)
+        else:
+            properties[property_name]['default'] = default
+
     return {
         'type': 'object',
         'title': type_.__name__,
@@ -65,6 +86,9 @@ def python_type_to_json_schemas(type_):
         return [{'type': 'number'}]
     elif issubclass(type_, (dict, )):
         return [{'type': 'object'}]
+    elif issubclass(type_, tuple) and hasattr(type_, '_fields'):
+        # Named tuple
+        return [make_custom_object_schema(type_, property_names=type_._fields)]
     elif type(type_) == type(Tuple) and len(type_._subs_tree()) > 1:
         sub_types = type_._subs_tree()[1:]
         return [{
@@ -77,10 +101,6 @@ def python_type_to_json_schemas(type_):
         return [{'type': 'array'}]
     elif issubclass(type_, NoneType):
         return [{'type': 'null'}]
-    elif inspect.isclass(type_):
-        # This is somewhat dicey as too many things are classes for this to be
-        # reliable.
-        return [make_custom_object_schema(type_)]
     else:
         return [{'type': 'string'}]
 
@@ -160,7 +180,7 @@ def make_response_schema(f):
 
 
 if __name__ == '__main__':
-    class User(object):
+    class User(NamedTuple):
         username: str
         password: str
         is_admin: bool = False
@@ -292,9 +312,9 @@ def test_optional():
     assert schema['required'] == ['username']
 
 
-def test_custom_class():
+def test_named_tuple():
 
-    class User(object):
+    class User(NamedTuple):
         username: str
         password: str
         is_admin: bool = False
@@ -308,6 +328,22 @@ def test_custom_class():
             'username': {'type': 'string'},
             'password': {'type': 'string'},
             'is_admin': {'type': 'boolean', 'default': False},
+        }
+    assert set(schema['properties']['user']['required']) == {'password', 'username'}
+
+
+def test_named_tuple_using_function():
+    
+    User = namedtuple('User', ('username', 'password'))
+
+    def func(user: User): pass
+    schema = make_parameter_schema(func)
+
+    assert schema['properties']['user']['title'] == 'User'
+    assert schema['properties']['user']['type'] == 'object'
+    assert schema['properties']['user']['properties'] == {
+            'username': {},
+            'password': {},
         }
     assert set(schema['properties']['user']['required']) == {'password', 'username'}
 
@@ -335,9 +371,9 @@ def test_response_typed_tuple():
     ]
 
 
-def test_response_custom_object():
+def test_response_named_tuple():
 
-    class User(object):
+    class User(NamedTuple):
         username: str
         password: str
         is_admin: bool = False
