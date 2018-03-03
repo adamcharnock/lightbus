@@ -1,7 +1,7 @@
 import logging
 import time
 from datetime import datetime
-from typing import Sequence, Optional, Union, Generator
+from typing import Sequence, Optional, Union, Generator, Dict
 
 import aioredis
 from aioredis import Redis
@@ -311,6 +311,49 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
     async def consumption_complete(self, event_message: EventMessage, context: dict):
         context['streams'][event_message.redis_stream] = event_message.redis_id
+
+
+class RedisSchemaTransport(RedisTransportMixin, object):
+
+    def __init__(self, redis_pool=None, *,
+                 serializer=ByFieldMessageSerializer(), deserializer=ByFieldMessageDeserializer(RpcMessage),
+                 **connection_kwargs
+                 ):
+        self.set_redis_pool(redis_pool)
+        self.set_connection_kwargs(connection_kwargs)
+        self._latest_ids = {}
+        self.serializer = serializer
+        self.deserializer = deserializer
+
+    def schema_key(self, api_name):
+        return 'schema:{}'.format(api_name)
+
+    def schema_set_key(self):
+        """Maintains a set of api names in redis which can be used to retrieve individual schemas"""
+        return 'schemas'
+
+    async def store(self, api_name: str, schema: Dict[str, dict], ttl_seconds: int):
+        """Store an individual schema"""
+        with await self.connection_manager() as redis:
+            schema_key = self.schema_key(api_name)
+
+            p = redis.pipeline()
+            p.set(schema_key, self.serializer(schema))
+            p.expire(schema_key, ttl_seconds)
+            p.sadd(self.schema_set_key(), api_name)
+            await p.execute()
+
+    async def load(self) -> Dict[str, dict]:
+        """Load all schemas"""
+        schemas = {}
+        with await self.connection_manager() as redis:
+            api_names = list(await redis.smembers(self.schema_set_key()))
+            encoded_schemas = await redis.mget(*api_names)
+            for api_name, schema in zip(api_names, encoded_schemas):
+                # Schema may have expired
+                if schema:
+                    schemas[api_name] = self.deserializer(schema)
+        return schemas
 
 
 def redis_stream_id_subtract_one(message_id):
