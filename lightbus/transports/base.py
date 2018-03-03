@@ -50,26 +50,6 @@ class ResultTransport(object):
 
 class EventTransport(object):
     """ Implement the sending/consumption of events over a given transport.
-
-    The simplest implementation should simply be capable of:
-
-        1. Consuming all events
-        2. Sending events
-
-    However, consuming all events will probably be unnecessary in most situations.
-    You can therefore selectively listen for events by implementing
-    ``start_listening_for()`` and ``stop_listening_for()``.
-
-    Implementing these methods will have several benefits:
-
-      * Will reduce resource use
-      * Will allow for dynamically changing listened-for events at runtime
-
-    See Also:
-
-        lightbus.RedisEventTransport: Implements the start_listening_for()
-            and stop_listening_for() methods
-
     """
 
     async def send_event(self, event_message: EventMessage, options: dict):
