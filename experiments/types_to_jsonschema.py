@@ -102,7 +102,8 @@ def python_type_to_json_schemas(type_):
     elif issubclass(type_, NoneType):
         return [{'type': 'null'}]
     else:
-        return [{'type': 'string'}]
+        logging.warning('Could not convert python type to json schema type: {}'.format(type_))
+        return [{}]
 
 
 def parameter_to_json_schemas(parameter):
@@ -169,7 +170,7 @@ def make_parameter_schema(f):
 def make_response_schema(f):
     response_schema = {
         '$schema': 'http://json-schema.org/draft-04/schema#',
-        'description': '{}() parameters'.format(f.__name__),
+        'description': '{}() response type'.format(f.__name__),
     }
     sig = inspect.signature(f)
     response_schema.update(
@@ -333,7 +334,7 @@ def test_named_tuple():
 
 
 def test_named_tuple_using_function():
-    
+
     User = namedtuple('User', ('username', 'password'))
 
     def func(user: User): pass
@@ -390,3 +391,10 @@ def test_response_named_tuple():
     assert set(schema['required']) == {'username', 'password'}
     assert schema['additionalProperties'] == False
 
+
+def test_unknown_type():
+    class UnknownThing(object): pass
+
+    def func(username) -> UnknownThing: pass
+    schema = make_response_schema(func)
+    assert 'type' not in schema
