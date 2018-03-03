@@ -333,14 +333,15 @@ class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
         """Maintains a set of api names in redis which can be used to retrieve individual schemas"""
         return 'schemas'
 
-    async def store(self, api_name: str, schema: Dict, ttl_seconds: int):
+    async def store(self, api_name: str, schema: Dict, ttl_seconds: Optional[int]):
         """Store an individual schema"""
         with await self.connection_manager() as redis:
             schema_key = self.schema_key(api_name)
 
             p = redis.pipeline()
             p.set(schema_key, json.dumps(schema))
-            p.expire(schema_key, ttl_seconds)
+            if ttl_seconds is not None:
+                p.expire(schema_key, ttl_seconds)
             p.sadd(self.schema_set_key(), api_name)
             await p.execute()
 
