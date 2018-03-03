@@ -28,6 +28,12 @@ def redis_event_transport(new_redis_pool, server, loop):
 
 
 @pytest.fixture
+def redis_schema_transport(new_redis_pool, server, loop):
+    """Get a redis transport backed by a running redis server."""
+    return lightbus.RedisSchemaTransport(redis_pool=new_redis_pool(maxsize=10000))
+
+
+@pytest.fixture
 def bus(redis_rpc_transport, redis_result_transport, redis_event_transport):
     """Get a redis transport backed by a running redis server."""
     return lightbus.create(

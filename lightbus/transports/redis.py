@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from datetime import datetime
@@ -338,7 +339,7 @@ class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
             schema_key = self.schema_key(api_name)
 
             p = redis.pipeline()
-            p.set(schema_key, self.serializer(schema))
+            p.set(schema_key, json.dumps(schema))
             p.expire(schema_key, ttl_seconds)
             p.sadd(self.schema_set_key(), api_name)
             await p.execute()
@@ -347,12 +348,19 @@ class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
         """Load all schemas"""
         schemas = {}
         with await self.connection_manager() as redis:
+            # Get & decode the api names
             api_names = list(await redis.smembers(self.schema_set_key()))
-            encoded_schemas = await redis.mget(*api_names)
+            api_names = [api_name.decode('utf8') for api_name in api_names]
+
+            # Convert the api names into redis keys
+            keys = [self.schema_key(api_name) for api_name in api_names]
+
+            # Get the schemas from the keys
+            encoded_schemas = await redis.mget(*keys)
             for api_name, schema in zip(api_names, encoded_schemas):
                 # Schema may have expired
                 if schema:
-                    schemas[api_name] = self.deserializer(schema)
+                    schemas[api_name] = json.loads(schema)
         return schemas
 
 
