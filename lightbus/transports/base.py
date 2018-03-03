@@ -1,4 +1,4 @@
-from typing import Sequence, Tuple, List, Generator
+from typing import Sequence, Tuple, List, Generator, Dict
 
 from lightbus.api import Api
 from lightbus.exceptions import NothingToListenFor
@@ -88,3 +88,19 @@ class EventTransport(object):
 
     async def consumption_complete(self, event_message: EventMessage, context: dict):
         pass
+
+
+class SchemaTransport(object):
+    """ Implement sharing of lightbus API schemas
+    """
+
+    async def store(self, api_name: str, schema: Dict, ttl_seconds: int):
+        """Store a schema for the given API"""
+        raise NotImplementedError()
+
+    async def load(self) -> Dict[str, Dict]:
+        """Load the schema for all APIs
+
+        Should return a mapping of API names to schemas
+        """
+        raise NotImplementedError()

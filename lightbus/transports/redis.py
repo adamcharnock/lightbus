@@ -15,7 +15,7 @@ from lightbus.log import L, Bold, LBullets
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.serializers.blob import BlobMessageSerializer, BlobMessageDeserializer
 from lightbus.serializers.by_field import ByFieldMessageSerializer, ByFieldMessageDeserializer
-from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
+from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport, SchemaTransport
 from lightbus.utilities import human_time
 
 logger = logging.getLogger(__name__)
@@ -313,7 +313,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         context['streams'][event_message.redis_stream] = event_message.redis_id
 
 
-class RedisSchemaTransport(RedisTransportMixin, object):
+class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
 
     def __init__(self, redis_pool=None, *,
                  serializer=ByFieldMessageSerializer(), deserializer=ByFieldMessageDeserializer(RpcMessage),
@@ -332,7 +332,7 @@ class RedisSchemaTransport(RedisTransportMixin, object):
         """Maintains a set of api names in redis which can be used to retrieve individual schemas"""
         return 'schemas'
 
-    async def store(self, api_name: str, schema: Dict[str, dict], ttl_seconds: int):
+    async def store(self, api_name: str, schema: Dict, ttl_seconds: int):
         """Store an individual schema"""
         with await self.connection_manager() as redis:
             schema_key = self.schema_key(api_name)
@@ -343,7 +343,7 @@ class RedisSchemaTransport(RedisTransportMixin, object):
             p.sadd(self.schema_set_key(), api_name)
             await p.execute()
 
-    async def load(self) -> Dict[str, dict]:
+    async def load(self) -> Dict[str, Dict]:
         """Load all schemas"""
         schemas = {}
         with await self.connection_manager() as redis:
