@@ -11,7 +11,7 @@ import json
 from decimal import Decimal
 from textwrap import indent
 
-from typing import Union, Optional, Tuple, NamedTuple
+from typing import Union, Optional, Tuple, NamedTuple, Any
 
 import itertools
 
@@ -75,18 +75,21 @@ def make_custom_object_schema(type_, property_names=None):
 
 
 def python_type_to_json_schemas(type_):
+    is_class = inspect.isclass(type_)
     if type(type_) == type(Union):
         sub_types = type_._subs_tree()[1:]
         return list(itertools.chain(*map(python_type_to_json_schemas, sub_types)))
-    elif issubclass(type_, (str, bytes, Decimal, complex)):
+    elif type_ in (Any, ...):
+        return [{}]
+    elif is_class and issubclass(type_, (str, bytes, Decimal, complex)):
         return [{'type': 'string'}]
-    elif issubclass(type_, (bool, )):
+    elif is_class and issubclass(type_, (bool, )):
         return [{'type': 'boolean'}]
-    elif issubclass(type_, (int, float)):
+    elif is_class and issubclass(type_, (int, float)):
         return [{'type': 'number'}]
-    elif issubclass(type_, (dict, )):
+    elif is_class and issubclass(type_, (dict, )):
         return [{'type': 'object'}]
-    elif issubclass(type_, tuple) and hasattr(type_, '_fields'):
+    elif is_class and issubclass(type_, tuple) and hasattr(type_, '_fields'):
         # Named tuple
         return [make_custom_object_schema(type_, property_names=type_._fields)]
     elif type(type_) == type(Tuple) and len(type_._subs_tree()) > 1:
@@ -97,9 +100,9 @@ def python_type_to_json_schemas(type_):
             'minItems': len(sub_types),
             'items': [wrap_with_one_of(python_type_to_json_schemas(sub_type)) for sub_type in sub_types]
         }]
-    elif issubclass(type_, (list, tuple)):
+    elif is_class and issubclass(type_, (list, tuple)):
         return [{'type': 'array'}]
-    elif issubclass(type_, NoneType):
+    elif is_class and issubclass(type_, NoneType):
         return [{'type': 'null'}]
     else:
         logging.warning('Could not convert python type to json schema type: {}'.format(type_))
@@ -396,5 +399,17 @@ def test_unknown_type():
     class UnknownThing(object): pass
 
     def func(username) -> UnknownThing: pass
+    schema = make_response_schema(func)
+    assert 'type' not in schema
+
+
+def test_any():
+    def func(username) -> Any: pass
+    schema = make_response_schema(func)
+    assert 'type' not in schema
+
+
+def test_ellipsis():
+    def func(username) -> ...: pass
     schema = make_response_schema(func)
     assert 'type' not in schema
