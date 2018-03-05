@@ -1,6 +1,7 @@
-from typing import Optional
+import inspect
+from typing import Optional, NamedTuple
 
-from lightbus import Api
+from lightbus import Api, Event, Api
 from lightbus.transports.base import SchemaTransport
 
 # schema = {
@@ -18,6 +19,39 @@ from lightbus.transports.base import SchemaTransport
 #         },
 #     }
 # }
+
+
+class RegistrationEventParameters(NamedTuple):
+    username: str
+    email: str
+    is_admin: str = False
+
+
+class TestApi(Api):
+    # The current implementation
+    user_registered1 = Event(parameters=['username', 'email', 'is_admin'])
+
+    # Simple, no default values, no **kwargs
+    user_registered2 = Event(parameters={'username': str, 'email': str, 'is_admin': bool})
+
+    # Verbose, but has default values and **kwargs
+    user_registered3 = Event(parameters=[
+        inspect.Parameter('username', kind=inspect.Parameter.KEYWORD_ONLY, annotation=str),
+        inspect.Parameter('email', kind=inspect.Parameter.KEYWORD_ONLY, annotation=str),
+        inspect.Parameter('is_admin', kind=inspect.Parameter.KEYWORD_ONLY, annotation=str),
+        inspect.Parameter('extra_fields', kind=inspect.Parameter.VAR_KEYWORD, annotation=str, default=False),
+    ])
+
+    # As above, but customised for more concise definitions
+    user_registered4 = Event(parameters=[
+        Parameter('username', str),
+        Parameter('email', str),
+        Parameter('is_admin', str),
+        WildcardParameter('extra_fields', str, default=False),
+    ])
+
+    # Does not support **kwargs. Parameters can no longer be inline
+    user_registered5 = Event(parameters=RegistrationEventParameters)
 
 
 class Schema(object):

@@ -10,7 +10,7 @@ pytestmark = pytest.mark.unit
 
 
 class TestApi(Api):
-    my_event = Event(arguments=[])
+    my_event = Event(parameters=[])
 
     class Meta:
         name = 'example.test'

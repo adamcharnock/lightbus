@@ -110,6 +110,6 @@ class Api(object, metaclass=ApiMetaclass):
 
 class Event(object):
 
-    def __init__(self, arguments):
+    def __init__(self, parameters):
         # Ensure you update the __copy__() method if adding instance variables below
-        self.arguments = arguments
+        self.parameters = parameters

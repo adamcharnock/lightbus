@@ -219,12 +219,12 @@ class BusClient(object):
                 "may also be using the incorrect API. Also check for typos.".format(**locals())
             )
 
-        if set(event.arguments) != set(kwargs.keys()):
+        if set(event.parameters) != set(kwargs.keys()):
             raise InvalidEventArguments(
                 "Invalid event arguments supplied when firing event. Attempted to fire event with "
                 "{} arguments: {}. Event expected {}: {}".format(
                     len(kwargs), sorted(kwargs.keys()),
-                    len(event.arguments), sorted(event.arguments),
+                    len(event.parameters), sorted(event.parameters),
                 )
             )
 

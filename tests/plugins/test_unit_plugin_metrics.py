@@ -12,7 +12,7 @@ pytestmark = pytest.mark.unit
 
 
 class TestApi(Api):
-    my_event = Event(arguments=['f'])
+    my_event = Event(parameters=['f'])
 
     def my_method(self, f=None):
         return 'value'

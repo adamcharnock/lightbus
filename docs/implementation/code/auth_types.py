@@ -3,7 +3,7 @@ from typing import NewType
 from lightbus import Api, Event
 
 class AuthApi(Api):
-    user_registered = Event(arguments=[
+    user_registered = Event(parameters=[
         NewType('username', str)
     ])
 
