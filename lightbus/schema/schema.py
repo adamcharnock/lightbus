@@ -1,7 +1,8 @@
 import inspect
 from typing import Optional
 
-from lightbus import Api
+from lightbus import Api, Event
+from lightbus.schema.hints_to_schema import make_response_schema, make_rpc_parameter_schema, make_event_parameter_schema
 from lightbus.transports.base import SchemaTransport
 
 # schema = {
@@ -52,7 +53,7 @@ class Schema(object):
         return self.local_schemas.get(api_name) or self.remote_schemas.get(api_name)
 
     def make_schema(self, api: Api):
-        pass
+        return api_to_schema(api)
 
 
 class Parameter(inspect.Parameter):
@@ -79,3 +80,30 @@ class WildcardParameter(inspect.Parameter):
             default={},
             annotation=dict
         )
+
+
+def api_to_schema(api: Api) -> dict:
+    schema = {
+        'rpcs': {},
+        'events': {},
+    }
+
+    for member_name, member in inspect.getmembers(api):
+        if member_name.startswith('_'):
+            # Don't create schema from private methods
+            continue
+        if hasattr(Api, member_name):
+            # Don't create schema for methods defined on Api class
+            continue
+
+        if inspect.ismethod(member):
+            schema['rpcs'][member_name] = {
+                'parameters': make_rpc_parameter_schema(api.meta.name, member_name, method=member),
+                'response': make_response_schema(api.meta.name, member_name, method=member),
+            }
+        elif isinstance(member, Event):
+            schema['events'][member_name] = {
+                'parameters': make_event_parameter_schema(api.meta.name, member_name, event=member),
+            }
+
+    return schema

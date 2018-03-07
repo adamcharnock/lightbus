@@ -3,10 +3,16 @@ import itertools
 import json
 import logging
 from _pydecimal import Decimal
-from typing import Union, Any, Tuple
+from typing import Union, Any, Tuple, Sequence
+
+from lightbus import Event
 
 NoneType = type(None)
 empty = inspect.Signature.empty
+logger = logging.getLogger(__name__)
+
+
+SCHEMA_URI = 'http://json-schema.org/draft-04/schema#'
 
 
 def wrap_with_one_of(schemas):
@@ -91,7 +97,7 @@ def python_type_to_json_schemas(type_):
     elif is_class and issubclass(type_, NoneType):
         return [{'type': 'null'}]
     else:
-        logging.warning('Could not convert python type to json schema type: {}'.format(type_))
+        logger.warning('Could not convert python type to json schema type: {}'.format(type_))
         return [{}]
 
 
@@ -129,19 +135,18 @@ def return_type_to_schema(type_):
     return wrap_with_one_of(type_schemas)
 
 
-def make_parameter_schema(f):
+def make_parameter_schema(parameters: Sequence[inspect.Parameter]):
     parameter_schema = {
-        '$schema': 'http://json-schema.org/draft-04/schema#',
-        'description': '{}() parameters'.format(f.__name__),
+        '$schema': SCHEMA_URI,
         'type': 'object',
         'additionalProperties': False,
         'properties': {},
         'required': [],
     }
-    sig = inspect.signature(f)
-    for parameter in sig.parameters.values():
+
+    for parameter in parameters:
         if parameter.kind in (parameter.POSITIONAL_ONLY, parameter.VAR_POSITIONAL):
-            logging.warning('Positional-only arguments are not supported: {}'.format(parameter))
+            logger.warning('Positional-only arguments are not supported: {}'.format(parameter))
             continue
 
         if parameter.kind == parameter.VAR_KEYWORD:
@@ -152,18 +157,40 @@ def make_parameter_schema(f):
         if parameter.default is empty:
             parameter_schema['required'].append(parameter.name)
 
-    logging.info(json.dumps(parameter_schema, indent=4))
     return parameter_schema
 
 
-def make_response_schema(f):
-    response_schema = {
-        '$schema': 'http://json-schema.org/draft-04/schema#',
-        'description': '{}() response type'.format(f.__name__),
-    }
-    sig = inspect.signature(f)
-    response_schema.update(
-        **return_type_to_schema(sig.return_annotation)
-    )
-    logging.info(json.dumps(response_schema, indent=4))
-    return response_schema
+def make_rpc_parameter_schema(api_name, method_name, method):
+    # Get the method parameters by inspecting the method's signature
+    parameters = inspect.signature(method).parameters.values()
+    schema = make_parameter_schema(parameters)
+    schema['title'] = 'RPC {}.{}() parameters'.format(api_name, method_name)
+    return schema
+
+
+def make_event_parameter_schema(api_name, method_name, event: Event):
+    # Get the event parameters via whatever was declared for the event
+    parameters = _normalise_event_parameters(event.parameters)
+    schema = make_parameter_schema(parameters)
+    schema['title'] = 'Event {}.{} parameters'.format(api_name, method_name)
+    return schema
+
+
+def make_response_schema(api_name, method_name, method):
+    sig = inspect.signature(method)
+    schema = return_type_to_schema(sig.return_annotation)
+    schema['title'] = 'RPC {}.{}() response'.format(api_name, method_name)
+    schema['$schema'] = SCHEMA_URI
+    return schema
+
+
+def _normalise_event_parameters(parameters):
+    from lightbus.schema import Parameter
+
+    normalised = []
+    for parameter in parameters:
+        if isinstance(parameter, str):
+            normalised.append(Parameter(name=parameter))
+        else:
+            normalised.append(parameter)
+    return normalised
