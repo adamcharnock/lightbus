@@ -6,22 +6,6 @@ from lightbus.exceptions import InvalidApiForSchemaCreation
 from lightbus.schema.hints_to_schema import make_response_schema, make_rpc_parameter_schema, make_event_parameter_schema
 from lightbus.transports.base import SchemaTransport
 
-# schema = {
-#     'my.api': {
-#         'rpcs': {
-#             'check_password': {
-#                 'parameters': SCHEMA,
-#                 'response': SCHEMA,
-#             }
-#         },
-#         'events': {
-#             'user_registered': {
-#                 'parameters': SCHEMA,
-#             }
-#         },
-#     }
-# }
-
 
 class Schema(object):
     """ Represents the bus' schema
