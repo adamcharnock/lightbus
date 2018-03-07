@@ -8,8 +8,6 @@ Schema
     :backlinks: none
 
 
-**Early design stage**
-
 Lightbus will optionally support a schema format based upon `JSON Schema`_. A schema
 file will specify information about one or more APIs. The values
 of certain keys will be valid JSON schema definitions, and can therefore
