@@ -28,6 +28,10 @@ class InvalidApiRegistryEntry(LightbusException):
     pass
 
 
+class InvalidApiForSchemaCreation(LightbusException):
+    pass
+
+
 class InvalidApiEventConfiguration(LightbusException):
     pass
 

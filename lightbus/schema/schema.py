@@ -2,6 +2,7 @@ import inspect
 from typing import Optional
 
 from lightbus import Api, Event
+from lightbus.exceptions import InvalidApiForSchemaCreation
 from lightbus.schema.hints_to_schema import make_response_schema, make_rpc_parameter_schema, make_event_parameter_schema
 from lightbus.transports.base import SchemaTransport
 
@@ -87,6 +88,13 @@ def api_to_schema(api: Api) -> dict:
         'rpcs': {},
         'events': {},
     }
+
+    if isinstance(api, type):
+        raise InvalidApiForSchemaCreation(
+            "An attempt was made to derive an API schema from a type/class, rather than "
+            "from an instance of an API. This is probably because you are passing an API "
+            "class to api_to_schema(), rather than an instance of the API class."
+        )
 
     for member_name, member in inspect.getmembers(api):
         if member_name.startswith('_'):

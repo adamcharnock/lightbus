@@ -1,6 +1,7 @@
 import pytest
 
 from lightbus import Event, Api, Parameter
+from lightbus.exceptions import InvalidApiForSchemaCreation
 from lightbus.schema.schema import api_to_schema
 
 
@@ -101,3 +102,12 @@ def test_api_to_schema_rpc_private():
 
     schema = api_to_schema(TestApi())
     assert not schema['rpcs']
+
+
+def test_api_to_schema_class_not_instance():
+    class TestApi(Api):
+        class Meta:
+            name = 'my.test_api'
+
+    with pytest.raises(InvalidApiForSchemaCreation):
+        api_to_schema(TestApi)
