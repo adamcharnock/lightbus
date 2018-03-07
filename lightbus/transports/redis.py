@@ -356,6 +356,9 @@ class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
             # Convert the api names into redis keys
             keys = [self.schema_key(api_name) for api_name in api_names]
 
+            if not keys:
+                return {}
+
             # Get the schemas from the keys
             encoded_schemas = await redis.mget(*keys)
             for api_name, schema in zip(api_names, encoded_schemas):

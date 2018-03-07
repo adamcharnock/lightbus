@@ -3,10 +3,10 @@ import contextlib
 import inspect
 import logging
 import time
-import traceback
 from asyncio.futures import CancelledError
 from typing import Optional
 
+from lightbus.schema import Schema
 from lightbus.api import registry
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
     InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError
@@ -16,6 +16,8 @@ from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
 from lightbus.transports import RpcTransport, ResultTransport, EventTransport, RedisRpcTransport, \
     RedisResultTransport, RedisEventTransport
+from lightbus.transports.base import SchemaTransport
+from lightbus.transports.redis import RedisSchemaTransport
 from lightbus.utilities import handle_aio_exceptions, human_time, block, generate_process_name
 
 __all__ = ['BusClient', 'BusNode', 'create']
@@ -26,11 +28,16 @@ logger = logging.getLogger(__name__)
 
 class BusClient(object):
 
-    def __init__(self, rpc_transport: 'RpcTransport', result_transport: 'ResultTransport',
-                 event_transport: 'EventTransport', process_name: str=''):
+    def __init__(self,
+                 rpc_transport: 'RpcTransport',
+                 result_transport: 'ResultTransport',
+                 event_transport: 'EventTransport',
+                 schema_transport: 'SchemaTransport',
+                 process_name: str=''):
         self.rpc_transport = rpc_transport
         self.result_transport = result_transport
         self.event_transport = event_transport
+        self.schema = Schema(schema_transport=schema_transport)
         self.process_name = process_name or generate_process_name()
         self._listeners = {}
 
@@ -53,9 +60,18 @@ class BusClient(object):
         else:
             logger.info("No plugins loaded")
 
+        # Load schema
+        logger.debug("Loading schema...")
+        block(handle_aio_exceptions(self.schema.load()), timeout=5)
+
+        logger.info(LBullets(
+            "Loading the following remote schemas ({})".format(len(self.schema.remote_schemas)),
+            items=self.schema.remote_schemas.keys()
+        ))
+
     def run_forever(self, *, loop=None, consume_rpcs=True, plugins=None):
         logger.info(LBullets(
-            "Lightbus getting ready to run. Brokers in use",
+            "Lightbus getting ready to run. Transports in use",
             items={
                 "RPC transport": L(
                     '{}.{}',
@@ -68,6 +84,10 @@ class BusClient(object):
                 "Event transport": L(
                     '{}.{}', self.event_transport.__module__,
                     Bold(self.event_transport.__class__.__name__)
+                ),
+                "Schema transport": L(
+                    '{}.{}', self.schema.schema_transport.__module__,
+                    Bold(self.schema.schema_transport.__class__.__name__)
                 ),
             }
         ))
@@ -97,6 +117,10 @@ class BusClient(object):
         if consume_rpcs and registry.all():
             asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs()), loop=loop)
 
+        asyncio.ensure_future(handle_aio_exceptions(
+            self.schema.monitor()
+        ), loop=loop)
+        
         try:
             loop.run_forever()
         except KeyboardInterrupt:
@@ -387,9 +411,10 @@ class BusNode(object):
 
 
 def create(
-        rpc_transport: Optional['RpcTransport'] = None,
-        result_transport: Optional['ResultTransport'] = None,
-        event_transport: Optional['EventTransport'] = None,
+        rpc_transport: Optional['RpcTransport']=None,
+        result_transport: Optional['ResultTransport']=None,
+        event_transport: Optional['EventTransport']=None,
+        schema_transport: Optional['SchemaTransport']=None,
         client_class=BusClient,
         node_class=BusNode,
         plugins=None,
@@ -399,6 +424,7 @@ def create(
         rpc_transport=rpc_transport or RedisRpcTransport(),
         result_transport=result_transport or RedisResultTransport(),
         event_transport=event_transport or RedisEventTransport(),
+        schema_transport=schema_transport or RedisSchemaTransport(),
         **kwargs
     )
     bus_client.setup(plugins=plugins)

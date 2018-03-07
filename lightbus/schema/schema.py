@@ -1,7 +1,9 @@
 import inspect
 from typing import Optional
 
-from lightbus import Api, Event
+import asyncio
+
+import lightbus
 from lightbus.exceptions import InvalidApiForSchemaCreation
 from lightbus.schema.hints_to_schema import make_response_schema, make_rpc_parameter_schema, make_event_parameter_schema
 from lightbus.transports.base import SchemaTransport
@@ -19,26 +21,47 @@ class Schema(object):
     That being said, you should expect old schemas to be dropped
     after max_age_seconds.
     """
-    # TODO: Periodically renew the schema within the transport (as per max_age_seconds)
-    # TODO: Reload schemas when a new lightbus process comes online
 
-    def __init__(self, schema_transport: SchemaTransport, max_age_seconds: Optional[int]=3600 * 24):
+    def __init__(self, schema_transport: SchemaTransport, max_age_seconds: Optional[int]=60):
+        # TODO: Pull max_age_seconds from configuration
         self.schema_transport = schema_transport
         self.max_age_seconds = max_age_seconds
         self.local_schemas = {}
         self.remote_schemas = {}
 
-    def add_api(self, api: Api):
-        # Adds an API locally, and sends to to the transport
-        schema = self.make_schema(api)  # TODO: IMPLEMENT IT
+    def add_api(self, api: 'Api'):
+        """Adds an API locally, and sends to to the transport"""
+        schema = api_to_schema(api)
         self.local_schemas[api.meta.name] = schema
         self.schema_transport.store(api.meta.name, schema, ttl_seconds=self.max_age_seconds)
 
     def get_schema(self, api_name) -> Optional[dict]:
+        """Get the schema for the given API"""
         return self.local_schemas.get(api_name) or self.remote_schemas.get(api_name)
 
-    def make_schema(self, api: Api):
-        return api_to_schema(api)
+    async def store(self):
+        """Store the schema onto the bus"""
+        for api_name, schema in self.local_schemas.items():
+            await self.schema_transport.store(api_name, schema, ttl_seconds=self.max_age_seconds)
+
+    async def load(self):
+        self.remote_schemas = await self.schema_transport.load()
+
+    async def monitor(self, interval=None):
+        """Monitor for remote schema changes and keep any local schemas alive on the bus
+        """
+        interval = interval or self.max_age_seconds * 0.8
+        try:
+            while True:
+                await asyncio.sleep(interval)
+                # Keep alive our local schemas
+                for api_name, schema in self.local_schemas.items():
+                    await self.schema_transport.ping(api_name, schema, ttl_seconds=self.max_age_seconds)
+
+                # Read the entire schema back from the bus
+                await self.load()
+        except asyncio.CancelledError:
+            return
 
 
 class Parameter(inspect.Parameter):
@@ -67,7 +90,7 @@ class WildcardParameter(inspect.Parameter):
         )
 
 
-def api_to_schema(api: Api) -> dict:
+def api_to_schema(api: 'lightbus.Api') -> dict:
     schema = {
         'rpcs': {},
         'events': {},
@@ -84,7 +107,7 @@ def api_to_schema(api: Api) -> dict:
         if member_name.startswith('_'):
             # Don't create schema from private methods
             continue
-        if hasattr(Api, member_name):
+        if hasattr(lightbus.Api, member_name):
             # Don't create schema for methods defined on Api class
             continue
 
@@ -93,7 +116,7 @@ def api_to_schema(api: Api) -> dict:
                 'parameters': make_rpc_parameter_schema(api.meta.name, member_name, method=member),
                 'response': make_response_schema(api.meta.name, member_name, method=member),
             }
-        elif isinstance(member, Event):
+        elif isinstance(member, lightbus.Event):
             schema['events'][member_name] = {
                 'parameters': make_event_parameter_schema(api.meta.name, member_name, event=member),
             }

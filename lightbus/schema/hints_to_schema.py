@@ -5,7 +5,7 @@ import logging
 from _pydecimal import Decimal
 from typing import Union, Any, Tuple, Sequence
 
-from lightbus import Event
+import lightbus
 
 NoneType = type(None)
 empty = inspect.Signature.empty
@@ -168,7 +168,7 @@ def make_rpc_parameter_schema(api_name, method_name, method):
     return schema
 
 
-def make_event_parameter_schema(api_name, method_name, event: Event):
+def make_event_parameter_schema(api_name, method_name, event: 'lightbus.Event'):
     # Get the event parameters via whatever was declared for the event
     parameters = _normalise_event_parameters(event.parameters)
     schema = make_parameter_schema(parameters)

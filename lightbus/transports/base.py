@@ -98,6 +98,15 @@ class SchemaTransport(object):
         """Store a schema for the given API"""
         raise NotImplementedError()
 
+    async def ping(self, api_name: str, schema: Dict, ttl_seconds: int):
+        """Keep alive a schema already stored via store()
+
+        The defaults to simply calling store() on the assumption that this
+        will cause the ttl to be updated. Backends may choose to
+        customise this logic.
+        """
+        return self.store(api_name, schema, ttl_seconds)
+
     async def load(self) -> Dict[str, Dict]:
         """Load the schema for all APIs
 

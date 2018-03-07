@@ -42,3 +42,21 @@ async def test_load(redis_schema_transport: RedisSchemaTransport, redis_client):
     assert schemas == {
         'my.api': {'key': 'value'}
     }
+
+
+@pytest.mark.run_loop
+async def test_load(redis_schema_transport: RedisSchemaTransport, redis_client):
+    await redis_client.sadd('schemas', 'my.api', 'old.api')
+    await redis_client.set('schema:my.api', json.dumps({'key': 'value'}))
+
+    schemas = await redis_schema_transport.load()
+
+    assert schemas == {
+        'my.api': {'key': 'value'}
+    }
+
+
+@pytest.mark.run_loop
+async def test_load_no_apis(redis_schema_transport: RedisSchemaTransport, redis_client):
+    schemas = await redis_schema_transport.load()
+    assert schemas == {}
