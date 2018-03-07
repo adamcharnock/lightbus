@@ -49,25 +49,21 @@ Generating a schema on your provider
     # ./schema.json
     {
         'my_company.auth': [
-            {
-                'type': 'event',
-                'name': 'user_registered',
-                'arguments': {
-                    'username': {}
-                 }
-            }, {
-                'type': 'rpc',
-                'name': 'check_password',
-                'arguments': {
-                    'username': {},
-                    'password': {}
+            'events': {
+                'user_registered': {
+                    'parameters': JSON_SCHEMA
+                }
+            },
+            'rpcs': {
+                'check_password': {
+                    'parameters': JSON_SCHEMA,
+                    'response': JSON_SCHEMA,
                 }
             }
         ]
     }
 
-This schema contains the basic information of the API. However, types are notably missing
-(more on this in :ref:`implementation/schema:Specifying types`)
+This schema contains the basic information of the API.
 
 Loading a schema on your consumer
 ---------------------------------
@@ -77,7 +73,7 @@ Loading a schema on the client is simple:
 .. code-block:: python
 
     >>> bus = lightbus.create()
-    >>> bus = lightbus.add_schema(file='./schema.json')
+    >>> bus = bus.schema.load(file='./schema.json')
 
 Error checking with schemas
 ---------------------------
@@ -96,12 +92,12 @@ Manual validation will also be available as follows:
 
     # Validate event dispatch arguments
     my_company.auth.user_registered.validate(
-        arguments=dict(username='adam')
+        parameters=dict(username='adam')
     )
 
     # Validate RPC call (can specify one or both of 'arguments' & 'response')
     my_company.auth.check_password.validate(
-        arguments=dict(username='adam', password='secret'),
+        parameters=dict(username='adam', password='secret'),
         response=True
     )
 
@@ -128,7 +124,7 @@ Now we can generate our schema again and see the results:
 
 .. code-block:: python
 
-    >> bus.dump_schema(file='./schema.json')
+    >> bus.schema.dump(file='./schema.json')
 
 .. code-block:: python
 
@@ -172,13 +168,14 @@ Sometimes it may be preferable to store your schema in multiple files. For examp
 Dumping schemas to individual files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To dump multiple files, specify the ``directory`` argument to ``dump_schema()``, rather than ``file``:
+To dump multiple files, specify the ``directory`` argument to ``bus.schema.dump()``, rather than ``file``:
 
 .. code-block:: python
 
-    >>> bus.dump_schema(directory='./schema')
+    >>> bus.schema.dump(directory='./schema')
 
 .. code-block:: shell
+
 
     $ ls ./schema
     my_company.auth.json
@@ -191,7 +188,7 @@ Loading schemas from individual files
 .. code-block:: python
 
     >>> bus = lightbus.create()
-    >>> bus = lightbus.add_schema(directory='./schema')
+    >>> bus.schema.load(directory='./schema')
 
 Generation of stub files
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -202,8 +199,8 @@ IDE code completion:
 .. code-block:: python
 
     >>> bus = lightbus.create()
-    >>> bus = lightbus.add_schema(directory='./schema')
-    >>> lightbus.generate_stubs('./.stubs')
+    >>> bus.schema.load(directory='./schema')
+    >>> bus.schema.generate_stubs('./.stubs')
 
 
 
