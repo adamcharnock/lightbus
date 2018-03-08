@@ -40,7 +40,7 @@ Generating a schema on your provider
 
 .. code-block:: python
 
-    >> bus.dump_schema(file='./schema.json')
+    >> bus.schema.dump(file='./schema.json')
 
 .. code-block:: python
 

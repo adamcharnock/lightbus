@@ -6,6 +6,7 @@ from lightbus.plugins import autoload_plugins, plugin_hook
 from lightbus.utilities import configure_logging, block
 import lightbus.commands.run
 import lightbus.commands.shell
+import lightbus.commands.dump_schema
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ def parse_args(args=None):
 
     lightbus.commands.run.Command().setup(parser, subparsers)
     lightbus.commands.shell.Command().setup(parser, subparsers)
+    lightbus.commands.dump_schema.Command().setup(parser, subparsers)
 
     autoload_plugins()
     block(plugin_hook('before_parse_args', parser=parser, subparsers=subparsers), timeout=5)

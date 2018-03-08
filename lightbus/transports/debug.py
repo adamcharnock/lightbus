@@ -75,10 +75,15 @@ class DebugEventTransport(EventTransport):
 
 class DebugSchemaTransport(SchemaTransport):
 
+    def __init__(self):
+        self._schemas = {}
+
     async def store(self, api_name: str, schema: Dict, ttl_seconds: int):
+        self._schemas[api_name] = schema
+
         logging.debug('Debug schema transport storing schema for {} (TTL: {}): {}'.format(
             api_name, ttl_seconds, schema)
         )
 
     async def load(self) -> Dict[str, Dict]:
-        return {}
+        return self._schemas

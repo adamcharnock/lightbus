@@ -1,6 +1,8 @@
 import asyncio
 import json
+from pathlib import Path
 
+import os
 import pytest
 
 from lightbus import Event, Api, Parameter, Schema
@@ -116,27 +118,24 @@ def test_api_to_schema_class_not_instance():
         api_to_schema(TestApi)
 
 
+# Schema class
+
+
 @pytest.mark.run_loop
-async def test_add_api(loop, redis_client, redis_pool):
+async def test_add_api(loop, schema, redis_client):
     class TestApi(Api):
         my_event = Event(['field'])
 
         class Meta:
             name = 'my.test_api'
 
-    schema = Schema(
-        schema_transport=RedisSchemaTransport(redis_pool=redis_pool),
-    )
     await schema.add_api(TestApi())
     assert await redis_client.exists('schemas')
     assert await redis_client.smembers('schemas') == [b'my.test_api']
 
 
 @pytest.mark.run_loop
-async def test_store(loop, redis_client, redis_pool):
-    schema = Schema(
-        schema_transport=RedisSchemaTransport(redis_pool=redis_pool),
-    )
+async def test_store(loop, schema, redis_client):
     schema.local_schemas['my.test_api'] = {'foo': 'bar'}
     await schema.store()
     assert await redis_client.exists('schemas')
@@ -145,7 +144,7 @@ async def test_store(loop, redis_client, redis_pool):
 
 
 @pytest.mark.run_loop
-async def test_monitor_store(loop, redis_client, redis_pool):
+async def test_monitor_store(loop, schema, redis_client):
     """Check the monitor will persist local changes"""
     class TestApi(Api):
         my_event = Event(['field'])
@@ -153,9 +152,6 @@ async def test_monitor_store(loop, redis_client, redis_pool):
         class Meta:
             name = 'my.test_api'
 
-    schema = Schema(
-        schema_transport=RedisSchemaTransport(redis_pool=redis_pool),
-    )
     monitor_task = asyncio.ensure_future(schema.monitor(interval=0.1), loop=loop)
 
     assert await redis_client.smembers('schemas') == []
@@ -165,11 +161,8 @@ async def test_monitor_store(loop, redis_client, redis_pool):
 
 
 @pytest.mark.run_loop
-async def test_monitor_load(loop, redis_client, redis_pool):
+async def test_monitor_load(loop, schema, redis_client):
     """Check the monitor will load new data from redis"""
-    schema = Schema(
-        schema_transport=RedisSchemaTransport(redis_pool=redis_pool),
-    )
     monitor_task = asyncio.ensure_future(schema.monitor(interval=0.1), loop=loop)
 
     assert await redis_client.smembers('schemas') == []
@@ -178,3 +171,47 @@ async def test_monitor_load(loop, redis_client, redis_pool):
     await asyncio.sleep(0.2)
     assert await redis_client.smembers('schemas') == [b'my.test_api']
     assert json.loads(await redis_client.get('schemas:my.test_api')) == {'foo': 'bar'}
+
+
+def test_dump_to_file_empty(tmp_file, schema):
+    schema.dump(tmp_file.name)
+    tmp_file.seek(0)
+    assert tmp_file.read() == '{}'
+
+
+@pytest.mark.run_loop
+async def test_dump_to_file(tmp_file, schema):
+    class TestApi(Api):
+        my_event = Event(['field'])
+
+        class Meta:
+            name = 'my.test_api'
+
+    await schema.add_api(TestApi())
+    schema.dump(tmp_file.name)
+    tmp_file.seek(0)
+    written_schema = tmp_file.read()
+    assert len(written_schema) > 100
+    assert 'my.test_api' in json.loads(written_schema)
+
+
+def test_dump_to_directory_empty(tmp_directory, schema):
+    schema.dump(tmp_directory)
+    assert not os.listdir(tmp_directory)
+
+
+@pytest.mark.run_loop
+async def test_dump_to_directory(tmp_directory, schema):
+    class TestApi(Api):
+        my_event = Event(['field'])
+
+        class Meta:
+            name = 'my.test_api'
+
+    await schema.add_api(TestApi())
+    schema.dump(tmp_directory)
+    assert set(os.listdir(tmp_directory)) == {'my.test_api.json'}
+    file_path = Path(tmp_directory) / 'my.test_api.json'
+    written_schema = file_path.read_text()
+    assert len(written_schema) > 100
+    assert 'my.test_api' in json.loads(written_schema)

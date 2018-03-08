@@ -1,12 +1,19 @@
 import inspect
-from typing import Optional
+import json
+from pathlib import Path
+from typing import Optional, TextIO, Union
 
 import asyncio
+
+import itertools
+
+import sys
 
 import lightbus
 from lightbus.exceptions import InvalidApiForSchemaCreation
 from lightbus.schema.hints_to_schema import make_response_schema, make_rpc_parameter_schema, make_event_parameter_schema
 from lightbus.transports.base import SchemaTransport
+from lightbus.utilities import make_file_safe_api_name
 
 
 class Schema(object):
@@ -39,6 +46,10 @@ class Schema(object):
         """Get the schema for the given API"""
         return self.local_schemas.get(api_name) or self.remote_schemas.get(api_name)
 
+    @property
+    def api_names(self):
+        return list(set(itertools.chain(self.local_schemas.keys(), self.remote_schemas.keys())))
+
     async def store(self):
         """Store the schema onto the bus"""
         for api_name, schema in self.local_schemas.items():
@@ -62,6 +73,33 @@ class Schema(object):
                 await self.load()
         except asyncio.CancelledError:
             return
+
+    def dump(self, destination: Union[str, Path, TextIO]=None):
+        if isinstance(destination, str):
+            destination = Path(destination)
+
+        if destination is None:
+            self._dump_to_file(sys.stdout)
+        elif destination.is_dir():
+            self._dump_to_directory(destination)
+        else:
+            with destination.open('w', encoding='utf8') as f:
+                self._dump_to_file(f)
+
+    def _dump_to_directory(self, destination: Path):
+        for api_name in self.api_names:
+            file_name = '{}.json'.format(make_file_safe_api_name(api_name))
+            (destination / file_name).write_text(self._get_dump(api_name), encoding='utf8')
+
+    def _dump_to_file(self, f):
+        f.write(self._get_dump())
+
+    def _get_dump(self, api_name=None):
+        if api_name:
+            schema = {api_name: self.get_schema(api_name)}
+        else:
+            schema = {api_name: self.get_schema(api_name) for api_name in self.api_names}
+        return json.dumps(schema, indent=2, sort_keys=True) + "\n"
 
 
 class Parameter(inspect.Parameter):

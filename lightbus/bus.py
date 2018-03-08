@@ -63,6 +63,8 @@ class BusClient(object):
         # Load schema
         logger.debug("Loading schema...")
         block(handle_aio_exceptions(self.schema.load()), timeout=5)
+        for api in registry.all():
+            block(handle_aio_exceptions(self.schema.add_api(api)), timeout=1)
 
         logger.info(LBullets(
             "Loaded the following remote schemas ({})".format(len(self.schema.remote_schemas)),
@@ -408,6 +410,16 @@ class BusNode(object):
         path = [node.name for node in self.ancestors(include_self=True)]
         path.reverse()
         return '.'.join(path[1:])
+
+    @property
+    def schema(self):
+        if self.parent is None:
+            return self.bus_client.schema
+        else:
+            # TODO: Implement getting schema of child nodes if there is demand
+            raise AttributeError(
+                'Schema only available on root node. Use bus.schema, not bus.my_api.schema'
+            )
 
 
 def create(
