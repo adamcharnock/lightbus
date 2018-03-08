@@ -65,7 +65,7 @@ class BusClient(object):
         block(handle_aio_exceptions(self.schema.load()), timeout=5)
 
         logger.info(LBullets(
-            "Loading the following remote schemas ({})".format(len(self.schema.remote_schemas)),
+            "Loaded the following remote schemas ({})".format(len(self.schema.remote_schemas)),
             items=self.schema.remote_schemas.keys()
         ))
 

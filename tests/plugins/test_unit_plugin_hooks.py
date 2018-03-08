@@ -35,7 +35,7 @@ def add_base_plugin():
     return do_add_base_plugin
 
 
-def test_server_start_stop(mocker, called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dummy_api):
+def test_server_start_stop(loop, mocker, called_hooks, dummy_bus: BusNode, add_base_plugin, dummy_api):
     add_base_plugin()
     mocker.patch.object(BusClient, '_run_forever')
     dummy_bus.run_forever(loop=loop)
