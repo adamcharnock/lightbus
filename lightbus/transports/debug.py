@@ -1,8 +1,8 @@
 import asyncio
 import logging
-from typing import Sequence, Tuple, Any, Generator, List
+from typing import Sequence, Tuple, Any, Generator, List, Dict
 
-from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
+from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport, SchemaTransport
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 
 
@@ -71,3 +71,14 @@ class DebugEventTransport(EventTransport):
 
     def _get_fake_message(self):
         return EventMessage(api_name='my_company.auth', event_name='user_registered', kwargs={'example': 'value'})
+
+
+class DebugSchemaTransport(SchemaTransport):
+
+    async def store(self, api_name: str, schema: Dict, ttl_seconds: int):
+        logging.debug('Debug schema transport storing schema for {} (TTL: {}): {}'.format(
+            api_name, ttl_seconds, schema)
+        )
+
+    async def load(self) -> Dict[str, Dict]:
+        return {}

@@ -40,6 +40,7 @@ def bus(redis_rpc_transport, redis_result_transport, redis_event_transport):
         rpc_transport=redis_rpc_transport,
         result_transport=redis_result_transport,
         event_transport=redis_event_transport,
+        schema_transport=redis_schema_transport,
     )
 
 
