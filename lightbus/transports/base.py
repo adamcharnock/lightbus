@@ -105,7 +105,7 @@ class SchemaTransport(object):
         will cause the ttl to be updated. Backends may choose to
         customise this logic.
         """
-        return self.store(api_name, schema, ttl_seconds)
+        await self.store(api_name, schema, ttl_seconds)
 
     async def load(self) -> Dict[str, Dict]:
         """Load the schema for all APIs

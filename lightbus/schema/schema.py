@@ -29,11 +29,11 @@ class Schema(object):
         self.local_schemas = {}
         self.remote_schemas = {}
 
-    def add_api(self, api: 'Api'):
+    async def add_api(self, api: 'Api'):
         """Adds an API locally, and sends to to the transport"""
         schema = api_to_schema(api)
         self.local_schemas[api.meta.name] = schema
-        self.schema_transport.store(api.meta.name, schema, ttl_seconds=self.max_age_seconds)
+        await self.schema_transport.store(api.meta.name, schema, ttl_seconds=self.max_age_seconds)
 
     def get_schema(self, api_name) -> Optional[dict]:
         """Get the schema for the given API"""
