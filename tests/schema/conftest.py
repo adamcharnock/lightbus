@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
@@ -17,7 +19,7 @@ def tmp_file():
 @pytest.yield_fixture
 def tmp_directory():
     f = TemporaryDirectory()
-    yield f.name
+    yield Path(f.name)
     try:
         f.cleanup()
     except IOError:

@@ -28,13 +28,21 @@ class Schema(object):
 
     That being said, you should expect old schemas to be dropped
     after max_age_seconds.
+
     """
 
     def __init__(self, schema_transport: SchemaTransport, max_age_seconds: Optional[int]=60):
         # TODO: Pull max_age_seconds from configuration
         self.schema_transport = schema_transport
         self.max_age_seconds = max_age_seconds
+
+        # Schemas which have been provided locally. These will either be locally-available
+        # APIs, or schemas which have been loaded from local files
         self.local_schemas = {}
+
+        # Schemas which have been retrieved from the bus. This will also contain local
+        # schemas which have been stored onto the bus. The storing and retrieving of
+        # remote schemas is mediated by the schema transport.
         self.remote_schemas = {}
 
     async def add_api(self, api: 'Api'):
@@ -88,6 +96,7 @@ class Schema(object):
 
         if destination is None:
             self._dump_to_file(sys.stdout)
+            sys.stdout.write('\n')
         elif destination.is_dir():
             self._dump_to_directory(destination)
         else:
@@ -98,34 +107,35 @@ class Schema(object):
         if isinstance(source, str):
             source = Path(source)
 
-        if source is None:
-            json_schema = sys.stdin.read()
+        def _load_schema(path, file_data):
             try:
-                schema = json.loads(json_schema)
+                return json.loads(file_data)
             except JSONDecodeError as e:
-                raise InvalidSchema('Could not parse schema received on stdin: {}'.format(e.msg))
-        elif source.is_dir():
+                raise InvalidSchema('Could not parse schema file {}: {}'.format(path, e.msg))
+
+        if source is None:
+            # No source, read from stdin
+            schema = _load_schema('[stdin]', sys.stdin.read())
+        elif hasattr(source, 'is_dir') and source.is_dir():
+            # Read each json file in directory
             schemas = []
             for file_path in source.glob('*.json'):
-                try:
-                    schema = json.loads(file_path.read())
-                except JSONDecodeError as e:
-                    raise InvalidSchema('Could not parse schema file at {}: {}'.format(
-                        file_path, e.msg
-                    ))
-                schemas.append(schema)
+                schemas.append(_load_schema(file_path, file_path.read_text(encoding='utf8')))
             schema = ChainMap(*schemas)
+        elif hasattr(source, 'read'):
+            # Read file handle
+            schema = _load_schema(source.name, source.read())
+        elif hasattr(source, 'read_text'):
+            # Read pathlib Path
+            schema = _load_schema(source.name, source.read_text())
         else:
-            with source.open('r', encoding='utf8') as f:
-                try:
-                    schema = json.loads(f.read())
-                except JSONDecodeError as e:
-                    raise InvalidSchema('Could not parse schema file at {}: {}'.format(
-                        source, e.msg
-                    ))
+            raise InvalidSchema(
+                'Did not recognise provided source as either a '
+                'directory path, file path, or file handle: {}'.format(source)
+            )
 
         for api_name, api_schema in schema.items():
-            self.schema_transport.store(api_name, api_schema, ttl_seconds=self.max_age_seconds)
+            self.local_schemas[api_name] = api_schema
 
         return schema
 
@@ -142,7 +152,7 @@ class Schema(object):
             schema = {api_name: self.get_schema(api_name)}
         else:
             schema = {api_name: self.get_schema(api_name) for api_name in self.api_names}
-        return json.dumps(schema, indent=2, sort_keys=True) + "\n"
+        return json.dumps(schema, indent=2, sort_keys=True)
 
 
 class Parameter(inspect.Parameter):

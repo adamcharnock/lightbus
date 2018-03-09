@@ -173,14 +173,14 @@ async def test_monitor_load(loop, schema, redis_client):
     assert json.loads(await redis_client.get('schemas:my.test_api')) == {'foo': 'bar'}
 
 
-def test_dump_to_file_empty(tmp_file, schema):
+def test_save_local_file_empty(tmp_file, schema):
     schema.save_local(tmp_file.name)
     tmp_file.seek(0)
     assert tmp_file.read() == '{}'
 
 
 @pytest.mark.run_loop
-async def test_dump_to_file(tmp_file, schema):
+async def test_save_local_file(tmp_file, schema):
     class TestApi(Api):
         my_event = Event(['field'])
 
@@ -195,13 +195,13 @@ async def test_dump_to_file(tmp_file, schema):
     assert 'my.test_api' in json.loads(written_schema)
 
 
-def test_dump_to_directory_empty(tmp_directory, schema):
+def test_save_local_directory_empty(tmp_directory, schema):
     schema.save_local(tmp_directory)
     assert not os.listdir(tmp_directory)
 
 
 @pytest.mark.run_loop
-async def test_dump_to_directory(tmp_directory, schema):
+async def test_save_local_directory(tmp_directory, schema):
     class TestApi(Api):
         my_event = Event(['field'])
 
@@ -215,3 +215,28 @@ async def test_dump_to_directory(tmp_directory, schema):
     written_schema = file_path.read_text()
     assert len(written_schema) > 100
     assert 'my.test_api' in json.loads(written_schema)
+
+
+def test_load_local_file_path(tmp_file, schema):
+    tmp_file.write('{"a": 1}')
+    tmp_file.flush()
+    schema.load_local(tmp_file.name)
+    assert schema.local_schemas == {'a': 1}
+    assert schema.remote_schemas == {}
+
+
+def test_load_local_file_handle(tmp_file, schema):
+    tmp_file.write('{"a": 1}')
+    tmp_file.flush()
+    tmp_file.seek(0)
+    schema.load_local(tmp_file)
+    assert schema.local_schemas == {'a': 1}
+    assert schema.remote_schemas == {}
+
+
+def test_load_local_directory(tmp_directory, schema):
+    (tmp_directory / 'test1.json').write_text('{"a": 1}')
+    (tmp_directory / 'test2.json').write_text('{"b": 2}')
+    schema.load_local(tmp_directory)
+    assert schema.local_schemas == {'a': 1, 'b': 2}
+    assert schema.remote_schemas == {}
