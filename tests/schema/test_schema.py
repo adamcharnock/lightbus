@@ -195,6 +195,17 @@ async def test_save_local_file(tmp_file, schema):
     assert 'my.test_api' in json.loads(written_schema)
 
 
+@pytest.mark.run_loop
+async def test_save_local_file_remote_api(tmp_file, schema):
+    # Ensure remote APIs are loaded and included in the save
+    await schema.schema_transport.store('my.test_api', {'a': 1}, ttl_seconds=60)
+    await schema.load_from_bus()
+    schema.save_local(tmp_file.name)
+    tmp_file.seek(0)
+    written_schema = tmp_file.read()
+    assert 'my.test_api' in json.loads(written_schema)
+
+
 def test_save_local_directory_empty(tmp_directory, schema):
     schema.save_local(tmp_directory)
     assert not os.listdir(tmp_directory)

@@ -14,7 +14,7 @@ class Command(BusImportMixin, object):
 
     def setup(self, parser, subparsers):
         parser_shell = subparsers.add_parser('dumpschema',
-                                             help='Dump the bus schema to a file',
+                                             help='Dumps all currently present bus schemas to a file or directory',
                                              formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser_shell.add_argument('--schema',
                                   help='File or directory to write schema to. If a directory is '
@@ -29,4 +29,9 @@ class Command(BusImportMixin, object):
         self.import_bus(args)
         bus = lightbus.create()
         bus.schema.save_local(args.schema)
-        sys.stderr.write('Schema saved to {}\n'.format(Path(args.schema).resolve()))
+
+        if args.schema:
+            sys.stderr.write('Schema for {} APIs saved to {}\n'.format(
+                len(bus.schema.api_names),
+                Path(args.schema).resolve())
+            )
