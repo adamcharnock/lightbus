@@ -65,7 +65,13 @@ class Command(BusImportMixin, object):
             schema_transport=schema_transport(),
         )
 
-        bus.schema.load_local(source=args.schema)
+        if args.schema:
+            if args.schema == '-':
+                # if '-' read from stdin
+                source = None
+            else:
+                source = args.schema
+            bus.schema.load_local(source)
 
         before_server_start = getattr(bus_module, 'before_server_start', None)
         if before_server_start:
