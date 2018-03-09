@@ -91,6 +91,10 @@ class Schema(object):
             return
 
     def save_local(self, destination: Union[str, Path, TextIO]=None):
+        """Save all present schemas to a local file
+
+        This will save both local & remote schemas to a local file
+        """
         if isinstance(destination, str):
             destination = Path(destination)
 
@@ -104,6 +108,11 @@ class Schema(object):
                 self._dump_to_file(f)
 
     def load_local(self, source: Union[str, Path, TextIO]=None):
+        """Load schemas from a local file
+
+        These files will be treated as local schemas, and will not be sent to the bus.
+        This can be useful for validation during development and testing.
+        """
         if isinstance(source, str):
             source = Path(source)
 
