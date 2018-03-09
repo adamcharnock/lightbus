@@ -59,6 +59,7 @@ class StatePlugin(LightbusPlugin):
             '--ping-interval',
             help='Interval between server ping events in seconds. Ping events alert the bus '
                  'that this Lightbus server is alive, and are used to update the lightbus admin interface.',
+            metavar='SECONDS',
             type=int,
             default=self.ping_interval,
         )

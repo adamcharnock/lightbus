@@ -1,6 +1,9 @@
 import argparse
 import logging
 
+import sys
+from pathlib import Path
+
 import lightbus
 from lightbus.commands.utilities import BusImportMixin
 
@@ -13,13 +16,17 @@ class Command(BusImportMixin, object):
         parser_shell = subparsers.add_parser('dumpschema',
                                              help='Dump the bus schema to a file',
                                              formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        parser_shell.add_argument('--file', help='File or directory to write schema to. If a directory is '
-                                                 'specified one schema file will be created for each API. '
-                                                 'If omitted schema will be written to standard out.')
+        parser_shell.add_argument('--schema',
+                                  help='File or directory to write schema to. If a directory is '
+                                       'specified one schema file will be created for each API. '
+                                       'If omitted schema will be written to standard out.',
+                                  metavar='FILE_OR_DIRECTORY',
+                                  )
         self.setup_import_parameter(parser_shell)
         parser_shell.set_defaults(func=self.handle)
 
     def handle(self, args):
         self.import_bus(args)
         bus = lightbus.create()
-        bus.schema.dump(args.file)
+        bus.schema.save_local(args.schema)
+        sys.stderr.write('Schema saved to {}\n'.format(Path(args.schema).resolve()))

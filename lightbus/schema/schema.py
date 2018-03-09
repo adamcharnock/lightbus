@@ -1,7 +1,8 @@
 import inspect
 import json
+from json import JSONDecodeError
 from pathlib import Path
-from typing import Optional, TextIO, Union
+from typing import Optional, TextIO, Union, ChainMap
 
 import asyncio
 
@@ -10,7 +11,7 @@ import itertools
 import sys
 
 import lightbus
-from lightbus.exceptions import InvalidApiForSchemaCreation
+from lightbus.exceptions import InvalidApiForSchemaCreation, InvalidSchema
 from lightbus.schema.hints_to_schema import make_response_schema, make_rpc_parameter_schema, make_event_parameter_schema
 from lightbus.transports.base import SchemaTransport
 from lightbus.utilities import make_file_safe_api_name
@@ -50,12 +51,19 @@ class Schema(object):
     def api_names(self):
         return list(set(itertools.chain(self.local_schemas.keys(), self.remote_schemas.keys())))
 
-    async def store(self):
-        """Store the schema onto the bus"""
+    async def save_to_bus(self):
+        """Save the schema onto the bus
+
+        This will be done using the `schema_transport` provided to `__init__()`
+        """
         for api_name, schema in self.local_schemas.items():
             await self.schema_transport.store(api_name, schema, ttl_seconds=self.max_age_seconds)
 
-    async def load(self):
+    async def load_from_bus(self):
+        """Save the schema from the bus
+
+        This will be done using the `schema_transport` provided to `__init__()`
+        """
         self.remote_schemas = await self.schema_transport.load()
 
     async def monitor(self, interval=None):
@@ -70,11 +78,11 @@ class Schema(object):
                     await self.schema_transport.ping(api_name, schema, ttl_seconds=self.max_age_seconds)
 
                 # Read the entire schema back from the bus
-                await self.load()
+                await self.load_from_bus()
         except asyncio.CancelledError:
             return
 
-    def dump(self, destination: Union[str, Path, TextIO]=None):
+    def save_local(self, destination: Union[str, Path, TextIO]=None):
         if isinstance(destination, str):
             destination = Path(destination)
 
@@ -85,6 +93,41 @@ class Schema(object):
         else:
             with destination.open('w', encoding='utf8') as f:
                 self._dump_to_file(f)
+
+    def load_local(self, source: Union[str, Path, TextIO]=None):
+        if isinstance(source, str):
+            source = Path(source)
+
+        if source is None:
+            json_schema = sys.stdin.read()
+            try:
+                schema = json.loads(json_schema)
+            except JSONDecodeError as e:
+                raise InvalidSchema('Could not parse schema received on stdin: {}'.format(e.msg))
+        elif source.is_dir():
+            schemas = []
+            for file_path in source.glob('*.json'):
+                try:
+                    schema = json.loads(file_path.read())
+                except JSONDecodeError as e:
+                    raise InvalidSchema('Could not parse schema file at {}: {}'.format(
+                        file_path, e.msg
+                    ))
+                schemas.append(schema)
+            schema = ChainMap(*schemas)
+        else:
+            with source.open('r', encoding='utf8') as f:
+                try:
+                    schema = json.loads(f.read())
+                except JSONDecodeError as e:
+                    raise InvalidSchema('Could not parse schema file at {}: {}'.format(
+                        source, e.msg
+                    ))
+
+        for api_name, api_schema in schema.items():
+            self.schema_transport.store(api_name, api_schema, ttl_seconds=self.max_age_seconds)
+
+        return schema
 
     def _dump_to_directory(self, destination: Path):
         for api_name in self.api_names:

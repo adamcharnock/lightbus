@@ -9,7 +9,9 @@ logger = logging.getLogger(__name__)
 class BusImportMixin(object):
 
     def setup_import_parameter(self, argument_group):
-        argument_group.add_argument('--import', dest='imprt',
+        argument_group.add_argument('--import',
+                                    dest='imprt',
+                                    metavar='PYTHON_MODULE',
                                     help='The Python module to import initially. Will autodetect if omitted')
 
     def import_bus(self, args):

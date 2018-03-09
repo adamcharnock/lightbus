@@ -62,7 +62,7 @@ class BusClient(object):
 
         # Load schema
         logger.debug("Loading schema...")
-        block(handle_aio_exceptions(self.schema.load()), timeout=5)
+        block(handle_aio_exceptions(self.schema.load_from_bus()), timeout=5)
         for api in registry.all():
             block(handle_aio_exceptions(self.schema.add_api(api)), timeout=1)
 

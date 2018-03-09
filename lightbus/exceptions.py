@@ -87,3 +87,7 @@ class LightbusServerError(LightbusException):
 
 class LightbusShutdownInProgress(LightbusException):
     pass
+
+
+class InvalidSchema(LightbusException):
+    pass

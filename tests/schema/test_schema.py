@@ -137,7 +137,7 @@ async def test_add_api(loop, schema, redis_client):
 @pytest.mark.run_loop
 async def test_store(loop, schema, redis_client):
     schema.local_schemas['my.test_api'] = {'foo': 'bar'}
-    await schema.store()
+    await schema.save_to_bus()
     assert await redis_client.exists('schemas')
     assert await redis_client.smembers('schemas') == [b'my.test_api']
     assert json.loads(await redis_client.get('schema:my.test_api')) == {'foo': 'bar'}
@@ -174,7 +174,7 @@ async def test_monitor_load(loop, schema, redis_client):
 
 
 def test_dump_to_file_empty(tmp_file, schema):
-    schema.dump(tmp_file.name)
+    schema.save_local(tmp_file.name)
     tmp_file.seek(0)
     assert tmp_file.read() == '{}'
 
@@ -188,7 +188,7 @@ async def test_dump_to_file(tmp_file, schema):
             name = 'my.test_api'
 
     await schema.add_api(TestApi())
-    schema.dump(tmp_file.name)
+    schema.save_local(tmp_file.name)
     tmp_file.seek(0)
     written_schema = tmp_file.read()
     assert len(written_schema) > 100
@@ -196,7 +196,7 @@ async def test_dump_to_file(tmp_file, schema):
 
 
 def test_dump_to_directory_empty(tmp_directory, schema):
-    schema.dump(tmp_directory)
+    schema.save_local(tmp_directory)
     assert not os.listdir(tmp_directory)
 
 
@@ -209,7 +209,7 @@ async def test_dump_to_directory(tmp_directory, schema):
             name = 'my.test_api'
 
     await schema.add_api(TestApi())
-    schema.dump(tmp_directory)
+    schema.save_local(tmp_directory)
     assert set(os.listdir(tmp_directory)) == {'my.test_api.json'}
     file_path = Path(tmp_directory) / 'my.test_api.json'
     written_schema = file_path.read_text()

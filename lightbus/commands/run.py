@@ -18,6 +18,13 @@ class Command(BusImportMixin, object):
         parser_run_action_group = parser_run.add_mutually_exclusive_group()
         parser_run_action_group.add_argument('--events-only', help='Run Lightbus, but only listen for and handle events', action='store_true')
         parser_run_action_group.add_argument('--rpcs-only', help='Run Lightbus, but only consume and handle RPCs', action='store_true')
+        parser_run_action_group.add_argument(
+            '--schema',
+            help='Manually load the schema from the given file or directory. '
+                 'This will normally be provided by the schema transport, '
+                 'but manual loading may be useful during development or testing.',
+            metavar='FILE_OR_DIRECTORY',
+        )
         parser_run.set_defaults(func=self.handle)
 
         parser_run_transport_group = parser_run.add_argument_group(title='Transport options')
@@ -30,6 +37,9 @@ class Command(BusImportMixin, object):
         parser_run_transport_group.add_argument(
             '--event-transport', help='Event transport class to use', default='lightbus.RedisEventTransport'
         )
+        parser_run_transport_group.add_argument(
+            '--schema-transport', help='Schema transport class to use', default='lightbus.RedisSchemaTransport'
+        )
 
         # parser_run_connection_group = parser_run.add_argument_group(title='Connection options')
         # parser_run_connection_group.add_argument(
@@ -41,6 +51,7 @@ class Command(BusImportMixin, object):
             rpc_transport = import_from_string(args.rpc_transport)
             result_transport = import_from_string(args.result_transport)
             event_transport = import_from_string(args.event_transport)
+            schema_transport = import_from_string(args.schema_transport)
         except ImportError as e:
             logger.critical("Error when trying to import transports: {}. Perhaps check your config for typos.".format(e))
             return
@@ -51,7 +62,10 @@ class Command(BusImportMixin, object):
             rpc_transport=rpc_transport(),
             result_transport=result_transport(),
             event_transport=event_transport(),
+            schema_transport=schema_transport(),
         )
+
+        bus.schema.load_local(source=args.schema)
 
         before_server_start = getattr(bus_module, 'before_server_start', None)
         if before_server_start:
