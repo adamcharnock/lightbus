@@ -106,23 +106,17 @@ class BusClient(object):
                 items=registry.all()
             ))
 
-        block(handle_aio_exceptions(
-            plugin_hook('before_server_start', bus_client=self)
-        ), self.loop, timeout=5)
+        block(plugin_hook('before_server_start', bus_client=self), self.loop, timeout=5)
 
         self._run_forever(consume_rpcs)
 
-        self.loop.run_until_complete(handle_aio_exceptions(
-            plugin_hook('after_server_stopped', bus_client=self)
-        ))
+        self.loop.run_until_complete(plugin_hook('after_server_stopped', bus_client=self))
 
     def _run_forever(self, consume_rpcs):
         if consume_rpcs and registry.all():
-            asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs()), loop=self.loop)
+            asyncio.ensure_future(self.consume_rpcs(), loop=self.loop)
 
-        asyncio.ensure_future(handle_aio_exceptions(
-            self.schema.monitor()
-        ), loop=self.loop)
+        asyncio.ensure_future(self.schema.monitor(), loop=self.loop)
         
         try:
             self.loop.run_forever()
@@ -131,6 +125,10 @@ class BusClient(object):
         finally:
             for task in asyncio.Task.all_tasks():
                 task.cancel()
+                try:
+                    self.loop.run_until_complete(task)
+                except CancelledError:
+                    pass
 
     # RPCs
 

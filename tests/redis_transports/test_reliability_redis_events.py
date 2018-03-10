@@ -5,10 +5,7 @@ from asyncio.futures import CancelledError
 import pytest
 
 import lightbus
-from lightbus.plugins import remove_all_plugins, get_plugins, manually_set_plugins
-from lightbus.plugins.metrics import MetricsPlugin
-from lightbus.plugins.state import StatePlugin
-from lightbus.utilities import handle_aio_exceptions
+from lightbus.plugins import remove_all_plugins
 
 pytestmark = pytest.mark.reliability
 
@@ -32,7 +29,7 @@ async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events,
         event_ok_ids[call_id] += 1
         await asyncio.sleep(0.01)
 
-    fire_task = asyncio.ensure_future(handle_aio_exceptions(fire_dummy_events(total=100, initial_delay=0.1)))
+    fire_task = asyncio.ensure_future(fire_dummy_events(total=100, initial_delay=0.1))
 
     for _ in range(0, 20):
         logging.warning('TEST: Still waiting for events to finish. {} so far'.format(len(event_ok_ids)))
@@ -52,6 +49,7 @@ async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events,
     fire_task.cancel()
     try:
         await fire_task
+        fire_task.result()
     except CancelledError:
         pass
 

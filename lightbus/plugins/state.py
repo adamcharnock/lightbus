@@ -1,23 +1,18 @@
 """Plugin to broadcast Lightbus' state on the internal.state API"""
 import asyncio
 import logging
+import resource
 import socket
 from argparse import ArgumentParser, _ArgumentGroup, Namespace
-
 from datetime import datetime
 
 import os
-import resource
-
-import sys
 
 from lightbus import BusClient
 from lightbus.api import registry
 from lightbus.message import EventMessage
 from lightbus.plugins import LightbusPlugin, is_plugin_loaded
 from lightbus.plugins.metrics import MetricsPlugin
-from lightbus.utilities import handle_aio_exceptions
-
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +84,7 @@ class StatePlugin(LightbusPlugin):
             logger.info(
                 'Ping messages will be sent every {} seconds'.format(self.ping_interval)
             )
-            asyncio.ensure_future(handle_aio_exceptions(self._send_ping(bus_client)), loop=bus_client.loop)
+            future = asyncio.ensure_future(self._send_ping(bus_client), loop=bus_client.loop)
         else:
             logger.warning(
                 'Ping events have been disabled. This will reduce log volume and bus traffic, but '

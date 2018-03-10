@@ -126,7 +126,13 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
         with await self.connection_manager() as redis:
             # TODO: Count/timeout configurable
-            stream_messages = await redis.xread(streams, latest_ids=latest_ids, count=10)
+            try:
+                stream_messages = await redis.xread(streams, latest_ids=latest_ids, count=10)
+            except RuntimeError:
+                # For some reason aio-redis likes to eat the CancelledError and
+                # turn it into a Runtime error:
+                # https://github.com/aio-libs/aioredis/blob/9f5964/aioredis/connection.py#L184
+                raise asyncio.CancelledError('aio-redis task was cancelled and decided it should be a RuntimeError')
 
         rpc_messages = []
         for stream, message_id, fields in stream_messages:
