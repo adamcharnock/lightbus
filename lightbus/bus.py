@@ -179,7 +179,12 @@ class BusClient(object):
         try:
             result_message, _ = await asyncio.wait_for(future, timeout=timeout)
         except asyncio.TimeoutError:
-            future.cancel()
+            # Allow the future to finish, as per https://bugs.python.org/issue29432
+            try:
+                await future
+            except CancelledError:
+                pass
+
             # TODO: Include description of possible causes and how to increase the timeout.
             # TODO: Remove RPC from queue. Perhaps add a RpcBackend.cancel() method. Optional,
             #       as not all backends will support it. No point processing calls which have timed out.
