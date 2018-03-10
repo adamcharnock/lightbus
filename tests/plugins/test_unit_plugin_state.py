@@ -24,7 +24,7 @@ async def test_before_server_start(dummy_bus: BusNode, loop, get_dummy_events):
 
     state_plugin = StatePlugin()
     state_plugin.do_ping = False
-    await state_plugin.before_server_start(bus_client=dummy_bus.bus_client, loop=loop)
+    await state_plugin.before_server_start(bus_client=dummy_bus.bus_client)
 
     dummy_events = get_dummy_events()
     assert len(dummy_events) == 1
@@ -78,7 +78,7 @@ async def test_after_server_stopped(dummy_bus: BusNode, loop, get_dummy_events):
     registry.add(TestApi())
     await dummy_bus.example.test.my_event.listen_async(lambda **kw: None)
 
-    await StatePlugin().after_server_stopped(bus_client=dummy_bus.bus_client, loop=loop)
+    await StatePlugin().after_server_stopped(bus_client=dummy_bus.bus_client)
 
     dummy_events = get_dummy_events()
     assert len(dummy_events) == 1

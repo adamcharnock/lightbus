@@ -89,13 +89,7 @@ def human_time(seconds: float):
         return '{} milliseconds'.format(round(seconds * 1000, 2))
 
 
-def block(coroutine, *, timeout):
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
+def block(coroutine, loop, *, timeout):
     if loop.is_running():
         coroutine.close()
         raise CannotBlockHere(
@@ -184,3 +178,12 @@ def generate_process_name():
 def make_file_safe_api_name(api_name):
     """Make an api name safe for use in a file name"""
     return "".join([c for c in api_name if c.isalpha() or c.isdigit() or c in ('.', '_', '-')])
+
+
+def get_event_loop():
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError as e:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop

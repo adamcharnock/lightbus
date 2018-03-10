@@ -5,13 +5,11 @@ import logging
 import time
 from asyncio.futures import CancelledError
 from typing import Optional
-import jsonschema
 
 from lightbus.schema import Schema
 from lightbus.api import registry
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
-    InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError, SchemaNotFound, \
-    NoResponseSchemaFound
+    InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
@@ -20,7 +18,7 @@ from lightbus.transports import RpcTransport, ResultTransport, EventTransport, R
     RedisResultTransport, RedisEventTransport
 from lightbus.transports.base import SchemaTransport
 from lightbus.transports.redis import RedisSchemaTransport
-from lightbus.utilities import handle_aio_exceptions, human_time, block, generate_process_name
+from lightbus.utilities import handle_aio_exceptions, human_time, block, generate_process_name, get_event_loop
 
 __all__ = ['BusClient', 'BusNode', 'create']
 
@@ -35,12 +33,14 @@ class BusClient(object):
                  result_transport: 'ResultTransport',
                  event_transport: 'EventTransport',
                  schema_transport: 'SchemaTransport',
-                 process_name: str=''):
+                 process_name: str='',
+                 loop: asyncio.AbstractEventLoop=None):
         self.rpc_transport = rpc_transport
         self.result_transport = result_transport
         self.event_transport = event_transport
         self.schema = Schema(schema_transport=schema_transport)
         self.process_name = process_name or generate_process_name()
+        self.loop = loop or get_event_loop()
         self._listeners = {}
 
     def setup(self, plugins: dict=None):
@@ -64,16 +64,16 @@ class BusClient(object):
 
         # Load schema
         logger.debug("Loading schema...")
-        block(handle_aio_exceptions(self.schema.load_from_bus()), timeout=5)
+        block(self.schema.load_from_bus(), self.loop, timeout=5)
         for api in registry.all():
-            block(handle_aio_exceptions(self.schema.add_api(api)), timeout=1)
+            block(self.schema.add_api(api), self.loop, timeout=1)
 
         logger.info(LBullets(
             "Loaded the following remote schemas ({})".format(len(self.schema.remote_schemas)),
             items=self.schema.remote_schemas.keys()
         ))
 
-    def run_forever(self, *, loop=None, consume_rpcs=True, plugins=None):
+    def run_forever(self, *, consume_rpcs=True, plugins=None):
         logger.info(LBullets(
             "Lightbus getting ready to run. Transports in use",
             items={
@@ -107,23 +107,22 @@ class BusClient(object):
             ))
 
         block(handle_aio_exceptions(
-            plugin_hook('before_server_start', bus_client=self, loop=loop)
-        ), timeout=5)
+            plugin_hook('before_server_start', bus_client=self)
+        ), self.loop, timeout=5)
 
-        loop = loop or asyncio.get_event_loop()
-        self._run_forever(loop, consume_rpcs)
+        self._run_forever(consume_rpcs)
 
-        loop.run_until_complete(handle_aio_exceptions(
-            plugin_hook('after_server_stopped', bus_client=self, loop=loop)
+        self.loop.run_until_complete(handle_aio_exceptions(
+            plugin_hook('after_server_stopped', bus_client=self)
         ))
 
-    def _run_forever(self, loop, consume_rpcs):
+    def _run_forever(self, consume_rpcs):
         if consume_rpcs and registry.all():
-            asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs()), loop=loop)
+            asyncio.ensure_future(handle_aio_exceptions(self.consume_rpcs()), loop=self.loop)
 
         asyncio.ensure_future(handle_aio_exceptions(
             self.schema.monitor()
-        ), loop=loop)
+        ), loop=self.loop)
         
         try:
             loop.run_forever()
@@ -364,7 +363,7 @@ class BusNode(object):
         return self.call(**kwargs)
 
     def call(self, *, bus_options=None, **kwargs):
-        return block(self.call_async(**kwargs, bus_options=bus_options), timeout=1)
+        return block(self.call_async(**kwargs, bus_options=bus_options), self.bus_client.loop, timeout=1)
 
     async def call_async(self, *, bus_options=None, **kwargs):
         return await self.bus_client.call_rpc_remote(
@@ -379,7 +378,7 @@ class BusNode(object):
         )
 
     def listen(self, listener, *, bus_options: dict=None):
-        return block(self.listen_async(listener, bus_options=bus_options), timeout=5)
+        return block(self.listen_async(listener, bus_options=bus_options), self.bus_client.loop, timeout=5)
 
     async def fire_async(self, *, bus_options: dict=None, **kwargs):
         return await self.bus_client.fire_event(
@@ -387,7 +386,7 @@ class BusNode(object):
         )
 
     def fire(self, *, bus_options: dict=None, **kwargs):
-        return block(self.fire_async(**kwargs, bus_options=bus_options), timeout=5)
+        return block(self.fire_async(**kwargs, bus_options=bus_options), self.bus_client.loop, timeout=5)
 
     # Utilities
 
@@ -398,8 +397,8 @@ class BusNode(object):
                 yield parent
             parent = parent.parent
 
-    def run_forever(self, loop=None, consume_rpcs=True, plugins=None):
-        self.bus_client.run_forever(loop=loop, consume_rpcs=consume_rpcs, plugins=plugins)
+    def run_forever(self, consume_rpcs=True, plugins=None):
+        self.bus_client.run_forever(consume_rpcs=consume_rpcs, plugins=plugins)
 
     @property
     def api_name(self):
@@ -460,6 +459,7 @@ def create(
         client_class=BusClient,
         node_class=BusNode,
         plugins=None,
+        loop=None,
         **kwargs) -> BusNode:
 
     bus_client = client_class(
@@ -467,6 +467,7 @@ def create(
         result_transport=result_transport or RedisResultTransport(),
         event_transport=event_transport or RedisEventTransport(),
         schema_transport=schema_transport or RedisSchemaTransport(),
+        loop=loop,
         **kwargs
     )
     bus_client.setup(plugins=plugins)

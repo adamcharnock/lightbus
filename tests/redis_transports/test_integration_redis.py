@@ -30,7 +30,8 @@ async def test_bus_fixture(bus: lightbus.BusNode):
         assert await redis_rpc.get('X')
 
         info = await redis_rpc.info()
-        assert int(info['clients']['connected_clients']) == 3
+        # transports: rpc, result, event, schema
+        assert int(info['clients']['connected_clients']) == 4
 
 
 @pytest.mark.run_loop

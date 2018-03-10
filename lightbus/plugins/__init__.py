@@ -34,10 +34,10 @@ class LightbusPlugin(object):
     async def after_parse_args(self, args: Namespace):
         pass
 
-    async def before_server_start(self, *, bus_client: 'lightbus.bus.BusClient', loop: AbstractEventLoop):
+    async def before_server_start(self, *, bus_client: 'lightbus.bus.BusClient'):
         pass
 
-    async def after_server_stopped(self, *, bus_client: 'lightbus.bus.BusClient', loop: AbstractEventLoop):
+    async def after_server_stopped(self, *, bus_client: 'lightbus.bus.BusClient'):
         pass
 
     async def before_rpc_call(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):

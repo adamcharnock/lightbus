@@ -76,7 +76,7 @@ class StatePlugin(LightbusPlugin):
             self.do_ping = not args.no_ping
             self.ping_interval = args.ping_interval
 
-    async def before_server_start(self, *, bus_client: BusClient, loop):
+    async def before_server_start(self, *, bus_client: BusClient):
         await bus_client.event_transport.send_event(
             EventMessage(
                 api_name='internal.state',
@@ -96,7 +96,7 @@ class StatePlugin(LightbusPlugin):
                 'may result in this Lightbus server not appearing in the Lightbus admin interface.'
             )
 
-    async def after_server_stopped(self, *, bus_client: BusClient, loop):
+    async def after_server_stopped(self, *, bus_client: BusClient):
         await bus_client.event_transport.send_event(
             EventMessage(api_name='internal.state', event_name='server_stopped', kwargs=dict(
                 process_name=bus_client.process_name,
