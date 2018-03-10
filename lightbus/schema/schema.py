@@ -109,7 +109,6 @@ class Schema(object):
         or return None if valid.
         """
         json_schema = self.get_event_or_rpc_schema(api_name, event_or_rpc_name)['parameters']
-        import pdb; pdb.set_trace()
         jsonschema.validate(parameters, json_schema)
 
     def validate_response(self, api_name, rpc_name, response):

@@ -85,7 +85,6 @@ def test_api_to_schema_rpc():
             'type': 'object',
             'additionalProperties': False,
             'properties': {'field': {'type': 'boolean', 'default': True}},
-            'required': [],
             'title': 'RPC my.test_api.my_proc() parameters',
         },
         'response': {

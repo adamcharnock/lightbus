@@ -57,13 +57,19 @@ def make_custom_object_schema(type_, property_names=None):
         else:
             properties[property_name]['default'] = default
 
-    return {
+    schema = {
         'type': 'object',
         'title': type_.__name__,
         'properties': properties,
         'required': required,
         'additionalProperties': False,
     }
+
+    # required key should not be present if it is empty
+    if not schema['required']:
+        schema.pop('required')
+
+    return schema
 
 
 def python_type_to_json_schemas(type_):
@@ -156,6 +162,10 @@ def make_parameter_schema(parameters: Sequence[inspect.Parameter]):
         parameter_schema['properties'][parameter.name] = parameter_to_schema(parameter)
         if parameter.default is empty:
             parameter_schema['required'].append(parameter.name)
+
+    # required key should not be present if it is empty
+    if not parameter_schema['required']:
+        parameter_schema.pop('required')
 
     return parameter_schema
 

@@ -21,7 +21,7 @@ def test_default():
     def func(field=123): pass
     schema = make_rpc_parameter_schema('api_name', 'rpc_name', func)
     assert schema['properties']['field'] == {'type': 'number', 'default': 123}
-    assert schema['required'] == []
+    assert 'required' not in schema
 
 
 def test_type():
@@ -35,7 +35,7 @@ def test_type_with_default():
     def func(field: float=3.142): pass
     schema = make_rpc_parameter_schema('api_name', 'rpc_name', func)
     assert schema['properties']['field'] == {'type': 'number', 'default': 3.142}
-    assert schema['required'] == []
+    assert 'required' not in schema
 
 
 def test_kwargs():
@@ -84,7 +84,7 @@ def test_union_default():
             {'type': 'number', 'default': 123},
         ]
     }
-    assert schema['required'] == []
+    assert 'required' not in schema
 
 
 def test_optional():
