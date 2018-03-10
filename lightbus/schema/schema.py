@@ -11,7 +11,7 @@ import itertools
 import sys
 
 import lightbus
-from lightbus.exceptions import InvalidApiForSchemaCreation, InvalidSchema
+from lightbus.exceptions import InvalidApiForSchemaCreation, InvalidSchema, SchemaNotFound
 from lightbus.schema.hints_to_schema import make_response_schema, make_rpc_parameter_schema, make_event_parameter_schema
 from lightbus.transports.base import SchemaTransport
 from lightbus.utilities import make_file_safe_api_name
@@ -53,7 +53,15 @@ class Schema(object):
 
     def get_schema(self, api_name) -> Optional[dict]:
         """Get the schema for the given API"""
-        return self.local_schemas.get(api_name) or self.remote_schemas.get(api_name)
+        api_schema = self.local_schemas.get(api_name) or self.remote_schemas.get(api_name)
+        if not api_schema:
+            # TODO: Add link to docs in error message
+            raise SchemaNotFound(
+                'No schema could be found for API {}. You should ensure that either this '
+                'API is being served by another lightbus process, or you can load this schema manually.'
+                ''.format(api_name)
+            )
+        return api_schema
 
     @property
     def api_names(self):

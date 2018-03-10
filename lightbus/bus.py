@@ -5,11 +5,13 @@ import logging
 import time
 from asyncio.futures import CancelledError
 from typing import Optional
+import jsonschema
 
 from lightbus.schema import Schema
 from lightbus.api import registry
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
-    InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError
+    InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError, SchemaNotFound, \
+    NoResponseSchemaFound
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
@@ -411,8 +413,11 @@ class BusNode(object):
         path.reverse()
         return '.'.join(path[1:])
 
+    # Schema
+
     @property
     def schema(self):
+        """Get the bus schema"""
         if self.parent is None:
             return self.bus_client.schema
         else:
@@ -420,6 +425,46 @@ class BusNode(object):
             raise AttributeError(
                 'Schema only available on root node. Use bus.schema, not bus.my_api.schema'
             )
+
+    def _get_attribute_schema(self):
+        """Get the schema for the event or rpc this node represents
+
+        This makes the assumption that this node does indeed represent an
+        event or an rpc. If it does not, a SchemaNotFound exception will be raised.
+        """
+        schema = self.schema.get_schema(self.api_name)
+        attribute_schema = schema['events'].get(self.name) or schema['rpcs'].get(self.name)
+        if not attribute_schema:
+            # TODO: Add link to docs in error message
+            raise SchemaNotFound(
+                "No schema found for '{}' on API '{}'. You should ensure that either this "
+                "API is being served by another lightbus process, or you can load this schema manually."
+                "".format(self.name, self.api_name)
+            )
+        return attribute_schema
+
+    @property
+    def parameter_schema(self):
+        """Get the parameter JSON schema for the given event or RPC"""
+        return self._get_attribute_schema()['parameters']
+
+    @property
+    def response_schema(self):
+        """Get the response JSON schema for the given event or RPC"""
+        attribute_schema = self._get_attribute_schema()
+        if 'response' not in attribute_schema:
+            raise NoResponseSchemaFound(
+                "No response schema exists for '{}' on API '{}'. This is almost certainly "
+                "because you are trying to get the response schema for an event, and events "
+                "do not provide responses.".format(self.name, self.api_name)
+            )
+        return attribute_schema['response']
+
+    def validate_parameters(self, parameters: dict):
+        jsonschema.validate(parameters, schema=self.parameter_schema)
+
+    def validate_response(self):
+        pass
 
 
 def create(

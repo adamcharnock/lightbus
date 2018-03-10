@@ -15,7 +15,8 @@ setup(
     description='Filling the gap between monolithic and microservice',
     long_description=open('README.rst').read() if exists("README.rst") else "",
     install_requires=[
-        'aioredis',
+        'aioredis',  # TODO: Pin version once streams support is merged
+        'jsonschema==2.6.0',
     ],
     include_package_data=True,
     entry_points={

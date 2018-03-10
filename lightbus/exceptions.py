@@ -91,3 +91,11 @@ class LightbusShutdownInProgress(LightbusException):
 
 class InvalidSchema(LightbusException):
     pass
+
+
+class SchemaNotFound(LightbusException):
+    pass
+
+
+class NoResponseSchemaFound(SchemaNotFound):
+    pass
