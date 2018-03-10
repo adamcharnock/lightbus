@@ -125,7 +125,7 @@ class BusClient(object):
         ), loop=self.loop)
         
         try:
-            loop.run_forever()
+            self.loop.run_forever()
         except KeyboardInterrupt:
             logger.error('Keyboard interrupt. Shutting down...')
         finally:
