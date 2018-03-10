@@ -316,3 +316,29 @@ async def test_validate_parameters_rpc_invalid(schema, TestApi):
     await schema.add_api(TestApi())
     with pytest.raises(jsonschema.ValidationError):
         schema.validate_parameters('my.test_api', 'my_proc', {'field': 123})
+
+
+@pytest.mark.run_loop
+async def test_validate_parameters_event_valid(schema, TestApi):
+    await schema.add_api(TestApi())
+    schema.validate_parameters('my.test_api', 'my_event', {'field': True})
+
+
+@pytest.mark.run_loop
+async def test_validate_parameters_event_invalid(schema, TestApi):
+    await schema.add_api(TestApi())
+    with pytest.raises(jsonschema.ValidationError):
+        schema.validate_parameters('my.test_api', 'my_event', {'field': 123})
+
+
+@pytest.mark.run_loop
+async def test_validate_response_valid(schema, TestApi):
+    await schema.add_api(TestApi())
+    schema.validate_response('my.test_api', 'my_proc', 'string')
+
+
+@pytest.mark.run_loop
+async def test_validate_response_invalid(schema, TestApi):
+    await schema.add_api(TestApi())
+    with pytest.raises(jsonschema.ValidationError):
+        schema.validate_response('my.test_api', 'my_proc', 123)
