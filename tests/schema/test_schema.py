@@ -2,11 +2,12 @@ import asyncio
 import json
 from pathlib import Path
 
+import jsonschema
 import os
 import pytest
 
 from lightbus import Event, Api, Parameter, Schema
-from lightbus.exceptions import InvalidApiForSchemaCreation
+from lightbus.exceptions import InvalidApiForSchemaCreation, SchemaNotFound
 from lightbus.schema.schema import api_to_schema
 from lightbus.transports.redis import RedisSchemaTransport
 
@@ -251,3 +252,68 @@ def test_load_local_directory(tmp_directory, schema):
     schema.load_local(tmp_directory)
     assert schema.local_schemas == {'a': 1, 'b': 2}
     assert schema.remote_schemas == {}
+
+
+@pytest.mark.run_loop
+async def test_get_event_schema_found(schema, TestApi):
+    await schema.add_api(TestApi())
+    assert schema.get_event_schema('my.test_api', 'my_event')
+
+
+@pytest.mark.run_loop
+async def test_get_event_schema_not_found(schema, TestApi):
+    await schema.add_api(TestApi())
+    with pytest.raises(SchemaNotFound):
+        schema.get_event_schema('my.test_api', 'foo')
+
+
+@pytest.mark.run_loop
+async def test_get_rpc_schema_found(schema, TestApi):
+    await schema.add_api(TestApi())
+    assert schema.get_rpc_schema('my.test_api', 'my_proc')
+
+
+@pytest.mark.run_loop
+async def test_get_rpc_schema_not_found(schema, TestApi):
+    await schema.add_api(TestApi())
+    with pytest.raises(SchemaNotFound):
+        schema.get_rpc_schema('my.test_api', 'foo')
+
+
+@pytest.mark.run_loop
+async def test_get_event_or_rpc_schema_event_found(schema, TestApi):
+    await schema.add_api(TestApi())
+    assert schema.get_event_or_rpc_schema('my.test_api', 'my_event')
+
+
+@pytest.mark.run_loop
+async def test_get_event_or_rpc_schema_event_not_found(schema, TestApi):
+    await schema.add_api(TestApi())
+    with pytest.raises(SchemaNotFound):
+        schema.get_event_or_rpc_schema('my.test_api', 'foo')
+
+
+@pytest.mark.run_loop
+async def test_get_event_or_rpc_schema_rpc_found(schema, TestApi):
+    await schema.add_api(TestApi())
+    assert schema.get_event_or_rpc_schema('my.test_api', 'my_proc')
+
+
+@pytest.mark.run_loop
+async def test_get_event_or_rpc_schema_rpc_not_found(schema, TestApi):
+    await schema.add_api(TestApi())
+    with pytest.raises(SchemaNotFound):
+        schema.get_event_or_rpc_schema('my.test_api', 'foo')
+
+
+@pytest.mark.run_loop
+async def test_validate_parameters_rpc_valid(schema, TestApi):
+    await schema.add_api(TestApi())
+    schema.validate_parameters('my.test_api', 'my_proc', {'field': True})
+
+
+@pytest.mark.run_loop
+async def test_validate_parameters_rpc_invalid(schema, TestApi):
+    await schema.add_api(TestApi())
+    with pytest.raises(jsonschema.ValidationError):
+        schema.validate_parameters('my.test_api', 'my_proc', {'field': 123})

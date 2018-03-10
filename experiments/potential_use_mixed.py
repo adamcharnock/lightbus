@@ -122,7 +122,7 @@ AuthApi.get_user.add_schema(python=Any)
 
 
 # On the server:
->>> bus.get_schema()
+>>> bus.get_api_schema()
 {
     'my_company.auth': [
         {

@@ -426,45 +426,30 @@ class BusNode(object):
                 'Schema only available on root node. Use bus.schema, not bus.my_api.schema'
             )
 
-    def _get_attribute_schema(self):
-        """Get the schema for the event or rpc this node represents
-
-        This makes the assumption that this node does indeed represent an
-        event or an rpc. If it does not, a SchemaNotFound exception will be raised.
-        """
-        schema = self.schema.get_schema(self.api_name)
-        attribute_schema = schema['events'].get(self.name) or schema['rpcs'].get(self.name)
-        if not attribute_schema:
-            # TODO: Add link to docs in error message
-            raise SchemaNotFound(
-                "No schema found for '{}' on API '{}'. You should ensure that either this "
-                "API is being served by another lightbus process, or you can load this schema manually."
-                "".format(self.name, self.api_name)
-            )
-        return attribute_schema
-
     @property
     def parameter_schema(self):
         """Get the parameter JSON schema for the given event or RPC"""
-        return self._get_attribute_schema()['parameters']
+        # TODO: Test
+        return self.bus_client.schema.get_event_or_rpc_schema(self.api_name, self.name)['parameters']
 
     @property
     def response_schema(self):
-        """Get the response JSON schema for the given event or RPC"""
-        attribute_schema = self._get_attribute_schema()
-        if 'response' not in attribute_schema:
-            raise NoResponseSchemaFound(
-                "No response schema exists for '{}' on API '{}'. This is almost certainly "
-                "because you are trying to get the response schema for an event, and events "
-                "do not provide responses.".format(self.name, self.api_name)
-            )
-        return attribute_schema['response']
+        """Get the response JSON schema for the given RPC
+
+        Only RPCs have responses. Accessing this property for an event will result in a
+        SchemaNotFound error.
+        """
+        # TODO: Test
+        rpc_schema = self.bus_client.schema.get_rpc_schema(self.api_name, self.name)['response']
+        return rpc_schema['response']
 
     def validate_parameters(self, parameters: dict):
-        jsonschema.validate(parameters, schema=self.parameter_schema)
+        # TODO: Test
+        self.bus_client.schema.validate_parameters(self.api_name, self.name, parameters)
 
-    def validate_response(self):
-        pass
+    def validate_response(self, response):
+        # TODO: Test
+        self.bus_client.schema.validate_parameters(self.api_name, self.name, response)
 
 
 def create(

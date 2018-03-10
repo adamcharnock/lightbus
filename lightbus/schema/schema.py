@@ -3,6 +3,7 @@ import json
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Optional, TextIO, Union, ChainMap
+import jsonschema
 
 import asyncio
 
@@ -51,7 +52,7 @@ class Schema(object):
         self.local_schemas[api.meta.name] = schema
         await self.schema_transport.store(api.meta.name, schema, ttl_seconds=self.max_age_seconds)
 
-    def get_schema(self, api_name) -> Optional[dict]:
+    def get_api_schema(self, api_name) -> Optional[dict]:
         """Get the schema for the given API"""
         api_schema = self.local_schemas.get(api_name) or self.remote_schemas.get(api_name)
         if not api_schema:
@@ -62,6 +63,66 @@ class Schema(object):
                 ''.format(api_name)
             )
         return api_schema
+
+    def get_event_schema(self, api_name, event_name):
+        event_schemas = self.get_api_schema(api_name)['events']
+        try:
+            return event_schemas[event_name]
+        except KeyError:
+            raise SchemaNotFound(
+                "Found schema for API '{}', but it did not contain an event named '{}'"
+                "".format(api_name, event_name)
+            )
+
+    def get_rpc_schema(self, api_name, rpc_name):
+        rpc_schemas = self.get_api_schema(api_name)['rpcs']
+        try:
+            return rpc_schemas[rpc_name]
+        except KeyError:
+            raise SchemaNotFound(
+                "Found schema for API '{}', but it did not contain a RPC named '{}'"
+                "".format(api_name, rpc_name)
+            )
+
+    def get_event_or_rpc_schema(self, api_name, name):
+        try:
+            return self.get_event_schema(api_name, name)
+        except SchemaNotFound:
+            pass
+
+        try:
+            return self.get_rpc_schema(api_name, name)
+        except SchemaNotFound:
+            pass
+
+        # TODO: Add link to docs in error message
+        raise SchemaNotFound(
+            "No schema found for '{}' on API '{}'. You should ensure that either this "
+            "API is being served by another lightbus process, or you can load this schema manually."
+            "".format(api_name, name)
+        )
+
+    def validate_parameters(self, api_name, event_or_rpc_name, parameters):
+        """Validate the parameters for the given event/rpc
+
+        This will raise an `jsonschema.ValidationError` exception on error,
+        or return None if valid.
+        """
+        json_schema = self.get_event_or_rpc_schema(api_name, event_or_rpc_name)['parameters']
+        import pdb; pdb.set_trace()
+        jsonschema.validate(parameters, json_schema)
+
+    def validate_response(self, api_name, rpc_name, response):
+        """Validate the parameters for the given event/rpc
+
+        This will raise an `jsonschema.ValidationError` exception on error,
+        or return None if valid.
+
+        Note that only RPCs have responses. Accessing this property for an
+        event will result in a SchemaNotFound error.
+        """
+        json_schema = self.get_rpc_schema(api_name, rpc_name)['response']
+        jsonschema.validate(response, json_schema)
 
     @property
     def api_names(self):
@@ -166,9 +227,9 @@ class Schema(object):
 
     def _get_dump(self, api_name=None):
         if api_name:
-            schema = {api_name: self.get_schema(api_name)}
+            schema = {api_name: self.get_api_schema(api_name)}
         else:
-            schema = {api_name: self.get_schema(api_name) for api_name in self.api_names}
+            schema = {api_name: self.get_api_schema(api_name) for api_name in self.api_names}
         return json.dumps(schema, indent=2, sort_keys=True)
 
 
