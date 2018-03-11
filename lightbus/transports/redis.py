@@ -196,8 +196,14 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
 
         with await self.connection_manager() as redis:
             start_time = time.time()
-            # TODO: Make timeout configurable
-            _, serialized = await redis.blpop(redis_key, timeout=5)
+            result = None
+            while not result:
+                # Sometimes blpop() will return None in the case of timeout or
+                # cancellation. We therefore perform this step with a loop to catch
+                # this. A more elegant solution is welcome.
+                # TODO: Make timeout configurable
+                result = await redis.blpop(redis_key, timeout=5)
+            _, serialized = result
 
         result_message = self.deserializer(serialized)
 
