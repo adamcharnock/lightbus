@@ -323,15 +323,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
 class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
 
-    def __init__(self, redis_pool=None, *,
-                 serializer=ByFieldMessageSerializer(), deserializer=ByFieldMessageDeserializer(RpcMessage),
-                 **connection_kwargs
-                 ):
+    def __init__(self, redis_pool=None, **connection_kwargs):
         self.set_redis_pool(redis_pool)
         self.set_connection_kwargs(connection_kwargs)
         self._latest_ids = {}
-        self.serializer = serializer
-        self.deserializer = deserializer
 
     def schema_key(self, api_name):
         return 'schema:{}'.format(api_name)
