@@ -19,7 +19,7 @@ def make_api_config_structure() -> NamedTuple:
     for transport_type, transports in transports_by_type.items():
         transport_config_structure = make_transport_config_structure(transport_type, transports)
         transport_config_structures[transport_config_structure.__name__] = transport_config_structure
-        code += f"    {transport_type}_transport: {transport_config_structure.__name__}\n"
+        code += f"    {transport_type}_transport: {transport_config_structure.__name__} = None\n"
 
     code += (
         f"    rpc_timeout: int = 5\n"
@@ -62,4 +62,4 @@ class BusConfig(NamedTuple):
 
 class RootConfig(NamedTuple):
     bus: BusConfig
-    apis: Mapping[str, ApiConfig]
+    apis: Mapping[str, ApiConfig] = {}

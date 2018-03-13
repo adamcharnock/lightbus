@@ -3,6 +3,7 @@ import json as jsonlib
 from pathlib import Path
 from typing import Mapping, Union, Type, NamedTuple, get_type_hints, TypeVar, Callable
 
+import jsonschema
 import yaml as yamllib
 
 from lightbus.schema.hints_to_schema import python_type_to_json_schemas, SCHEMA_URI
@@ -46,10 +47,15 @@ class Config(object):
 
     @classmethod
     def load_mapping(cls, mapping: Mapping):
-
+        validate_config(mapping)
         return cls(
             root_config=mapping_to_named_tuple(mapping, RootConfig)
         )
+
+
+def validate_config(mapping: Mapping):
+    json_schema = config_as_json_schema()
+    jsonschema.validate(mapping, json_schema)
 
 
 def config_as_json_schema():
