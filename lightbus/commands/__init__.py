@@ -20,6 +20,8 @@ def lightbus_entry_point():  # pragma: no cover
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description='Lightbus management command.')
+    parser.add_argument('--config', help='Config file to load, JSON or YAML', metavar='FILE')
+
     subparsers = parser.add_subparsers(help='Commands', dest='subcommand')
     subparsers.required = True
 

@@ -73,7 +73,7 @@ def make_transport_config_structure(type_, transports):
         transport_config_structure = transport_class.get_config_structure()
         if transport_config_structure:
             config_classes[transport_config_structure.__name__] = transport_config_structure
-            code += f"    {transport_name}: {transport_config_structure.__name__}\n"
+            code += f"    {transport_name}: Optional[{transport_config_structure.__name__}]\n"
 
     globals_ = globals().copy()
     globals_.update(config_classes)
@@ -92,5 +92,5 @@ class BusConfig(NamedTuple):
 
 
 class RootConfig(NamedTuple):
-    bus: BusConfig
+    bus: BusConfig = BusConfig()
     apis: Mapping[str, ApiConfig] = {}

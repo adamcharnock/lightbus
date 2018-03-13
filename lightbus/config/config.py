@@ -25,6 +25,8 @@ class Config(object):
     _config: RootConfig
 
     def __init__(self, root_config: RootConfig):
+        if 'default' not in root_config.apis:
+            root_config.apis['default'] = ApiConfig()
         self._config = root_config
 
     def bus(self) -> BusConfig:
@@ -56,23 +58,24 @@ class Config(object):
     @classmethod
     def load_json(cls, json: str):
         """Instantiate the config from a JSON string"""
-        return cls.load_mapping(mapping=jsonlib.loads(json))
+        return cls.load_dict(config=jsonlib.loads(json))
 
     @classmethod
     def load_yaml(cls, yaml: str):
         """Instantiate the config from a YAML string"""
-        return cls.load_mapping(mapping=yamllib.load(yaml))
+        return cls.load_dict(config=yamllib.load(yaml))
 
     @classmethod
-    def load_mapping(cls, mapping: Mapping):
+    def load_dict(cls, config: dict):
         """Instantiate the config from a dictionary"""
-        validate_config(mapping)
+        config = set_default_config(config.copy())
+        validate_config(config)
         return cls(
-            root_config=mapping_to_named_tuple(mapping, RootConfig)
+            root_config=mapping_to_named_tuple(config, RootConfig)
         )
 
 
-def validate_config(config: Mapping):
+def validate_config(config: dict):
     """Validate the provided config dictionary against the config json schema"""
     json_schema = config_as_json_schema()
     jsonschema.validate(config, json_schema)
@@ -83,6 +86,17 @@ def config_as_json_schema() -> dict:
     schema, = python_type_to_json_schemas(RootConfig)
     schema['$schema'] = SCHEMA_URI
     return schema
+
+
+def set_default_config(config: dict) -> dict:
+    config.setdefault('apis', {})
+    config['apis'].setdefault('default', {})
+
+    config['apis']['default'].setdefault('rpc_transport', {'redis': None})
+    config['apis']['default'].setdefault('result_transport', {'redis': None})
+    config['apis']['default'].setdefault('event_transport', {'redis': None})
+    config['apis']['default'].setdefault('schema_transport', {'redis': None})
+    return config
 
 
 T = TypeVar('T')
@@ -106,10 +120,11 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
         return None
 
     for key, hint in hints.items():
+        if key not in mapping:
+            continue
+
         value = mapping.get(key)
-        if value is None:
-            parameters[key] = None
-        elif is_namedtuple(hint):
+        if is_namedtuple(hint):
             parameters[key] = mapping_to_named_tuple(value, hint)
         elif inspect.isclass(hint) and issubclass(hint, Mapping) and hasattr(hint, '_subs_tree') and is_namedtuple(hint._subs_tree()[2]):
             parameters[key] = dict()

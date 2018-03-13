@@ -26,6 +26,16 @@ def test_config_as_json_schema_apis():
     assert schema['properties']['apis']
 
 
+def test_default_config():
+    config = Config.load_dict({})
+    assert config.bus()
+    assert config.api()
+    assert config.api().rpc_transport.redis is None
+    assert config.api().result_transport.redis is None
+    assert config.api().event_transport.redis is None
+    assert config.api().schema_transport.redis is None
+
+
 def test_load_bus_config(tmp_file):
     tmp_file.write('bus: { log_level: warning }')
     tmp_file.flush()
