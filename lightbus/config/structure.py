@@ -1,16 +1,47 @@
+""" Configuration structure generation
+
+We do some pretty exciting things here to generate the configuration
+structure.
+
+We load in all available plugins and transports and get the desired
+configuration format for each (via `get_config_structure()` in both
+cases). From there we dynamically generate named tuples which form
+the structure for the configuration.
+
+Benefits of this are:
+
+    1. Many configuration errors can be caught early
+    2. We can use the schema-related code to generate a JSON schema for the config.
+       This can be used for validation, auto completion, and improving tooling in general
+       (smart config editing in the management UI?)
+    3. Plugins and transports can be assured of reasonable sane data
+
+"""
 from typing import NamedTuple, Optional, Union, Mapping, Type
 
 from lightbus import get_available_transports
 from lightbus.plugins import get_plugins
 
-# apis:
-#   default:
-#     event_transport:
-#       redis:
-#         redis-config
-
 
 def make_api_config_structure() -> NamedTuple:
+    """Create a named tuple structure to hold api configuration
+
+    Example YAML for this structure:
+
+        # YAML root
+        apis:
+          default:            # <-- This is what we generate
+            # Various api-level options
+            rpc_timeout: 5
+            event_listener_setup_timeout: 1
+            event_fire_timeout: 1
+            log_level: warning
+
+            event_transport:  # <-- A key for each type of transport (event, rpc, result, schema)
+              redis:          # <-- The name of the transport to use as specified in the entrypoint
+                url: redis://my_host:9999/0
+
+    """
     plugins = get_plugins()
     transports_by_type = get_available_transports()
     code = f"class ApiConfig(NamedTuple):\n"
