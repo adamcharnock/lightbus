@@ -11,6 +11,17 @@ from .structure import RootConfig, BusConfig, ApiConfig
 
 
 class Config(object):
+    """Provides access to configuration options
+
+    There are two forms of configuration:
+
+        * Bus-level configuration, `config.bus()`
+        * API-level configuration, `config.api(api_name)`
+
+    Bus-level configuration is global to lightbus. API-level configuration
+    will normally have a default catch-all definition, but can be customised
+    on a per-api basis.
+    """
     _config: RootConfig
 
     def __init__(self, root_config: RootConfig):
@@ -29,6 +40,11 @@ class Config(object):
 
     @classmethod
     def load_file(cls, file_path):
+        """Instantiate the config from the given file path
+
+        Files ending in `.json` will be parsed as JSON, otherwise the
+        file will be parsed as YAML.
+        """
         file_path = Path(file_path)
         encoded_config = file_path.read_text(encoding='utf8')
 
@@ -39,26 +55,31 @@ class Config(object):
 
     @classmethod
     def load_json(cls, json: str):
+        """Instantiate the config from a JSON string"""
         return cls.load_mapping(mapping=jsonlib.loads(json))
 
     @classmethod
     def load_yaml(cls, yaml: str):
+        """Instantiate the config from a YAML string"""
         return cls.load_mapping(mapping=yamllib.load(yaml))
 
     @classmethod
     def load_mapping(cls, mapping: Mapping):
+        """Instantiate the config from a dictionary"""
         validate_config(mapping)
         return cls(
             root_config=mapping_to_named_tuple(mapping, RootConfig)
         )
 
 
-def validate_config(mapping: Mapping):
+def validate_config(config: Mapping):
+    """Validate the provided config dictionary against the config json schema"""
     json_schema = config_as_json_schema()
-    jsonschema.validate(mapping, json_schema)
+    jsonschema.validate(config, json_schema)
 
 
-def config_as_json_schema():
+def config_as_json_schema() -> dict:
+    """Get the configuration structure as a json schema"""
     schema, = python_type_to_json_schemas(RootConfig)
     schema['$schema'] = SCHEMA_URI
     return schema
@@ -68,6 +89,15 @@ T = TypeVar('T')
 
 
 def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
+    """Convert a dictionary-like object into the given named tuple
+
+    This conversion is performed recursively. If the passed named tuple
+    class contains child named tuples, then the the corresponding
+    child keys of the dictionary will be mapped.
+
+    This is used to take the supplied configuration and load it into the
+    expected configuration structures.
+    """
     import lightbus.config.structure
     hints = get_type_hints(named_tuple, None, lightbus.config.structure.__dict__)
     parameters = {}
@@ -91,6 +121,7 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
 
 
 def is_namedtuple(v):
+    """Figuring out if an object is a named tuple is not as trivial as one may expect"""
     try:
         return issubclass(v, tuple) and hasattr(v, '_fields')
     except TypeError:
