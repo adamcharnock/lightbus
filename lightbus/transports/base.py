@@ -1,4 +1,4 @@
-from typing import Sequence, Tuple, List, Generator, Dict
+from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, Optional
 
 from lightbus.api import Api
 from lightbus.exceptions import NothingToListenFor
@@ -15,6 +15,14 @@ class RpcTransport(object):
     async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         """Consume RPC calls for the given API"""
         raise NotImplementedError()
+
+    @classmethod
+    def get_config_structure(self) -> Optional[NamedTuple]:
+        return None
+
+    @classmethod
+    def from_config(cls, config: NamedTuple) -> 'RpcTransport':
+        return cls(**config._asdict())
 
 
 class ResultTransport(object):
@@ -46,6 +54,14 @@ class ResultTransport(object):
             options (dict): Dictionary of options specific to this particular backend
         """
         raise NotImplementedError()
+
+    @classmethod
+    def get_config_structure(self) -> Optional[NamedTuple]:
+        return None
+
+    @classmethod
+    def from_config(cls, config: NamedTuple) -> 'ResultTransport':
+        return cls(**config._asdict())
 
 
 class EventTransport(object):
@@ -89,6 +105,14 @@ class EventTransport(object):
     async def consumption_complete(self, event_message: EventMessage, context: dict):
         pass
 
+    @classmethod
+    def get_config_structure(self) -> Optional[NamedTuple]:
+        return None
+
+    @classmethod
+    def from_config(cls, config: NamedTuple) -> 'EventMessage':
+        return cls(**config._asdict())
+
 
 class SchemaTransport(object):
     """ Implement sharing of lightbus API schemas
@@ -113,3 +137,11 @@ class SchemaTransport(object):
         Should return a mapping of API names to schemas
         """
         raise NotImplementedError()
+
+    @classmethod
+    def get_config_structure(self) -> Optional[NamedTuple]:
+        return None
+
+    @classmethod
+    def from_config(cls, config: NamedTuple) -> 'SchemaTransport':
+        return cls(**config._asdict())

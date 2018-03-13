@@ -6,6 +6,8 @@ will is still required to organise the setup code below.
 
 """
 import asyncio
+from pathlib import Path
+
 import pytest
 import socket
 import subprocess
@@ -23,6 +25,7 @@ from async_timeout import timeout as async_timeout
 
 import aioredis
 import aioredis.sentinel
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import lightbus
 from lightbus.api import registry
@@ -747,3 +750,23 @@ def dummy_api():
     dummy_api = DummyApi()
     registry.add(dummy_api)
     return dummy_api
+
+
+@pytest.yield_fixture
+def tmp_file():
+    f = NamedTemporaryFile('r+', encoding='utf8')
+    yield f
+    try:
+        f.close()
+    except IOError:
+        pass
+
+
+@pytest.yield_fixture
+def tmp_directory():
+    f = TemporaryDirectory()
+    yield Path(f.name)
+    try:
+        f.cleanup()
+    except IOError:
+        pass

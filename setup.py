@@ -17,6 +17,7 @@ setup(
     install_requires=[
         'aioredis',  # TODO: Pin version once streams support is merged
         'jsonschema==2.6.0',
+        'pyyaml>=3.12,<4',
     ],
     include_package_data=True,
     entry_points={
@@ -26,6 +27,24 @@ setup(
         'lightbus_plugins': [
             'internal_state = lightbus.plugins.state:StatePlugin',
             'internal_metrics = lightbus.plugins.metrics:MetricsPlugin',
+        ],
+        'lightbus_event_transports': [
+            'redis = lightbus:RedisEventTransport',
+            'debug = lightbus:DebugEventTransport',
+            'direct = lightbus:DirectEventTransport',
+        ],
+        'lightbus_rpc_transports': [
+            'redis = lightbus:RedisRpcTransport',
+            'debug = lightbus:DebugRpcTransport',
+            'direct = lightbus:DirectRpcTransport',
+        ],
+        'lightbus_result_transports': [
+            'redis = lightbus:RedisResultTransport',
+            'debug = lightbus:DebugResultTransport',
+            'direct = lightbus:DirectResultTransport',
+        ],
+        'lightbus_schema_transports': [
+            'redis = lightbus:RedisSchemaTransport',
         ]
     }
 )

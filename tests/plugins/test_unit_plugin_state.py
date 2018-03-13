@@ -23,7 +23,7 @@ async def test_before_server_start(dummy_bus: BusNode, loop, get_dummy_events):
     await asyncio.sleep(0.1)  # Give the bus a moment to kick up the listener
 
     state_plugin = StatePlugin()
-    state_plugin.do_ping = False
+    state_plugin.ping_enabled = False
     await state_plugin.before_server_start(bus_client=dummy_bus.bus_client)
 
     dummy_events = get_dummy_events()

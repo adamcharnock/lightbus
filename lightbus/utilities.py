@@ -1,15 +1,15 @@
 import asyncio
 
 import logging
+
+import pkg_resources
 import random
-from threading import Thread
-from typing import Callable
+from typing import Callable, Sequence, Tuple
 
 import os
 
 import importlib.util
 import traceback
-from glob import glob
 
 from pathlib import Path
 
@@ -187,3 +187,16 @@ def get_event_loop():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
     return loop
+
+
+def load_entrypoint_classes(entrypoint_name) -> Sequence[Tuple[str, str, Callable]]:
+    """Load classes specified in an entrypoint
+
+    Entrypoints are specified in setup.py, and Lightbus uses them to
+    discover plugins & transports.
+    """
+    found_classes = []
+    for entrypoint in pkg_resources.iter_entry_points(entrypoint_name):
+        class_ = entrypoint.load()
+        found_classes.append((entrypoint.module_name, entrypoint.name, class_))
+    return found_classes

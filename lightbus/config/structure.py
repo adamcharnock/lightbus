@@ -1,4 +1,18 @@
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Union, Mapping, Type
+
+from lightbus import get_available_transports
+from lightbus.plugins import get_plugins
+
+# apis:
+#   default:
+#     event_transport:
+#       redis:
+#         redis-config
+
+
+class RootConfig(NamedTuple):
+    bus: 'BusConfig'
+    apis: Mapping[str, 'BaseApiConfig']
 
 
 class BusConfig(NamedTuple):
@@ -8,7 +22,7 @@ class BusConfig(NamedTuple):
     log_level: str = 'debug'
 
 
-class ApiConfig(NamedTuple):
+class BaseApiConfig(NamedTuple):
     rpc_timeout: int = 5
     event_listener_setup_timeout: int = 1
     event_fire_timeout: int = 1
@@ -16,38 +30,34 @@ class ApiConfig(NamedTuple):
     log_level: Optional[str] = None
 
 
-class TransportConfig(NamedTuple):
-    pass
+def make_api_config_structure() -> Type[BaseApiConfig]:
+    plugins = get_plugins()
+    transports_by_type = get_available_transports()
+    code = f"class ApiConfig(BaseApiConfig):\n"
+
+    transport_config_structures = {}
+    for transport_type, transports in transports_by_type.items():
+        transport_config_structure = make_transport_config_structure(transport_type, transports)
+        transport_config_structures[transport_config_structure.__name__] = transport_config_structure
+        code += f"    {transport_type}_transport: {transport_config_structure.__name__}\n"
+
+    globals_ = globals().copy()
+    globals_.update(transport_config_structures)
+    exec(code, globals_)
+    return globals_['ApiConfig']
 
 
-class RedisTransportConfig(TransportConfig):
-    url: str = 'redis://127.0.0.1:6379/0'
-    pool_parameters: dict = dict(maxsize=100)
-    serializer: str
-    deserializer: str
+def make_transport_config_structure(type, transports):
+    class_name = f"{type.title()}Transport"
+    code = f"class {class_name}(NamedTuple):\n"
+    config_classes = {}
+    for _, transport_name, transport_class in transports:
+        transport_config_structure = transport_class.get_config_structure()
+        if transport_config_structure:
+            config_classes[transport_config_structure.__name__] = transport_config_structure
+            code += f"    {transport_name}: {transport_config_structure.__name__}\n"
 
-
-class RedisEventTransportConfig(TransportConfig):
-    batch_size: int = 10
-    serializer: str = 'lightbus.serializers.ByFieldMessageSerializer'
-    # NOTE: This will need to be passed the class it needs to deserialize into
-    deserializer: str = 'lightbus.serializers.ByFieldMessageDeserializer'
-
-
-class RedisResultTransportConfig(TransportConfig):
-    result_ttl: int = 60
-    serializer: str = 'lightbus.serializers.BlobMessageSerializer'
-    # NOTE: This will need to be passed the class it needs to deserialize into
-    deserializer: str = 'lightbus.serializers.BlobMessageDeserializer'
-
-
-class RedisRpcTransportConfig(TransportConfig):
-    batch_size: int = 10
-    serializer: str = 'lightbus.serializers.ByFieldMessageSerializer'
-    # NOTE: This will need to be passed the class it needs to deserialize into
-    deserializer: str = 'lightbus.serializers.ByFieldMessageDeserializer'
-
-
-class StatePluginConfig(NamedTuple):
-    ping_enabled: bool = True
-    ping_interval: int = 60
+    globals_ = globals().copy()
+    globals_.update(config_classes)
+    exec(code, globals_)
+    return globals_[class_name]

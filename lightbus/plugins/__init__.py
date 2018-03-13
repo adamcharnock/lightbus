@@ -1,17 +1,16 @@
+import asyncio
+import logging
 import traceback
 from argparse import ArgumentParser, _ArgumentGroup, Namespace
-from asyncio import AbstractEventLoop
-from typing import Sequence, Dict, Type, Any
-
-import asyncio
-
-import logging
-from collections import OrderedDict
+from typing import Dict, Type, NamedTuple, Optional, TypeVar, Callable
 
 import pkg_resources
+from collections import OrderedDict
+
 import lightbus
 from lightbus.exceptions import PluginsNotLoaded, PluginHookNotFound, InvalidPlugins, LightbusShutdownInProgress
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
+from lightbus.utilities import load_entrypoint_classes
 
 _plugins = None
 _hooks_names = []
@@ -24,6 +23,13 @@ logger = logging.getLogger(__name__)
 # TODO: Document plugins in docs (and reference those docs here)
 class LightbusPlugin(object):
     priority = 1000
+
+    def get_config_structure(self) -> Optional[NamedTuple]:
+        return None
+
+    @classmethod
+    def from_config(cls, config: NamedTuple) -> 'LightbusPlugin':
+        return cls(**config._asdict())
 
     def __str__(self):
         return '{}.{}'.format(self.__class__.__module__, self.__class__.__name__)
@@ -74,17 +80,14 @@ def autoload_plugins(force=False):
     if _plugins:
         return _plugins
 
-    found_plugins = []
-    for entrypoint in pkg_resources.iter_entry_points(ENTRYPOINT_NAME):
-        plugin_class = entrypoint.load()
-        plugin = plugin_class()
-        found_plugins.append((plugin.priority, entrypoint.module_name, entrypoint.name, plugin))
+    found_plugins = load_entrypoint_classes(ENTRYPOINT_NAME)
+    found_plugins = sorted(found_plugins, key=lambda v: v[-1].priority)
 
     _plugins = OrderedDict()
-    for priority, module_name, name, plugin in sorted(found_plugins):
+    for module_name, name, plugin in found_plugins:
         if name in _plugins:
             pass
-        _plugins[name] = plugin
+        _plugins[name] = plugin()
 
     return _plugins
 

@@ -1,29 +1,6 @@
-from pathlib import Path
-
 import pytest
-from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 from lightbus import Schema, RedisSchemaTransport, DebugSchemaTransport, Api, Event, Parameter
-
-
-@pytest.yield_fixture
-def tmp_file():
-    f = NamedTemporaryFile('r+', encoding='utf8')
-    yield f
-    try:
-        f.close()
-    except IOError:
-        pass
-
-
-@pytest.yield_fixture
-def tmp_directory():
-    f = TemporaryDirectory()
-    yield Path(f.name)
-    try:
-        f.cleanup()
-    except IOError:
-        pass
 
 
 @pytest.fixture

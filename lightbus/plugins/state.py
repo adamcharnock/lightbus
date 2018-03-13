@@ -7,6 +7,7 @@ from argparse import ArgumentParser, _ArgumentGroup, Namespace
 from datetime import datetime
 
 import os
+from typing import NamedTuple
 
 from lightbus import BusClient
 from lightbus.api import registry
@@ -43,8 +44,15 @@ class StatePlugin(LightbusPlugin):
     priority = 100
 
     def __init__(self):
-        self.do_ping = True
+        self.ping_enabled = True
         self.ping_interval = 60  # config: ping_interval
+
+    @classmethod
+    def get_config_structure(self):
+        class StatePluginConfig(NamedTuple):
+            ping_enabled: bool = True
+            ping_interval: int = 60
+        return StatePluginConfig
 
     async def before_parse_args(self, *, parser: ArgumentParser, subparsers: _ArgumentGroup):
         """Add some plugin-related args so behaviour can be customised"""
@@ -69,7 +77,7 @@ class StatePlugin(LightbusPlugin):
 
     async def after_parse_args(self, args: Namespace):
         if args.subcommand == 'run':
-            self.do_ping = not args.no_ping
+            self.ping_enabled = not args.no_ping
             self.ping_interval = args.ping_interval
 
     async def before_server_start(self, *, bus_client: BusClient):
@@ -81,7 +89,7 @@ class StatePlugin(LightbusPlugin):
             ),
             options={},
         )
-        if self.do_ping:
+        if self.ping_enabled:
             logger.info(
                 'Ping messages will be sent every {} seconds'.format(self.ping_interval)
             )
@@ -121,7 +129,7 @@ class StatePlugin(LightbusPlugin):
             api_names=[api.meta.name for api in registry.public()],
             listening_for=['{}.{}'.format(api_name, event_name) for api_name, event_name in bus_client._listeners.keys()],
             timestamp=datetime.utcnow().timestamp(),
-            ping_enabled=self.do_ping,
+            ping_enabled=self.ping_enabled,
             ping_interval=self.ping_interval,
             hostname=socket.gethostname(),
             pid=os.getpid(),
