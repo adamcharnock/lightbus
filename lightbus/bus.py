@@ -64,9 +64,9 @@ class BusClient(object):
 
         # Load schema
         logger.debug("Loading schema...")
-        block(self.schema.load_from_bus(), self.loop, timeout=5)
+        block(self.schema.load_from_bus(), self.loop, timeout=5)  # config: schema_load_timeout
         for api in registry.all():
-            block(self.schema.add_api(api), self.loop, timeout=1)
+            block(self.schema.add_api(api), self.loop, timeout=1)  # config: schema_add_api_timeout
 
         logger.info(LBullets(
             "Loaded the following remote schemas ({})".format(len(self.schema.remote_schemas)),
@@ -160,7 +160,7 @@ class BusClient(object):
         return_path = self.result_transport.get_return_path(rpc_message)
         rpc_message.return_path = return_path
         options = options or {}
-        timeout = options.get('timeout', 5)
+        timeout = options.get('timeout', 5)  # config: rpc_timeout
 
         logger.info("➡ Calling remote RPC ".format(rpc_message))
 
@@ -366,6 +366,7 @@ class BusNode(object):
         return self.call(**kwargs)
 
     def call(self, *, bus_options=None, **kwargs):
+        # config: rpc_timeout
         return block(self.call_async(**kwargs, bus_options=bus_options), self.bus_client.loop, timeout=1)
 
     async def call_async(self, *, bus_options=None, **kwargs):
@@ -381,6 +382,7 @@ class BusNode(object):
         )
 
     def listen(self, listener, *, bus_options: dict=None):
+        # config: event_listener_setup_timeout
         return block(self.listen_async(listener, bus_options=bus_options), self.bus_client.loop, timeout=5)
 
     async def fire_async(self, *, bus_options: dict=None, **kwargs):
@@ -389,6 +391,7 @@ class BusNode(object):
         )
 
     def fire(self, *, bus_options: dict=None, **kwargs):
+        # config: event_fire_timeout
         return block(self.fire_async(**kwargs, bus_options=bus_options), self.bus_client.loop, timeout=5)
 
     # Utilities

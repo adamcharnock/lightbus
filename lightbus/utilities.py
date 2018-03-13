@@ -79,7 +79,7 @@ def configure_logging():
     handler.setFormatter(formatter)
 
     logger.addHandler(handler)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG)  # config: log_level
 
 
 def human_time(seconds: float):

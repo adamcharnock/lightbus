@@ -44,7 +44,7 @@ class StatePlugin(LightbusPlugin):
 
     def __init__(self):
         self.do_ping = True
-        self.ping_interval = 60
+        self.ping_interval = 60  # config: ping_interval
 
     async def before_parse_args(self, *, parser: ArgumentParser, subparsers: _ArgumentGroup):
         """Add some plugin-related args so behaviour can be customised"""
@@ -58,6 +58,7 @@ class StatePlugin(LightbusPlugin):
             type=int,
             default=self.ping_interval,
         )
+        # config: ping_interval
         state_run_group.add_argument(
             '--no-ping',
             help='Disable sending ping events on the internal.state API. This '

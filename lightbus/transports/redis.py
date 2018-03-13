@@ -127,7 +127,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         with await self.connection_manager() as redis:
             # TODO: Count/timeout configurable
             try:
-                stream_messages = await redis.xread(streams, latest_ids=latest_ids, count=10)
+                stream_messages = await redis.xread(streams, latest_ids=latest_ids, count=10)  # config: batch_size (rpc transport)
             except RuntimeError:
                 # For some reason aio-redis likes to eat the CancelledError and
                 # turn it into a Runtime error:
@@ -182,7 +182,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
             p = redis.pipeline()
             p.lpush(redis_key, self.serializer(result_message))
             # TODO: Make result expiry configurable
-            p.expire(redis_key, timeout=60)
+            p.expire(redis_key, timeout=60)  # config: result_ttl
             await p.execute()
 
         logger.debug(L(
@@ -202,7 +202,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
                 # cancellation. We therefore perform this step with a loop to catch
                 # this. A more elegant solution is welcome.
                 # TODO: Make timeout configurable
-                result = await redis.blpop(redis_key, timeout=5)
+                result = await redis.blpop(redis_key, timeout=5)  # config: rpc_timeout
             _, serialized = result
 
         result_message = self.deserializer(serialized)
@@ -285,6 +285,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     stream_messages = await redis.xread(
                         streams=list(streams.keys()),
                         latest_ids=list(streams.values()),
+                        # config: batch_size (event transport)
                         count=10,  # TODO: Make configurable, add timeout too
                     )
                 except aioredis.ConnectionForcedCloseError:
