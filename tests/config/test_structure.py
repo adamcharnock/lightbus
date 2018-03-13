@@ -14,8 +14,6 @@ def test_make_transport_config_structure():
         ('lightbus', 'debug', DebugEventTransport),
     ])
     assert 'redis' in config.__annotations__
-    assert config.__annotations__['redis'].url
-    assert config.__annotations__['redis'].batch_size
 
 
 def test_make_api_config_structure():

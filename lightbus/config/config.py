@@ -25,8 +25,6 @@ class Config(object):
     _config: RootConfig
 
     def __init__(self, root_config: RootConfig):
-        if 'default' not in root_config.apis:
-            root_config.apis['default'] = ApiConfig()
         self._config = root_config
 
     def bus(self) -> BusConfig:
@@ -74,6 +72,9 @@ class Config(object):
             root_config=mapping_to_named_tuple(config, RootConfig)
         )
 
+    # def get_rpc_transport(self, api_name=None):
+
+
 
 def validate_config(config: dict):
     """Validate the provided config dictionary against the config json schema"""
@@ -120,13 +121,20 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
         return None
 
     for key, hint in hints.items():
+        is_class = inspect.isclass(hint)
+        value = mapping.get(key)
+
         if key not in mapping:
             continue
 
-        value = mapping.get(key)
+        # Is this an Optional[] hint (which looks like Union[Thing, None)
+        subs_tree = hint._subs_tree() if hasattr(hint, '_subs_tree') else None
+        if type(hint) == type(Union) and len(subs_tree) == 3 and subs_tree[2] == type(None) and value:
+            hint = subs_tree[1]
+
         if is_namedtuple(hint):
             parameters[key] = mapping_to_named_tuple(value, hint)
-        elif inspect.isclass(hint) and issubclass(hint, Mapping) and hasattr(hint, '_subs_tree') and is_namedtuple(hint._subs_tree()[2]):
+        elif is_class and issubclass(hint, Mapping) and subs_tree and is_namedtuple(subs_tree[2]):
             parameters[key] = dict()
             for k, v in value.items():
                 parameters[key][k] = mapping_to_named_tuple(v, hint._subs_tree()[2])
