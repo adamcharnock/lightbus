@@ -1,21 +1,29 @@
 import pytest
 
 from lightbus.config import Config
-from lightbus.config.config import mapping_to_named_tuple
+from lightbus.config.config import mapping_to_named_tuple, config_as_json_schema
 from lightbus.config.structure import RootConfig, BusConfig
 
 pytestmark = pytest.mark.unit
 
 
-def test_config_schema():
-    schema = Config(
-        root_config=RootConfig(bus=BusConfig(), apis=[])
-    ).schema()
+def test_config_as_json_schema():
+    schema = config_as_json_schema()
 
     assert '$schema' in schema
-    assert 'properties' in schema
+    assert 'bus' in schema['properties']
     assert schema['additionalProperties'] == False
     assert schema['type'] == 'object'
+
+
+def test_config_as_json_schema_bus():
+    schema = config_as_json_schema()
+    assert schema['properties']['bus']
+
+
+def test_config_as_json_schema_apis():
+    schema = config_as_json_schema()
+    assert schema['properties']['apis']
 
 
 def test_load_bus_config(tmp_file):
@@ -42,12 +50,12 @@ def test_mapping_to_named_tuple_unknown_property():
 
 def test_api_config_default():
     config = Config.load_yaml(EXAMPLE_VALID_YAML)
-    assert config.api('foo').event_transport.parameters.batch_size == 50
+    assert config.api('foo').event_transport.redis.batch_size == 50
 
 
 def test_api_config_customised():
     config = Config.load_yaml(EXAMPLE_VALID_YAML)
-    assert config.api('my.api').event_transport.parameters.batch_size == 1
+    assert config.api('my.api').event_transport.redis.batch_size == 1
 
 
 EXAMPLE_VALID_YAML = """
@@ -57,12 +65,11 @@ bus:
 apis:
     default:
         event_transport:
-            transport: lightbus.RedisRpcTransport
-            parameters:
+            redis:
                 batch_size: 50
                 
     my.api:
         event_transport:
-            parameters:
+            redis:
                 batch_size: 1
 """

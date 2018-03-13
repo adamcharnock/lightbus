@@ -3,7 +3,7 @@ import itertools
 import json
 import logging
 from _pydecimal import Decimal
-from typing import Union, Any, Tuple, Sequence
+from typing import Union, Any, Tuple, Sequence, Mapping
 
 import lightbus
 
@@ -87,6 +87,12 @@ def python_type_to_json_schemas(type_):
         return [{'type': 'number'}]
     elif is_class and issubclass(type_, (dict, )):
         return [{'type': 'object'}]
+    elif is_class and issubclass(type_, (Mapping, )) and type_._subs_tree()[1] == str:
+        # Mapping with strings as keys
+        return [{
+            'type': 'object',
+            'patternProperties': {'.*': wrap_with_one_of(python_type_to_json_schemas(type_._subs_tree()[2]))}
+        }]
     elif is_class and issubclass(type_, tuple) and hasattr(type_, '_fields'):
         # Named tuple
         return [make_custom_object_schema(type_, property_names=type_._fields)]

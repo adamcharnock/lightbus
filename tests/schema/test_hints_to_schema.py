@@ -1,4 +1,4 @@
-from typing import Union, Optional, NamedTuple, Tuple, Any
+from typing import Union, Optional, NamedTuple, Tuple, Any, Mapping
 from collections import namedtuple
 
 import pytest
@@ -193,3 +193,11 @@ def test_ellipsis():
     def func(username) -> ...: pass
     schema = make_response_schema('api_name', 'rpc_name', func)
     assert 'type' not in schema
+
+
+def test_mapping():
+    def func(username) -> Mapping[str, int]: pass
+    schema = make_response_schema('api_name', 'rpc_name', func)
+    assert schema['type'] == 'object'
+    assert schema['patternProperties'] == {'.*': {'type': 'number'}}
+
