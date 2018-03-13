@@ -99,3 +99,15 @@ class SchemaNotFound(LightbusException):
 
 class NoResponseSchemaFound(SchemaNotFound):
     pass
+
+
+class TransportNotFound(LightbusException):
+    pass
+
+
+class TooManyTransportsForApi(LightbusException):
+    pass
+
+
+class NoTransportConfigured(LightbusException):
+    pass

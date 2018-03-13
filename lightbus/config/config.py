@@ -6,6 +6,8 @@ from typing import Mapping, Union, Type, NamedTuple, get_type_hints, TypeVar, Ca
 import jsonschema
 import yaml as yamllib
 
+from lightbus import get_transport
+from lightbus.exceptions import TooManyTransportsForApi, TransportNotFound, NoTransportConfigured
 from lightbus.schema.hints_to_schema import python_type_to_json_schemas, SCHEMA_URI
 from .structure import RootConfig, BusConfig, ApiConfig
 
@@ -72,8 +74,27 @@ class Config(object):
             root_config=mapping_to_named_tuple(config, RootConfig)
         )
 
-    # def get_rpc_transport(self, api_name=None):
+    def get_rpc_transport(self, api_name=None):
+        transport_config = self.api(api_name).rpc_transport
+        transport_names = [name for name, value in transport_config._asdict().items() if value is not None]
+        if len(transport_names) > 1:
+            raise TooManyTransportsForApi(
+                "Multiple RPCs transports configured for API {}. This is not supported, you must only "
+                "specify a single transport. Transports found: {}".format(api_name, ', '.join(transport_names))
+            )
+        elif not transport_names and api_name:
+            # Fallback to the default transport
+            return self.get_rpc_transport(api_name=None)
+        elif not transport_names:
+            raise NoTransportConfigured(
+                "No RPC transport configured for API {}. Either configure a default RPC transport, "
+                "or specify one specifically for this API.".format(api_name)
+            )
 
+        transport_name = transport_names[0]
+        transport_class = get_transport(type_='rpc', name=transport_name)
+        transport = transport_class.from_config(getattr(transport_config, transport_name))
+        return transport
 
 
 def validate_config(config: dict):
@@ -129,7 +150,7 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
 
         # Is this an Optional[] hint (which looks like Union[Thing, None)
         subs_tree = hint._subs_tree() if hasattr(hint, '_subs_tree') else None
-        if type(hint) == type(Union) and len(subs_tree) == 3 and subs_tree[2] == type(None) and value:
+        if type(hint) == type(Union) and len(subs_tree) == 3 and subs_tree[2] == type(None) and value is not None:
             hint = subs_tree[1]
 
         if is_namedtuple(hint):
