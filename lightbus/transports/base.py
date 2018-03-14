@@ -20,10 +20,6 @@ class RpcTransport(object):
         raise NotImplementedError()
 
     @classmethod
-    def get_config_structure(self) -> Optional[NamedTuple]:
-        return None
-
-    @classmethod
     def from_config(cls: Type[T]) -> T:
         return cls()
 
@@ -57,10 +53,6 @@ class ResultTransport(object):
             options (dict): Dictionary of options specific to this particular backend
         """
         raise NotImplementedError()
-
-    @classmethod
-    def get_config_structure(self) -> Optional[NamedTuple]:
-        return None
 
     @classmethod
     def from_config(cls, config: NamedTuple) -> 'ResultTransport':
@@ -109,10 +101,6 @@ class EventTransport(object):
         pass
 
     @classmethod
-    def get_config_structure(self) -> Optional[NamedTuple]:
-        return None
-
-    @classmethod
     def from_config(cls, config: NamedTuple) -> 'EventMessage':
         return cls(**config._asdict())
 
@@ -140,10 +128,6 @@ class SchemaTransport(object):
         Should return a mapping of API names to schemas
         """
         raise NotImplementedError()
-
-    @classmethod
-    def get_config_structure(self) -> Optional[NamedTuple]:
-        return None
 
     @classmethod
     def from_config(cls, config: NamedTuple) -> 'SchemaTransport':

@@ -56,7 +56,7 @@ def make_parameter_schema(parameters: Sequence[inspect.Parameter]):
 
     for parameter in parameters:
         if parameter.kind in (parameter.POSITIONAL_ONLY, parameter.VAR_POSITIONAL):
-            logger.warning('Positional-only arguments are not supported: {}'.format(parameter))
+            logger.warning('Positional-only arguments are not supported in event or RPC parameters: {}'.format(parameter))
             continue
 
         if parameter.kind == parameter.VAR_KEYWORD:
@@ -136,8 +136,14 @@ def python_type_to_json_schemas(type_):
     the `Union` type hint. These are later combined via `wrap_with_one_of()`
     """
     is_class = inspect.isclass(type_)
+
+    if hasattr(type_, '_subs_tree') and isinstance(type_._subs_tree(), Sequence):
+        subs_tree = type_._subs_tree()
+    else:
+        subs_tree = None
+
     if type(type_) == type(Union):
-        sub_types = type_._subs_tree()[1:]
+        sub_types = subs_tree[1:]
         return list(itertools.chain(*map(python_type_to_json_schemas, sub_types)))
     elif type_ in (Any, ...):
         return [{}]
@@ -149,17 +155,17 @@ def python_type_to_json_schemas(type_):
         return [{'type': 'number'}]
     elif is_class and issubclass(type_, (dict, )):
         return [{'type': 'object'}]
-    elif is_class and issubclass(type_, (Mapping, )) and type_._subs_tree()[1] == str:
+    elif is_class and issubclass(type_, (Mapping, )) and subs_tree and subs_tree[1] == str:
         # Mapping with strings as keys
         return [{
             'type': 'object',
-            'patternProperties': {'.*': wrap_with_one_of(python_type_to_json_schemas(type_._subs_tree()[2]))}
+            'patternProperties': {'.*': wrap_with_one_of(python_type_to_json_schemas(subs_tree[2]))}
         }]
     elif is_class and issubclass(type_, tuple) and hasattr(type_, '_fields'):
         # Named tuple
         return [make_custom_object_schema(type_, property_names=type_._fields)]
-    elif type(type_) == type(Tuple) and len(type_._subs_tree()) > 1:
-        sub_types = type_._subs_tree()[1:]
+    elif type(type_) == type(Tuple) and len(subs_tree) > 1:
+        sub_types = subs_tree[1:]
         return [{
             'type': 'array',
             'maxItems': len(sub_types),

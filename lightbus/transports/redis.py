@@ -2,7 +2,7 @@ import json
 import logging
 import time
 from datetime import datetime
-from typing import Sequence, Optional, Union, Generator, Dict, NamedTuple
+from typing import Sequence, Optional, Union, Generator, Dict, NamedTuple, Mapping
 
 import aioredis
 import asyncio
@@ -18,7 +18,9 @@ from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.serializers.blob import BlobMessageSerializer, BlobMessageDeserializer
 from lightbus.serializers.by_field import ByFieldMessageSerializer, ByFieldMessageDeserializer
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport, SchemaTransport
+from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
+from lightbus.utilities.importing import import_from_string
 
 logger = logging.getLogger(__name__)
 
@@ -153,12 +155,17 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
     @classmethod
     def from_config(cls,
                     url: str='redis://127.0.0.1:6379/0',
-                    pool_parameters: dict=dict(maxsize=100),
+                    pool_parameters: Mapping=frozendict(maxsize=100),
                     batch_size: int=10,
                     serializer: str='lightbus.serializers.ByFieldMessageSerializer',
                     deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
-    ):
-        return cls(*locals())
+                    ):
+        serializer = import_from_string(serializer)()
+        deserializer = import_from_string(deserializer)(RpcMessage)
+
+        params = locals()
+        params.pop('cls')
+        return cls(**params)
 
 
 class RedisResultTransport(RedisTransportMixin, ResultTransport):
@@ -229,16 +236,19 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         return return_path[12:]
 
     @classmethod
-    def get_config_structure(self):
-        class RedisResultTransportConfig(NamedTuple):
-            url: str = 'redis://127.0.0.1:6379/0'
-            pool_parameters: dict = dict(maxsize=100)
-            result_ttl: int = 60
-            serializer: str = 'lightbus.serializers.BlobMessageSerializer'
-            # NOTE: This will need to be passed the class it needs to deserialize into
-            deserializer: str = 'lightbus.serializers.BlobMessageDeserializer'
+    def from_config(cls,
+                    url: str='redis://127.0.0.1:6379/0',
+                    pool_parameters: Mapping=frozendict(maxsize=100),
+                    batch_size: int=10,
+                    serializer: str='lightbus.serializers.BlobMessageSerializer',
+                    deserializer: str='lightbus.serializers.BlobMessageDeserializer',
+                    ):
+        serializer = import_from_string(serializer)()
+        deserializer = import_from_string(deserializer)(ResultMessage)
 
-        return RedisResultTransportConfig
+        params = locals()
+        params.pop('cls')
+        return cls(**params)
 
 
 class RedisEventTransport(RedisTransportMixin, EventTransport):
@@ -350,14 +360,19 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         context['streams'][event_message.redis_stream] = event_message.redis_id
 
     @classmethod
-    def get_config_structure(self):
-        class RedisEventTransportConfig(NamedTuple):
-            url: str = 'redis://127.0.0.1:6379/0'
-            pool_parameters: dict = dict(maxsize=100)
-            batch_size: int = 10
-            serializer: str = 'lightbus.serializers.ByFieldMessageSerializer'
-            deserializer: str = 'lightbus.serializers.ByFieldMessageDeserializer'
-        return RedisEventTransportConfig
+    def from_config(cls,
+                    url: str='redis://127.0.0.1:6379/0',
+                    pool_parameters: Mapping=frozendict(maxsize=100),
+                    batch_size: int=10,
+                    serializer: str='lightbus.serializers.ByFieldMessageSerializer',
+                    deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
+                    ):
+        serializer = import_from_string(serializer)()
+        deserializer = import_from_string(deserializer)(EventMessage)
+
+        params = locals()
+        params.pop('cls')
+        return cls(**params)
 
 
 class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
@@ -411,11 +426,13 @@ class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
         return schemas
 
     @classmethod
-    def get_config_structure(self):
-        class RedisEventTransportConfig(NamedTuple):
-            url: str = 'redis://127.0.0.1:6379/0'
-            pool_parameters: dict = dict(maxsize=10)
-        return RedisEventTransportConfig
+    def from_config(cls,
+                    url: str='redis://127.0.0.1:6379/0',
+                    pool_parameters: Mapping=frozendict(maxsize=10),
+                    ):
+        params = locals()
+        params.pop('cls')
+        return cls(**params)
 
 
 def redis_stream_id_subtract_one(message_id):

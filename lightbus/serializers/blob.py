@@ -5,7 +5,7 @@ These serializers handle moving data to/from a string-based format.
 """
 
 import lightbus
-from lightbus.serializers import decode_bytes, sanity_check_metadata, MessageSerializer, MessageDeserializer
+from lightbus.serializers.base import decode_bytes, sanity_check_metadata, MessageSerializer, MessageDeserializer
 
 
 class BlobMessageSerializer(MessageSerializer):

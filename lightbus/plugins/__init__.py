@@ -19,17 +19,16 @@ ENTRYPOINT_NAME = 'lightbus_plugins'
 
 logger = logging.getLogger(__name__)
 
+T = TypeVar('T')
+
 
 # TODO: Document plugins in docs (and reference those docs here)
 class LightbusPlugin(object):
     priority = 1000
 
-    def get_config_structure(self) -> Optional[NamedTuple]:
-        return None
-
     @classmethod
-    def from_config(cls, config: NamedTuple) -> 'LightbusPlugin':
-        return cls(**config._asdict())
+    def from_config(cls: Type[T]) -> T:
+        return cls()
 
     def __str__(self):
         return '{}.{}'.format(self.__class__.__module__, self.__class__.__name__)

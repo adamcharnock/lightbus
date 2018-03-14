@@ -43,16 +43,13 @@ class StatePlugin(LightbusPlugin):
     """
     priority = 100
 
-    def __init__(self):
-        self.ping_enabled = True
-        self.ping_interval = 60  # config: ping_interval
+    def __init__(self, ping_enabled: bool=True, ping_interval: int=60):
+        self.ping_enabled = ping_enabled
+        self.ping_interval = ping_interval
 
     @classmethod
-    def get_config_structure(self):
-        class StatePluginConfig(NamedTuple):
-            ping_enabled: bool = True
-            ping_interval: int = 60
-        return StatePluginConfig
+    def from_config(cls, ping_enabled: bool=True, ping_interval: int=60):
+        return cls(ping_enabled=ping_enabled, ping_interval=ping_interval)
 
     async def before_parse_args(self, *, parser: ArgumentParser, subparsers: _ArgumentGroup):
         """Add some plugin-related args so behaviour can be customised"""

@@ -1,6 +1,6 @@
 import pytest
 
-from lightbus.config import make_transport_config_structure, make_api_config_structure
+from lightbus.config import make_transport_selector_structure, make_api_config_structure
 from lightbus.transports.debug import DebugEventTransport
 from lightbus.transports.redis import RedisEventTransport
 
@@ -8,7 +8,7 @@ pytestmark = pytest.mark.unit
 
 
 def test_make_transport_config_structure():
-    config = make_transport_config_structure('event', [
+    config = make_transport_selector_structure('event', [
         # module (ignored), name, class
         ('lightbus', 'redis', RedisEventTransport),
         ('lightbus', 'debug', DebugEventTransport),
