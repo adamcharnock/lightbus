@@ -16,7 +16,7 @@ from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
 from lightbus.transports import RpcTransport, ResultTransport, EventTransport, RedisRpcTransport, \
     RedisResultTransport, RedisEventTransport
-from lightbus.transports.base import SchemaTransport
+from lightbus.transports.base import SchemaTransport, TransportRegistry
 from lightbus.transports.redis import RedisSchemaTransport
 from lightbus.utilities.human import human_time, generate_process_name
 from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loop
@@ -465,29 +465,30 @@ def create(
         schema_transport: Optional['SchemaTransport']=None,
         client_class=BusClient,
         node_class=BusNode,
+        config: dict=frozenset(),
         plugins=None,
         loop=None,
         **kwargs) -> BusNode:
 
     from lightbus.config import Config
-    config = Config.load_dict({
-        'apis': {
-            'default': {
-                'rpc_transport': {},
-                'result_transport': {},
-                'event_transport': {},
-                'schema_transport': {},
-            }
-        }
-    })
+    config = Config.load_file(config or {})
+    transport_registry = TransportRegistry().load_config(config)
 
-    default = config.api('default')
+    if not transport_registry.has_rpc_transport('default'):
+        transport_registry.set_rpc_transport('default', rpc_transport or RedisRpcTransport())
+
+    if not transport_registry.has_result_transport('default'):
+        transport_registry.set_result_transport('default', result_transport or RedisResultTransport())
+
+    if not transport_registry.has_event_transport('default'):
+        transport_registry.set_event_transport('default', event_transport or RedisEventTransport())
+
+    if not transport_registry.has_schema_transport('default'):
+        transport_registry.set_schema_transport('default', schema_transport or RedisSchemaTransport())
 
     bus_client = client_class(
-        rpc_transport=rpc_transport or RedisRpcTransport(),
-        result_transport=result_transport or RedisResultTransport(),
-        event_transport=event_transport or RedisEventTransport(),
-        schema_transport=schema_transport or RedisSchemaTransport(),
+        transport_registry=transport_registry,
+        config=config,
         loop=loop,
         **kwargs
     )
