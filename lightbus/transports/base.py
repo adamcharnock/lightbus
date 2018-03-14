@@ -167,6 +167,13 @@ class SchemaTransport(Transport):
 class TransportRegistry(object):
     """ Manages access to transports
 
+    It is possible for different APIs within lightbus to use different transports.
+    This registry handles the logic of loading the transports for a given
+    configuration. Thereafter, it provides access to these transports based on
+    a given API.
+
+    The 'default' API is a special case as it is fallback transport for
+    any APIs that do not have their own specific transports configured.
     """
 
     class _RegistryEntry(NamedTuple):
@@ -225,6 +232,14 @@ class TransportRegistry(object):
             )
         else:
             return api_transport
+
+    def _has_transport(self, api_name: str, transport_type: str):
+        try:
+            self._get_transport(api_name, transport_type)
+        except TransportNotFound:
+            return False
+        else:
+            return True
 
     def set_rpc_transport(self, api_name: str, transport):
         self._set_transport(api_name, transport, 'rpc')
