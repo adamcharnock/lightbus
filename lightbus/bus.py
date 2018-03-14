@@ -18,7 +18,8 @@ from lightbus.transports import RpcTransport, ResultTransport, EventTransport, R
     RedisResultTransport, RedisEventTransport
 from lightbus.transports.base import SchemaTransport
 from lightbus.transports.redis import RedisSchemaTransport
-from lightbus.utilities import handle_aio_exceptions, human_time, block, generate_process_name, get_event_loop
+from lightbus.utilities.human import human_time, generate_process_name
+from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loop
 
 __all__ = ['BusClient', 'BusNode', 'create']
 

@@ -18,7 +18,7 @@ from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.serializers.blob import BlobMessageSerializer, BlobMessageDeserializer
 from lightbus.serializers.by_field import ByFieldMessageSerializer, ByFieldMessageDeserializer
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport, SchemaTransport
-from lightbus.utilities import human_time
+from lightbus.utilities.human import human_time
 
 logger = logging.getLogger(__name__)
 
@@ -151,15 +151,14 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         return rpc_messages
 
     @classmethod
-    def get_config_structure(self):
-        class RedisRpcTransportConfig(NamedTuple):
-            url: str = 'redis://127.0.0.1:6379/0'
-            pool_parameters: dict = dict(maxsize=100)
-            batch_size: int = 10
-            serializer: str = 'lightbus.serializers.ByFieldMessageSerializer'
-            deserializer: str = 'lightbus.serializers.ByFieldMessageDeserializer'
-
-        return RedisRpcTransportConfig
+    def from_config(cls,
+                    url: str='redis://127.0.0.1:6379/0',
+                    pool_parameters: dict=dict(maxsize=100),
+                    batch_size: int=10,
+                    serializer: str='lightbus.serializers.ByFieldMessageSerializer',
+                    deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
+    ):
+        return cls(*locals())
 
 
 class RedisResultTransport(RedisTransportMixin, ResultTransport):

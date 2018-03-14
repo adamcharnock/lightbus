@@ -1,8 +1,10 @@
-from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, Optional
+from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, Optional, TypeVar, Type, Callable
 
 from lightbus.api import Api
 from lightbus.exceptions import NothingToListenFor
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
+
+T = TypeVar('T')
 
 
 class RpcTransport(object):
@@ -10,6 +12,7 @@ class RpcTransport(object):
 
     async def call_rpc(self, rpc_message: RpcMessage, options: dict):
         """Publish a call to a remote procedure"""
+        RpcTransport.from_config()
         raise NotImplementedError()
 
     async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
@@ -21,8 +24,8 @@ class RpcTransport(object):
         return None
 
     @classmethod
-    def from_config(cls, config: NamedTuple) -> 'RpcTransport':
-        return cls(**config._asdict())
+    def from_config(cls: Type[T]) -> T:
+        return cls()
 
 
 class ResultTransport(object):

@@ -67,7 +67,7 @@ def make_api_config_structure() -> NamedTuple:
 
 def make_transport_config_structure(type_, transports):
     class_name = f"{type_.title()}Transport"
-    code = f"class {class_name}(NamedTuple):\n"
+    code = f"class {class_name}(NamedTuple):\n    pass\n"
     config_classes = {}
     for _, transport_name, transport_class in transports:
         transport_config_structure = transport_class.get_config_structure()

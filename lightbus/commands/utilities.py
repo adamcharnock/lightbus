@@ -1,7 +1,7 @@
 import importlib.util
 import logging
 
-from lightbus.utilities import autodiscover
+from lightbus.utilities.autodiscovery import autodiscover
 
 logger = logging.getLogger(__name__)
 

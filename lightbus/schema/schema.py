@@ -15,7 +15,7 @@ import lightbus
 from lightbus.exceptions import InvalidApiForSchemaCreation, InvalidSchema, SchemaNotFound
 from lightbus.schema.hints_to_schema import make_response_schema, make_rpc_parameter_schema, make_event_parameter_schema
 from lightbus.transports.base import SchemaTransport
-from lightbus.utilities import make_file_safe_api_name
+from lightbus.utilities.io import make_file_safe_api_name
 
 
 class Schema(object):

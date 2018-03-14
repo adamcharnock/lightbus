@@ -1,7 +1,7 @@
 import logging
 
 from lightbus.exceptions import TransportNotFound
-from lightbus.utilities import load_entrypoint_classes
+from lightbus.utilities.importing import load_entrypoint_classes
 from .base import RpcTransport, ResultTransport, EventTransport, SchemaTransport
 from .debug import DebugRpcTransport, DebugResultTransport, DebugEventTransport, DebugSchemaTransport
 from .direct import DirectRpcTransport, DirectResultTransport, DirectEventTransport

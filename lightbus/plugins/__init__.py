@@ -10,7 +10,7 @@ from collections import OrderedDict
 import lightbus
 from lightbus.exceptions import PluginsNotLoaded, PluginHookNotFound, InvalidPlugins, LightbusShutdownInProgress
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
-from lightbus.utilities import load_entrypoint_classes
+from lightbus.utilities.importing import load_entrypoint_classes
 
 _plugins = None
 _hooks_names = []

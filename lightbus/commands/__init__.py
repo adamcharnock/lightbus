@@ -4,7 +4,8 @@ import sys
 from asyncio.events import get_event_loop
 
 from lightbus.plugins import autoload_plugins, plugin_hook
-from lightbus.utilities import configure_logging, block
+from lightbus.utilities.logging import configure_logging
+from lightbus.utilities.async import block
 import lightbus.commands.run
 import lightbus.commands.shell
 import lightbus.commands.dump_schema
