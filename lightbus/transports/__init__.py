@@ -8,17 +8,17 @@ from .direct import DirectRpcTransport, DirectResultTransport, DirectEventTransp
 from .redis import RedisRpcTransport, RedisResultTransport, RedisEventTransport, RedisSchemaTransport
 
 
-def get_available_transports():
+def get_available_transports(type_):
+    loaded = load_entrypoint_classes(f'lightbus_{type_}_transports')
+
     return {
-        'event': load_entrypoint_classes('lightbus_event_transports'),
-        'rpc': load_entrypoint_classes('lightbus_rpc_transports'),
-        'result': load_entrypoint_classes('lightbus_result_transports'),
-        'schema': load_entrypoint_classes('lightbus_schema_transports'),
+        name: class_
+        for module_name, name, class_
+        in loaded
     }
 
-
 def get_transport(type_, name):
-    for _, name_, class_ in get_available_transports()[type_]:
+    for name_, class_ in get_available_transports(type_).items():
         if name == name_:
             return class_
 

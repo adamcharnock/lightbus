@@ -8,12 +8,8 @@ pytestmark = pytest.mark.unit
 
 
 def test_make_transport_config_structure():
-    config = make_transport_selector_structure('event', [
-        # module (ignored), name, class
-        ('lightbus', 'redis', RedisEventTransport),
-        ('lightbus', 'debug', DebugEventTransport),
-    ])
-    assert 'redis' in config.__annotations__
+    EventTransportSelector = make_transport_selector_structure('event')
+    assert 'redis' in EventTransportSelector.__annotations__
 
 
 def test_make_api_config_structure():

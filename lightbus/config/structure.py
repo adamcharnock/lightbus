@@ -47,14 +47,10 @@ def make_api_config_structure() -> NamedTuple:
 
     """
     plugins = get_plugins()
-    transports_by_type = get_available_transports()
     code = f"class ApiConfig(NamedTuple):\n"
 
-    transport_config_structures = {}
-    for transport_type, transports in transports_by_type.items():
-        transport_config_structure = make_transport_selector_structure(transport_type, transports)
-        transport_config_structures[transport_config_structure.__name__] = transport_config_structure
-        code += f"    {transport_type}_transport: {transport_config_structure.__name__} = None\n"
+    for transport_type in ('event', 'rpc', 'result', 'schema'):
+        code += f"    {transport_type}_transport: {transport_type.title()}TransportSelector = None\n"
 
     code += (
         f"    rpc_timeout: int = 5\n"
@@ -64,52 +60,29 @@ def make_api_config_structure() -> NamedTuple:
     )
 
     globals_ = globals().copy()
-    globals_.update(transport_config_structures)
     exec(code, globals_)
     return globals_['ApiConfig']
 
 
-def make_transport_selector_structure(type_, transports):
+def make_transport_selector_structure(type_) -> NamedTuple:
     class_name = f"{type_.title()}TransportSelector"
     code = f"class {class_name}(NamedTuple):\n    pass\n"
-    config_classes = {}
-    for _, transport_name, transport_class in transports:
-        transport_config_structure = make_transport_config_structure(type_, transport_class)
-        if transport_config_structure:
-            config_classes[transport_config_structure.__name__] = transport_config_structure
-            code += f"    {transport_name}: Optional[{transport_config_structure.__name__}] = None\n"
-
-    globals_ = globals().copy()
-    globals_.update(config_classes)
-    exec(code, globals_)
-    return globals_[class_name]
-
-
-def make_transport_config_structure(type_, transport_class):
-    class_name = f"{transport_class.__name__}Config"
-    code = f"class {class_name}(NamedTuple):\n    pass\n"
-    vars = dict(p={})
-
-    parameters = inspect.signature(transport_class.from_config).parameters.values()
-    for parameter in parameters:
-        if parameter.kind in (parameter.POSITIONAL_ONLY, parameter.VAR_POSITIONAL):
-            logger.warning(
-                'Positional-only arguments are not supported in from_config() on transport {}'.format(transport_class)
-            )
-        elif parameter.kind in (parameter.VAR_KEYWORD, ):
-            logger.warning(
-                '**kwargs-style parameters are not supported in from_config() on transport {}'.format(transport_class)
-            )
-        else:
-            name = parameter.name
-            vars['p'][name] = parameter
-            code += f"    {name}: p['{name}'].annotation = p['{name}'].default\n"
+    vars = {}
+    transports = get_available_transports(type_)
+    for transport_name, transport_class in transports.items():
+        vars[transport_class.__name__] = transport_class
+        code += f"    {transport_name}: Optional[{transport_class.__name__}.Config] = None\n"
 
     globals_ = globals().copy()
     globals_.update(vars)
     exec(code, globals_)
     return globals_[class_name]
 
+
+RpcTransportSelector = make_transport_selector_structure('rpc')
+ResultTransportSelector = make_transport_selector_structure('result')
+EventTransportSelector = make_transport_selector_structure('event')
+SchemaTransportSelector = make_transport_selector_structure('schema')
 
 ApiConfig = make_api_config_structure()
 

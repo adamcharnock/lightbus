@@ -105,7 +105,7 @@ class Config(object):
     def _set_transport(self, api_name, transport_type, transport: object):
         self._config.apis.setdefault(api_name, ApiConfig())
         self._config.apis.load_config({
-            'event_transport':
+            'event_transport': 123
         })
 
     def get_rpc_transport(self, api_name=None):
