@@ -32,7 +32,7 @@ class Schema(object):
 
     """
 
-    def __init__(self, schema_transport: SchemaTransport, max_age_seconds: Optional[int]=60):
+    def __init__(self, schema_transport: 'SchemaTransport', max_age_seconds: Optional[int]=60):
         # TODO: Pull max_age_seconds from configuration
         self.schema_transport = schema_transport
         self.max_age_seconds = max_age_seconds

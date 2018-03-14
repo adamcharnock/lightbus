@@ -3,8 +3,9 @@ import logging
 from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, Optional, TypeVar, Type, Callable
 
 from lightbus.api import Api
-from lightbus.exceptions import NothingToListenFor
+from lightbus.exceptions import NothingToListenFor, TransportNotFound
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
+from lightbus.utilities.importing import load_entrypoint_classes
 
 T = TypeVar('T')
 logger = logging.getLogger(__name__)
@@ -161,3 +162,123 @@ class SchemaTransport(Transport):
         Should return a mapping of API names to schemas
         """
         raise NotImplementedError()
+
+
+class TransportRegistry(object):
+    """ Manages access to transports
+
+    """
+
+    class _RegistryEntry(NamedTuple):
+        rpc: RpcTransport = None
+        result: ResultTransport = None
+        event: EventTransport = None
+        schema: SchemaTransport = None
+
+    def __init__(self):
+        self._registry: Dict[str, self._RegistryEntry] = {}
+
+    def load_config(self, config: 'Config'):
+        for api_name, api_config in config.apis().items():
+            for transport_type in ('event', 'rpc', 'result', 'schema'):
+                transport_config = self._get_transport_config(api_config, transport_type)
+                if transport_config:
+                    transport_name, transport_config = transport_config
+                    transport = self._instantiate_transport(transport_type, transport_name, transport_config)
+                    self._set_transport(api_name, transport, transport_type)
+        return self
+
+    def _get_transport_config(self, api_config: 'ApiConfig', type_: str):
+        transport_selector = getattr(api_config, f'{type_}_transport')
+        for transport_name in transport_selector._fields:
+            transport_config = getattr(transport_selector, transport_name)
+            if transport_config is not None:
+                return transport_name, transport_config
+
+    def _instantiate_transport(self, type_, name, config):
+        transport_class = get_transport(type_=type_, name=name)
+        transport = transport_class.from_config(config)
+        return transport
+
+    def _set_transport(self, api_name: str, transport: Transport, transport_type: str):
+        self._registry.setdefault(api_name, self._RegistryEntry())
+        self._registry[api_name] = self._registry[api_name]._replace(**{transport_type: transport})
+
+    def _get_transport(self, api_name: str, transport_type: str):
+        registry_entry = self._registry.get(api_name)
+        api_transport = None
+        if registry_entry:
+            api_transport = getattr(registry_entry, transport_type)
+
+        if not api_transport and api_name != 'default':
+            try:
+                api_transport = self._get_transport('default', transport_type)
+            except TransportNotFound:
+                pass
+
+        if not api_transport:
+            raise TransportNotFound(
+                f"No {transport_type} transport found for API '{api_name}'. Neither was a default "
+                f"API transport found. Either specify a {transport_type} transport for this specific API, "
+                f"or specify a default {transport_type} transport. In most cases setting a default transport "
+                f"is the best course of action."
+            )
+        else:
+            return api_transport
+
+    def set_rpc_transport(self, api_name: str, transport):
+        self._set_transport(api_name, transport, 'rpc')
+
+    def set_result_transport(self, api_name: str, transport):
+        self._set_transport(api_name, transport, 'result')
+
+    def set_event_transport(self, api_name: str, transport):
+        self._set_transport(api_name, transport, 'event')
+
+    def set_schema_transport(self, api_name: str, transport):
+        self._set_transport(api_name, transport, 'schema')
+
+    def get_rpc_transport(self, api_name: str) -> RpcTransport:
+        return self._get_transport(api_name, 'rpc')
+
+    def get_result_transport(self, api_name: str) -> ResultTransport:
+        return self._get_transport(api_name, 'result')
+
+    def get_event_transport(self, api_name: str) -> EventTransport:
+        return self._get_transport(api_name, 'event')
+
+    def get_schema_transport(self, api_name: str) -> SchemaTransport:
+        return self._get_transport(api_name, 'schema')
+
+
+def get_available_transports(type_):
+    loaded = load_entrypoint_classes(f'lightbus_{type_}_transports')
+
+    return {
+        name: class_
+        for module_name, name, class_
+        in loaded
+    }
+
+
+def get_transport(type_, name):
+    for name_, class_ in get_available_transports(type_).items():
+        if name == name_:
+            return class_
+
+    raise TransportNotFound(
+        f"No '{type_}' transport found named '{name}'. Check the transport is installed and "
+        f"has the relevant entrypoints setup in it's setup.py file. Or perhaps "
+        f"you have a typo in your config file."
+    )
+
+
+def get_transport_name(cls: Type['Transport']):
+    for type_ in ('rpc', 'result', 'event', 'schema'):
+        for *_, name, class_ in load_entrypoint_classes(f'lightbus_{type_}_transports'):
+            if cls == class_:
+                return name
+
+    raise TransportNotFound(
+        f"Transport class {cls.__module__}.{cls.__name__} is not specified in any entrypoint."
+    )

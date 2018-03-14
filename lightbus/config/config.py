@@ -1,15 +1,16 @@
 import inspect
 import json as jsonlib
 from pathlib import Path
-from typing import Mapping, Union, Type, NamedTuple, get_type_hints, TypeVar, Callable
+from typing import Mapping, Union, Type, NamedTuple, get_type_hints, TypeVar, Callable, Dict
 
 import jsonschema
 import yaml as yamllib
 
-from lightbus import get_transport
+from lightbus import RpcTransport
 from lightbus.exceptions import TooManyTransportsForApi, TransportNotFound, NoTransportConfigured
 from lightbus.schema.hints_to_schema import python_type_to_json_schemas, SCHEMA_URI
-from .structure import RootConfig, BusConfig, ApiConfig
+from lightbus.transports.base import Transport, get_transport, get_transport_name
+from .structure import RootConfig, BusConfig, ApiConfig, RpcTransportSelector
 
 
 class Config(object):
@@ -39,6 +40,9 @@ class Config(object):
         given api_name, then the root API config will be returned.
         """
         return self._config.apis.get(api_name, None) or self._config.apis['default']
+
+    def apis(self) -> Dict[str, ApiConfig]:
+        return self._config.apis
 
     @classmethod
     def load_file(cls, file_path):
@@ -73,46 +77,6 @@ class Config(object):
         return cls(
             root_config=mapping_to_named_tuple(config, RootConfig)
         )
-
-    def _get_transport(self, api_name, transport_type):
-        # Get the rpc_transport, result_transport, event_transport, or schema_transport key from the config
-        transport_config = getattr(self.api(api_name), f"{transport_type}_transport")
-
-        # Get the short string name for each transport (as used in the entrypoints)
-        transport_names = [name for name, value in transport_config._asdict().items() if value is not None]
-
-        # Sanity checking
-        if len(transport_names) > 1:
-            raise TooManyTransportsForApi(
-                f"Multiple {transport_type} transports configured for API {api_name}. This is not supported, "
-                f"you must only specify a single transport. Transports found: {', '.join(transport_names)}"
-            )
-        elif not transport_names and api_name:
-            # No config available for specific API, fallback to the default api
-            return self._get_transport(api_name, transport_type)
-        elif not transport_names:
-            raise NoTransportConfigured(
-                f"No {transport_type} transport configured for API {api_name}. Either configure a "
-                f"default {transport_type} transport, or specify one specifically for this API."
-            )
-
-        # Ok, we have a single transport for the given API, proceed as normal
-        transport_name = transport_names[0]
-        transport_class = get_transport(type_=transport_type, name=transport_name)
-        transport = transport_class.from_config(getattr(transport_config, transport_name))
-        return transport
-
-    def _set_transport(self, api_name, transport_type, transport: object):
-        self._config.apis.setdefault(api_name, ApiConfig())
-        self._config.apis.load_config({
-            'event_transport': 123
-        })
-
-    def get_rpc_transport(self, api_name=None):
-        return self._get_transport(api_name, 'rpc')
-
-    def set_rpc_transport(self, api_name=None):
-        return self._get_transport(api_name, 'rpc')
 
 
 def validate_config(config: dict):

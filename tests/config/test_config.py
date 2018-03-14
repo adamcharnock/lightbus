@@ -1,5 +1,6 @@
 import pytest
 
+from lightbus import DebugRpcTransport
 from lightbus.config import Config
 from lightbus.config.config import mapping_to_named_tuple, config_as_json_schema
 from lightbus.config.structure import RootConfig, BusConfig
@@ -67,12 +68,6 @@ def test_api_config_default():
 def test_api_config_customised():
     config = Config.load_yaml(EXAMPLE_VALID_YAML)
     assert config.api('my.api').event_transport.redis.batch_size == 1
-
-
-def test_get_rpc_transport():
-    config = Config.load_dict({'apis': {'default': {'rpc_transport': {'redis': {}}}}})
-    transport = config.get_rpc_transport('foo')
-    assert isinstance(transport, RedisRpcTransport)
 
 
 EXAMPLE_VALID_YAML = """

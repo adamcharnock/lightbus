@@ -21,7 +21,7 @@ import inspect
 import logging
 from typing import NamedTuple, Optional, Union, Mapping, Type, Dict
 
-from lightbus import get_available_transports
+from lightbus.transports.base import get_available_transports
 from lightbus.plugins import get_plugins
 
 logger = logging.getLogger(__name__)
