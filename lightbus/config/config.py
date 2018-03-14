@@ -1,16 +1,13 @@
 import inspect
 import json as jsonlib
 from pathlib import Path
-from typing import Mapping, Union, Type, NamedTuple, get_type_hints, TypeVar, Callable, Dict
+from typing import Mapping, Union, Type, get_type_hints, TypeVar, Dict
 
 import jsonschema
 import yaml as yamllib
 
-from lightbus import RpcTransport
-from lightbus.exceptions import TooManyTransportsForApi, TransportNotFound, NoTransportConfigured
 from lightbus.schema.hints_to_schema import python_type_to_json_schemas, SCHEMA_URI
-from lightbus.transports.base import Transport, get_transport, get_transport_name
-from .structure import RootConfig, BusConfig, ApiConfig, RpcTransportSelector
+from .structure import RootConfig, BusConfig, ApiConfig
 
 
 class Config(object):
