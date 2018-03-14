@@ -19,7 +19,7 @@ Benefits of this are:
 """
 import inspect
 import logging
-from typing import NamedTuple, Optional, Union, Mapping, Type
+from typing import NamedTuple, Optional, Union, Mapping, Type, Dict
 
 from lightbus import get_available_transports
 from lightbus.plugins import get_plugins
@@ -123,4 +123,4 @@ class BusConfig(NamedTuple):
 
 class RootConfig(NamedTuple):
     bus: BusConfig = BusConfig()
-    apis: Mapping[str, ApiConfig] = {}
+    apis: Dict[str, ApiConfig] = {}

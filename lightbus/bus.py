@@ -469,6 +469,20 @@ def create(
         loop=None,
         **kwargs) -> BusNode:
 
+    from lightbus.config import Config
+    config = Config.load_dict({
+        'apis': {
+            'default': {
+                'rpc_transport': {},
+                'result_transport': {},
+                'event_transport': {},
+                'schema_transport': {},
+            }
+        }
+    })
+
+    default = config.api('default')
+
     bus_client = client_class(
         rpc_transport=rpc_transport or RedisRpcTransport(),
         result_transport=result_transport or RedisResultTransport(),

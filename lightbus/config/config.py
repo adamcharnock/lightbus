@@ -74,27 +74,45 @@ class Config(object):
             root_config=mapping_to_named_tuple(config, RootConfig)
         )
 
-    def get_rpc_transport(self, api_name=None):
-        transport_config = self.api(api_name).rpc_transport
+    def _get_transport(self, api_name, transport_type):
+        # Get the rpc_transport, result_transport, event_transport, or schema_transport key from the config
+        transport_config = getattr(self.api(api_name), f"{transport_type}_transport")
+
+        # Get the short string name for each transport (as used in the entrypoints)
         transport_names = [name for name, value in transport_config._asdict().items() if value is not None]
+
+        # Sanity checking
         if len(transport_names) > 1:
             raise TooManyTransportsForApi(
-                "Multiple RPCs transports configured for API {}. This is not supported, you must only "
-                "specify a single transport. Transports found: {}".format(api_name, ', '.join(transport_names))
+                f"Multiple {transport_type} transports configured for API {api_name}. This is not supported, "
+                f"you must only specify a single transport. Transports found: {', '.join(transport_names)}"
             )
         elif not transport_names and api_name:
-            # Fallback to the default transport
-            return self.get_rpc_transport(api_name=None)
+            # No config available for specific API, fallback to the default api
+            return self._get_transport(api_name, transport_type)
         elif not transport_names:
             raise NoTransportConfigured(
-                "No RPC transport configured for API {}. Either configure a default RPC transport, "
-                "or specify one specifically for this API.".format(api_name)
+                f"No {transport_type} transport configured for API {api_name}. Either configure a "
+                f"default {transport_type} transport, or specify one specifically for this API."
             )
 
+        # Ok, we have a single transport for the given API, proceed as normal
         transport_name = transport_names[0]
-        transport_class = get_transport(type_='rpc', name=transport_name)
+        transport_class = get_transport(type_=transport_type, name=transport_name)
         transport = transport_class.from_config(getattr(transport_config, transport_name))
         return transport
+
+    def _set_transport(self, api_name, transport_type, transport: object):
+        self._config.apis.setdefault(api_name, ApiConfig())
+        self._config.apis.load_config({
+            'event_transport':
+        })
+
+    def get_rpc_transport(self, api_name=None):
+        return self._get_transport(api_name, 'rpc')
+
+    def set_rpc_transport(self, api_name=None):
+        return self._get_transport(api_name, 'rpc')
 
 
 def validate_config(config: dict):
