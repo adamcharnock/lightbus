@@ -60,7 +60,8 @@ async def test_remote_rpc_call(dummy_bus: BusNode, get_dummy_events):
 
 @pytest.mark.run_loop
 async def test_local_rpc_call(dummy_bus: BusNode, rpc_consumer, get_dummy_events, mocker):
-    mocker.patch.object(dummy_bus.bus_client.rpc_transport, '_get_fake_messages', return_value=[
+    rpc_transport = dummy_bus.bus_client.transport_registry.get_rpc_transport('default')
+    mocker.patch.object(rpc_transport, '_get_fake_messages', return_value=[
         RpcMessage(rpc_id='123abc', api_name='example.test', procedure_name='my_method', kwargs={'f': 123})
     ])
 
@@ -123,7 +124,8 @@ async def test_send_event(dummy_bus: BusNode, get_dummy_events):
 
 @pytest.mark.run_loop
 async def test_execute_events(dummy_bus: BusNode, dummy_listener, get_dummy_events, mocker):
-    mocker.patch.object(dummy_bus.bus_client.event_transport, '_get_fake_message',
+    event_transport = dummy_bus.bus_client.transport_registry.get_event_transport('default')
+    mocker.patch.object(event_transport, '_get_fake_message',
                         return_value=EventMessage(api_name='example.test', event_name='my_event', kwargs={'f': 123})
     )
 

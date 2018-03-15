@@ -78,7 +78,8 @@ class StatePlugin(LightbusPlugin):
             self.ping_interval = args.ping_interval
 
     async def before_server_start(self, *, bus_client: BusClient):
-        await bus_client.event_transport.send_event(
+        event_transport = bus_client.transport_registry.get_event_transport('internal.metrics')
+        await event_transport.send_event(
             EventMessage(
                 api_name='internal.state',
                 event_name='server_started',
@@ -98,7 +99,8 @@ class StatePlugin(LightbusPlugin):
             )
 
     async def after_server_stopped(self, *, bus_client: BusClient):
-        await bus_client.event_transport.send_event(
+        event_transport = bus_client.transport_registry.get_event_transport('internal.metrics')
+        await event_transport.send_event(
             EventMessage(api_name='internal.state', event_name='server_stopped', kwargs=dict(
                 process_name=bus_client.process_name,
             )),
@@ -106,9 +108,10 @@ class StatePlugin(LightbusPlugin):
         )
 
     async def _send_ping(self, bus_client: BusClient):
+        event_transport = bus_client.transport_registry.get_event_transport('internal.metrics')
         while True:
             await asyncio.sleep(self.ping_interval)
-            await bus_client.event_transport.send_event(
+            await event_transport.send_event(
                 EventMessage(
                     api_name='internal.state',
                     event_name='server_ping',

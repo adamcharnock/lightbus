@@ -63,7 +63,8 @@ async def test_rpc_execution(called_hooks, dummy_bus: BusNode, loop, mocker, add
         else:
             raise StopIt()
 
-    m = mocker.patch.object(dummy_bus.bus_client.rpc_transport, 'consume_rpcs', side_effect=dummy_transport_consume_rpcs)
+    rpc_transport = dummy_bus.bus_client.transport_registry.get_rpc_transport('default')
+    m = mocker.patch.object(rpc_transport, 'consume_rpcs', side_effect=dummy_transport_consume_rpcs)
 
     try:
         await dummy_bus.bus_client.consume_rpcs()

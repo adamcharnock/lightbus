@@ -111,3 +111,7 @@ class TooManyTransportsForApi(LightbusException):
 
 class NoTransportConfigured(LightbusException):
     pass
+
+
+class NoApisToListenOn(LightbusException):
+    pass

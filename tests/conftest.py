@@ -228,11 +228,12 @@ def dummy_listener(dummy_bus: BusNode, loop):
 @pytest.fixture
 def get_dummy_events(mocker, dummy_bus: BusNode):
     """Get events sent on the dummy bus"""
-    mocker.spy(dummy_bus.bus_client.event_transport, 'send_event')
+    event_transport = dummy_bus.bus_client.transport_registry.get_event_transport('default')
+    mocker.spy(event_transport, 'send_event')
 
     def get_events():
         events = []
-        send_event_calls = dummy_bus.bus_client.event_transport.send_event.call_args_list
+        send_event_calls = event_transport.send_event.call_args_list
         for args, kwargs in send_event_calls:
             assert isinstance(args[0], EventMessage), 'Argument passed to send_event was not an EventMessage'
             events.append(args[0])
@@ -242,13 +243,13 @@ def get_dummy_events(mocker, dummy_bus: BusNode):
 
 
 @pytest.yield_fixture
-def rpc_consumer(dummy_bus: BusNode, loop, mocker):
+def rpc_consumer(loop, dummy_bus: BusNode, mocker):
     """Start the dummy bus consuming RPCs"""
     task = None
 
     try:
         task = asyncio.ensure_future(
-            dummy_bus.bus_client.consume_rpcs(),
+            dummy_bus.bus_client.consume_rpcs(apis=['my.api']),
             loop=loop
         )
         yield

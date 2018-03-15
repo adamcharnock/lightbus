@@ -4,13 +4,13 @@ import inspect
 import logging
 import time
 from asyncio.futures import CancelledError
-from typing import Optional
+from typing import Optional, List
 
 from lightbus.config import Config
 from lightbus.schema import Schema
 from lightbus.api import registry
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
-    InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError
+    InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError, NoApisToListenOn
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
@@ -136,28 +136,45 @@ class BusClient(object):
 
     # RPCs
 
-    async def consume_rpcs(self, apis=None):
+    async def consume_rpcs(self, apis: List[str]=None):
         if apis is None:
             apis = registry.all()
 
+        if not apis:
+            raise NoApisToListenOn(
+                'No APIs to consume on in consume_rpcs(). Either this method was called with apis=[], '
+                'or the API registry is empty.'
+            )
+
         while True:
-            rpc_messages = await self.rpc_transport.consume_rpcs(apis)
-            for rpc_message in rpc_messages:
-                await plugin_hook('before_rpc_execution', rpc_message=rpc_message, bus_client=self)
-                try:
-                    result = await self.call_rpc_local(
-                        api_name=rpc_message.api_name,
-                        name=rpc_message.procedure_name,
-                        kwargs=rpc_message.kwargs
-                    )
-                except SuddenDeathException:
-                    # Used to simulate message failure for testing
-                    pass
-                else:
-                    result_message = ResultMessage(result=result, rpc_id=rpc_message.rpc_id)
-                    await plugin_hook('after_rpc_execution', rpc_message=rpc_message, result_message=result_message,
-                                      bus_client=self)
-                    await self.send_result(rpc_message=rpc_message, result_message=result_message)
+            # Not all APIs will necessarily be served by the same transport, so group them
+            # accordingly
+            api_names_by_transport = self.transport_registry.get_rpc_transports(apis)
+            coroutines = [
+                self._consume_rpcs_with_transport(rpc_transport, apis)
+                for rpc_transport, apis
+                in api_names_by_transport
+            ]
+            await asyncio.gather(*coroutines)
+
+    async def _consume_rpcs_with_transport(self, rpc_transport, apis):
+        rpc_messages = await rpc_transport.consume_rpcs(apis)
+        for rpc_message in rpc_messages:
+            await plugin_hook('before_rpc_execution', rpc_message=rpc_message, bus_client=self)
+            try:
+                result = await self.call_rpc_local(
+                    api_name=rpc_message.api_name,
+                    name=rpc_message.procedure_name,
+                    kwargs=rpc_message.kwargs
+                )
+            except SuddenDeathException:
+                # Used to simulate message failure for testing
+                pass
+            else:
+                result_message = ResultMessage(result=result, rpc_id=rpc_message.rpc_id)
+                await plugin_hook('after_rpc_execution', rpc_message=rpc_message, result_message=result_message,
+                                  bus_client=self)
+                await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
     async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict, options: dict):
         rpc_transport = self.transport_registry.get_rpc_transport(api_name)
