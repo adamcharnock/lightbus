@@ -88,7 +88,8 @@ async def test_event_execution(called_hooks, dummy_bus: BusNode, loop, add_base_
     # Send the event message using a lower-level API to avoid triggering the
     # before_event_sent & after_event_sent plugin hooks. We don't care about those here
     event_message = EventMessage(api_name='my.dummy', event_name='my_event', kwargs={'field': 1})
-    await dummy_bus.bus_client.event_transport.send_event(event_message, options={})
+    event_transport = dummy_bus.bus_client.transport_registry.get_event_transport('default')
+    await event_transport.send_event(event_message, options={})
     await asyncio.sleep(0.1)
 
     assert called_hooks() == ['before_event_execution', 'after_event_execution']

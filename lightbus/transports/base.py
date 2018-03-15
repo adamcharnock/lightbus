@@ -188,7 +188,7 @@ class TransportRegistry(object):
     def __init__(self):
         self._registry: Dict[str, self._RegistryEntry] = {}
 
-    def load_config(self, config: 'Config'):
+    def load_config(self, config: 'Config') -> 'TransportRegistry':
         for api_name, api_config in config.apis().items():
             for transport_type in ('event', 'rpc', 'result', 'schema'):
                 transport_config = self._get_transport_config(api_config, transport_type)
@@ -244,7 +244,7 @@ class TransportRegistry(object):
             apis_by_transport[transport].append(api_name)
         return list(apis_by_transport.items())
 
-    def _has_transport(self, api_name: str, transport_type: str):
+    def _has_transport(self, api_name: str, transport_type: str) -> bool:
         try:
             self._get_transport(api_name, transport_type)
         except TransportNotFound:
@@ -276,6 +276,18 @@ class TransportRegistry(object):
     def get_schema_transport(self, api_name: str, default=empty) -> SchemaTransport:
         # TODO: This is only available globally, not per api. Perhaps it needs to be be under apis in the config
         return self._get_transport(api_name, 'schema', default=default)
+
+    def has_rpc_transport(self, api_name: str) -> bool:
+        self._has_transport(api_name, 'rpc')
+
+    def has_result_transport(self, api_name: str) -> bool:
+        self._has_transport(api_name, 'result')
+
+    def has_event_transport(self, api_name: str) -> bool:
+        self._has_transport(api_name, 'event')
+
+    def has_schema_transport(self, api_name: str) -> bool:
+        self._has_transport(api_name, 'schema')
 
     def get_rpc_transports(self, api_names: Sequence[str]) -> List[Tuple[RpcTransport, List[str]]]:
         """Get a mapping of transports to lists of APIs

@@ -91,7 +91,7 @@ class BusClient(object):
                 ) if rpc_transport else None,
                 "Event transport": L(
                     '{}.{}', event_transport.__module__,
-                    Bold(event_transport.__class__.__name__)
+                    Bold(self.event_transport.__class__.__name__)
                 ) if rpc_transport else None,
                 "Schema transport": L(
                     '{}.{}', self.schema.schema_transport.__module__,
@@ -263,8 +263,9 @@ class BusClient(object):
             )
 
         event_message = EventMessage(api_name=api.meta.name, event_name=name, kwargs=kwargs)
+        event_transport = self.transport_registry.get_event_transport(api_name)
         await plugin_hook('before_event_sent', event_message=event_message, bus_client=self)
-        await self.event_transport.send_event(event_message, options=options)
+        await event_transport.send_event(event_message, options=options)
         await plugin_hook('after_event_sent', event_message=event_message, bus_client=self)
 
     async def listen_for_event(self, api_name, name, listener, options: dict=None) -> asyncio.Task:
@@ -279,7 +280,8 @@ class BusClient(object):
         async def listen_for_event_task():
             # event_transport.consume() returns an asynchronous generator
             # which will provide us with messages
-            consumer = self.event_transport.consume(
+            event_transport = self.transport_registry.get_event_transport(api_name)
+            consumer = event_transport.consume(
                 listen_for=[(api_name, name)],
                 context=listener_context,
                 **options
@@ -297,7 +299,7 @@ class BusClient(object):
 
                     # Let the event transport know that it can consider the
                     # event message to have been successfully consumed
-                    await self.event_transport.consumption_complete(event_message, listener_context)
+                    await event_transport.consumption_complete(event_message, listener_context)
                     await plugin_hook('after_event_execution', event_message=event_message, bus_client=self)
 
         return asyncio.ensure_future(
@@ -474,7 +476,7 @@ def create(
         **kwargs) -> BusNode:
 
     from lightbus.config import Config
-    config = Config.load_file(config or {})
+    config = Config.load_dict(config or {})
     transport_registry = TransportRegistry().load_config(config)
 
     if not transport_registry.has_rpc_transport('default'):
