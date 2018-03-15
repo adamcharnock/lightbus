@@ -91,7 +91,7 @@ class BusClient(object):
                 ) if rpc_transport else None,
                 "Event transport": L(
                     '{}.{}', event_transport.__module__,
-                    Bold(self.event_transport.__class__.__name__)
+                    Bold(event_transport.__class__.__name__)
                 ) if rpc_transport else None,
                 "Schema transport": L(
                     '{}.{}', self.schema.schema_transport.__module__,
@@ -160,8 +160,11 @@ class BusClient(object):
                     await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
     async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict, options: dict):
+        rpc_transport = self.transport_registry.get_rpc_transport(api_name)
+        result_transport = self.transport_registry.get_result_transport(api_name)
+
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)
-        return_path = self.result_transport.get_return_path(rpc_message)
+        return_path = result_transport.get_return_path(rpc_message)
         rpc_message.return_path = return_path
         options = options or {}
         timeout = options.get('timeout', 5)  # config: rpc_timeout
@@ -173,7 +176,7 @@ class BusClient(object):
 
         future = asyncio.gather(
             self.receive_result(rpc_message, return_path, options=options),
-            self.rpc_transport.call_rpc(rpc_message, options=options),
+            rpc_transport.call_rpc(rpc_message, options=options),
         )
 
         await plugin_hook('before_rpc_call', rpc_message=rpc_message, bus_client=self)
@@ -309,10 +312,12 @@ class BusClient(object):
     # Results
 
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
-        return await self.result_transport.send_result(rpc_message, result_message, rpc_message.return_path)
+        result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
+        return await result_transport.send_result(rpc_message, result_message, rpc_message.return_path)
 
     async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict):
-        return await self.result_transport.receive_result(rpc_message, return_path, options)
+        result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
+        return await result_transport.receive_result(rpc_message, return_path, options)
 
     @contextlib.contextmanager
     def _register_listener(self, api_name, event_name):
