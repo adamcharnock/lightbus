@@ -1,6 +1,6 @@
 import inspect
 import logging
-from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, Optional, TypeVar, Type, Callable
+from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, Optional, TypeVar, Type, Callable, Hashable
 
 from lightbus.api import Api
 from lightbus.exceptions import NothingToListenFor, TransportNotFound
@@ -236,6 +236,14 @@ class TransportRegistry(object):
         else:
             return api_transport
 
+    def _get_transports(self, api_names: Sequence[str], transport_type: str) -> List[Tuple[Transport, List[str]]]:
+        apis_by_transport: Dict[Transport, List[str]] = {}
+        for api_name in api_names:
+            transport = self._get_transport(api_name, transport_type)
+            apis_by_transport.setdefault(transport, [])
+            apis_by_transport[transport].append(api_name)
+        return list(apis_by_transport.items())
+
     def _has_transport(self, api_name: str, transport_type: str):
         try:
             self._get_transport(api_name, transport_type)
@@ -268,6 +276,20 @@ class TransportRegistry(object):
     def get_schema_transport(self, api_name: str, default=empty) -> SchemaTransport:
         # TODO: This is only available globally, not per api. Perhaps it needs to be be under apis in the config
         return self._get_transport(api_name, 'schema', default=default)
+
+    def get_rpc_transports(self, api_names: Sequence[str]) -> List[Tuple[RpcTransport, List[str]]]:
+        """Get a mapping of transports to lists of APIs
+
+        This is useful when multiple APIs can be served by a single transport
+        """
+        return self._get_transports(api_names, 'rpc')
+
+    def get_event_transports(self, api_names: Sequence[str]) -> List[Tuple[EventTransport, List[str]]]:
+        """Get a mapping of transports to lists of APIs
+
+        This is useful when multiple APIs can be served by a single transport
+        """
+        return self._get_transports(api_names, 'event')
 
 
 def get_available_transports(type_):

@@ -1,6 +1,7 @@
 import pytest
 
-from lightbus import RedisRpcTransport, RedisResultTransport, RedisEventTransport, RedisSchemaTransport
+from lightbus import RedisRpcTransport, RedisResultTransport, RedisEventTransport, RedisSchemaTransport, \
+    DebugRpcTransport, DebugEventTransport
 from lightbus.config import Config
 from lightbus.exceptions import TransportNotFound
 from lightbus.transports.base import TransportRegistry
@@ -90,3 +91,41 @@ def test_transport_registry_load_config(redis_default_config):
     assert registry.get_result_transport('default').__class__ == RedisResultTransport
     assert registry.get_event_transport('default').__class__ == RedisEventTransport
     assert registry.get_schema_transport('default').__class__ == RedisSchemaTransport
+
+
+def test_transport_registry_get_rpc_transports(redis_default_config):
+    registry = TransportRegistry().load_config(redis_default_config)
+    debug_transport = DebugRpcTransport
+    redis_transport = RedisRpcTransport
+
+    registry.set_rpc_transport('redis1', redis_transport)
+    registry.set_rpc_transport('redis2', redis_transport)
+    registry.set_rpc_transport('debug1', debug_transport)
+    registry.set_rpc_transport('debug2', debug_transport)
+    transports = registry.get_rpc_transports(['default', 'foo', 'bar', 'redis1', 'redis2', 'debug1', 'debug2'])
+
+    default_redis_transport = registry.get_rpc_transport('default')
+
+    transports = dict(transports)
+    assert set(transports[default_redis_transport]) == {'default', 'foo', 'bar'}
+    assert set(transports[debug_transport]) == {'debug1', 'debug2'}
+    assert set(transports[redis_transport]) == {'redis1', 'redis2'}
+
+
+def test_transport_registry_get_event_transports(redis_default_config):
+    registry = TransportRegistry().load_config(redis_default_config)
+    debug_transport = DebugEventTransport
+    redis_transport = RedisEventTransport
+
+    registry.set_event_transport('redis1', redis_transport)
+    registry.set_event_transport('redis2', redis_transport)
+    registry.set_event_transport('debug1', debug_transport)
+    registry.set_event_transport('debug2', debug_transport)
+    transports = registry.get_event_transports(['default', 'foo', 'bar', 'redis1', 'redis2', 'debug1', 'debug2'])
+
+    default_redis_transport = registry.get_event_transport('default')
+
+    transports = dict(transports)
+    assert set(transports[default_redis_transport]) == {'default', 'foo', 'bar'}
+    assert set(transports[debug_transport]) == {'debug1', 'debug2'}
+    assert set(transports[redis_transport]) == {'redis1', 'redis2'}
