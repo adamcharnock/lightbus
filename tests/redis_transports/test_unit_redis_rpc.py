@@ -2,8 +2,9 @@ import asyncio
 
 import pytest
 
+from lightbus import RedisRpcTransport
 from lightbus.message import RpcMessage
-
+from lightbus.serializers import BlobMessageSerializer, BlobMessageDeserializer
 
 pytestmark = pytest.mark.unit
 
@@ -63,3 +64,26 @@ async def test_consume_rpcs(redis_client, redis_rpc_transport, dummy_api):
     assert message.procedure_name == 'my_proc'
     assert message.kwargs == {'field': 'value'}
     assert message.return_path == 'abc'
+
+
+@pytest.mark.run_loop
+async def test_from_config(redis_client):
+    await redis_client.select(5)
+    host, port = redis_client.address
+    transport = RedisRpcTransport.from_config(
+        url=f'redis://127.0.0.1:{port}/5',
+        connection_parameters=dict(maxsize=123),
+        batch_size=123,
+        # Non default serializers, event though they wouldn't make sense in this context
+        serializer='lightbus.serializers.BlobMessageSerializer',
+        deserializer='lightbus.serializers.BlobMessageDeserializer',
+    )
+    with await transport.connection_manager() as transport_client:
+        assert transport_client.connection.address == ('127.0.0.1', port)
+        assert transport_client.connection.db == 5
+        await transport_client.set('x', 1)
+        assert await redis_client.get('x')
+
+    assert transport._redis_pool.connection.maxsize == 123
+    assert isinstance(transport.serializer, BlobMessageSerializer)
+    assert isinstance(transport.deserializer, BlobMessageDeserializer)

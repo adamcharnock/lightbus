@@ -5,6 +5,7 @@ import pytest
 from base64 import b64decode
 
 from lightbus.message import RpcMessage, ResultMessage
+from lightbus.serializers import BlobMessageDeserializer, ByFieldMessageSerializer, ByFieldMessageDeserializer
 from lightbus.transports.redis import RedisResultTransport
 
 
@@ -92,3 +93,26 @@ async def test_receive_result(redis_result_transport: RedisResultTransport, redi
     assert result_message.result == 'All done! 😎'
     assert result_message.rpc_id == '123abc'
     assert result_message.error == False
+
+
+@pytest.mark.run_loop
+async def test_from_config(redis_client):
+    await redis_client.select(5)
+    host, port = redis_client.address
+    transport = RedisResultTransport.from_config(
+        url=f'redis://127.0.0.1:{port}/5',
+        connection_parameters=dict(maxsize=123),
+        # Non default serializers, event though they wouldn't make sense in this context
+        serializer='lightbus.serializers.ByFieldMessageSerializer',
+        deserializer='lightbus.serializers.ByFieldMessageDeserializer',
+    )
+    with await transport.connection_manager() as transport_client:
+        assert transport_client.connection.address == ('127.0.0.1', port)
+        assert transport_client.connection.db == 5
+        await transport_client.set('x', 1)
+        assert await redis_client.get('x')
+
+    assert transport._redis_pool.connection.maxsize == 123
+    assert isinstance(transport.serializer, ByFieldMessageSerializer)
+    assert isinstance(transport.deserializer, ByFieldMessageDeserializer)
+

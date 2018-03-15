@@ -3,6 +3,7 @@ import logging
 import time
 from datetime import datetime
 from typing import Sequence, Optional, Union, Generator, Dict, NamedTuple, Mapping
+from urllib.parse import urlparse
 
 import aioredis
 import asyncio
@@ -30,14 +31,18 @@ Since = Union[str, datetime, None]
 
 
 class RedisTransportMixin(object):
-    connection_kwargs: dict = {
-        'address': ('localhost', 6379),
+    connection_parameters: dict = {
+        'address': 'redis://localhost:6379',
         'maxsize': 100,
     }
     _redis_pool: Optional[Redis] = None
 
-    def set_redis_pool(self, redis_pool: Optional[Redis]):
-        if redis_pool:
+    def set_redis_pool(self, redis_pool: Optional[Redis], url: str=None, connection_parameters: Mapping=frozendict()):
+        if not redis_pool:
+            self.connection_parameters.update(connection_parameters)
+            if url:
+                self.connection_parameters['address'] = url
+        else:
             if isinstance(redis_pool, (ConnectionsPool,)):
                 # If they've passed a raw pool then wrap it up in a Redis object.
                 # aioredis.create_redis_pool() normally does this for us.
@@ -56,15 +61,10 @@ class RedisTransportMixin(object):
 
             self._redis_pool = redis_pool
 
-    def set_connection_kwargs(self, connection_kwargs: dict):
-        # Apply sensible default values from above
-        connection_kwargs = connection_kwargs.copy()
-        connection_kwargs.update(**self.connection_kwargs)
-        self.connection_kwargs = connection_kwargs
-
     async def connection_manager(self) -> Redis:
         if self._redis_pool is None:
-            self._redis_pool = await aioredis.create_redis_pool(**self.connection_kwargs)
+            self._redis_pool = await aioredis.create_redis_pool(**self.connection_parameters)
+
         try:
             internal_pool = self._redis_pool._pool_or_conn
             if hasattr(internal_pool, 'size') and hasattr(internal_pool, 'maxsize'):
@@ -74,7 +74,7 @@ class RedisTransportMixin(object):
                         "but may be you have more event listeners than connections available to the Redis pool. "
                         "You can increase the redis pull size by specifying the `maxsize` "
                         "parameter when instantiating each Redis transport. Current maxsize is: "
-                        "".format(self.connection_kwargs.get('maxsize'))
+                        "".format(self.connection_parameters.get('maxsize'))
                     )
 
             return await self._redis_pool
@@ -84,16 +84,42 @@ class RedisTransportMixin(object):
 
 class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
-    def __init__(self, redis_pool=None, *, track_consumption_progress=False,
-                 serializer=ByFieldMessageSerializer(), deserializer=ByFieldMessageDeserializer(RpcMessage),
-                 **connection_kwargs
+    def __init__(self, *,
+                 redis_pool=None,
+                 url=None,
+                 track_consumption_progress=False,
+                 serializer=ByFieldMessageSerializer(),
+                 deserializer=ByFieldMessageDeserializer(RpcMessage),
+                 connection_parameters: Mapping=frozendict(maxsize=100),
+                 batch_size=10,
                  ):
-        self.set_redis_pool(redis_pool)
-        self.set_connection_kwargs(connection_kwargs)
+        self.set_redis_pool(redis_pool, url, connection_parameters)
         self._latest_ids = {}
         self.track_consumption_progress = track_consumption_progress  # TODO: Implement (rename: replay?)
         self.serializer = serializer
         self.deserializer = deserializer
+        self.batch_size = batch_size
+
+    @classmethod
+    def from_config(cls,
+                    url: str='redis://127.0.0.1:6379/0',
+                    connection_parameters: Mapping=frozendict(maxsize=100),
+                    batch_size: int=10,
+                    serializer: str='lightbus.serializers.ByFieldMessageSerializer',
+                    deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
+                    track_consumption_progress=False,
+                    ):
+        serializer = import_from_string(serializer)()
+        deserializer = import_from_string(deserializer)(RpcMessage)
+
+        return cls(
+            url=url,
+            track_consumption_progress=track_consumption_progress,
+            serializer=serializer,
+            deserializer=deserializer,
+            connection_parameters=connection_parameters,
+            batch_size=batch_size,
+        )
 
     async def call_rpc(self, rpc_message: RpcMessage, options: dict):
         stream = '{}:stream'.format(rpc_message.api_name)
@@ -129,7 +155,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         with await self.connection_manager() as redis:
             # TODO: Count/timeout configurable
             try:
-                stream_messages = await redis.xread(streams, latest_ids=latest_ids, count=10)  # config: batch_size (rpc transport)
+                stream_messages = await redis.xread(streams, latest_ids=latest_ids, count=self.batch_size)
             except RuntimeError:
                 # For some reason aio-redis likes to eat the CancelledError and
                 # turn it into a Runtime error:
@@ -152,33 +178,37 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
         return rpc_messages
 
-    @classmethod
-    def from_config(cls,
-                    url: str='redis://127.0.0.1:6379/0',
-                    pool_parameters: Mapping=frozendict(maxsize=100),
-                    batch_size: int=10,
-                    serializer: str='lightbus.serializers.ByFieldMessageSerializer',
-                    deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
-                    ):
-        serializer = import_from_string(serializer)()
-        deserializer = import_from_string(deserializer)(RpcMessage)
-
-        params = locals()
-        params.pop('cls')
-        return cls(**params)
-
 
 class RedisResultTransport(RedisTransportMixin, ResultTransport):
 
-    def __init__(self, redis_pool=None, *,
-                 serializer=BlobMessageSerializer(), deserializer=BlobMessageDeserializer(ResultMessage),
-                 **connection_kwargs
+    def __init__(self, *,
+                 redis_pool=None,
+                 url=None,
+                 serializer=BlobMessageSerializer(),
+                 deserializer=BlobMessageDeserializer(ResultMessage),
+                 connection_parameters: Mapping=frozendict(maxsize=100),
                  ):
         # NOTE: We use the blob serializer here, as the results come back as values in a list
-        self.set_redis_pool(redis_pool)
-        self.set_connection_kwargs(connection_kwargs)
+        self.set_redis_pool(redis_pool, url, connection_parameters)
         self.serializer = serializer
         self.deserializer = deserializer
+
+    @classmethod
+    def from_config(cls,
+                    url: str='redis://127.0.0.1:6379/0',
+                    serializer: str='lightbus.serializers.BlobMessageSerializer',
+                    deserializer: str='lightbus.serializers.BlobMessageDeserializer',
+                    connection_parameters: Mapping=frozendict(maxsize=100),
+                    ):
+        serializer = import_from_string(serializer)()
+        deserializer = import_from_string(deserializer)(ResultMessage)
+
+        return cls(
+            url=url,
+            serializer=serializer,
+            deserializer=deserializer,
+            connection_parameters=connection_parameters,
+        )
 
     def get_return_path(self, rpc_message: RpcMessage) -> str:
         return 'redis+key://{}.{}:result:{}'.format(
@@ -235,36 +265,47 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         assert return_path.startswith('redis+key://')
         return return_path[12:]
 
-    @classmethod
-    def from_config(cls,
-                    url: str='redis://127.0.0.1:6379/0',
-                    pool_parameters: Mapping=frozendict(maxsize=100),
-                    batch_size: int=10,
-                    serializer: str='lightbus.serializers.BlobMessageSerializer',
-                    deserializer: str='lightbus.serializers.BlobMessageDeserializer',
-                    ):
-        serializer = import_from_string(serializer)()
-        deserializer = import_from_string(deserializer)(ResultMessage)
-
-        params = locals()
-        params.pop('cls')
-        return cls(**params)
-
 
 class RedisEventTransport(RedisTransportMixin, EventTransport):
 
     def __init__(self, redis_pool=None, *,
-                 serializer=ByFieldMessageSerializer(), deserializer=ByFieldMessageDeserializer(EventMessage),
-                 track_consumption_progress=False, **connection_kwargs
+                 url=None,
+                 serializer=ByFieldMessageSerializer(),
+                 deserializer=ByFieldMessageDeserializer(EventMessage),
+                 track_consumption_progress=False,
+                 connection_parameters: Mapping=frozendict(maxsize=100),
+                 batch_size=10,
                  ):
-        self.set_redis_pool(redis_pool)
-        self.set_connection_kwargs(connection_kwargs)
+        self.set_redis_pool(redis_pool, url, connection_parameters)
         self.track_consumption_progress = track_consumption_progress  # TODO: Implement (rename: replay?)
         self.serializer = serializer
         self.deserializer = deserializer
+        self.batch_size = batch_size
 
         self._task = None
         self._reload = False
+
+    @classmethod
+    def from_config(cls,
+                    url: str='redis://127.0.0.1:6379/0',
+                    connection_parameters: Mapping=frozendict(maxsize=100),
+                    batch_size: int=10,
+                    serializer: str='lightbus.serializers.ByFieldMessageSerializer',
+                    deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
+                    track_consumption_progress: bool=False,
+                    ):
+        serializer = import_from_string(serializer)()
+        deserializer = import_from_string(deserializer)(EventMessage)
+
+        return cls(
+            redis_pool=None,
+            url=url,
+            connection_parameters=connection_parameters,
+            batch_size=batch_size,
+            serializer=serializer,
+            deserializer=deserializer,
+            track_consumption_progress=track_consumption_progress,
+        )
 
     async def send_event(self, event_message: EventMessage, options: dict):
         """Publish an event"""
@@ -317,8 +358,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     stream_messages = await redis.xread(
                         streams=list(streams.keys()),
                         latest_ids=list(streams.values()),
-                        # config: batch_size (event transport)
-                        count=10,  # TODO: Make configurable, add timeout too
+                        count=self.batch_size,
                     )
                 except aioredis.ConnectionForcedCloseError:
                     return
@@ -359,28 +399,26 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
     async def consumption_complete(self, event_message: EventMessage, context: dict):
         context['streams'][event_message.redis_stream] = event_message.redis_id
 
-    @classmethod
-    def from_config(cls,
-                    url: str='redis://127.0.0.1:6379/0',
-                    pool_parameters: Mapping=frozendict(maxsize=100),
-                    batch_size: int=10,
-                    serializer: str='lightbus.serializers.ByFieldMessageSerializer',
-                    deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
-                    ):
-        serializer = import_from_string(serializer)()
-        deserializer = import_from_string(deserializer)(EventMessage)
-
-        params = locals()
-        params.pop('cls')
-        return cls(**params)
-
 
 class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
 
-    def __init__(self, redis_pool=None, **connection_kwargs):
-        self.set_redis_pool(redis_pool)
-        self.set_connection_kwargs(connection_kwargs)
+    def __init__(self, *,
+                 redis_pool=None,
+                 url: str = 'redis://127.0.0.1:6379/0',
+                 connection_parameters: Mapping=frozendict()
+                 ):
+        self.set_redis_pool(redis_pool, url, connection_parameters)
         self._latest_ids = {}
+
+    @classmethod
+    def from_config(cls,
+                    url: str='redis://127.0.0.1:6379/0',
+                    connection_parameters: Mapping=frozendict(),
+                    ):
+        return cls(
+            url=url,
+            connection_parameters=connection_parameters,
+        )
 
     def schema_key(self, api_name):
         return 'schema:{}'.format(api_name)
@@ -424,15 +462,6 @@ class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
                 if schema:
                     schemas[api_name] = json.loads(schema)
         return schemas
-
-    @classmethod
-    def from_config(cls,
-                    url: str='redis://127.0.0.1:6379/0',
-                    pool_parameters: Mapping=frozendict(maxsize=10),
-                    ):
-        params = locals()
-        params.pop('cls')
-        return cls(**params)
 
 
 def redis_stream_id_subtract_one(message_id):

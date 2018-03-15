@@ -60,3 +60,20 @@ async def test_load(redis_schema_transport: RedisSchemaTransport, redis_client):
 async def test_load_no_apis(redis_schema_transport: RedisSchemaTransport, redis_client):
     schemas = await redis_schema_transport.load()
     assert schemas == {}
+
+
+@pytest.mark.run_loop
+async def test_from_config(redis_client):
+    await redis_client.select(5)
+    host, port = redis_client.address
+    transport = RedisSchemaTransport.from_config(
+        url=f'redis://127.0.0.1:{port}/5',
+        connection_parameters=dict(maxsize=3),
+    )
+    with await transport.connection_manager() as transport_client:
+        assert transport_client.connection.address == ('127.0.0.1', port)
+        assert transport_client.connection.db == 5
+        await transport_client.set('x', 1)
+        assert await redis_client.get('x')
+
+    assert transport._redis_pool.connection.maxsize == 3

@@ -4,6 +4,8 @@ from datetime import datetime
 import pytest
 
 from lightbus.message import EventMessage
+from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeserializer, BlobMessageSerializer, \
+    BlobMessageDeserializer
 from lightbus.transports.redis import RedisEventTransport
 
 
@@ -157,3 +159,26 @@ async def test_consume_events_starts_from_fixed_point(redis_event_transport: Red
     assert 'streams' in context
     assert 'my.dummy.my_event:stream' in context['streams']
     assert context['streams']['my.dummy.my_event:stream'].endswith('-9999')
+
+
+@pytest.mark.run_loop
+async def test_from_config(redis_client):
+    await redis_client.select(5)
+    host, port = redis_client.address
+    transport = RedisEventTransport.from_config(
+        url=f'redis://127.0.0.1:{port}/5',
+        connection_parameters=dict(maxsize=123),
+        batch_size=123,
+        # Non default serializers, event though they wouldn't make sense in this context
+        serializer='lightbus.serializers.BlobMessageSerializer',
+        deserializer='lightbus.serializers.BlobMessageDeserializer',
+    )
+    with await transport.connection_manager() as transport_client:
+        assert transport_client.connection.address == ('127.0.0.1', port)
+        assert transport_client.connection.db == 5
+        await transport_client.set('x', 1)
+        assert await redis_client.get('x')
+
+    assert transport._redis_pool.connection.maxsize == 123
+    assert isinstance(transport.serializer, BlobMessageSerializer)
+    assert isinstance(transport.deserializer, BlobMessageDeserializer)

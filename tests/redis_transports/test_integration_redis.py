@@ -132,8 +132,8 @@ async def test_rpc_ids(bus: lightbus.BusNode, dummy_api, mocker):
 
 
 def test_multiple_rpc_transports():
-    pass
+    raise NotImplementedError()
 
 
 def test_multiple_event_transports():
-    pass
+    raise NotImplementedError()
