@@ -11,9 +11,6 @@ from lightbus.plugins import LightbusPlugin
 class MetricsPlugin(LightbusPlugin):
     priority = 110
 
-    async def before_server_start(self, *, bus_client: lightbus.BusClient):
-        self.event_transport = bus_client.transport_registry.get_event_transport('internal.metrics')
-
     # Client-side RPC hooks
 
     async def before_rpc_call(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):
@@ -84,7 +81,8 @@ class MetricsPlugin(LightbusPlugin):
         """
         kwargs.setdefault('timestamp', datetime.utcnow().timestamp())
         kwargs.setdefault('process_name', bus_client.process_name)
-        return self.event_transport.send_event(
+        event_transport = bus_client.transport_registry.get_event_transport('internal.metrics')
+        return event_transport.send_event(
             EventMessage(
                 api_name='internal.metrics',
                 event_name=event_name_,

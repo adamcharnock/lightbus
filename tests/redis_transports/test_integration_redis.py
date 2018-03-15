@@ -10,10 +10,13 @@ pytestmark = pytest.mark.integration
 @pytest.mark.run_loop
 async def test_bus_fixture(bus: lightbus.BusNode):
     """Just sanity check the fixture"""
+    rpc_transport = bus.bus_client.transport_registry.get_rpc_transport('default')
+    result_transport = bus.bus_client.transport_registry.get_result_transport('default')
+    event_transport = bus.bus_client.transport_registry.get_event_transport('default')
 
-    connection_manager_rpc = await bus.bus_client.rpc_transport.connection_manager()
-    connection_manager_result = await bus.bus_client.result_transport.connection_manager()
-    connection_manager_event = await bus.bus_client.event_transport.connection_manager()
+    connection_manager_rpc = await rpc_transport.connection_manager()
+    connection_manager_result = await result_transport.connection_manager()
+    connection_manager_event = await event_transport.connection_manager()
 
     with await connection_manager_rpc as redis_rpc, \
             await connection_manager_result as redis_result, \
@@ -127,3 +130,10 @@ async def test_rpc_ids(bus: lightbus.BusNode, dummy_api, mocker):
     assert result_message.rpc_id
     assert rpc_message.rpc_id == result_message.rpc_id
 
+
+def test_multiple_rpc_transports():
+    pass
+
+
+def test_multiple_event_transports():
+    pass
