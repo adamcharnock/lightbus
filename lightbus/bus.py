@@ -8,7 +8,7 @@ from typing import Optional, List
 
 from lightbus.config import Config
 from lightbus.schema import Schema
-from lightbus.api import registry
+from lightbus.api import registry, Api
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
     InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError, NoApisToListenOn
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
@@ -32,12 +32,13 @@ class BusClient(object):
 
     def __init__(self,
                  config: 'Config',
-                 transport_registry: TransportRegistry=TransportRegistry(),
+                 transport_registry: TransportRegistry=None,
                  process_name: str='',
                  loop: asyncio.AbstractEventLoop=None):
 
         self.config = config
-        self.transport_registry = transport_registry
+        self.transport_registry = transport_registry or TransportRegistry().load_config(config)
+        # TODO: Schema transport should not be in registry
         self.schema = Schema(schema_transport=self.transport_registry.get_schema_transport('default'))
         self.process_name = process_name or generate_process_name()
         self.loop = loop or get_event_loop()
@@ -136,7 +137,7 @@ class BusClient(object):
 
     # RPCs
 
-    async def consume_rpcs(self, apis: List[str]=None):
+    async def consume_rpcs(self, apis: List[Api]=None):
         if apis is None:
             apis = registry.all()
 
@@ -149,12 +150,19 @@ class BusClient(object):
         while True:
             # Not all APIs will necessarily be served by the same transport, so group them
             # accordingly
-            api_names_by_transport = self.transport_registry.get_rpc_transports(apis)
-            coroutines = [
-                self._consume_rpcs_with_transport(rpc_transport, apis)
-                for rpc_transport, apis
-                in api_names_by_transport
-            ]
+            api_names = [api.meta.name for api in apis]
+            api_names_by_transport = self.transport_registry.get_rpc_transports(api_names)
+
+            coroutines = []
+            for rpc_transport, transport_api_names in api_names_by_transport:
+                transport_apis = map(registry.get, transport_api_names)
+                coroutines.append(
+                    self._consume_rpcs_with_transport(
+                        rpc_transport=rpc_transport,
+                        apis=transport_apis
+                    )
+                )
+
             await asyncio.gather(*coroutines)
 
     async def _consume_rpcs_with_transport(self, rpc_transport, apis):

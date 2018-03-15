@@ -73,7 +73,7 @@ def call_rpc_fixture(bus):
 @pytest.fixture(name='consume_rpcs')
 def consume_rpcs_fixture(bus):
     # Note: You'll have to cancel this manually as it'll run forever
-    async def consume_rpcs():
-        await bus.bus_client.consume_rpcs()
+    async def consume_rpcs(bus_=None, apis=None):
+        await (bus_ or bus).bus_client.consume_rpcs(apis=apis)
         logging.warning('TEST: consume_rpcs() completed (should not happen, should get cancelled)')
     return consume_rpcs

@@ -1,8 +1,13 @@
 import asyncio
+import logging
 
 import pytest
 import lightbus
+from lightbus import BusNode
+from lightbus.api import registry
+from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
+from lightbus.plugins import manually_set_plugins
 
 pytestmark = pytest.mark.integration
 
@@ -131,8 +136,59 @@ async def test_rpc_ids(bus: lightbus.BusNode, dummy_api, mocker):
     assert rpc_message.rpc_id == result_message.rpc_id
 
 
-def test_multiple_rpc_transports():
-    raise NotImplementedError()
+class ApiA(lightbus.Api):
+    class Meta:
+        name = 'api_a'
+
+    def test_a(self): return 'A'
+
+
+class ApiB(lightbus.Api):
+    class Meta:
+        name = 'api_b'
+
+    def test_b(self): return 'b'
+
+
+
+@pytest.mark.run_loop
+async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpcs):
+    registry.add(ApiA())
+    registry.add(ApiB())
+
+    manually_set_plugins(plugins={})
+
+    redis_server_a = server
+
+    port_a = redis_server_a.tcp_address.port
+    port_b = redis_server_b.tcp_address.port
+
+    logging.warning(f'Server A port: {port_a}')
+    logging.warning(f'Server B port: {port_b}')
+
+    config = Config.load_dict({
+        'apis': {
+            # TODO: This needs moving out of the apis config section
+            'default': {
+                'rpc_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
+                'result_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
+                'schema_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
+            },
+            'api_b': {
+                'rpc_transport': {'redis': {'url': f'redis://localhost:{port_b}'}},
+                'result_transport': {'redis': {'url': f'redis://localhost:{port_b}'}},
+            },
+        }
+    })
+
+    bus = BusNode(name='', parent=None, bus_client=lightbus.BusClient(config=config, loop=loop))
+    consume_task = asyncio.ensure_future(consume_rpcs(bus))
+    await asyncio.sleep(0.1)
+
+    await bus.api_a.test_a.call_async()
+    await bus.api_b.test_b.call_async()
+
+
 
 
 def test_multiple_event_transports():

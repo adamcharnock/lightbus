@@ -200,14 +200,15 @@ class TransportRegistry(object):
 
     def _get_transport_config(self, api_config: 'ApiConfig', type_: str):
         transport_selector = getattr(api_config, f'{type_}_transport')
-        for transport_name in transport_selector._fields:
-            transport_config = getattr(transport_selector, transport_name)
-            if transport_config is not None:
-                return transport_name, transport_config
+        if transport_selector:
+            for transport_name in transport_selector._fields:
+                transport_config = getattr(transport_selector, transport_name)
+                if transport_config is not None:
+                    return transport_name, transport_config
 
-    def _instantiate_transport(self, type_, name, config):
+    def _instantiate_transport(self, type_, name, transport_config: NamedTuple):
         transport_class = get_transport(type_=type_, name=name)
-        transport = transport_class.from_config(config)
+        transport = transport_class.from_config(**transport_config._asdict())
         return transport
 
     def _set_transport(self, api_name: str, transport: Transport, transport_type: str):

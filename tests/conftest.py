@@ -249,7 +249,7 @@ def rpc_consumer(loop, dummy_bus: BusNode, mocker):
 
     try:
         task = asyncio.ensure_future(
-            dummy_bus.bus_client.consume_rpcs(apis=['my.api']),
+            dummy_bus.bus_client.consume_rpcs(),
             loop=loop
         )
         yield

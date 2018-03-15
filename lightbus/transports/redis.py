@@ -39,6 +39,7 @@ class RedisTransportMixin(object):
 
     def set_redis_pool(self, redis_pool: Optional[Redis], url: str=None, connection_parameters: Mapping=frozendict()):
         if not redis_pool:
+            self.connection_parameters = self.connection_parameters.copy()
             self.connection_parameters.update(connection_parameters)
             if url:
                 self.connection_parameters['address'] = url
