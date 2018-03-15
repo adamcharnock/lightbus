@@ -41,7 +41,7 @@ def make_api_config_structure() -> NamedTuple:
             event_fire_timeout: 1
             log_level: warning
 
-            event_transport:  # <-- A key for each type of transport (event, rpc, result, schema)
+            event_transport:  # <-- TransportSelector: A key for each type of transport (event, rpc, result, schema)
               redis:          # <-- The name of the transport to use as specified in the entrypoint
                 url: redis://my_host:9999/0
 

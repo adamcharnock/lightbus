@@ -6,6 +6,7 @@ import time
 from asyncio.futures import CancelledError
 from typing import Optional
 
+from lightbus.config import Config
 from lightbus.schema import Schema
 from lightbus.api import registry
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
@@ -30,16 +31,14 @@ logger = logging.getLogger(__name__)
 class BusClient(object):
 
     def __init__(self,
-                 rpc_transport: 'RpcTransport',
-                 result_transport: 'ResultTransport',
-                 event_transport: 'EventTransport',
-                 schema_transport: 'SchemaTransport',
+                 config: 'Config',
+                 transport_registry: TransportRegistry=TransportRegistry(),
                  process_name: str='',
                  loop: asyncio.AbstractEventLoop=None):
-        self.rpc_transport = rpc_transport
-        self.result_transport = result_transport
-        self.event_transport = event_transport
-        self.schema = Schema(schema_transport=schema_transport)
+
+        self.config = config
+        self.transport_registry = transport_registry
+        self.schema = Schema(schema_transport=self.transport_registry.get_schema_transport('default'))
         self.process_name = process_name or generate_process_name()
         self.loop = loop or get_event_loop()
         self._listeners = {}
@@ -75,25 +74,29 @@ class BusClient(object):
         ))
 
     def run_forever(self, *, consume_rpcs=True, plugins=None):
+        rpc_transport = self.transport_registry.get_rpc_transport('default', default=None)
+        result_transport = self.transport_registry.get_result_transport('default', default=None)
+        event_transport = self.transport_registry.get_event_transport('default', default=None)
+
         logger.info(LBullets(
-            "Lightbus getting ready to run. Transports in use",
+            "Lightbus getting ready to run. Default transports are:",
             items={
                 "RPC transport": L(
                     '{}.{}',
-                    self.rpc_transport.__module__, Bold(self.rpc_transport.__class__.__name__)
+                    rpc_transport.__module__, Bold(rpc_transport.__class__.__name__)
                 ),
                 "Result transport": L(
-                    '{}.{}', self.result_transport.__module__,
-                    Bold(self.result_transport.__class__.__name__)
-                ),
+                    '{}.{}', result_transport.__module__,
+                    Bold(result_transport.__class__.__name__)
+                ) if rpc_transport else None,
                 "Event transport": L(
-                    '{}.{}', self.event_transport.__module__,
-                    Bold(self.event_transport.__class__.__name__)
-                ),
+                    '{}.{}', event_transport.__module__,
+                    Bold(event_transport.__class__.__name__)
+                ) if rpc_transport else None,
                 "Schema transport": L(
                     '{}.{}', self.schema.schema_transport.__module__,
                     Bold(self.schema.schema_transport.__class__.__name__)
-                ),
+                ) if rpc_transport else None,
             }
         ))
 

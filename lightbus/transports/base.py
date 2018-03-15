@@ -164,6 +164,9 @@ class SchemaTransport(Transport):
         raise NotImplementedError()
 
 
+empty = NamedTuple('Empty')
+
+
 class TransportRegistry(object):
     """ Manages access to transports
 
@@ -211,7 +214,7 @@ class TransportRegistry(object):
         self._registry.setdefault(api_name, self._RegistryEntry())
         self._registry[api_name] = self._registry[api_name]._replace(**{transport_type: transport})
 
-    def _get_transport(self, api_name: str, transport_type: str):
+    def _get_transport(self, api_name: str, transport_type: str, default=empty):
         registry_entry = self._registry.get(api_name)
         api_transport = None
         if registry_entry:
@@ -223,7 +226,7 @@ class TransportRegistry(object):
             except TransportNotFound:
                 pass
 
-        if not api_transport:
+        if not api_transport and default == empty:
             raise TransportNotFound(
                 f"No {transport_type} transport found for API '{api_name}'. Neither was a default "
                 f"API transport found. Either specify a {transport_type} transport for this specific API, "
@@ -253,17 +256,18 @@ class TransportRegistry(object):
     def set_schema_transport(self, api_name: str, transport):
         self._set_transport(api_name, transport, 'schema')
 
-    def get_rpc_transport(self, api_name: str) -> RpcTransport:
-        return self._get_transport(api_name, 'rpc')
+    def get_rpc_transport(self, api_name: str, default=empty) -> RpcTransport:
+        return self._get_transport(api_name, 'rpc', default=default)
 
-    def get_result_transport(self, api_name: str) -> ResultTransport:
-        return self._get_transport(api_name, 'result')
+    def get_result_transport(self, api_name: str, default=empty) -> ResultTransport:
+        return self._get_transport(api_name, 'result', default=default)
 
-    def get_event_transport(self, api_name: str) -> EventTransport:
-        return self._get_transport(api_name, 'event')
+    def get_event_transport(self, api_name: str, default=empty) -> EventTransport:
+        return self._get_transport(api_name, 'event', default=default)
 
-    def get_schema_transport(self, api_name: str) -> SchemaTransport:
-        return self._get_transport(api_name, 'schema')
+    def get_schema_transport(self, api_name: str, default=empty) -> SchemaTransport:
+        # TODO: This is only available globally, not per api. Perhaps it needs to be be under apis in the config
+        return self._get_transport(api_name, 'schema', default=default)
 
 
 def get_available_transports(type_):

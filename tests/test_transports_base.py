@@ -48,6 +48,14 @@ def test_transport_registry_get_does_not_exist_default():
         assert not registry.get_schema_transport('default')
 
 
+def test_transport_registry_get_does_not_exist_default_default_value():
+    registry = TransportRegistry()
+    assert registry.get_rpc_transport('default', default=None) is None
+    assert registry.get_result_transport('default', default=None) is None
+    assert registry.get_event_transport('default', default=None) is None
+    assert registry.get_schema_transport('default', default=None) is None
+
+
 def test_transport_registry_get_does_not_exist_other():
     registry = TransportRegistry()
     with pytest.raises(TransportNotFound):

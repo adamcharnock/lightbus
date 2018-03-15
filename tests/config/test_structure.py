@@ -1,8 +1,6 @@
 import pytest
 
-from lightbus.config import make_transport_selector_structure, make_api_config_structure
-from lightbus.transports.debug import DebugEventTransport
-from lightbus.transports.redis import RedisEventTransport
+from lightbus.config.structure import make_transport_selector_structure, make_api_config_structure
 
 pytestmark = pytest.mark.unit
 
