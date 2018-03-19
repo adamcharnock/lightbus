@@ -4,6 +4,8 @@ from uuid import uuid1
 
 from base64 import b64encode
 
+import lightbus
+
 __all__ = ['Message', 'RpcMessage', 'ResultMessage', 'EventMessage']
 
 
@@ -36,7 +38,7 @@ class Message(object):
 class RpcMessage(Message):
     required_metadata = ['rpc_id', 'api_name', 'procedure_name', 'return_path']
 
-    def __init__(self, *, api_name: str, procedure_name: str, kwargs: dict=Optional[None],
+    def __init__(self, *, api_name: str, procedure_name: str, kwargs: Optional[dict]=None,
                  return_path: Any=None, rpc_id: str=''):
 
         self.rpc_id = rpc_id or b64encode(uuid1().bytes).decode('utf8')
@@ -72,6 +74,9 @@ class RpcMessage(Message):
     @classmethod
     def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> 'RpcMessage':
         return cls(**metadata, kwargs=kwargs)
+
+    def validate(self, schema: 'lightbus.Schema'):
+        schema.validate_parameters(self.api_name, self.procedure_name, self.kwargs)
 
 
 class ResultMessage(Message):
@@ -120,11 +125,14 @@ class ResultMessage(Message):
     def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> 'ResultMessage':
         return cls(**metadata, result=kwargs.get('result'))
 
+    def validate(self, schema: 'lightbus.Schema', api_name, procedure_name):
+        schema.validate_response(api_name, procedure_name, self.result)
+
 
 class EventMessage(Message):
     required_metadata = ['api_name', 'event_name']
 
-    def __init__(self, *, api_name: str, event_name: str, kwargs: dict=Optional[None]):
+    def __init__(self, *, api_name: str, event_name: str, kwargs: Optional[dict]=None):
         self.api_name = api_name
         self.event_name = event_name
         self.kwargs = kwargs or {}
@@ -154,3 +162,6 @@ class EventMessage(Message):
     @classmethod
     def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> 'EventMessage':
         return cls(**metadata, kwargs=kwargs)
+
+    def validate(self, schema: 'lightbus.Schema'):
+        schema.validate_parameters(self.api_name, self.event_name, self.kwargs)
