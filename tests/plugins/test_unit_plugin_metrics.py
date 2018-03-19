@@ -59,7 +59,7 @@ async def test_remote_rpc_call(dummy_bus: BusNode, get_dummy_events):
 
 
 @pytest.mark.run_loop
-async def test_local_rpc_call(dummy_bus: BusNode, rpc_consumer, get_dummy_events, mocker):
+async def test_local_rpc_call(loop, dummy_bus: BusNode, consume_rpcs, get_dummy_events, mocker):
     rpc_transport = dummy_bus.bus_client.transport_registry.get_rpc_transport('default')
     mocker.patch.object(rpc_transport, '_get_fake_messages', return_value=[
         RpcMessage(rpc_id='123abc', api_name='example.test', procedure_name='my_method', kwargs={'f': 123})
@@ -68,6 +68,8 @@ async def test_local_rpc_call(dummy_bus: BusNode, rpc_consumer, get_dummy_events
     # Setup the bus and do the call
     manually_set_plugins(plugins={'metrics': MetricsPlugin()})
     registry.add(TestApi())
+
+    asyncio.ensure_future(consume_rpcs(dummy_bus), loop=loop)
 
     # The dummy transport will fire an every every 0.1 seconds
     await asyncio.sleep(0.15)

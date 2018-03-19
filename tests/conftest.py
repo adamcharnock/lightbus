@@ -242,24 +242,27 @@ def get_dummy_events(mocker, dummy_bus: BusNode):
     return get_events
 
 
-@pytest.yield_fixture
-def rpc_consumer(loop, dummy_bus: BusNode, mocker):
-    """Start the dummy bus consuming RPCs"""
-    task = None
+@pytest.fixture(name='call_rpc')
+def call_rpc_fixture(bus):
+    results = []
+    async def call_rpc(rpc: BusNode, total, initial_delay=0.1, kwargs=None):
+        await asyncio.sleep(initial_delay)
+        for n in range(0, total):
+            results.append(
+                await rpc.call_async(kwargs=dict(n=n))
+            )
+        logger.warning('TEST: call_rpc() completed')
+        return results
+    return call_rpc
 
-    try:
-        task = asyncio.ensure_future(
-            dummy_bus.bus_client.consume_rpcs(),
-            loop=loop
-        )
-        yield
-    finally:
-        if task is not None:
-            task.cancel()
-            try:
-                loop.run_until_complete(task)
-            except asyncio.CancelledError:
-                pass
+
+@pytest.fixture(name='consume_rpcs')
+def consume_rpcs_fixture():
+    # Note: If you don't cancel this manually it'll be cancelling in the loop teardown (which is ok)
+    async def consume_rpcs(bus=None, apis=None):
+        await bus.bus_client.consume_rpcs(apis=apis)
+        logging.warning('TEST: consume_rpcs() completed (should not happen, should get cancelled)')
+    return consume_rpcs
 
 
 # Internal stuff #
