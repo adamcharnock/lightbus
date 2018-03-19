@@ -137,22 +137,26 @@ async def test_rpc_ids(bus: lightbus.BusNode, dummy_api, mocker):
 
 
 class ApiA(lightbus.Api):
+    event_a = lightbus.Event()
+
     class Meta:
         name = 'api_a'
 
-    def test_a(self): return 'A'
+    def rpc_a(self): return 'A'
 
 
 class ApiB(lightbus.Api):
+    event_b = lightbus.Event()
+
     class Meta:
         name = 'api_b'
 
-    def test_b(self): return 'b'
-
+    def rpc_b(self): return 'b'
 
 
 @pytest.mark.run_loop
 async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpcs):
+    """Configure a bus with two redis transports and ensure they write to the correct redis servers"""
     registry.add(ApiA())
     registry.add(ApiB())
 
@@ -182,14 +186,56 @@ async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpc
     })
 
     bus = BusNode(name='', parent=None, bus_client=lightbus.BusClient(config=config, loop=loop))
-    consume_task = asyncio.ensure_future(consume_rpcs(bus))
+    asyncio.ensure_future(consume_rpcs(bus))
     await asyncio.sleep(0.1)
 
-    await bus.api_a.test_a.call_async()
-    await bus.api_b.test_b.call_async()
+    await bus.api_a.rpc_a.call_async()
+    await bus.api_b.rpc_b.call_async()
 
 
+@pytest.mark.run_loop
+async def test_multiple_event_transports(loop, server, redis_server_b):
+    """Configure a bus with two redis transports and ensure they write to the correct redis servers"""
+    registry.add(ApiA())
+    registry.add(ApiB())
 
+    manually_set_plugins(plugins={})
 
-def test_multiple_event_transports():
-    raise NotImplementedError()
+    redis_server_a = server
+
+    port_a = redis_server_a.tcp_address.port
+    port_b = redis_server_b.tcp_address.port
+
+    logging.warning(f'Server A port: {port_a}')
+    logging.warning(f'Server B port: {port_b}')
+
+    config = Config.load_dict({
+        'apis': {
+            # TODO: This needs moving out of the apis config section
+            'default': {
+                'event_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
+                'schema_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
+            },
+            'api_b': {
+                'event_transport': {'redis': {'url': f'redis://localhost:{port_b}'}},
+            },
+        }
+    })
+
+    bus = BusNode(name='', parent=None, bus_client=lightbus.BusClient(config=config, loop=loop))
+    await asyncio.sleep(0.1)
+
+    await bus.api_a.event_a.fire_async()
+    await bus.api_b.event_b.fire_async()
+
+    connection_manager_a = bus.bus_client.transport_registry.get_event_transport('api_a').connection_manager
+    connection_manager_b = bus.bus_client.transport_registry.get_event_transport('api_b').connection_manager
+
+    with await connection_manager_a() as redis:
+        assert await redis.xrange('api_a.event_a:stream')
+        assert await redis.xrange('api_b.event_b:stream') == []
+
+    with await connection_manager_b() as redis:
+        assert await redis.xrange('api_a.event_a:stream') == []
+        assert await redis.xrange('api_b.event_b:stream')
+
