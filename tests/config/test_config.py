@@ -26,6 +26,18 @@ def test_config_as_json_schema_bus():
 def test_config_as_json_schema_apis():
     schema = config_as_json_schema()
     assert schema['properties']['apis']
+    assert '.*' in schema['properties']['apis']['patternProperties']
+    api_config_schema = schema['properties']['apis']['patternProperties']['.*']['properties']
+    assert api_config_schema['event_transport']['type'] == 'object'
+    assert api_config_schema['rpc_transport']['type'] == 'object'
+    assert api_config_schema['result_transport']['type'] == 'object'
+    assert api_config_schema['schema_transport']['type'] == 'object'
+
+    assert api_config_schema['rpc_timeout']['type'] == 'number'
+    assert api_config_schema['event_listener_setup_timeout']['type'] == 'number'
+    assert api_config_schema['event_fire_timeout']['type'] == 'number'
+    assert api_config_schema['log_level']['oneOf']
+    assert api_config_schema['validate']['oneOf']
 
 
 def test_default_config():

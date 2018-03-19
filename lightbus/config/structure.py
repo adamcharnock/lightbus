@@ -21,6 +21,8 @@ import inspect
 import logging
 from typing import NamedTuple, Optional, Union, Mapping, Type, Dict
 
+from enum import Enum
+
 from lightbus.transports.base import get_available_transports
 from lightbus.plugins import get_plugins
 
@@ -56,8 +58,8 @@ def make_api_config_structure() -> NamedTuple:
         f"    rpc_timeout: int = 5\n"
         f"    event_listener_setup_timeout: int = 1\n"
         f"    event_fire_timeout: int = 1\n"
-        f"    log_level: Optional[str] = None\n"
-        f"    validation: Optional[Union[ApiValidationConfig, bool]] = True\n"
+        f"    log_level: Optional[ApiLogLevelEnum] = None\n"
+        f"    validate: Optional[Union[ApiValidationConfig, bool]] = True\n"
     )
 
     globals_ = globals().copy()
@@ -86,9 +88,22 @@ EventTransportSelector = make_transport_selector_structure('event')
 SchemaTransportSelector = make_transport_selector_structure('schema')
 
 
+class ApiLogLevelEnum(Enum):
+    DEBUG = 'debug'
+    INFO = 'info'
+    WARNING = 'warning'
+    ERROR = 'error'
+    CRITICAL = 'critical'
+
+
+class ApiValidationEnum(Enum):
+    EVENT_ONLY = 'event_only'
+    RPC_ONLY = 'rpc_only'
+
+
 class ApiValidationConfig(NamedTuple):
-    outgoing: Union[str, bool] = True
-    incoming: Union[str, bool] = True
+    outgoing: Union[ApiValidationEnum, bool] = True
+    incoming: Union[ApiValidationEnum, bool] = True
 
 
 ApiConfig = make_api_config_structure()

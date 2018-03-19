@@ -155,14 +155,14 @@ def python_type_to_json_schemas(type_):
         return [{'type': 'boolean'}]
     elif is_class and issubclass(type_, (int, float)):
         return [{'type': 'number'}]
-    elif is_class and issubclass(type_, (dict, )):
-        return [{'type': 'object'}]
     elif is_class and issubclass(type_, (Mapping, )) and subs_tree and subs_tree[1] == str:
         # Mapping with strings as keys
         return [{
             'type': 'object',
             'patternProperties': {'.*': wrap_with_one_of(python_type_to_json_schemas(subs_tree[2]))}
         }]
+    elif is_class and issubclass(type_, (dict, )):
+        return [{'type': 'object'}]
     elif is_class and issubclass(type_, tuple) and hasattr(type_, '_fields'):
         # Named tuple
         return [make_custom_object_schema(type_, property_names=type_._fields)]
