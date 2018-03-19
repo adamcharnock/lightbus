@@ -12,7 +12,7 @@ pytestmark = pytest.mark.reliability
 
 
 @pytest.mark.run_loop
-async def test_timeouts(bus: lightbus.BusNode, caplog, consume_rpcs, call_rpc, mocker, dummy_api, loop):
+async def test_timeouts(bus: lightbus.BusNode, caplog, dummy_api, loop):
     caplog.set_level(logging.WARNING)
     loop.slow_callback_duration = 0.01
     results = []
