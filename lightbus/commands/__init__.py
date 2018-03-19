@@ -9,6 +9,7 @@ from lightbus.utilities.async import block
 import lightbus.commands.run
 import lightbus.commands.shell
 import lightbus.commands.dump_schema
+import lightbus.commands.dump_config_schema
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ def parse_args(args=None):
     lightbus.commands.run.Command().setup(parser, subparsers)
     lightbus.commands.shell.Command().setup(parser, subparsers)
     lightbus.commands.dump_schema.Command().setup(parser, subparsers)
+    lightbus.commands.dump_config_schema.Command().setup(parser, subparsers)
 
     autoload_plugins()
 

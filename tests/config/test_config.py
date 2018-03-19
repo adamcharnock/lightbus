@@ -1,9 +1,12 @@
+import json
+
 import pytest
 
 from lightbus import DebugRpcTransport
 from lightbus.config import Config
 from lightbus.config.config import mapping_to_named_tuple, config_as_json_schema
 from lightbus.config.structure import RootConfig, BusConfig
+from lightbus.schema.encoder import json_encode
 from lightbus.transports.redis import RedisRpcTransport
 
 pytestmark = pytest.mark.unit
@@ -39,6 +42,31 @@ def test_config_as_json_schema_apis():
     assert api_config_schema['log_level']['oneOf']
     assert api_config_schema['validate']['oneOf']
 
+
+def test_config_as_json_schema_redis():
+    schema = config_as_json_schema()
+
+    api_config_schema = schema['properties']['apis']['patternProperties']['.*']['properties']
+    redis_rpc_transport = api_config_schema['rpc_transport']['properties']['redis']['oneOf'][0]
+    redis_result_transport = api_config_schema['result_transport']['properties']['redis']['oneOf'][0]
+    redis_event_transport = api_config_schema['event_transport']['properties']['redis']['oneOf'][0]
+    redis_schema_transport = api_config_schema['schema_transport']['properties']['redis']['oneOf'][0]
+
+    assert redis_rpc_transport['type'] == 'object'
+    assert redis_result_transport['type'] == 'object'
+    assert redis_event_transport['type'] == 'object'
+    assert redis_schema_transport['type'] == 'object'
+
+
+def test_config_as_json_schema_dump():
+    """Make sure we can encode the schema as json
+
+    We may have some custom types kicking around (i.e. frozendict())
+    """
+    schema = config_as_json_schema()
+    encoded = json_encode(schema)
+    assert encoded
+    json.loads(encoded)
 
 def test_default_config():
     config = Config.load_dict({})

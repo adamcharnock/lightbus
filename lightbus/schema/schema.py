@@ -13,6 +13,7 @@ import sys
 
 import lightbus
 from lightbus.exceptions import InvalidApiForSchemaCreation, InvalidSchema, SchemaNotFound
+from lightbus.schema.encoder import json_encode
 from lightbus.schema.hints_to_schema import make_response_schema, make_rpc_parameter_schema, make_event_parameter_schema
 from lightbus.transports.base import SchemaTransport
 from lightbus.utilities.io import make_file_safe_api_name
@@ -229,7 +230,7 @@ class Schema(object):
             schema = {api_name: self.get_api_schema(api_name)}
         else:
             schema = {api_name: self.get_api_schema(api_name) for api_name in self.api_names}
-        return json.dumps(schema, indent=2, sort_keys=True)  # config: schema_human_readable
+        return json_encode(schema)  # config: schema_human_readable
 
 
 class Parameter(inspect.Parameter):

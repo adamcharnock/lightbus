@@ -16,6 +16,7 @@ from lightbus.api import Api
 from lightbus.exceptions import LightbusException, LightbusShutdownInProgress
 from lightbus.log import L, Bold, LBullets
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
+from lightbus.schema.encoder import json_encode
 from lightbus.serializers.blob import BlobMessageSerializer, BlobMessageDeserializer
 from lightbus.serializers.by_field import ByFieldMessageSerializer, ByFieldMessageDeserializer
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport, SchemaTransport
@@ -434,7 +435,7 @@ class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
             schema_key = self.schema_key(api_name)
 
             p = redis.pipeline()
-            p.set(schema_key, json.dumps(schema))
+            p.set(schema_key, json_encode(schema))
             if ttl_seconds is not None:
                 p.expire(schema_key, ttl_seconds)
             p.sadd(self.schema_set_key(), api_name)

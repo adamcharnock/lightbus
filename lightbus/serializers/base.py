@@ -3,6 +3,7 @@ import json
 from typing import Union, TypeVar, Type
 
 from lightbus.exceptions import InvalidMessage, InvalidSerializerConfiguration
+from lightbus.schema.encoder import json_encode
 
 
 def decode_bytes(b: Union[str, bytes]):
@@ -40,7 +41,7 @@ SerialisedData = TypeVar('SerialisedData')
 
 class MessageSerializer(object):
 
-    def __init__(self, encoder=json.dumps):
+    def __init__(self, encoder=json_encode):
         self.encoder = encoder
 
     def __call__(self, message: 'lightbus.Message') -> SerialisedData:
