@@ -16,3 +16,4 @@ def test_make_api_config_structure():
     assert 'rpc_transport' in ApiConfig.__annotations__
     assert 'result_transport' in ApiConfig.__annotations__
     assert 'schema_transport' in ApiConfig.__annotations__
+    assert 'validation' in ApiConfig.__annotations__

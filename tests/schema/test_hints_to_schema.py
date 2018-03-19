@@ -2,6 +2,7 @@ from typing import Union, Optional, NamedTuple, Tuple, Any, Mapping
 from collections import namedtuple
 
 import pytest
+from enum import Enum
 
 from lightbus.schema.hints_to_schema import make_parameter_schema, python_type_to_json_schemas, make_response_schema, \
     make_rpc_parameter_schema
@@ -201,3 +202,35 @@ def test_mapping():
     assert schema['type'] == 'object'
     assert schema['patternProperties'] == {'.*': {'type': 'number'}}
 
+
+def test_enum_number():
+    TestEnum = Enum('TestEnum', {'Foo': 1, 'Bar': 2})
+    def func(username) -> TestEnum: pass
+    schema = make_response_schema('api_name', 'rpc_name', func)
+    assert schema['type'] == 'number'
+    assert set(schema['enum']) == {1, 2}
+
+
+def test_enum_string():
+    TestEnum = Enum('TestEnum', {'Foo': 'foo', 'Bar': 'bar'})
+    def func(username) -> TestEnum: pass
+    schema = make_response_schema('api_name', 'rpc_name', func)
+    assert schema['type'] == 'string'
+    assert set(schema['enum']) == {'foo', 'bar'}
+
+
+def test_enum_empty():
+    TestEnum = Enum('TestEnum', {})
+    def func(username) -> TestEnum: pass
+    schema = make_response_schema('api_name', 'rpc_name', func)
+    assert 'type' not in schema
+    assert 'enum' not in schema
+
+
+def test_enum_unknown_value_types():
+    class UnknownThing(object): pass
+    TestEnum = Enum('TestEnum', {'Foo': UnknownThing, 'Bar': UnknownThing})
+    def func(username) -> TestEnum: pass
+    schema = make_response_schema('api_name', 'rpc_name', func)
+    assert 'type' not in schema
+    assert 'enum' not in schema

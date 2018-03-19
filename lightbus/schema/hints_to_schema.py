@@ -5,6 +5,8 @@ import logging
 from _pydecimal import Decimal
 from typing import Union, Any, Tuple, Sequence, Mapping, Callable
 
+from enum import Enum
+
 import lightbus
 
 NoneType = type(None)
@@ -164,6 +166,16 @@ def python_type_to_json_schemas(type_):
     elif is_class and issubclass(type_, tuple) and hasattr(type_, '_fields'):
         # Named tuple
         return [make_custom_object_schema(type_, property_names=type_._fields)]
+    elif is_class and issubclass(type_, Enum) and type_.__members__:
+        # Enum
+        enum_first_value = list(type_.__members__.values())[0].value
+        schema = {}
+        try:
+            schema['type'] = python_type_to_json_schemas(type(enum_first_value))[0]['type']
+            schema['enum'] = [v.value for v in type_.__members__.values()]
+        except KeyError:
+            logger.warning(f'Could not determine type for values in enum: {type_}')
+        return [schema]
     elif type(type_) == type(Tuple) and len(subs_tree) > 1:
         sub_types = subs_tree[1:]
         return [{
