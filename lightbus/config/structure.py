@@ -57,6 +57,7 @@ def make_api_config_structure() -> NamedTuple:
         f"    event_listener_setup_timeout: int = 1\n"
         f"    event_fire_timeout: int = 1\n"
         f"    log_level: Optional[str] = None\n"
+        f"    validation: Optional[Union[ApiValidationConfig, bool]] = True\n"
     )
 
     globals_ = globals().copy()
@@ -83,6 +84,12 @@ RpcTransportSelector = make_transport_selector_structure('rpc')
 ResultTransportSelector = make_transport_selector_structure('result')
 EventTransportSelector = make_transport_selector_structure('event')
 SchemaTransportSelector = make_transport_selector_structure('schema')
+
+
+class ApiValidationConfig(NamedTuple):
+    outgoing: Union[str, bool] = True
+    incoming: Union[str, bool] = True
+
 
 ApiConfig = make_api_config_structure()
 
