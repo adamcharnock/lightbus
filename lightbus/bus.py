@@ -170,8 +170,7 @@ class BusClient(object):
     async def _consume_rpcs_with_transport(self, rpc_transport, apis):
         rpc_messages = await rpc_transport.consume_rpcs(apis)
         for rpc_message in rpc_messages:
-            if self.config.api(rpc_message.api_name).validate.incoming:
-                rpc_message.validate(self.schema)
+            self._validate(rpc_message, 'incoming')
 
             await plugin_hook('before_rpc_execution', rpc_message=rpc_message, bus_client=self)
             try:
@@ -188,8 +187,8 @@ class BusClient(object):
                 await plugin_hook('after_rpc_execution', rpc_message=rpc_message, result_message=result_message,
                                   bus_client=self)
 
-                if self.config.api(rpc_message.api_name).validate.outgoing:
-                    result_message.validate(self.schema, rpc_message.api_name, rpc_message.procedure_name)
+                self._validate(result_message, 'outgoing',
+                               api_name=rpc_message.api_name, procedure_name=rpc_message.procedure_name)
 
                 await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
@@ -213,8 +212,7 @@ class BusClient(object):
             rpc_transport.call_rpc(rpc_message, options=options),
         )
 
-        if self.config.api(rpc_message.api_name).validate.outgoing:
-            rpc_message.validate(self.schema)
+        self._validate(rpc_message, 'outgoing')
 
         await plugin_hook('before_rpc_call', rpc_message=rpc_message, bus_client=self)
 
@@ -252,8 +250,7 @@ class BusClient(object):
                 result_message.trace,
             ))
 
-        if self.config.api(rpc_message.api_name).validate.incoming:
-            result_message.validate(self.schema)
+        self._validate(result_message, 'incoming', api_name, procedure_name=name)
 
         return result_message.result
 
@@ -307,8 +304,7 @@ class BusClient(object):
 
         event_message = EventMessage(api_name=api.meta.name, event_name=name, kwargs=kwargs)
 
-        if self.config.api(event_message.api_name).validate.outgoing:
-            event_message.validate(self.schema)
+        self._validate(event_message, 'outgoing')
 
         event_transport = self.transport_registry.get_event_transport(api_name)
         await plugin_hook('before_event_sent', event_message=event_message, bus_client=self)
@@ -335,8 +331,7 @@ class BusClient(object):
             )
             with self._register_listener(api_name, name):
                 async for event_message in consumer:
-                    if self.config.api(event_message.api_name).validate.incoming:
-                        event_message.validate(self.schema)
+                    self._validate(event_message, 'incoming')
 
                     await plugin_hook('before_event_execution', event_message=event_message, bus_client=self)
 
