@@ -188,6 +188,9 @@ def python_type_to_json_schemas(type_):
         return [{'type': 'array'}]
     elif is_class and issubclass(type_, NoneType):
         return [{'type': 'null'}]
+    elif is_class and getattr(type_, '__annotations__', None):
+        # Custom class
+        return [make_custom_object_schema(type_)]
     else:
         logger.warning('Could not convert python type to json schema type: {}'.format(type_))
         return [{}]

@@ -68,6 +68,7 @@ def test_config_as_json_schema_dump():
     assert encoded
     json.loads(encoded)
 
+
 def test_default_config():
     config = Config.load_dict({})
     assert config.bus()
@@ -108,6 +109,15 @@ def test_api_config_default():
 def test_api_config_customised():
     config = Config.load_yaml(EXAMPLE_VALID_YAML)
     assert config.api('my.api').event_transport.redis.batch_size == 1
+
+
+def test_mapping_to_named_tuple_validate():
+    root_config = mapping_to_named_tuple({'apis': {'my_api': {'validate': {
+        'incoming': True,
+        'outgoing': False,
+    }}}}, RootConfig)
+    assert root_config.apis['my_api'].validate.incoming == True
+    assert root_config.apis['my_api'].validate.outgoing == False
 
 
 EXAMPLE_VALID_YAML = """

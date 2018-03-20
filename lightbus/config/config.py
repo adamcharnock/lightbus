@@ -134,12 +134,13 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
 
         if is_namedtuple(hint):
             parameters[key] = mapping_to_named_tuple(value, hint)
-        elif is_class and issubclass(hint, Mapping) and subs_tree and is_namedtuple(subs_tree[2]):
+        elif is_class and issubclass(hint, Mapping) and subs_tree and len(subs_tree) == 3:
             parameters[key] = dict()
             for k, v in value.items():
                 parameters[key][k] = mapping_to_named_tuple(v, hint._subs_tree()[2])
         else:
             parameters[key] = value
+
     return named_tuple(**parameters)
 
 

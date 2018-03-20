@@ -47,6 +47,9 @@ class Schema(object):
         # remote schemas is mediated by the schema transport.
         self.remote_schemas = {}
 
+    def __contains__(self, item):
+        return item in self.local_schemas or item in self.remote_schemas
+
     async def add_api(self, api: 'Api'):
         """Adds an API locally, and sends to to the transport"""
         schema = api_to_schema(api)
@@ -98,8 +101,8 @@ class Schema(object):
 
         # TODO: Add link to docs in error message
         raise SchemaNotFound(
-            "No schema found for '{}' on API '{}'. You should ensure that either this "
-            "API is being served by another lightbus process, or you can load this schema manually."
+            "No schema found for '{}' on API '{}'. You should either, a) ensure this "
+            "API is being served by another lightbus process, or b) load this schema manually."
             "".format(api_name, name)
         )
 

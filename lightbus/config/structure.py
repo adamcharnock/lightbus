@@ -29,44 +29,6 @@ from lightbus.plugins import get_plugins
 logger = logging.getLogger(__name__)
 
 
-def make_api_config_structure() -> NamedTuple:
-    """Create a named tuple structure to hold api configuration
-
-    Example YAML for this structure:
-
-        # YAML root
-        apis:
-          default:            # <-- This is what we generate
-            # Various api-level options
-            rpc_timeout: 5
-            event_listener_setup_timeout: 1
-            event_fire_timeout: 1
-            log_level: warning
-
-            event_transport:  # <-- TransportSelector: A key for each type of transport (event, rpc, result, schema)
-              redis:          # <-- The name of the transport to use as specified in the entrypoint
-                url: redis://my_host:9999/0
-
-    """
-    plugins = get_plugins()
-    code = f"class ApiConfig(NamedTuple):\n"
-
-    for transport_type in ('event', 'rpc', 'result', 'schema'):
-        code += f"    {transport_type}_transport: {transport_type.title()}TransportSelector = None\n"
-
-    code += (
-        f"    rpc_timeout: int = 5\n"
-        f"    event_listener_setup_timeout: int = 1\n"
-        f"    event_fire_timeout: int = 1\n"
-        f"    log_level: Optional[ApiLogLevelEnum] = None\n"
-        f"    validate: Optional[Union[ApiValidationConfig, bool]] = True\n"
-    )
-
-    globals_ = globals().copy()
-    exec(code, globals_)
-    return globals_['ApiConfig']
-
-
 def make_transport_selector_structure(type_) -> NamedTuple:
     class_name = f"{type_.title()}TransportSelector"
     code = f"class {class_name}(NamedTuple):\n    pass\n"
@@ -88,7 +50,7 @@ EventTransportSelector = make_transport_selector_structure('event')
 SchemaTransportSelector = make_transport_selector_structure('schema')
 
 
-class ApiLogLevelEnum(Enum):
+class LogLevelEnum(Enum):
     DEBUG = 'debug'
     INFO = 'info'
     WARNING = 'warning'
@@ -96,24 +58,42 @@ class ApiLogLevelEnum(Enum):
     CRITICAL = 'critical'
 
 
-class ApiValidationEnum(Enum):
-    EVENT_ONLY = 'event_only'
-    RPC_ONLY = 'rpc_only'
-
-
 class ApiValidationConfig(NamedTuple):
-    outgoing: Union[ApiValidationEnum, bool] = True
-    incoming: Union[ApiValidationEnum, bool] = True
+    outgoing: bool = True
+    incoming: bool = True
 
 
-ApiConfig = make_api_config_structure()
+class ApiConfig(object):
+    rpc_timeout: int = 5
+    event_listener_setup_timeout: int = 1
+    event_fire_timeout: int = 1
+    log_level: Optional[LogLevelEnum] = None
+    validate: Optional[Union[ApiValidationConfig, bool]] = True
+    event_transport: EventTransportSelector = None
+    rpc_transport: RpcTransportSelector = None
+    result_transport: ResultTransportSelector = None
+    schema_transport: SchemaTransportSelector = None
+    strict_validation: bool = False
+
+    def __init__(self, **kw):
+        for k, v in kw.items():
+            setattr(self, k, v)
+
+        self._normalise_validate()
+
+    def _normalise_validate(self):
+        if self.validate in (True, False):
+            # Expand out the true/false shortcut
+            self.validate = ApiValidationConfig(outgoing=self.validate, incoming=self.validate)
+        else:
+            self.validate = ApiValidationConfig(**self.validate)
 
 
 class BusConfig(NamedTuple):
     schema_load_timeout: int = 5
     schema_add_api_timeout: int = 1
     schema_human_readable: bool = True
-    log_level: str = 'debug'
+    log_level: LogLevelEnum = LogLevelEnum.WARNING
 
 
 class RootConfig(NamedTuple):

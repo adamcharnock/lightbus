@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any, Sequence
 from uuid import uuid1
 
 from base64 import b64encode
+from jsonschema import ValidationError
 
 import lightbus
 
@@ -75,9 +76,6 @@ class RpcMessage(Message):
     def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> 'RpcMessage':
         return cls(**metadata, kwargs=kwargs)
 
-    def validate(self, schema: 'lightbus.Schema'):
-        schema.validate_parameters(self.api_name, self.procedure_name, self.kwargs)
-
 
 class ResultMessage(Message):
     required_metadata = ['rpc_id']
@@ -125,9 +123,6 @@ class ResultMessage(Message):
     def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> 'ResultMessage':
         return cls(**metadata, result=kwargs.get('result'))
 
-    def validate(self, schema: 'lightbus.Schema', api_name, procedure_name):
-        schema.validate_response(api_name, procedure_name, self.result)
-
 
 class EventMessage(Message):
     required_metadata = ['api_name', 'event_name']
@@ -162,6 +157,3 @@ class EventMessage(Message):
     @classmethod
     def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> 'EventMessage':
         return cls(**metadata, kwargs=kwargs)
-
-    def validate(self, schema: 'lightbus.Schema'):
-        schema.validate_parameters(self.api_name, self.event_name, self.kwargs)

@@ -6,6 +6,8 @@ import time
 from asyncio.futures import CancelledError
 from typing import Optional, List
 
+import jsonschema
+
 from lightbus.config import Config
 from lightbus.schema import Schema
 from lightbus.api import registry, Api
@@ -13,7 +15,7 @@ from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfigurati
     InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError, NoApisToListenOn
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
-from lightbus.message import RpcMessage, ResultMessage, EventMessage
+from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
 from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
 from lightbus.transports import RpcTransport, ResultTransport, EventTransport, RedisRpcTransport, \
     RedisResultTransport, RedisEventTransport
@@ -168,6 +170,9 @@ class BusClient(object):
     async def _consume_rpcs_with_transport(self, rpc_transport, apis):
         rpc_messages = await rpc_transport.consume_rpcs(apis)
         for rpc_message in rpc_messages:
+            if self.config.api(rpc_message.api_name).validate.incoming:
+                rpc_message.validate(self.schema)
+
             await plugin_hook('before_rpc_execution', rpc_message=rpc_message, bus_client=self)
             try:
                 result = await self.call_rpc_local(
@@ -182,6 +187,10 @@ class BusClient(object):
                 result_message = ResultMessage(result=result, rpc_id=rpc_message.rpc_id)
                 await plugin_hook('after_rpc_execution', rpc_message=rpc_message, result_message=result_message,
                                   bus_client=self)
+
+                if self.config.api(rpc_message.api_name).validate.outgoing:
+                    result_message.validate(self.schema, rpc_message.api_name, rpc_message.procedure_name)
+
                 await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
     async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict, options: dict):
@@ -203,6 +212,9 @@ class BusClient(object):
             self.receive_result(rpc_message, return_path, options=options),
             rpc_transport.call_rpc(rpc_message, options=options),
         )
+
+        if self.config.api(rpc_message.api_name).validate.outgoing:
+            rpc_message.validate(self.schema)
 
         await plugin_hook('before_rpc_call', rpc_message=rpc_message, bus_client=self)
 
@@ -239,6 +251,9 @@ class BusClient(object):
                 result_message.result,
                 result_message.trace,
             ))
+
+        if self.config.api(rpc_message.api_name).validate.incoming:
+            result_message.validate(self.schema)
 
         return result_message.result
 
@@ -291,6 +306,10 @@ class BusClient(object):
             )
 
         event_message = EventMessage(api_name=api.meta.name, event_name=name, kwargs=kwargs)
+
+        if self.config.api(event_message.api_name).validate.outgoing:
+            event_message.validate(self.schema)
+
         event_transport = self.transport_registry.get_event_transport(api_name)
         await plugin_hook('before_event_sent', event_message=event_message, bus_client=self)
         await event_transport.send_event(event_message, options=options)
@@ -316,6 +335,9 @@ class BusClient(object):
             )
             with self._register_listener(api_name, name):
                 async for event_message in consumer:
+                    if self.config.api(event_message.api_name).validate.incoming:
+                        event_message.validate(self.schema)
+
                     await plugin_hook('before_event_execution', event_message=event_message, bus_client=self)
 
                     # Call the listener
@@ -354,6 +376,33 @@ class BusClient(object):
         self._listeners[key] -= 1
         if not self._listeners[key]:
             self._listeners.pop(key)
+
+    def _validate(self, message: Message, direction: str, api_name=None, procedure_name=None):
+        assert direction in ('incoming', 'outgoing')
+
+        # Result messages do not carry the api or procedure name, so allow them to be
+        # specified manually
+        api_name = getattr(message, 'api_name', api_name)
+        procedure_name = getattr(message, 'procedure_name', procedure_name)
+        api_config = self.config.api(api_name)
+        strict_validation = api_config.strict_validation
+
+        if not getattr(api_config.validate, direction):
+            return
+
+        if not strict_validation and api_name not in self.schema:
+            logging.debug(
+                f"Validation is enabled for API {api_name}, but there is no schema present for this API. "
+                f"Validation is therefore not possible. You can force this to be an error by enabling "
+                f"the 'strict_validation' config option. You can silence this message by disabling validation "
+                f"for this API using the 'validate' option."
+            )
+            return
+
+        if isinstance(message, (RpcMessage, EventMessage)):
+            self.schema.validate_parameters(api_name, procedure_name, message.kwargs)
+        elif isinstance(message, (ResultMessage)):
+            self.schema.validate_response(api_name, procedure_name, message.result)
 
 
 class BusNode(object):

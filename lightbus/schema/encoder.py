@@ -1,5 +1,7 @@
 from json import JSONEncoder
 
+from enum import Enum
+
 from lightbus.utilities.frozendict import frozendict
 
 
@@ -9,6 +11,8 @@ class LightbusEncoder(JSONEncoder):
     def default(self, o):
         if isinstance(o, frozendict):
             return o._dict
+        elif isinstance(o, Enum):
+            return o.value
         else:
             super(LightbusEncoder, self).default(o)
 
