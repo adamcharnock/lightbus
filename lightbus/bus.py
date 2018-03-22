@@ -224,10 +224,9 @@ class BusClient(object):
             # Allow the future to finish, as per https://bugs.python.org/issue29432
             try:
                 await future
+                future.result()
             except CancelledError:
                 pass
-
-            future.result()
 
             # TODO: Include description of possible causes and how to increase the timeout.
             # TODO: Remove RPC from queue. Perhaps add a RpcBackend.cancel() method. Optional,
