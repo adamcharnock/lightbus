@@ -207,23 +207,26 @@ class BusClient(object):
         start_time = time.time()
         # TODO: It is possible that the RPC will be called before we start waiting for the response. This is bad.
 
+        self._validate(rpc_message, 'outgoing')
+
         future = asyncio.gather(
             self.receive_result(rpc_message, return_path, options=options),
             rpc_transport.call_rpc(rpc_message, options=options),
         )
 
-        self._validate(rpc_message, 'outgoing')
-
         await plugin_hook('before_rpc_call', rpc_message=rpc_message, bus_client=self)
 
         try:
             result_message, _ = await asyncio.wait_for(future, timeout=timeout)
+            future.result()
         except asyncio.TimeoutError:
             # Allow the future to finish, as per https://bugs.python.org/issue29432
             try:
                 await future
             except CancelledError:
                 pass
+
+            future.result()
 
             # TODO: Include description of possible causes and how to increase the timeout.
             # TODO: Remove RPC from queue. Perhaps add a RpcBackend.cancel() method. Optional,

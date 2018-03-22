@@ -10,7 +10,7 @@ class DummyApi(Api):
     class Meta:
         name = 'my.dummy'
 
-    def my_proc(self, field):
+    def my_proc(self, field) -> str:
         return 'value: {}'.format(field)
 
     def sudden_death(self, n):

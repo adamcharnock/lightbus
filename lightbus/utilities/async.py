@@ -44,3 +44,27 @@ def get_event_loop():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
     return loop
+
+
+async def cancel(*tasks):
+    """Useful for cleaning up tasks in tests"""
+    ex = None
+    for task in tasks:
+        # Cancel all the tasks any pull out any exceptions
+        if not task.cancelled():
+            task.cancel()
+        try:
+            await task
+            task.result()
+        except asyncio.CancelledError:
+            pass
+
+        except Exception as e:
+            # If there was an exception, and this is the first
+            # exception we've seen, then stash it away for later
+            if ex is None:
+                ex = e
+
+    # Now raise the first exception we saw, if any
+    if ex:
+        raise ex

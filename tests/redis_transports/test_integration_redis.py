@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+import jsonschema
 import pytest
 import lightbus
 from lightbus import BusNode
@@ -8,6 +9,7 @@ from lightbus.api import registry
 from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
 from lightbus.plugins import manually_set_plugins
+from lightbus.utilities.async import cancel
 
 pytestmark = pytest.mark.integration
 
@@ -239,3 +241,44 @@ async def test_multiple_event_transports(loop, server, redis_server_b):
         assert await redis.xrange('api_a.event_a:stream') == []
         assert await redis.xrange('api_b.event_b:stream')
 
+
+@pytest.mark.run_loop
+async def test_validation_rpc(loop, bus: lightbus.BusNode, dummy_api, mocker):
+    """Check validation happens when performing an RPC"""
+    config = Config.load_dict({
+        'apis': {
+            'default': {'validate': True, 'strict_validation': True}
+        }
+    })
+    bus.bus_client.config = config
+    mocker.patch('jsonschema.validate', autospec=True)
+
+    async def co_consume_rpcs():
+        return await bus.bus_client.consume_rpcs(apis=[dummy_api])
+
+    await bus.bus_client.schema.add_api(dummy_api)
+    await bus.bus_client.schema.save_to_bus()
+    await bus.bus_client.schema.load_from_bus()
+
+    consume_task = asyncio.ensure_future(co_consume_rpcs(), loop=loop)
+
+    await asyncio.sleep(0.1)
+    result = await bus.my.dummy.my_proc.call_async(field='Hello')
+
+    await cancel(consume_task)
+
+    assert result == 'value: Hello'
+
+    # Validate gets called
+    jsonschema.validate.assert_called_with(
+        'value: Hello',
+        {
+            '$schema': 'http://json-schema.org/draft-04/schema#',
+            'title': 'RPC my.dummy.my_proc() response',
+            'type': 'string'
+        }
+    )
+
+
+def test_validation_event():
+    raise NotImplementedError("Validation integration tests please!")

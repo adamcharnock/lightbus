@@ -258,7 +258,7 @@ def call_rpc_fixture(bus):
 
 @pytest.fixture(name='consume_rpcs')
 def consume_rpcs_fixture():
-    # Note: If you don't cancel this manually it'll be cancelling in the loop teardown (which is ok)
+    # Note: If you don't cancel this manually it'll be cancelling in the loop teardown (which is
     async def consume_rpcs(bus=None, apis=None):
         await bus.bus_client.consume_rpcs(apis=apis)
         logging.warning('TEST: consume_rpcs() completed (should not happen, should get cancelled)')
