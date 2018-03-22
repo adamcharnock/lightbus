@@ -610,10 +610,9 @@ def pytest_pyfunc_call(pyfuncitem):
         return True
 
 
-@asyncio.coroutine
-def _wait_coro(corofunc, kwargs, timeout, loop):
+async def _wait_coro(corofunc, kwargs, timeout, loop):
     with async_timeout(timeout, loop=loop):
-        return (yield from corofunc(**kwargs))
+        return await corofunc(**kwargs)
 
 
 def pytest_runtest_setup(item):

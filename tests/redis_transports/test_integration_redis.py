@@ -73,6 +73,7 @@ async def test_rpc_timeout(bus: lightbus.BusNode, dummy_api):
 
     (call_task, ), (consume_task, ) = await asyncio.wait([co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED)
     consume_task.cancel()
+
     with pytest.raises(LightbusTimeout):
         call_task.result()
 
@@ -280,5 +281,42 @@ async def test_validation_rpc(loop, bus: lightbus.BusNode, dummy_api, mocker):
     )
 
 
-def test_validation_event():
-    raise NotImplementedError("Validation integration tests please!")
+@pytest.mark.run_loop
+async def test_validation_event(loop, bus: lightbus.BusNode, dummy_api, mocker):
+    """Check validation happens when firing an event"""
+    config = Config.load_dict({
+        'apis': {
+            'default': {'validate': True, 'strict_validation': True}
+        }
+    })
+    bus.bus_client.config = config
+    mocker.patch('jsonschema.validate', autospec=True)
+
+    async def co_listener(**kw):
+        pass
+
+    await bus.bus_client.schema.add_api(dummy_api)
+    await bus.bus_client.schema.save_to_bus()
+    await bus.bus_client.schema.load_from_bus()
+
+    listener_task = await bus.bus_client.listen_for_event('my.dummy', 'my_event', co_listener)
+
+    await asyncio.sleep(0.1)
+    await bus.my.dummy.my_event.fire_async(field='Hello')
+
+    await cancel(listener_task)
+
+    # Validate gets called
+    jsonschema.validate.assert_called_with(
+        {'field': 'Hello'},
+        {
+            '$schema': 'http://json-schema.org/draft-04/schema#',
+            'type': 'object',
+            'additionalProperties': False,
+            'properties': {
+                'field': {'type': 'string'}
+            },
+            'required': ['field'],
+            'title': 'Event my.dummy.my_event parameters'
+        }
+    )

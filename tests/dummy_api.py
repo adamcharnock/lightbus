@@ -1,11 +1,13 @@
 from random import random
 
-from lightbus import Api, Event
+from lightbus import Api, Event, Parameter
 from lightbus.exceptions import SuddenDeathException
 
 
 class DummyApi(Api):
-    my_event = Event(['field'])
+    my_event = Event([
+        Parameter('field', str)
+    ])
 
     class Meta:
         name = 'my.dummy'

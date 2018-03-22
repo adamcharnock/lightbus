@@ -17,6 +17,7 @@ from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
 from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
+from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport, ResultTransport, EventTransport, RedisRpcTransport, \
     RedisResultTransport, RedisEventTransport
 from lightbus.transports.base import SchemaTransport, TransportRegistry
@@ -296,7 +297,7 @@ class BusClient(object):
                 "may also be using the incorrect API. Also check for typos.".format(**locals())
             )
 
-        if set(event.parameters) != set(kwargs.keys()):
+        if set(kwargs.keys()) != _parameter_names(event.parameters):
             raise InvalidEventArguments(
                 "Invalid event arguments supplied when firing event. Attempted to fire event with "
                 "{} arguments: {}. Event expected {}: {}".format(
@@ -381,7 +382,7 @@ class BusClient(object):
         # Result messages do not carry the api or procedure name, so allow them to be
         # specified manually
         api_name = getattr(message, 'api_name', api_name)
-        procedure_name = getattr(message, 'procedure_name', procedure_name)
+        event_or_rpc_name = getattr(message, 'procedure_name', None) or getattr(message, 'event_name', procedure_name)
         api_config = self.config.api(api_name)
         strict_validation = api_config.strict_validation
 
@@ -398,9 +399,9 @@ class BusClient(object):
             return
 
         if isinstance(message, (RpcMessage, EventMessage)):
-            self.schema.validate_parameters(api_name, procedure_name, message.kwargs)
+            self.schema.validate_parameters(api_name, event_or_rpc_name, message.kwargs)
         elif isinstance(message, (ResultMessage)):
-            self.schema.validate_response(api_name, procedure_name, message.result)
+            self.schema.validate_response(api_name, event_or_rpc_name, message.result)
 
 
 class BusNode(object):
