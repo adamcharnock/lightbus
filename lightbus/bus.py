@@ -158,7 +158,7 @@ class BusClient(object):
 
             coroutines = []
             for rpc_transport, transport_api_names in api_names_by_transport:
-                transport_apis = map(registry.get, transport_api_names)
+                transport_apis = list(map(registry.get, transport_api_names))
                 coroutines.append(
                     self._consume_rpcs_with_transport(
                         rpc_transport=rpc_transport,
@@ -168,7 +168,7 @@ class BusClient(object):
 
             await asyncio.gather(*coroutines)
 
-    async def _consume_rpcs_with_transport(self, rpc_transport, apis):
+    async def _consume_rpcs_with_transport(self, rpc_transport: RpcTransport, apis: List[Api] = None):
         rpc_messages = await rpc_transport.consume_rpcs(apis)
         for rpc_message in rpc_messages:
             self._validate(rpc_message, 'incoming')
