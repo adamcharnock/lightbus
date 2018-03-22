@@ -39,7 +39,6 @@ def test_config_as_json_schema_apis():
     assert api_config_schema['rpc_timeout']['type'] == 'number'
     assert api_config_schema['event_listener_setup_timeout']['type'] == 'number'
     assert api_config_schema['event_fire_timeout']['type'] == 'number'
-    assert api_config_schema['log_level']['oneOf']
     assert api_config_schema['validate']['oneOf']
 
 

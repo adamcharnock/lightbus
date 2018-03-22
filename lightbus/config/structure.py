@@ -67,7 +67,6 @@ class ApiConfig(object):
     rpc_timeout: int = 5
     event_listener_setup_timeout: int = 1
     event_fire_timeout: int = 1
-    log_level: Optional[LogLevelEnum] = None
     validate: Optional[Union[ApiValidationConfig, bool]] = True
     event_transport: EventTransportSelector = None
     rpc_transport: RpcTransportSelector = None
