@@ -8,11 +8,13 @@ from datetime import datetime
 
 import os
 
-from lightbus import BusClient
 from lightbus.api import registry
 from lightbus.message import EventMessage
 from lightbus.plugins import LightbusPlugin, is_plugin_loaded
 from lightbus.plugins.metrics import MetricsPlugin
+
+if False:
+    from lightbus import BusClient
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +78,7 @@ class StatePlugin(LightbusPlugin):
             self.ping_enabled = not args.no_ping
             self.ping_interval = args.ping_interval
 
-    async def before_server_start(self, *, bus_client: BusClient):
+    async def before_server_start(self, *, bus_client: 'BusClient'):
         event_transport = bus_client.transport_registry.get_event_transport('internal.metrics')
         await event_transport.send_event(
             EventMessage(
@@ -97,7 +99,7 @@ class StatePlugin(LightbusPlugin):
                 'may result in this Lightbus server not appearing in the Lightbus admin interface.'
             )
 
-    async def after_server_stopped(self, *, bus_client: BusClient):
+    async def after_server_stopped(self, *, bus_client: 'BusClient'):
         event_transport = bus_client.transport_registry.get_event_transport('internal.metrics')
         await event_transport.send_event(
             EventMessage(api_name='internal.state', event_name='server_stopped', kwargs=dict(
@@ -106,7 +108,7 @@ class StatePlugin(LightbusPlugin):
             options={},
         )
 
-    async def _send_ping(self, bus_client: BusClient):
+    async def _send_ping(self, bus_client: 'BusClient'):
         event_transport = bus_client.transport_registry.get_event_transport('internal.metrics')
         while True:
             await asyncio.sleep(self.ping_interval)
@@ -119,7 +121,7 @@ class StatePlugin(LightbusPlugin):
                 options={},
             )
 
-    def get_state_kwargs(self, bus_client: BusClient):
+    def get_state_kwargs(self, bus_client: 'BusClient'):
         """Get the kwargs for a server_started or ping message"""
         max_memory_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         return dict(

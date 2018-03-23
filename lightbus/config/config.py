@@ -8,7 +8,9 @@ import yaml as yamllib
 
 from lightbus.config.structure import PluginSelector
 from lightbus.schema.hints_to_schema import python_type_to_json_schemas, SCHEMA_URI
-from .structure import RootConfig, BusConfig, ApiConfig
+
+if False:
+    from .structure import RootConfig, BusConfig, ApiConfig
 
 
 class Config(object):
@@ -23,15 +25,15 @@ class Config(object):
     will normally have a default catch-all definition, but can be customised
     on a per-api basis.
     """
-    _config: RootConfig
+    _config: 'RootConfig'
 
-    def __init__(self, root_config: RootConfig):
+    def __init__(self, root_config: 'RootConfig'):
         self._config = root_config
 
-    def bus(self) -> BusConfig:
+    def bus(self) -> 'BusConfig':
         return self._config.bus
 
-    def api(self, api_name=None) -> ApiConfig:
+    def api(self, api_name=None) -> 'ApiConfig':
         """Returns config for the given API
 
         If there is no API-specific config available for the
@@ -39,10 +41,10 @@ class Config(object):
         """
         return self._config.apis.get(api_name, None) or self._config.apis['default']
 
-    def apis(self) -> Dict[str, ApiConfig]:
+    def apis(self) -> Dict[str, 'ApiConfig']:
         return self._config.apis
 
-    def plugin(self, plugin_name) -> PluginSelector:
+    def plugin(self, plugin_name) -> 'PluginSelector':
         return getattr(self._config.plugins, plugin_name)
 
     @classmethod
@@ -73,6 +75,7 @@ class Config(object):
     @classmethod
     def load_dict(cls, config: dict):
         """Instantiate the config from a dictionary"""
+        from .structure import RootConfig
         config = set_default_config(config.copy())
         validate_config(config)
         return cls(
@@ -88,6 +91,7 @@ def validate_config(config: dict):
 
 def config_as_json_schema() -> dict:
     """Get the configuration structure as a json schema"""
+    from .structure import RootConfig
     schema, = python_type_to_json_schemas(RootConfig)
     schema['$schema'] = SCHEMA_URI
     return schema
