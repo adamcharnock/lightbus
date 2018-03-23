@@ -2,6 +2,7 @@
 import pytest
 from collections import OrderedDict
 
+from lightbus.config import Config
 from lightbus.plugins import get_plugins, manually_set_plugins, LightbusPlugin, autoload_plugins, plugin_hook, \
     remove_all_plugins, is_plugin_loaded
 from lightbus.plugins.metrics import MetricsPlugin
@@ -26,8 +27,9 @@ def test_manually_set_plugins():
 
 
 def test_autoload_plugins():
+    config = Config.load_dict({})
     assert get_plugins() == OrderedDict()
-    assert autoload_plugins()
+    assert autoload_plugins(config)
     assert [(name, p.__class__) for name, p in get_plugins().items()] == [
         ('internal_state', StatePlugin),
         ('internal_metrics', MetricsPlugin),

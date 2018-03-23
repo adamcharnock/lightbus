@@ -56,7 +56,7 @@ class BusClient(object):
         """
         if plugins is None:
             logger.debug("Auto-loading any installed Lightbus plugins...")
-            plugins = autoload_plugins()
+            plugins = autoload_plugins(self.config)
         else:
             logger.debug("Loading explicitly specified Lightbus plugins....")
             manually_set_plugins(plugins)

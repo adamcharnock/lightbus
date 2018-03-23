@@ -49,9 +49,9 @@ def make_plugin_selector_structure() -> NamedTuple:
     code = f"class {class_name}(NamedTuple):\n    pass\n"
     vars = {}
 
-    for plugin_name, plugin in find_plugins().items():
-        plugin_class_name = plugin.__class__.__name__
-        vars[plugin.__class__.__name__] = plugin
+    for plugin_name, plugin_class in find_plugins().items():
+        plugin_class_name = plugin_class.__name__
+        vars[plugin_class_name] = plugin_class
         code += f"    {plugin_name}: Optional[{plugin_class_name}.Config] = {plugin_class_name}.Config()\n"
 
     globals_ = globals().copy()

@@ -2,7 +2,7 @@ import asyncio
 import logging
 import traceback
 from argparse import ArgumentParser, _ArgumentGroup, Namespace
-from typing import Dict, Type, TypeVar
+from typing import Dict, Type, TypeVar, NamedTuple
 
 from collections import OrderedDict
 
@@ -12,6 +12,9 @@ from lightbus.exceptions import PluginsNotLoaded, PluginHookNotFound, InvalidPlu
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
+
+if False:
+    from lightbus.config import Config
 
 _plugins = None
 _hooks_names = []
@@ -48,9 +51,19 @@ class LightbusPlugin(object, metaclass=PluginMetaclass):
         return '{}.{}'.format(self.__class__.__module__, self.__class__.__name__)
 
     async def before_parse_args(self, *, parser: ArgumentParser, subparsers: _ArgumentGroup):
+        """
+
+        Note: Configuration is not available within the before_parse_args() and  after_parse_args()
+        hooks. These hooks will be called in a separate throw-away instance of this Plugin.
+        """
         pass
 
     async def after_parse_args(self, args: Namespace):
+        """
+
+        Note: Configuration is not available within the before_parse_args() and  after_parse_args()
+        hooks. These hooks will be called in a separate throw-away instance of this Plugin.
+        """
         pass
 
     async def before_server_start(self, *, bus_client: 'lightbus.bus.BusClient'):
@@ -84,7 +97,7 @@ class LightbusPlugin(object, metaclass=PluginMetaclass):
         pass
 
 
-def autoload_plugins(force=False):
+def autoload_plugins(config: 'Config', force=False):
     global _plugins, _hooks_names
     load_hook_names()
 
@@ -93,11 +106,19 @@ def autoload_plugins(force=False):
     if _plugins:
         return _plugins
 
-    _plugins = find_plugins()
+    for name, cls in find_plugins().items():
+        plugin_config = config.plugin(name)
+        if plugin_config.enabled:
+            _plugins[name] = instantiate_plugin(
+                plugin_config=plugin_config,
+                cls=cls,
+            )
     return _plugins
 
 
-def find_plugins():
+def find_plugins() -> Dict[str, Type[LightbusPlugin]]:
+    """Discover available plugin classes
+    """
     available_plugin_classes = load_entrypoint_classes(ENTRYPOINT_NAME)
     available_plugin_classes = sorted(available_plugin_classes, key=lambda v: v[-1].priority)
 
@@ -105,9 +126,15 @@ def find_plugins():
     for module_name, name, plugin in available_plugin_classes:
         if name in plugins:
             pass
-        plugins[name] = plugin()
+        plugins[name] = plugin
 
     return plugins
+
+
+def instantiate_plugin(plugin_config: NamedTuple, cls: Type[LightbusPlugin]):
+    options = plugin_config._asdict()
+    options.pop('enabled')
+    return cls.from_config(**options)
 
 
 def manually_set_plugins(plugins: Dict[str, LightbusPlugin]):

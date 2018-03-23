@@ -1,7 +1,7 @@
 import inspect
 import json as jsonlib
 from pathlib import Path
-from typing import Mapping, Union, Type, get_type_hints, TypeVar, Dict
+from typing import Mapping, Union, Type, get_type_hints, TypeVar, Dict, NamedTuple
 
 import jsonschema
 import yaml as yamllib
@@ -44,7 +44,7 @@ class Config(object):
     def apis(self) -> Dict[str, 'ApiConfig']:
         return self._config.apis
 
-    def plugin(self, plugin_name) -> 'PluginSelector':
+    def plugin(self, plugin_name) -> NamedTuple:
         return getattr(self._config.plugins, plugin_name)
 
     @classmethod

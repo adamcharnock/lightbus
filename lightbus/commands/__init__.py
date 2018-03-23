@@ -3,7 +3,8 @@ import logging
 import sys
 from asyncio.events import get_event_loop
 
-from lightbus.plugins import autoload_plugins, plugin_hook
+from lightbus.config import Config
+from lightbus.plugins import autoload_plugins, plugin_hook, remove_all_plugins
 from lightbus.utilities.logging import configure_logging
 from lightbus.utilities.async import block
 import lightbus.commands.run
@@ -30,15 +31,17 @@ def parse_args(args=None):
     lightbus.commands.run.Command().setup(parser, subparsers)
     lightbus.commands.shell.Command().setup(parser, subparsers)
     lightbus.commands.dump_schema.Command().setup(parser, subparsers)
-    lightbus.commands.dump_config_schema.Command().setup(parser, subparsers)
+    lightbus.commands.dump_schema.Command().setup(parser, subparsers)
 
-    autoload_plugins()
+    autoload_plugins(config=Config.load_dict({}))
 
     loop = get_event_loop()
     block(plugin_hook('before_parse_args', parser=parser, subparsers=subparsers), loop, timeout=5)
 
     args = parser.parse_args(sys.argv[1:] if args is None else args)
     block(plugin_hook('after_parse_args', args=args), loop, timeout=5)
+
+    remove_all_plugins()
 
     return args
 
