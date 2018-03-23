@@ -7,7 +7,6 @@ from argparse import ArgumentParser, _ArgumentGroup, Namespace
 from datetime import datetime
 
 import os
-from typing import NamedTuple
 
 from lightbus import BusClient
 from lightbus.api import registry

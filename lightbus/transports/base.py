@@ -1,40 +1,14 @@
-import inspect
 import logging
-from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, Optional, TypeVar, Type, Callable, Hashable
+from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, TypeVar, Type
 
 from lightbus.api import Api
 from lightbus.exceptions import NothingToListenFor, TransportNotFound
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
+from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
 
 T = TypeVar('T')
 logger = logging.getLogger(__name__)
-
-
-def make_transport_config_structure(class_name, from_config_method):
-    # TODO: Move onto transport metaclass?
-    code = f"class {class_name}Config(NamedTuple):\n    pass\n"
-    vars = dict(p={})
-
-    parameters = inspect.signature(from_config_method).parameters.values()
-    for parameter in parameters:
-        if parameter.kind in (parameter.POSITIONAL_ONLY, parameter.VAR_POSITIONAL):
-            logger.warning(
-                f'Positional-only arguments are not supported in from_config() on transport {class_name}'
-            )
-        elif parameter.kind in (parameter.VAR_KEYWORD, ):
-            logger.warning(
-                f'**kwargs-style parameters are not supported in from_config() on transport {class_name}'
-            )
-        else:
-            name = parameter.name
-            vars['p'][name] = parameter
-            code += f"    {name}: p['{name}'].annotation = p['{name}'].default\n"
-
-    globals_ = globals().copy()
-    globals_.update(vars)
-    exec(code, globals_)
-    return globals_[f'{class_name}Config']
 
 
 class TransportMetaclass(type):
@@ -42,7 +16,10 @@ class TransportMetaclass(type):
     def __new__(mcs, name, bases, attrs, **kwds):
         cls = super().__new__(mcs, name, bases, attrs)
         if not hasattr(cls, f'{name}Config') and hasattr(cls, 'from_config'):
-            cls.Config = make_transport_config_structure(name, cls.from_config)
+            cls.Config = make_from_config_structure(
+                class_name=name,
+                from_config_method=cls.from_config,
+            )
         return cls
 
 

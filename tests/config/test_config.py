@@ -6,6 +6,9 @@ from lightbus import DebugRpcTransport
 from lightbus.config import Config
 from lightbus.config.config import mapping_to_named_tuple, config_as_json_schema
 from lightbus.config.structure import RootConfig, BusConfig
+from lightbus.plugins import autoload_plugins, manually_set_plugins
+from lightbus.plugins.metrics import MetricsPlugin
+from lightbus.plugins.state import StatePlugin
 from lightbus.schema.encoder import json_encode
 from lightbus.transports.redis import RedisRpcTransport
 
@@ -117,6 +120,15 @@ def test_mapping_to_named_tuple_validate():
     }}}}, RootConfig)
     assert root_config.apis['my_api'].validate.incoming == True
     assert root_config.apis['my_api'].validate.outgoing == False
+
+
+def test_plugin_selector_config():
+    config = Config.load_dict({})
+    assert hasattr(config._config.plugins, 'internal_state')
+    assert hasattr(config._config.plugins, 'internal_metrics')
+    assert config.plugin('internal_state').ping_enabled is True
+    assert config.plugin('internal_state').ping_interval > 0
+    assert config.plugin('internal_state').enabled is True
 
 
 EXAMPLE_VALID_YAML = """

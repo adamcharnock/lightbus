@@ -6,6 +6,7 @@ from typing import Mapping, Union, Type, get_type_hints, TypeVar, Dict
 import jsonschema
 import yaml as yamllib
 
+from lightbus.config.structure import PluginSelector
 from lightbus.schema.hints_to_schema import python_type_to_json_schemas, SCHEMA_URI
 from .structure import RootConfig, BusConfig, ApiConfig
 
@@ -40,6 +41,9 @@ class Config(object):
 
     def apis(self) -> Dict[str, ApiConfig]:
         return self._config.apis
+
+    def plugin(self, plugin_name) -> PluginSelector:
+        return getattr(self._config.plugins, plugin_name)
 
     @classmethod
     def load_file(cls, file_path):

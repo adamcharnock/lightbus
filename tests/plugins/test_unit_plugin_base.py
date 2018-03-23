@@ -67,3 +67,17 @@ def test_is_plugin_loaded():
         ('p1', LightbusPlugin()),
     ]))
     assert is_plugin_loaded(LightbusPlugin) == True
+
+
+def test_plugin_config():
+    # Is the Config attached to the plugin class by the
+    # base plugin's metaclass?
+    class PluginWithConfig(LightbusPlugin):
+        @classmethod
+        def from_config(cls, first: int=123):
+            pass
+
+    assert PluginWithConfig.Config
+    assert type(PluginWithConfig.Config) == type
+    assert 'first' in PluginWithConfig.Config.__annotations__
+    assert PluginWithConfig.Config().first == 123

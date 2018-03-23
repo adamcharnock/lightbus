@@ -8,7 +8,6 @@ from typing import Optional, List
 
 import jsonschema
 
-from lightbus.config import Config
 from lightbus.schema import Schema
 from lightbus.api import registry, Api
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
@@ -34,6 +33,7 @@ logger = logging.getLogger(__name__)
 class BusClient(object):
 
     def __init__(self,
+                 # TODO: Config hint unfulfilled due to circular imports. Make config structure not load at import time
                  config: 'Config',
                  transport_registry: TransportRegistry=None,
                  process_name: str='',

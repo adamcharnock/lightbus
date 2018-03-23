@@ -24,7 +24,7 @@ from typing import NamedTuple, Optional, Union, Mapping, Type, Dict
 from enum import Enum
 
 from lightbus.transports.base import get_available_transports
-from lightbus.plugins import get_plugins
+from lightbus.plugins import get_plugins, find_plugins
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +44,29 @@ def make_transport_selector_structure(type_) -> NamedTuple:
     return globals_[class_name]
 
 
+def make_plugin_selector_structure() -> NamedTuple:
+    class_name = f"PluginSelector"
+    code = f"class {class_name}(NamedTuple):\n    pass\n"
+    vars = {}
+
+    for plugin_name, plugin in find_plugins().items():
+        plugin_class_name = plugin.__class__.__name__
+        vars[plugin.__class__.__name__] = plugin
+        code += f"    {plugin_name}: Optional[{plugin_class_name}.Config] = {plugin_class_name}.Config()\n"
+
+    globals_ = globals().copy()
+    globals_.update(vars)
+    exec(code, globals_)
+    return globals_[class_name]
+
+
+# TODO: Rename to specifiers?
 RpcTransportSelector = make_transport_selector_structure('rpc')
 ResultTransportSelector = make_transport_selector_structure('result')
 EventTransportSelector = make_transport_selector_structure('event')
 SchemaTransportSelector = make_transport_selector_structure('schema')
+
+PluginSelector = make_plugin_selector_structure()
 
 
 class LogLevelEnum(Enum):
@@ -98,3 +117,4 @@ class BusConfig(NamedTuple):
 class RootConfig(NamedTuple):
     bus: BusConfig = BusConfig()
     apis: Dict[str, ApiConfig] = {}
+    plugins: PluginSelector = PluginSelector()

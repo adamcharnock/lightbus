@@ -2,14 +2,15 @@ import asyncio
 import logging
 import traceback
 from argparse import ArgumentParser, _ArgumentGroup, Namespace
-from typing import Dict, Type, NamedTuple, Optional, TypeVar, Callable
+from typing import Dict, Type, TypeVar
 
-import pkg_resources
 from collections import OrderedDict
 
 import lightbus
+from lightbus.schema.schema import Parameter
 from lightbus.exceptions import PluginsNotLoaded, PluginHookNotFound, InvalidPlugins, LightbusShutdownInProgress
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
+from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
 
 _plugins = None
@@ -22,8 +23,21 @@ logger = logging.getLogger(__name__)
 T = TypeVar('T')
 
 
+class PluginMetaclass(type):
+
+    def __new__(mcs, name, bases, attrs, **kwds):
+        cls = super().__new__(mcs, name, bases, attrs)
+        if not hasattr(cls, f'{name}Config') and hasattr(cls, 'from_config'):
+            cls.Config = make_from_config_structure(
+                class_name=name,
+                from_config_method=cls.from_config,
+                extra_parameters=[Parameter('enabled', bool, default=True)],
+            )
+        return cls
+
+
 # TODO: Document plugins in docs (and reference those docs here)
-class LightbusPlugin(object):
+class LightbusPlugin(object, metaclass=PluginMetaclass):
     priority = 1000
 
     @classmethod
@@ -79,16 +93,21 @@ def autoload_plugins(force=False):
     if _plugins:
         return _plugins
 
-    found_plugins = load_entrypoint_classes(ENTRYPOINT_NAME)
-    found_plugins = sorted(found_plugins, key=lambda v: v[-1].priority)
-
-    _plugins = OrderedDict()
-    for module_name, name, plugin in found_plugins:
-        if name in _plugins:
-            pass
-        _plugins[name] = plugin()
-
+    _plugins = find_plugins()
     return _plugins
+
+
+def find_plugins():
+    available_plugin_classes = load_entrypoint_classes(ENTRYPOINT_NAME)
+    available_plugin_classes = sorted(available_plugin_classes, key=lambda v: v[-1].priority)
+
+    plugins = OrderedDict()
+    for module_name, name, plugin in available_plugin_classes:
+        if name in plugins:
+            pass
+        plugins[name] = plugin()
+
+    return plugins
 
 
 def manually_set_plugins(plugins: Dict[str, LightbusPlugin]):
