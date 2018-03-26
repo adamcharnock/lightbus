@@ -1,0 +1,76 @@
+theme: readthedocs
+
+# Project information
+site_name: Lightbus
+site_description: RPC & event system for Python 3
+site_author: Adam Charnock
+site_url: http://lightbus.org
+
+# Repository
+repo_name: GitHub
+repo_url: https://github.com/adamcharnock/lightbus
+
+theme:
+  name: material
+
+  palette:
+    primary: 'pink'
+    accent: 'indigo'
+
+  static_templates:
+    - 404.html
+
+  language: en
+
+  font:
+    text: Roboto
+    code: Roboto Mono
+  favicon: ""
+  logo:
+    icon: "\uE915"
+
+pages:
+  - Introduction: index.md
+  - Quick start: quick-start.md
+  - Concepts: concepts.md
+  - Api Definition: api-definition.md
+  - Calling RPCs: calling-rpcs.md
+  - Listening for events: listening-for-events.md
+  - Configuration: configuration.md
+  - Transports: transports.md
+  - Command line use: command-line-use.md
+  - Debugging: debugging.md
+  - Contributing: contributing.md
+
+# Extensions
+markdown_extensions:
+  - meta
+  - markdown.extensions.admonition
+  - markdown.extensions.codehilite:
+      guess_lang: false
+  - markdown.extensions.def_list
+  - markdown.extensions.footnotes
+  - markdown.extensions.meta
+  - markdown.extensions.toc:
+      permalink: true
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+google_analytics:
+  - 'UA-103655163-1'
+  - 'auto'
