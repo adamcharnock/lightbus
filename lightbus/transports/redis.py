@@ -269,6 +269,9 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
 
 
 class RedisEventTransport(RedisTransportMixin, EventTransport):
+    # TODO: Use a consume group to make sure we don't miss events while the process is
+    # offline. For example, sending welcome email upon user registration. This means
+    # we need to collect an app name somewhere
 
     def __init__(self, redis_pool=None, *,
                  url=None,

@@ -16,21 +16,44 @@ clear and helpful error messages.
 
 For example, a naive authentication API:
 
-```python
+```python3
 class AuthApi(Api):
+    user_registered = Event(parameters=('username', 'email'))
+
     class Meta:
         name = 'auth'
 
     def check_password(self, user, password):
-        return user == 'admin' and password == 'secret'
+        return (
+            user == 'admin'
+            and password == 'secret'
+        )
 ```
 
 This can be called as follows:
 
-```python
+```python3
+import lightbus
+
 bus = lightbus.create()
-bus.auth.check_password(user='admin', password='secret')
-# True
-bus.auth.check_password(user='admin', password='wrong')
-# False
+
+bus.auth.check_password(
+    user='admin',
+    password='secret'
+)
+# Returns true
+```
+
+You could also listen for events:
+
+```python3
+def send_signup_email(username, email):
+    send_mail(
+        email,
+        subject=f'Welcome {username}'
+    )
+
+bus.auth.user_registered.listen(
+    send_signup_email
+)
 ```
