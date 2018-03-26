@@ -131,6 +131,45 @@ def test_plugin_selector_config():
     assert config.plugin('internal_state').enabled is True
 
 
+def test_plugin_selector_custom_config():
+    config = Config.load_dict({
+        'plugins': {
+            'internal_state': {
+                'ping_interval': 123,
+            }
+        }
+    })
+    assert config.plugin('internal_state').ping_interval == 123
+
+
+def test_plugin_disabled():
+    config = Config.load_dict({
+        'plugins': {
+            'internal_state': {
+                'enabled': False,
+            }, 'internal_metrics': {
+                'enabled': False,
+            }
+        }
+    })
+    plugins = autoload_plugins(config)
+    assert not plugins
+
+
+def test_plugin_enabled():
+    config = Config.load_dict({
+        'plugins': {
+            'internal_state': {
+                'enabled': True,
+            }, 'internal_metrics': {
+                'enabled': True,
+            }
+        }
+    })
+    plugins = autoload_plugins(config)
+    assert plugins
+
+
 EXAMPLE_VALID_YAML = """
 bus:
     log_level: warning

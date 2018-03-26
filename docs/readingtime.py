@@ -4,6 +4,7 @@ Credit to: https://github.com/hamukazu/wordcount-sphinx
 Adapted by Adam Charnock
 """
 from docutils import nodes
+from docutils.parsers.rst import Directive
 
 
 def setup(app):
@@ -16,7 +17,6 @@ class ReadingTime(nodes.General, nodes.Element):
     pass
 
 
-from sphinx.util.compat import Directive
 
 
 class ReadingTimeDirective(Directive):

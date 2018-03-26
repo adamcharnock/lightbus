@@ -100,7 +100,7 @@ For example:
 BusClient
 ---------
 
-The ``BusClient`` class wires together the ``BusNode``s and the transports, as well as
+The ``BusClient`` class wires together the ``BusNodes`` and the transports, as well as
 handling message serialisation.
 
 Message serialisation & deserialisation
