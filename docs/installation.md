@@ -83,7 +83,8 @@ You check check everything is setup correctly by starting up lightbus:
 
     $ lightbus run
 
-# TODO: Doesn't work
+Lightbus should start without errors and wait for messages. 
+You can exit using ++ctrl+c++.
 
 [vincent]: https://wsvincent.com/install-python3-mac/
 [gardner]: https://medium.com/@jordanthomasg/python-development-on-macos-with-pyenv-2509c694a808
