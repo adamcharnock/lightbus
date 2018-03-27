@@ -5,7 +5,7 @@ from asyncio.futures import CancelledError
 import pytest
 
 import lightbus
-from lightbus.plugins import remove_all_plugins
+from lightbus.plugins import manually_set_plugins
 
 pytestmark = pytest.mark.reliability
 
@@ -18,7 +18,7 @@ async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events,
     caplog.set_level(logging.WARNING)
 
     # The metrics plugins will add too much overhead to this test
-    remove_all_plugins()
+    manually_set_plugins({})
 
     event_ok_ids = dict()
     history = []

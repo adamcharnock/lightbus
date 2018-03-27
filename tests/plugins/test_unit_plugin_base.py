@@ -13,7 +13,7 @@ pytestmark = pytest.mark.unit
 
 
 def test_manually_set_plugins():
-    assert get_plugins() == OrderedDict()
+    assert get_plugins() is None
     p1 = LightbusPlugin()
     p2 = LightbusPlugin()
     manually_set_plugins(OrderedDict([
@@ -28,7 +28,7 @@ def test_manually_set_plugins():
 
 def test_autoload_plugins():
     config = Config.load_dict({})
-    assert get_plugins() == OrderedDict()
+    assert get_plugins() is None
     assert autoload_plugins(config)
     assert [(name, p.__class__) for name, p in get_plugins().items()] == [
         ('internal_state', StatePlugin),
@@ -39,7 +39,7 @@ def test_autoload_plugins():
 @pytest.mark.run_loop
 async def test_plugin_hook(mocker):
     """Ensure calling plugin_hook() calls the method on the plugin"""
-    assert get_plugins() == OrderedDict()
+    assert get_plugins() is None
     plugin = LightbusPlugin()
     manually_set_plugins(OrderedDict([
         ('p1', plugin),
@@ -54,16 +54,16 @@ async def test_plugin_hook(mocker):
 
 
 def test_remove_all_plugins():
-    assert get_plugins() == OrderedDict()
+    assert get_plugins() is None
     manually_set_plugins(OrderedDict([
         ('p1', LightbusPlugin()),
     ]))
     remove_all_plugins()
-    assert get_plugins() == OrderedDict()
+    assert get_plugins() is None
 
 
 def test_is_plugin_loaded():
-    assert get_plugins() == OrderedDict()
+    assert get_plugins() is None
     assert is_plugin_loaded(LightbusPlugin) == False
     manually_set_plugins(OrderedDict([
         ('p1', LightbusPlugin()),

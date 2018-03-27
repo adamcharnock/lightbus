@@ -103,8 +103,11 @@ def autoload_plugins(config: 'Config', force=False):
 
     if force:
         remove_all_plugins()
-    if _plugins:
+
+    if _plugins is not None:
         return _plugins
+    else:
+        _plugins = OrderedDict()
 
     for name, cls in find_plugins().items():
         plugin_config = config.plugin(name)
@@ -161,7 +164,7 @@ def load_hook_names():
 def remove_all_plugins():
     """Remove all plugins. Useful for testing"""
     global _plugins
-    _plugins = OrderedDict()
+    _plugins = None
 
 
 def get_plugins() -> Dict[str, LightbusPlugin]:
