@@ -147,6 +147,8 @@ def python_type_to_json_schemas(type_):
     if type(type_) == type(Union):
         sub_types = subs_tree[1:]
         return list(itertools.chain(*map(python_type_to_json_schemas, sub_types)))
+    if type_ == empty:
+        return [{}]
     elif type_ in (Any, ...):
         return [{}]
     elif is_class and issubclass(type_, (str, bytes, Decimal, complex)):
@@ -161,7 +163,7 @@ def python_type_to_json_schemas(type_):
             'type': 'object',
             'patternProperties': {'.*': wrap_with_one_of(python_type_to_json_schemas(subs_tree[2]))}
         }]
-    elif is_class and issubclass(type_, (dict, )):
+    elif is_class and issubclass(type_, (dict, Mapping)):
         return [{'type': 'object'}]
     elif is_class and issubclass(type_, tuple) and hasattr(type_, '_fields'):
         # Named tuple

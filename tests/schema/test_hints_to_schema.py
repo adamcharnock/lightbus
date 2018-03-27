@@ -1,3 +1,5 @@
+import inspect
+import logging
 from typing import Union, Optional, NamedTuple, Tuple, Any, Mapping
 from collections import namedtuple
 
@@ -62,6 +64,14 @@ def test_python_type_to_json_types_union():
         {'type': 'string'},
         {'type': 'number'},
     ]
+
+
+def test_python_type_to_json_types_empty(caplog):
+    with caplog.at_level(logging.CRITICAL, logger=''):
+        json_types = python_type_to_json_schemas(inspect.Parameter.empty)
+    assert json_types == [{}]
+    # Check there are no warnings
+    assert not caplog.records
 
 
 def test_union():
@@ -196,11 +206,19 @@ def test_ellipsis():
     assert 'type' not in schema
 
 
-def test_mapping():
+def test_mapping_with_types():
     def func(username) -> Mapping[str, int]: pass
     schema = make_response_schema('api_name', 'rpc_name', func)
     assert schema['type'] == 'object'
     assert schema['patternProperties'] == {'.*': {'type': 'number'}}
+
+
+def test_mapping_without_types():
+    def func(username) -> Mapping: pass
+    schema = make_response_schema('api_name', 'rpc_name', func)
+    assert schema['type'] == 'object'
+    assert 'patternProperties' not in schema
+    assert 'required' not in schema
 
 
 def test_enum_number():
