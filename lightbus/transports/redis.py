@@ -449,8 +449,6 @@ class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
         schemas = {}
         with await self.connection_manager() as redis:
             # Get & decode the api names
-            logger.debug('Current loop: {}'.format(id(asyncio.get_event_loop())))
-            logger.debug('Redis loop: {}'.format(id(redis._pool_or_conn._loop)))
             api_names = list(await redis.smembers(self.schema_set_key()))
             api_names = [api_name.decode('utf8') for api_name in api_names]
 
