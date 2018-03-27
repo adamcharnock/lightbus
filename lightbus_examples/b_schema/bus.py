@@ -7,7 +7,7 @@ class AuthApi(Api):
     ])
 
     class Meta:
-        name = 'my_company.auth'
+        name = 'auth'
 
     def check_password(self, username: str, password: str):
         return username == 'admin' and password == 'secret'

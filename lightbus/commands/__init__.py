@@ -24,6 +24,9 @@ def lightbus_entry_point():  # pragma: no cover
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description='Lightbus management command.')
     parser.add_argument('--config', help='Config file to load, JSON or YAML', metavar='FILE')
+    # TODO: Log level flag (plus honor --config flag)
+    # parser.add_argument('--log-level', help='Set the log level. Overrides any value set in config. '
+    #                                         'One of debug, info, warning, critical, exception.', metavar='LOG_LEVEL')
 
     subparsers = parser.add_subparsers(help='Commands', dest='subcommand')
     subparsers.required = True
