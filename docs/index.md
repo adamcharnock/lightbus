@@ -8,6 +8,9 @@ for other platforms may eventually be added.
 
 Lightbus requires Python 3.6 or above.
 
+**Lightbus is under active development and is still pre-release.**
+[Track progress in GitHub][issue-1].
+
 ## Designed for ease of use
 
 Lightbus is designed with developers in mind. The syntax aims to
@@ -57,3 +60,5 @@ bus.auth.user_registered.listen(
     send_signup_email
 )
 ```
+
+[issue-1]: 

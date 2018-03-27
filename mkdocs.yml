@@ -31,11 +31,12 @@ theme:
 
 pages:
   - Introduction: index.md
+  - Installation: installation.md
   - Quick start: quick-start.md
   - Concepts: concepts.md
-  - Api Definition: api-definition.md
-  - Calling RPCs: calling-rpcs.md
-  - Listening for events: listening-for-events.md
+  - APIs: apis.md
+  - Remote prcedure calls: rpcs.md
+  - Events: events.md
   - Configuration: configuration.md
   - Transports: transports.md
   - Command line use: command-line-use.md
