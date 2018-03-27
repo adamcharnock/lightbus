@@ -4,7 +4,7 @@
 Lightbus requires Python 3.6 or newer as it relies upon Python's new 
 [asyncio] and [type hinting] features. This is readily available 
 for all major operating systems but you should make sure you have it 
-installed before continuing.
+installed as per the steps below before installing Lightbus.
 
 ### macOS
 
