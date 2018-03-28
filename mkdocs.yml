@@ -39,6 +39,7 @@ pages:
   - Remote prcedure calls: rpcs.md
   - Events: events.md
   - Configuration: configuration.md
+  - Schema: schema.md
   - Transports: transports.md
   - Command line use: command-line-use.md
   - Debugging: debugging.md
