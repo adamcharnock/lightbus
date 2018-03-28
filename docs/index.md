@@ -47,7 +47,7 @@ bus.auth.check_password(
 # Returns true
 ```
 
-You could also listen for events:
+You can also listen for events:
 
 ```python3
 def send_signup_email(username, email):
