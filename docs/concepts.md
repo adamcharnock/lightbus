@@ -1,18 +1,101 @@
 ## Service
 
-* A single codebase of one or more processes
-* Shares the same `Api` definitions
+Throughout this documentation we use the term *service* 
+to refer to one or more processes handling a common task.
+These processes operate as a tightly-coupled whole.
+
+For example, your company may run a help desk 
+(e.g `support.company.com`) , an online shop (`shop.company.com`), 
+and an internal image resizing service (`img.cluster.local`).
+This documentation would consider each of these a service.
+
+The store and shop would probably have both a web process and a Lightbus process.
+The image resizing service would likely have a Lightbus process only.
 
 ## Bus
 
+In computing, a bus is a shared communication medium. A bus allows any 
+software/hardware connected to that medium to communicate, as long as 
+common rules are obeyed. In this sense a bus is very similar to a conversation 
+between a group of people.
+
+In electronics the communication medium can be a simple 
+copper cable. In software the communication medium is itself defined 
+by software.
+
+Lightbus uses Redis as its communication medium and provides a 
+simple programming interface to the developer.
+
+!!! note
+
+    The core of Lightbus mostly consists of the programming interface
+    and presentational nicities.
+    The connection with the communication medium is provided by 
+    customisable transports (see below). Lightbus ships with transports for Redis, 
+    but transports could be created for other mediums should you wish.
+
 ## API
 
-* Authoritative API use
+When we refer to an *API*, we are referring to an `Api` class definition. 
+For example, consider an API for support cases in the help desk service 
+mentioned above:
+
+```python3
+class SupportCaseApi(Api):
+    case_created = Event(parameters=('id', 'sender', 'subject', 'body'))
+
+    class Meta:
+        name = 'support.case'
+
+    def get_case(self, id):
+        return get_case_from_db(pk=id)
+```
+
+This API defines an event, a procedure, and the name used to address the API 
+on the bus. The help desk service could define multiple additional APIs as needed.
+
+The service which defines an API is *authoritative* for that API, and as 
+such can perform some actions that are not allowed by services accessing the API.
+
+A service which is authoritative for an API:
+
+1. Must import the API class definition
+2. Should respond to remote procedure calls for the API
+   (i.e. by running a `lightbus run` process)
+3. May fire events for the API
+
+Conversely, a non-authoritative service may *not* perform the above actions. 
+For example, the online shop service could not fire the `bus.support.case.case_created`
+event, nor should it import the `SupportCaseApi` class.
 
 ## Remote Procedure Calls (RPCs)
 
+A remote procedure call is where you call a procedure available on the bus. The authoritative 
+service executes the procedure you will receive the result. This is useful when:
+ 
+1. You require information from a service
+2. You wish to wait until a remote procedure has completed an action
+
+RPCs do not currently feature a 'fire and forget' mode of operation.
+
+You can perform an RPC as follows:
+
+```python3
+support_case = bus.support.case.get_case_from_db(pk=123)
+```
+
 ## Events
 
-* Can only be fired for APIs on which you are authoritative
+Firing an event will place the event onto the bus and return immediately. No information 
+is provided as to whether the event was processed, or indeed of it was received by any 
+other service at all. No return value is provided when firing an event.
+
+This is useful when:
+
+1. You wish to allow non-authoritative services to receive information without needing to concern yourself 
+   with their implementation
+2. You wish the authoritative service to perform a known task in the background
+
+The [quickstart](quick-start.md#events) provides an example of the latter case.
 
 ## Transports

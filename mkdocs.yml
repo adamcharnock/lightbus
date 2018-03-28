@@ -34,6 +34,7 @@ pages:
   - Installation: installation.md
   - Quick start: quick-start.md
   - Concepts: concepts.md
+  - Worked example: worked-example.md
   - APIs: apis.md
   - Remote prcedure calls: rpcs.md
   - Events: events.md

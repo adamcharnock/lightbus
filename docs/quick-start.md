@@ -11,7 +11,7 @@ the [installation section](installation.md):
 
 When using Lightbus you will still run your various services
 as normal. For web-based software this will likely include one or more
-processes to handle web traffic (e.g. Django or Flask).
+processes to handle web traffic (e.g. Django, Flask).
 You may or may not also have some other processes running for other purposes.  
 
 In addition to this, Lightbus will have its own process started via 
