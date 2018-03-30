@@ -1,3 +1,4 @@
+from .utilities.logging import configure_logging
 from .transports import *
 from .bus import *
 from .message import *

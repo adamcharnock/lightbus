@@ -5,12 +5,13 @@ to refer to one or more processes handling a common task.
 These processes operate as a tightly-coupled whole.
 
 For example, your company may run a help desk 
-(e.g `support.company.com`) , an online shop (`shop.company.com`), 
+(e.g `support.company.com`) , an online store (`store.company.com`), 
 and an internal image resizing service (`img.cluster.local`).
 This documentation would consider each of these a service.
 
-The store and shop would probably have both a web process and a Lightbus process.
-The image resizing service would likely have a Lightbus process only.
+The support and store services would probably have both a web process and a 
+Lightbus process each. The image resizing service would likely have a Lightbus 
+process only.
 
 ## Bus
 
@@ -65,7 +66,7 @@ A service which is authoritative for an API:
 3. May fire events for the API
 
 Conversely, a non-authoritative service may *not* perform the above actions. 
-For example, the online shop service could not fire the `bus.support.case.case_created`
+For example, the online store service could not fire the `bus.support.case.case_created`
 event, nor should it import the `SupportCaseApi` class.
 
 ## Remote Procedure Calls (RPCs)

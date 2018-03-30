@@ -1,0 +1,7 @@
+dashboard_bus: lightbus run --bus=dashboard/bus.py
+dashboard_web: FLASK_APP=dashboard/web.py flask run --port=5000
+
+store_bus: lightbus run --bus=store/bus.py
+store_web: FLASK_APP=store/web.py flask run --port=5001
+
+image_resizer_bus: lightbus run --bus=image/bus.py

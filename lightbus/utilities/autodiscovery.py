@@ -50,17 +50,22 @@ def prepare_exec_for_file(file: Path):
     return '.'.join(module[::-1])
 
 
-def autodiscover(directory='.'):
-    logger.debug("Attempting to autodiscover bus.py file")
-    bus_path = discover_bus_py(directory)
+def autodiscover(bus_path: str=None, search_directory: str='.'):
     if not bus_path:
-        return None
-    logger.debug(L("Found bus.py file at: {}", Bold(bus_path)))
+        logger.debug("Attempting to autodiscover bus.py file")
+        bus_path = discover_bus_py(search_directory)
+        if not bus_path:
+            return None
+        logger.debug(L("Found bus.py file at: {}", Bold(bus_path)))
+    else:
+        bus_path = Path(bus_path)
+        logger.debug(L("Using bus.py file at: {}", Bold(bus_path)))
+
     bus_module_name = prepare_exec_for_file(bus_path)
     logger.debug(L("Going to import {}", Bold(bus_module_name)))
     spec = importlib.util.spec_from_file_location(bus_module_name, str(bus_path))
     bus_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(bus_module)
-    logger.info(L("No initial import was specified. Using autodiscovered module '{}'", Bold(bus_module_name)))
+    logger.info(L("Auto-importing bus module '{}'", Bold(bus_module_name)))
 
     return bus_module

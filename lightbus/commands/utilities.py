@@ -9,10 +9,17 @@ logger = logging.getLogger(__name__)
 class BusImportMixin(object):
 
     def setup_import_parameter(self, argument_group):
-        argument_group.add_argument('--import',
-                                    dest='imprt',
-                                    metavar='PYTHON_MODULE',
-                                    help='The Python module to import initially. Will autodetect if omitted')
+        group = argument_group.add_mutually_exclusive_group()
+        group.add_argument('--import',
+                           dest='imprt',
+                           metavar='PYTHON_MODULE',
+                           help='The Python module to import initially. Will autodetect if omitted. '
+                                'Cannot specify both this option and --bus.')
+        group.add_argument('--bus',
+                           dest='bus_path',
+                           metavar='BUS_PATH',
+                           help='The path to the bus.py file. Will autodetect if omitted. '
+                                'Cannot specify both this option an --import.')
 
     def import_bus(self, args):
         if args.imprt:
@@ -23,7 +30,7 @@ class BusImportMixin(object):
                 return
             bus_module = importlib.util.module_from_spec(spec)
         else:
-            bus_module = autodiscover()
+            bus_module = autodiscover(bus_path=args.bus_path)
 
         if bus_module is None:
             logger.warning('Could not find a bus.py file, will listen for events only.')

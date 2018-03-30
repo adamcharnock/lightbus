@@ -111,7 +111,7 @@ class BusClient(object):
         if consume_rpcs:
             logger.info(LBullets(
                 "APIs in registry ({})".format(len(registry.all())),
-                items=registry.all()
+                items=registry.names()
             ))
 
         block(plugin_hook('before_server_start', bus_client=self), self.loop, timeout=5)
@@ -125,7 +125,7 @@ class BusClient(object):
             asyncio.ensure_future(self.consume_rpcs(), loop=self.loop)
 
         asyncio.ensure_future(self.schema.monitor(), loop=self.loop)
-        
+
         try:
             self.loop.run_forever()
         except KeyboardInterrupt:
@@ -203,7 +203,7 @@ class BusClient(object):
         options = options or {}
         timeout = options.get('timeout', 5)  # config: rpc_timeout
 
-        logger.info("➡ Calling remote RPC ".format(rpc_message))
+        logger.info("📞  Calling remote RPC {}.{}".format(Bold(api_name), Bold(name)))
 
         start_time = time.time()
         # TODO: It is possible that the RPC will be called before we start waiting for the response. This is bad.
@@ -238,7 +238,7 @@ class BusClient(object):
         await plugin_hook('after_rpc_call', rpc_message=rpc_message, result_message=result_message, bus_client=self)
 
         if not result_message.error:
-            logger.info(L("⚡ Remote call of {} completed in {}", Bold(rpc_message.canonical_name), human_time(time.time() - start_time)))
+            logger.info(L("🏁  Remote call of {} completed in {}", Bold(rpc_message.canonical_name), human_time(time.time() - start_time)))
         else:
             logger.warning(
                 L("⚡ Server error during remote call of {}. Took {}: {}",
@@ -265,10 +265,10 @@ class BusClient(object):
         except (CancelledError, SuddenDeathException):
             raise
         except Exception as e:
-            logger.warning(L("⚡ Error while executing {}.{}. Took {}", Bold(api_name), Bold(name), human_time(time.time() - start_time)))
+            logger.warning(L("⚡  Error while executing {}.{}. Took {}", Bold(api_name), Bold(name), human_time(time.time() - start_time)))
             return e
         else:
-            logger.info(L("⚡ Executed {}.{} in {}", Bold(api_name), Bold(name), human_time(time.time() - start_time)))
+            logger.info(L("⚡  Executed {}.{} in {}", Bold(api_name), Bold(name), human_time(time.time() - start_time)))
             return result
 
     # Events
@@ -311,6 +311,7 @@ class BusClient(object):
 
         event_transport = self.transport_registry.get_event_transport(api_name)
         await plugin_hook('before_event_sent', event_message=event_message, bus_client=self)
+        logger.info(L("📤  Sending event {}.{}".format(Bold(api_name), Bold(name))))
         await event_transport.send_event(event_message, options=options)
         await plugin_hook('after_event_sent', event_message=event_message, bus_client=self)
 
@@ -334,6 +335,8 @@ class BusClient(object):
             )
             with self._register_listener(api_name, name):
                 async for event_message in consumer:
+                    logger.info(L("📩  Received event {}.{}".format(Bold(api_name), Bold(name))))
+
                     self._validate(event_message, 'incoming')
 
                     await plugin_hook('before_event_execution', event_message=event_message, bus_client=self)

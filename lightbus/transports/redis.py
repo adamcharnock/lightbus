@@ -137,7 +137,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             # TODO: MAXLEN
             await redis.xadd(stream=stream, fields=self.serializer(rpc_message))
 
-        logger.info(L(
+        logger.debug(L(
             "Enqueued message {} in Redis in {} stream {}",
             Bold(rpc_message), human_time(time.time() - start_time), Bold(stream)
         ))
@@ -240,7 +240,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         ))
 
     async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict) -> ResultMessage:
-        logger.info(L("⌛ Awaiting Redis result for RPC message: {}", Bold(rpc_message)))
+        logger.debug(L("Awaiting Redis result for RPC message: {}", Bold(rpc_message)))
         redis_key = self._parse_return_path(return_path)
 
         with await self.connection_manager() as redis:
@@ -256,7 +256,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
 
         result_message = self.deserializer(serialized)
 
-        logger.info(L(
+        logger.debug(L(
             "⬅ Received Redis result in {} for RPC message {}: {}",
             human_time(time.time() - start_time), rpc_message, Bold(result_message.result)
         ))
@@ -327,7 +327,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             # TODO: MAXLEN
             await redis.xadd(stream=stream, fields=self.serializer(event_message))
 
-        logger.info(L(
+        logger.debug(L(
             "Enqueued event message {} in Redis in {} stream {}",
             Bold(event_message), human_time(time.time() - start_time), Bold(stream)
         ))
@@ -353,7 +353,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         while True:
             # Fetch some messages
             with await self.connection_manager() as redis:
-                logger.info(LBullets(
+                logger.debug(LBullets(
                     'Consuming events from', items={
                         '{} ({})'.format(*v) for v in streams.items()
                     }
