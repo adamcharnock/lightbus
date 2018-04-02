@@ -8,9 +8,5 @@ image_resizer_bus: lightbus run --bus=image/bus.py
 # on the StoreApi, and call the ImageApi's resize() RPC.
 store_web: FLASK_DEBUG=1 FLASK_APP=store/web.py flask run --port=5001
 
-# The dashboard's lightbus process. This listens for page_view events
-# and writes them a database local to this service.
-dashboard_bus: lightbus run --bus=dashboard/bus.py
-
-# The dashboard web interface. This reads data from its own database
-dashboard_web: FLASK_DEBUG=1 FLASK_APP=dashboard/web.py flask run --port=5000
+# Run the combined web UI + lightbus process
+dashboard_combined: python dashboard/combined.py

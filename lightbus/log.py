@@ -115,18 +115,6 @@ class LightbusLogRecord(object):
         return getattr(self._record, name)
 
 
-def _justify_icons(message, is_tty):
-    # Align messages alongside emojis/icons
-    if is_tty:
-        matches = re.match(r'([\U00002000-\U000FFFFF])(\s*)(.*)', message)
-        if matches:
-            return '{0}  {2}'.format(*matches.groups())
-        else:
-            return '   {}'.format(message)
-    else:
-        return message
-
-
 class LightbusFormatter(logging.Formatter):
     """
     A formatter that allows colors to be placed in the format string.
@@ -188,7 +176,6 @@ class LightbusFormatter(logging.Formatter):
         record = LightbusLogRecord(record)
         record.log_color = self.color(self.log_colors, record.levelname)
         record.is_tty = self.stream.isatty()
-        record.msg_cb = _justify_icons
 
         # Set secondary log colors
         if self.secondary_log_colors:
