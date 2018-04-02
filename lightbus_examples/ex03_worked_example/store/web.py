@@ -27,8 +27,8 @@ def home():
         html += (
             f'<a href="/pet/{pet_num}">'
             f'<img src="{resized_url}">'
-            f'</a>'
-            f'<br />')
+            f'</a> '
+        )
 
     bus.store.page_view.fire(url='/')
     return html

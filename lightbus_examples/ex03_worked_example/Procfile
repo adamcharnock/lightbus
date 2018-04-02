@@ -1,7 +1,16 @@
-dashboard_bus: lightbus run --bus=dashboard/bus.py
-dashboard_web: FLASK_APP=dashboard/web.py flask run --port=5000
+# This file defines the processes to start up as part of this example.
 
-store_bus: lightbus run --bus=store/bus.py
+# The image resizer service has no web UI. I does have an ImageApi
+# which provides a resize() RPC.
+image_resizer_bus: lightbus run --bus=image/bus.py
+
+# The store web interface. This will fire the page_view event
+# on the StoreApi, and call the ImageApi's resize() RPC.
 store_web: FLASK_APP=store/web.py flask run --port=5001
 
-image_resizer_bus: lightbus run --bus=image/bus.py
+# The dashboard's lightbus process. This listens for page_view events
+# and writes them a database local to this service.
+dashboard_bus: lightbus run --bus=dashboard/bus.py
+
+# The dashboard web interface. This reads data from its own database
+dashboard_web: FLASK_APP=dashboard/web.py flask run --port=5000

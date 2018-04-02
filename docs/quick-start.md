@@ -56,7 +56,7 @@ lightbus run
 Lightbus will output some logging data which will include a list of 
 APIs in its registry, including your new `auth` API:
 
-![alt text][lightbus-run]
+![lightbus run output][lightbus-run]
 
 Leave Lightbus running and open a new terminal window for the next stage. 
 
@@ -168,7 +168,7 @@ There a two important differences here:
 ## Further reading
 
 This quickstart has covered the basics of Lightbus, and has hopefully given you a 
-good starting point. Reading through the rest of this documentation should give you 
+good starting point. Reading through the remainder of this documentation should give you 
 a wider awareness of the features available and underlying concepts.
 
 

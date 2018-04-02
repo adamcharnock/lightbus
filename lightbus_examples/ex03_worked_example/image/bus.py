@@ -1,7 +1,6 @@
 """A simple image resizing service"""
 from lightbus import Api, Event
 
-
 class ImageApi(Api):
 
     class Meta:

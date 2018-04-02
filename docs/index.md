@@ -9,7 +9,7 @@ for other platforms may eventually be added.
 Lightbus requires Python 3.6 or above.
 
 **Lightbus is under active development and is still pre-release.**
-[Track progress in GitHub][issue-1].
+You can [track progress in GitHub][issue-1].
 
 ## Designed for ease of use
 
@@ -61,4 +61,7 @@ bus.auth.user_registered.listen(
 )
 ```
 
-[issue-1]: 
+To get started checkout the [installation](installation.md)
+and [quickstart](quick-start.md) guides.
+
+[issue-1]: https://github.com/adamcharnock/lightbus/issues/1

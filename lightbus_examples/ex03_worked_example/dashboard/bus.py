@@ -11,7 +11,7 @@ page_views = {}
 def handle_page_view(url):
     page_views.setdefault(url, 0)
     page_views[url] += 1
-    with open('/tmp/.exampledb.json', 'w') as f:
+    with open('/tmp/.dashboard.db.json', 'w') as f:
         json.dump(page_views, f)
 
 def before_server_start(bus):

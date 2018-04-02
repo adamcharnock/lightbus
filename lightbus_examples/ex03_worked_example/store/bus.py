@@ -1,4 +1,4 @@
-# bus.py
+# store/bus.py
 from lightbus import Api, Event, configure_logging
 configure_logging()
 

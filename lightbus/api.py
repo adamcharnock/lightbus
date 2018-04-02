@@ -75,6 +75,7 @@ class ApiMetaclass(type):
                 )
             cls.sanity_check_options(name, options)
             cls.meta = ApiOptions(cls.Meta.__dict__.copy())
+            # TODO: Disallow any APIs named 'default' or starting with 'default.'
             super(ApiMetaclass, cls).__init__(name, bases, dict)
 
             if cls.meta.auto_register:

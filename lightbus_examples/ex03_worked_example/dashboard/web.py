@@ -14,7 +14,7 @@ def home():
     html = '<h1>Dashboard</h1>\n'
     html = '<p>Total store views</p>\n'
 
-    with open('/tmp/.exampledb.json', 'r') as f:
+    with open('/tmp/.dashboard.db.json', 'r') as f:
         page_views = json.load(f)
 
     html += '<ul>'
