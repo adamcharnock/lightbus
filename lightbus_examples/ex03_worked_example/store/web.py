@@ -4,13 +4,15 @@ Shows a list of animals, and you can click on each one.
 
 Image resizing and page view tracking performed using lightbus.
 """
+import os
 import lightbus
 from flask import Flask
-from .bus import StoreApi
+from lightbus_examples.ex03_worked_example.store.bus import StoreApi
 
 app = Flask(__name__)
 
-bus = lightbus.create()
+lightbus.configure_logging()
+bus = lightbus.create(flask=True)
 
 PETS = (
     'http://store.company.com/image1.jpg',

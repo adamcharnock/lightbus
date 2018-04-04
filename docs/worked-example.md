@@ -1,4 +1,4 @@
-In the following worked example we will create a three services:
+In the following worked example we will create three services:
  
 1. An image resizing service
 2. An online store

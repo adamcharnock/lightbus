@@ -1,6 +1,7 @@
 import asyncio
 import traceback
 import logging
+from typing import Coroutine
 
 from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 
@@ -19,7 +20,7 @@ async def handle_aio_exceptions(fn):
         traceback.print_exc()
 
 
-def block(coroutine, loop, *, timeout):
+def block(coroutine: Coroutine, loop: asyncio.AbstractEventLoop, *, timeout):
     if loop.is_running():
         coroutine.close()
         raise CannotBlockHere(
@@ -50,6 +51,9 @@ async def cancel(*tasks):
     """Useful for cleaning up tasks in tests"""
     ex = None
     for task in tasks:
+        if task is None:
+            continue
+
         # Cancel all the tasks any pull out any exceptions
         if not task.cancelled():
             task.cancel()

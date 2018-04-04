@@ -1,6 +1,5 @@
 # store/bus.py
-from lightbus import Api, Event, configure_logging
-configure_logging()
+from lightbus import Api, Event
 
 class StoreApi(Api):
     page_view = Event(parameters=('url', ))

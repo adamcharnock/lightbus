@@ -1,12 +1,12 @@
+import os
 import asyncio
 import contextlib
 import inspect
 import logging
+import signal
 import time
 from asyncio.futures import CancelledError
 from typing import Optional, List
-
-import jsonschema
 
 from lightbus.config import Config
 from lightbus.schema import Schema
@@ -23,7 +23,7 @@ from lightbus.transports import RpcTransport, ResultTransport, EventTransport, R
 from lightbus.transports.base import SchemaTransport, TransportRegistry
 from lightbus.transports.redis import RedisSchemaTransport
 from lightbus.utilities.human import human_time, generate_process_name
-from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loop
+from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loop, cancel
 
 __all__ = ['BusClient', 'BusNode', 'create']
 
@@ -77,6 +77,21 @@ class BusClient(object):
             items=self.schema.remote_schemas.keys()
         ))
 
+    def close(self):
+        block(self.close_async(), loop=self.loop, timeout=5)
+
+    async def close_async(self):
+        listener_tasks = [
+            task
+            for task
+            in asyncio.Task.all_tasks(loop=self.loop)
+            if getattr(task, 'is_listener', False)
+        ]
+        await cancel(*listener_tasks)
+
+        for transport in self.transport_registry.get_all_transports():
+            await transport.close()
+
     def run_forever(self, *, consume_rpcs=True, plugins=None):
         rpc_transport = self.transport_registry.get_rpc_transport('default', default=None)
         result_transport = self.transport_registry.get_result_transport('default', default=None)
@@ -121,22 +136,37 @@ class BusClient(object):
         self.loop.run_until_complete(plugin_hook('after_server_stopped', bus_client=self))
 
     def _run_forever(self, consume_rpcs):
+        # Setup RPC consumption
+        consume_rpc_task = None
         if consume_rpcs and registry.all():
-            asyncio.ensure_future(self.consume_rpcs(), loop=self.loop)
+            consume_rpc_task = asyncio.ensure_future(self.consume_rpcs(), loop=self.loop)
 
-        asyncio.ensure_future(self.schema.monitor(), loop=self.loop)
+        # Setup schema monitoring
+        monitor_task = asyncio.ensure_future(self.schema.monitor(), loop=self.loop)
+
+        self.loop.add_signal_handler(signal.SIGINT, self.loop.stop)
+        self.loop.add_signal_handler(signal.SIGTERM, self.loop.stop)
 
         try:
             self.loop.run_forever()
+            logger.error('Interrupt received. Shutting down...')
         except KeyboardInterrupt:
             logger.error('Keyboard interrupt. Shutting down...')
-        finally:
-            for task in asyncio.Task.all_tasks():
-                task.cancel()
-                try:
-                    self.loop.run_until_complete(task)
-                except CancelledError:
-                    pass
+
+        # The loop has stopped, so we're shutting down
+
+        # Remove the signal handlers
+        self.loop.remove_signal_handler(signal.SIGINT)
+        self.loop.remove_signal_handler(signal.SIGTERM)
+
+        # Cancel the tasks we created above
+        block(
+            cancel(consume_rpc_task, monitor_task),
+            loop=self.loop, timeout=1
+        )
+
+        # Close the bus (which will in turn close the transports)
+        self.close()
 
     # RPCs
 
@@ -353,9 +383,11 @@ class BusClient(object):
                     await event_transport.consumption_complete(event_message, listener_context)
                     await plugin_hook('after_event_execution', event_message=event_message, bus_client=self)
 
-        return asyncio.ensure_future(
+        listener_task = asyncio.ensure_future(
             handle_aio_exceptions(listen_for_event_task())
         )
+        listener_task.is_listener = True
+        return listener_task
 
     # Results
 
@@ -552,8 +584,13 @@ def create(
         node_class=BusNode,
         config: dict=frozenset(),
         plugins=None,
-        loop=None,
+        loop: asyncio.AbstractEventLoop=None,
+        flask: bool=False,
         **kwargs) -> BusNode:
+
+    if flask and os.environ.get('WERKZEUG_RUN_MAIN', '').lower() != 'true':
+        # Flask has a reloader process that shouldn't start a lightbus client
+        return
 
     from lightbus.config import Config
     config = Config.load_dict(config or {})
@@ -578,4 +615,5 @@ def create(
         **kwargs
     )
     bus_client.setup(plugins=plugins)
+
     return node_class(name='', parent=None, bus_client=bus_client)

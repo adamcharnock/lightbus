@@ -95,8 +95,8 @@ def test_transport_registry_load_config(redis_default_config):
 
 def test_transport_registry_get_rpc_transports(redis_default_config):
     registry = TransportRegistry().load_config(redis_default_config)
-    debug_transport = DebugRpcTransport
-    redis_transport = RedisRpcTransport
+    debug_transport = DebugRpcTransport()
+    redis_transport = RedisRpcTransport()
 
     registry.set_rpc_transport('redis1', redis_transport)
     registry.set_rpc_transport('redis2', redis_transport)
@@ -114,8 +114,8 @@ def test_transport_registry_get_rpc_transports(redis_default_config):
 
 def test_transport_registry_get_event_transports(redis_default_config):
     registry = TransportRegistry().load_config(redis_default_config)
-    debug_transport = DebugEventTransport
-    redis_transport = RedisEventTransport
+    debug_transport = DebugEventTransport()
+    redis_transport = RedisEventTransport()
 
     registry.set_event_transport('redis1', redis_transport)
     registry.set_event_transport('redis2', redis_transport)
@@ -129,3 +129,10 @@ def test_transport_registry_get_event_transports(redis_default_config):
     assert set(transports[default_redis_transport]) == {'default', 'foo', 'bar'}
     assert set(transports[debug_transport]) == {'debug1', 'debug2'}
     assert set(transports[redis_transport]) == {'redis1', 'redis2'}
+
+
+def test_get_all_transports(redis_default_config):
+    registry = TransportRegistry().load_config(redis_default_config)
+    registry.set_event_transport('another', registry.get_event_transport('default'))
+    registry.set_event_transport('foo', DebugEventTransport())
+    assert len(registry.get_all_transports()) == 5

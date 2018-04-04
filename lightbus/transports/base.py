@@ -1,5 +1,6 @@
 import logging
-from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, TypeVar, Type
+from itertools import chain
+from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, TypeVar, Type, Set
 
 from lightbus.api import Api
 from lightbus.exceptions import NothingToListenFor, TransportNotFound
@@ -28,6 +29,13 @@ class Transport(object, metaclass=TransportMetaclass):
     @classmethod
     def from_config(cls: Type[T]) -> T:
         return cls()
+
+    async def close(self):
+        """Cleanup prior to termination
+
+        Can be used for closing connections etc.
+        """
+        pass
 
 
 class RpcTransport(Transport):
@@ -163,7 +171,7 @@ class TransportRegistry(object):
         schema: SchemaTransport = None
 
     def __init__(self):
-        self._registry: Dict[str, self._RegistryEntry] = {}
+        self._registry: Dict[str, TransportRegistry._RegistryEntry] = {}
 
     def load_config(self, config: 'Config') -> 'TransportRegistry':
         for api_name, api_config in config.apis().items():
@@ -280,6 +288,11 @@ class TransportRegistry(object):
         This is useful when multiple APIs can be served by a single transport
         """
         return self._get_transports(api_names, 'event')
+
+    def get_all_transports(self) -> Set[Transport]:
+        """Get a set of all transports irrespective of type"""
+        all_transports = chain(*[entry._asdict().values() for entry in self._registry.values()])
+        return set([t for t in all_transports if t is not None])
 
 
 def get_available_transports(type_):

@@ -83,6 +83,12 @@ class RedisTransportMixin(object):
         except aioredis.PoolClosedError:
             raise LightbusShutdownInProgress('Redis connection pool has been closed. Assuming shutdown in progress.')
 
+    async def close(self):
+        if self._redis_pool:
+            self._redis_pool.close()
+            await self._redis_pool.wait_closed()
+            self._redis_pool = None
+
 
 class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 

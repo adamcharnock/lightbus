@@ -26,30 +26,30 @@ def handle_page_view(url):
 
 
 async def start_listener(app):
-    app['page_view_listener'] = await app.bus.store.page_view.listen_async(handle_page_view)
+    # Create the asyncio task which will listen for the page_view event
+    listener_task = await app.bus.store.page_view.listen_async(handle_page_view)
+    # Store it against app in case we need it later
+    app['page_view_listener'] = listener_task
 
 
-async def cleanup_listener(app):
-    await cancel(app['page_view_listener'], *asyncio.Task.all_tasks())
-
-
-async def make_app(bus, loop):
-    app = web.Application()
-
-    app.router.add_route('GET', '/', home_view)
-
-    app.bus = bus
-    app.on_startup.append(start_listener)
-    app.on_cleanup.append(cleanup_listener)
-    return app
+async def cleanup(app):
+    # We're using aiohttp to manage the event loop, so
+    # we need to close up the lightbus client manually on shutdown.
+    await app.bus.bus_client.close_async()
 
 
 def main():
-    loop = asyncio.get_event_loop()
     lightbus.configure_logging()
-    bus = lightbus.create(loop=loop)
 
-    app = loop.run_until_complete(make_app(bus, loop))
+    loop = asyncio.get_event_loop()
+    bus = lightbus.create(loop=loop)
+    app = web.Application()
+
+    app.router.add_route('GET', '/', home_view)
+    app.on_startup.append(start_listener)
+    app.on_cleanup.append(cleanup)
+    app.bus = bus
+
     web.run_app(app, host='127.0.0.1', port=5000)
 
 
