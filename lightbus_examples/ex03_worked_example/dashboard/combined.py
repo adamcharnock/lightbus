@@ -1,8 +1,4 @@
-import asyncio
-
-
 import lightbus
-from lightbus.utilities.async import cancel
 from aiohttp import web
 
 page_views = {}
@@ -39,15 +35,19 @@ async def cleanup(app):
 
 
 def main():
+    # Make sure Lightbus formats its logs correctly
     lightbus.configure_logging()
 
-    loop = asyncio.get_event_loop()
-    bus = lightbus.create(loop=loop)
+    # Create our lightbus client and our web application
+    bus = lightbus.create()
     app = web.Application()
 
     app.router.add_route('GET', '/', home_view)
     app.on_startup.append(start_listener)
     app.on_cleanup.append(cleanup)
+
+    # Store the bus on `app` as we'll need it
+    # in start_listener() and cleanup()
     app.bus = bus
 
     web.run_app(app, host='127.0.0.1', port=5000)
