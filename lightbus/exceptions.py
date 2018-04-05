@@ -115,3 +115,7 @@ class NoTransportConfigured(LightbusException):
 
 class NoApisToListenOn(LightbusException):
     pass
+
+
+class InvalidName(LightbusException):
+    pass

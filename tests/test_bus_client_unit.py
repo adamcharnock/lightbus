@@ -6,7 +6,7 @@ import lightbus
 from lightbus import Schema, RpcMessage, ResultMessage, EventMessage, BusClient
 from lightbus.config import Config
 from lightbus.exceptions import UnknownApi, EventNotFound, InvalidEventArguments, InvalidEventListener, \
-    TransportNotFound
+    TransportNotFound, InvalidName
 
 pytestmark = pytest.mark.unit
 
@@ -33,6 +33,30 @@ async def test_fire_event_bad_event_arguments(dummy_bus: lightbus.BusNode, dummy
 async def test_listen_for_event_non_callable(dummy_bus: lightbus.BusNode):
     with pytest.raises(InvalidEventListener):
         await dummy_bus.bus_client.listen_for_event('my.dummy', 'my_event', listener=123)
+
+
+@pytest.mark.run_loop
+async def test_listen_for_event_starts_with_underscore(dummy_bus: lightbus.BusNode):
+    with pytest.raises(InvalidName):
+        await dummy_bus.bus_client.listen_for_event('my.dummy', '_my_event', listener=lambda: None)
+
+
+@pytest.mark.run_loop
+async def test_fire_event_starts_with_underscore(dummy_bus: lightbus.BusNode, dummy_api):
+    with pytest.raises(InvalidName):
+        await dummy_bus.bus_client.fire_event('my.dummy', '_my_event')
+
+
+@pytest.mark.run_loop
+async def test_call_rpc_remote_starts_with_underscore(dummy_bus: lightbus.BusNode):
+    with pytest.raises(InvalidName):
+        await dummy_bus.bus_client.call_rpc_remote('my.dummy', '_my_event')
+
+
+@pytest.mark.run_loop
+async def test_call_rpc_local_starts_with_underscore(dummy_bus: lightbus.BusNode, dummy_api):
+    with pytest.raises(InvalidName):
+        await dummy_bus.bus_client.call_rpc_local('my.dummy', '_my_event')
 
 
 @pytest.mark.run_loop
@@ -143,8 +167,8 @@ def test_validate_incoming_enabled(create_bus_client_with_unhappy_schema):
     message = RpcMessage(api_name='api', procedure_name='proc', kwargs={'p': 1})
     with pytest.raises(jsonschema.ValidationError):
         client._validate(message, direction='incoming', api_name='api', procedure_name='proc')
-        
-        
+
+
 def test_validate_outgoing_disabled(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema(validate={'outgoing': False})
 

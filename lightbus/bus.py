@@ -12,7 +12,7 @@ from lightbus.config import Config
 from lightbus.schema import Schema
 from lightbus.api import registry, Api
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
-    InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError, NoApisToListenOn
+    InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError, NoApisToListenOn, InvalidName
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
@@ -22,6 +22,7 @@ from lightbus.transports import RpcTransport, ResultTransport, EventTransport, R
     RedisResultTransport, RedisEventTransport
 from lightbus.transports.base import SchemaTransport, TransportRegistry
 from lightbus.transports.redis import RedisSchemaTransport
+from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time, generate_process_name
 from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loop, cancel
 
@@ -223,7 +224,7 @@ class BusClient(object):
 
                 await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
-    async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict, options: dict):
+    async def call_rpc_remote(self, api_name: str, name: str, kwargs: dict=frozendict(), options: dict=frozendict()):
         rpc_transport = self.transport_registry.get_rpc_transport(api_name)
         result_transport = self.transport_registry.get_result_transport(api_name)
 
@@ -232,6 +233,8 @@ class BusClient(object):
         rpc_message.return_path = return_path
         options = options or {}
         timeout = options.get('timeout', 5)  # config: rpc_timeout
+
+        self._validate_name(api_name, 'rpc', name)
 
         logger.info("📞  Calling remote RPC {}.{}".format(Bold(api_name), Bold(name)))
 
@@ -287,8 +290,10 @@ class BusClient(object):
 
         return result_message.result
 
-    async def call_rpc_local(self, api_name: str, name: str, kwargs: dict):
+    async def call_rpc_local(self, api_name: str, name: str, kwargs: dict=frozendict()):
         api = registry.get(api_name)
+        self._validate_name(api_name, 'rpc', name)
+
         start_time = time.time()
         try:
             result = await api.call(name, kwargs)
@@ -316,6 +321,8 @@ class BusClient(object):
                 "API name or event name, or be because the API class has not been "
                 "imported. ".format(**locals())
             )
+
+        self._validate_name(api_name, 'event', name)
 
         try:
             event = api.get_event(name)
@@ -351,6 +358,9 @@ class BusClient(object):
                 "The specified listener '{}' is not callable. Perhaps you called the function rather "
                 "than passing the function itself?".format(listener)
             )
+
+        self._validate_name(api_name, 'event', name)
+
         options = options or {}
         listener_context = {}
 
@@ -436,6 +446,19 @@ class BusClient(object):
             self.schema.validate_parameters(api_name, event_or_rpc_name, message.kwargs)
         elif isinstance(message, (ResultMessage)):
             self.schema.validate_response(api_name, event_or_rpc_name, message.result)
+
+    # Utilities
+
+    def _validate_name(self, api_name: str, type_: str, name: str):
+        """Validate that the given RPC/event name is ok to use"""
+        if not name:
+            raise InvalidName(f"Empty {type_} name specified when calling API {api_name}")
+
+        if name.startswith('_'):
+            raise InvalidName(
+                f"You can not use '{api_name}.{name}' as an {type_} because it starts with an underscore. "
+                f"API attributes starting with underscores are not available on the bus."
+            )
 
 
 class BusNode(object):
