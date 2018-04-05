@@ -60,6 +60,30 @@ async def test_call_rpc_local_starts_with_underscore(dummy_bus: lightbus.BusNode
 
 
 @pytest.mark.run_loop
+async def test_listen_for_event_empty_name(dummy_bus: lightbus.BusNode):
+    with pytest.raises(InvalidName):
+        await dummy_bus.bus_client.listen_for_event('my.dummy', '', listener=lambda: None)
+
+
+@pytest.mark.run_loop
+async def test_fire_event_empty_name(dummy_bus: lightbus.BusNode, dummy_api):
+    with pytest.raises(InvalidName):
+        await dummy_bus.bus_client.fire_event('my.dummy', '')
+
+
+@pytest.mark.run_loop
+async def test_call_rpc_remote_empty_name(dummy_bus: lightbus.BusNode):
+    with pytest.raises(InvalidName):
+        await dummy_bus.bus_client.call_rpc_remote('my.dummy', '')
+
+
+@pytest.mark.run_loop
+async def test_call_rpc_local_empty_name(dummy_bus: lightbus.BusNode, dummy_api):
+    with pytest.raises(InvalidName):
+        await dummy_bus.bus_client.call_rpc_local('my.dummy', '')
+
+
+@pytest.mark.run_loop
 async def test_no_transport(loop):
     # No transports configured for any relevant api
     config = Config.load_dict({
