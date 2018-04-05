@@ -59,7 +59,7 @@ on the bus. The help desk service could define multiple additional APIs as neede
 ## Remote Procedure Calls (RPCs)
 
 A remote procedure call is where you call a procedure available on the bus. The authoritative 
-service executes the procedure you will receive the result. This is useful when:
+service executes the procedure and you receive the result. This is useful when:
  
 1. You require information from a service
 2. You wish to wait until a remote procedure has completed an action
