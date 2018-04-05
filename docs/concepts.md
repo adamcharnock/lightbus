@@ -37,7 +37,8 @@ simple programming interface to the developer.
 
 ## API
 
-When we refer to an *API*, we are referring to an `Api` class definition. 
+When we refer to an *API*, we are referring to an `Api` class definition.
+These class definitions define the functionality available on the bus. 
 For example, consider an API for support cases in the help desk service 
 mentioned above:
 
@@ -48,26 +49,12 @@ class SupportCaseApi(Api):
     class Meta:
         name = 'support.case'
 
-    def get_case(self, id):
+    def get(self, id):
         return get_case_from_db(pk=id)
 ```
 
 This API defines an event, a procedure, and the name used to address the API 
 on the bus. The help desk service could define multiple additional APIs as needed.
-
-The service which defines an API is *authoritative* for that API, and as 
-such can perform some actions that are not allowed by services accessing the API.
-
-A service which is authoritative for an API:
-
-1. Must import the API class definition
-2. Should respond to remote procedure calls for the API
-   (i.e. by running a `lightbus run` process)
-3. May fire events for the API
-
-Conversely, a non-authoritative service may *not* perform the above actions. 
-For example, the online store service could not fire the `bus.support.case.case_created`
-event, nor should it import the `SupportCaseApi` class.
 
 ## Remote Procedure Calls (RPCs)
 
@@ -82,7 +69,7 @@ RPCs do not currently feature a 'fire and forget' mode of operation.
 You can perform an RPC as follows:
 
 ```python3
-support_case = bus.support.case.get_case_from_db(pk=123)
+support_case = bus.support.case.get(pk=123)
 ```
 
 ## Events
