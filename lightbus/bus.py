@@ -6,14 +6,14 @@ import logging
 import signal
 import time
 from asyncio.futures import CancelledError
-from typing import Optional, List
+from typing import Optional, List, Sequence, Tuple
 
 from lightbus.config import Config
 from lightbus.schema import Schema
 from lightbus.api import registry, Api
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
     InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError, NoApisToListenOn, InvalidName, \
-    InvalidParameters
+    InvalidParameters, ApisMustUseSameTransport
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
@@ -353,30 +353,39 @@ class BusClient(object):
         await event_transport.send_event(event_message, options=options)
         await plugin_hook('after_event_sent', event_message=event_message, bus_client=self)
 
-    async def listen_for_event(self, api_name, name, listener, options: dict=None) -> asyncio.Task:
+    async def listen_for_event(self, api_name, name, listener, options: dict = None) -> asyncio.Task:
+        return await self.listen_for_events([(api_name, name)], listener, options)
+
+    async def listen_for_events(self,
+                                events: List[Tuple[str, str]],
+                                listener,
+                                options: dict=None) -> asyncio.Task:
+
         if not callable(listener):
             raise InvalidEventListener(
                 "The specified listener '{}' is not callable. Perhaps you called the function rather "
                 "than passing the function itself?".format(listener)
             )
 
-        self._validate_name(api_name, 'event', name)
+        for api_name, name in events:
+            self._validate_name(api_name, 'event', name)
 
         options = options or {}
         listener_context = {}
 
-        async def listen_for_event_task():
+        async def listen_for_event_task(event_transport, events):
             # event_transport.consume() returns an asynchronous generator
             # which will provide us with messages
-            event_transport = self.transport_registry.get_event_transport(api_name)
             consumer = event_transport.consume(
-                listen_for=[(api_name, name)],
+                listen_for=events,
                 context=listener_context,
                 **options
             )
-            with self._register_listener(api_name, name):
+            with self._register_listener(events):
                 async for event_message in consumer:
-                    logger.info(L("📩  Received event {}.{}".format(Bold(api_name), Bold(name))))
+                    logger.info(L("📩  Received event {}.{}".format(
+                        Bold(event_message.api_name), Bold(event_message.event_name)
+                    )))
 
                     self._validate(event_message, 'incoming')
 
@@ -394,10 +403,26 @@ class BusClient(object):
                     await event_transport.consumption_complete(event_message, listener_context)
                     await plugin_hook('after_event_execution', event_message=event_message, bus_client=self)
 
-        listener_task = asyncio.ensure_future(
-            handle_aio_exceptions(listen_for_event_task())
+        # Get the events transports for the selection of APIs that we are listening on
+        event_transports = self.transport_registry.get_event_transports(
+            api_names=[api_name for api_name, _ in events]
         )
-        listener_task.is_listener = True
+
+        tasks = []
+        for _event_transport, _api_names in event_transports:
+            # Create a listener task for each event transport,
+            # passing each a list of events for which it should listen
+            _events = [
+                (api_name, event_name)
+                for api_name, event_name in events
+                if api_name in _api_names
+            ]
+            tasks.append(
+                handle_aio_exceptions(listen_for_event_task(_event_transport, _events)),
+            )
+
+        listener_task = asyncio.gather(*tasks)
+        listener_task.is_listener = True  # Used by close()
         return listener_task
 
     # Results
@@ -411,15 +436,20 @@ class BusClient(object):
         return await result_transport.receive_result(rpc_message, return_path, options)
 
     @contextlib.contextmanager
-    def _register_listener(self, api_name, event_name):
+    def _register_listener(self, events: List[Tuple[str, str]]):
         """A context manager to help keep track of what the bus is listening for"""
-        key = (api_name, event_name)
-        self._listeners.setdefault(key, 0)
-        self._listeners[key] += 1
+        for api_name, event_name in events:
+            key = (api_name, event_name)
+            self._listeners.setdefault(key, 0)
+            self._listeners[key] += 1
+
         yield
-        self._listeners[key] -= 1
-        if not self._listeners[key]:
-            self._listeners.pop(key)
+
+        for api_name, event_name in events:
+            key = (api_name, event_name)
+            self._listeners[key] -= 1
+            if not self._listeners[key]:
+                self._listeners.pop(key)
 
     def _validate(self, message: Message, direction: str, api_name=None, procedure_name=None):
         assert direction in ('incoming', 'outgoing')

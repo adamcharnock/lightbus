@@ -123,3 +123,7 @@ class InvalidName(LightbusException):
 
 class InvalidParameters(LightbusException):
     pass
+
+
+class ApisMustUseSameTransport(LightbusException):
+    pass
