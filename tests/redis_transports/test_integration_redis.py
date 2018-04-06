@@ -320,3 +320,52 @@ async def test_validation_event(loop, bus: lightbus.BusNode, dummy_api, mocker):
             'title': 'Event my.dummy.my_event parameters'
         }
     )
+
+
+@pytest.mark.run_loop
+async def test_listen_to_multiple_events_across_multiple_transports(loop, server, redis_server_b):
+    registry.add(ApiA())
+    registry.add(ApiB())
+
+    manually_set_plugins(plugins={})
+
+    redis_server_a = server
+
+    port_a = redis_server_a.tcp_address.port
+    port_b = redis_server_b.tcp_address.port
+
+    logging.warning(f'Server A port: {port_a}')
+    logging.warning(f'Server B port: {port_b}')
+
+    config = Config.load_dict({
+        'apis': {
+            # TODO: This needs moving out of the apis config section
+            'default': {
+                'event_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
+                'schema_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
+            },
+            'api_b': {
+                'event_transport': {'redis': {'url': f'redis://localhost:{port_b}'}},
+            },
+        }
+    })
+
+    bus = BusNode(name='', parent=None, bus_client=lightbus.BusClient(config=config, loop=loop))
+    await asyncio.sleep(0.1)
+
+    calls = 0
+    def listener(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+
+    await bus.listen_multiple_async([
+        bus.api_a.event_a,
+        bus.api_b.event_b
+    ], listener=listener)
+
+    await asyncio.sleep(0.1)
+    await bus.api_a.event_a.fire_async()
+    await bus.api_b.event_b.fire_async()
+    await asyncio.sleep(0.1)
+
+    assert calls == 2

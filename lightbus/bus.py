@@ -13,7 +13,7 @@ from lightbus.schema import Schema
 from lightbus.api import registry, Api
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
     InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError, NoApisToListenOn, InvalidName, \
-    InvalidParameters, ApisMustUseSameTransport
+    InvalidParameters, ApisMustUseSameTransport, OnlyAvailableOnRootNode
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
@@ -562,6 +562,23 @@ class BusNode(object):
     def listen(self, listener, *, bus_options: dict=None):
         # config: event_listener_setup_timeout
         return block(self.listen_async(listener, bus_options=bus_options), self.bus_client.loop, timeout=5)
+
+    async def listen_multiple_async(self, events: List['BusNode'], listener, *, bus_options: dict = None):
+        if self.parent:
+            raise OnlyAvailableOnRootNode(
+                'Both listen_multiple() and listen_multiple_async() are only available on the '
+                'bus root. For example, call bus.listen_multiple(), not bus.my_api.my_event.listen_multiple()'
+            )
+
+        events = [(node.api_name, node.name) for node in events]
+        return await self.bus_client.listen_for_events(
+            events=events, listener=listener, options=bus_options
+        )
+
+    def listen_multiple(self, events: List['BusNode'], listener, *, bus_options: dict=None):
+        return block(
+            self.listen_multiple_async(events, listener, bus_options=bus_options), self.bus_client.loop, timeout=5
+        )
 
     async def fire_async(self, *args, bus_options: dict=None, **kwargs):
         if args:

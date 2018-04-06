@@ -127,3 +127,7 @@ class InvalidParameters(LightbusException):
 
 class ApisMustUseSameTransport(LightbusException):
     pass
+
+
+class OnlyAvailableOnRootNode(LightbusException):
+    pass
