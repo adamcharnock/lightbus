@@ -19,7 +19,7 @@ class TestApi(Api):
 @pytest.mark.run_loop
 async def test_before_server_start(dummy_bus: BusNode, loop, get_dummy_events):
     registry.add(TestApi())
-    await dummy_bus.example.test.my_event.listen_async(lambda **kw: None)
+    await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
     await asyncio.sleep(0.1)  # Give the bus a moment to kick up the listener
 
     state_plugin = StatePlugin()
@@ -46,7 +46,7 @@ async def test_ping(dummy_bus: BusNode, loop, get_dummy_events):
     # We check the pings message contains a list of registries, so register one
     registry.add(TestApi())
     # Likewise for event listeners
-    await dummy_bus.example.test.my_event.listen_async(lambda **kw: None)
+    await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
 
     # Let the state plugin send a ping then cancel it
     state_plugin = StatePlugin()
@@ -76,7 +76,7 @@ async def test_ping(dummy_bus: BusNode, loop, get_dummy_events):
 @pytest.mark.run_loop
 async def test_after_server_stopped(dummy_bus: BusNode, loop, get_dummy_events):
     registry.add(TestApi())
-    await dummy_bus.example.test.my_event.listen_async(lambda **kw: None)
+    await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
 
     await StatePlugin().after_server_stopped(bus_client=dummy_bus.bus_client)
 

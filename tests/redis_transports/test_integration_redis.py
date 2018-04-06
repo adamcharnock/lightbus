@@ -103,9 +103,14 @@ async def test_event(bus: lightbus.BusNode, dummy_api):
     """Full event integration test"""
 
     received_kwargs = []
+    received_api_name = None
+    received_event_name = None
 
-    async def listener(**kwargs):
+    async def listener(api_name, event_name, **kwargs):
+        nonlocal received_kwargs, received_api_name, received_event_name
         received_kwargs.append(kwargs)
+        received_api_name = api_name
+        received_event_name = event_name
 
     await bus.my.dummy.my_event.listen_async(listener)
     await asyncio.sleep(0.01)
@@ -113,6 +118,8 @@ async def test_event(bus: lightbus.BusNode, dummy_api):
 
     # await asyncio.gather(co_fire_event(), co_listen_for_events())
     assert received_kwargs == [{'field': 'Hello! 😎'}]
+    assert received_api_name == 'my.dummy'
+    assert received_event_name == 'my_event'
 
 
 @pytest.mark.run_loop
@@ -292,7 +299,7 @@ async def test_validation_event(loop, bus: lightbus.BusNode, dummy_api, mocker):
     bus.bus_client.config = config
     mocker.patch('jsonschema.validate', autospec=True)
 
-    async def co_listener(**kw):
+    async def co_listener(*a, **kw):
         pass
 
     await bus.bus_client.schema.add_api(dummy_api)

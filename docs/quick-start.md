@@ -128,7 +128,7 @@ def before_server_start(bus):
     bus.auth.user_registered.listen(send_welcome_email)
 
 
-def send_welcome_email(username, email):
+def send_welcome_email(api_name, event_name, username, email):
     # In our example we'll just print something to the console,
     # rather than send an actual email
     print(f'Subject: Welcome to our site, {username}')

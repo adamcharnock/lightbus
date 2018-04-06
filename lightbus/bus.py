@@ -361,11 +361,7 @@ class BusClient(object):
                                 listener,
                                 options: dict=None) -> asyncio.Task:
 
-        if not callable(listener):
-            raise InvalidEventListener(
-                "The specified listener '{}' is not callable. Perhaps you called the function rather "
-                "than passing the function itself?".format(listener)
-            )
+        self._sanity_check_listener(listener)
 
         for api_name, name in events:
             self._validate_name(api_name, 'event', name)
@@ -392,7 +388,14 @@ class BusClient(object):
                     await plugin_hook('before_event_execution', event_message=event_message, bus_client=self)
 
                     # Call the listener
-                    co = listener(**event_message.kwargs)
+                    co = listener(
+                        # Pass the api & event names as positional arguments,
+                        # thereby allowing listeners to have flexibility in the argument names.
+                        # (And therefore allowing listeners to use the `even_name` parameter themselves)
+                        event_message.api_name,
+                        event_message.event_name,
+                        **event_message.kwargs
+                    )
 
                     # Await it if necessary
                     if inspect.isawaitable(co):
@@ -489,6 +492,31 @@ class BusClient(object):
             raise InvalidName(
                 f"You can not use '{api_name}.{name}' as an {type_} because it starts with an underscore. "
                 f"API attributes starting with underscores are not available on the bus."
+            )
+
+    def _sanity_check_listener(self, listener):
+        if not callable(listener):
+            raise InvalidEventListener(
+                f"The specified event listener {listener} is not callable. Perhaps you called the function rather "
+                f"than passing the function itself?"
+            )
+
+        total_positional_args = 0
+        has_variable_positional_args = False  # Eg: *args
+        for parameter in inspect.signature(listener).parameters.values():
+            if parameter.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD):
+                total_positional_args += 1
+            elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
+                has_variable_positional_args = True
+
+        if has_variable_positional_args:
+            return
+
+        if total_positional_args < 2:
+            raise InvalidEventListener(
+                f"The specified event listener {listener} must take at least two positional arguments. "
+                f"These will be the API name and the event name. For example: "
+                f"my_listener(api_name, event_name, other, ...)"
             )
 
 

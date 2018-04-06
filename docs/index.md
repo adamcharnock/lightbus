@@ -50,9 +50,9 @@ bus.auth.check_password(
 You can also listen for events:
 
 ```python3
-def send_signup_email(username, email):
-    send_mail(
-        email,
+def send_signup_email(api_name, event_name, 
+                      username, email):
+    send_mail(email,
         subject=f'Welcome {username}'
     )
 

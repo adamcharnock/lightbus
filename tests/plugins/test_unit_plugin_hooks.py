@@ -83,7 +83,8 @@ def test_event_sent(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dum
 @pytest.mark.run_loop
 async def test_event_execution(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dummy_api):
     add_base_plugin()
-    task = await dummy_bus.bus_client.listen_for_event('my.dummy', 'my_event', lambda **kw: None)
+
+    task = await dummy_bus.bus_client.listen_for_event('my.dummy', 'my_event', lambda *a, **kw: None)
     await asyncio.sleep(0.1)
 
     # Send the event message using a lower-level API to avoid triggering the
