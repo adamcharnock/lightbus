@@ -43,6 +43,7 @@ pages:
   - Transports: transports.md
   - Command line use: command-line-use.md
   - Debugging: debugging.md
+  - Plugins: plugins.md
   - Contributing: contributing.md
 
 # Extensions

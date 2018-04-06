@@ -39,7 +39,6 @@ class PluginMetaclass(type):
         return cls
 
 
-# TODO: Document plugins in docs (and reference those docs here)
 class LightbusPlugin(object, metaclass=PluginMetaclass):
     priority = 1000
 
