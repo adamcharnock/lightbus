@@ -10,12 +10,12 @@ class BusImportMixin(object):
 
     def setup_import_parameter(self, argument_group):
         group = argument_group.add_mutually_exclusive_group()
-        group.add_argument('--import',
+        group.add_argument('--import', '-i',
                            dest='imprt',
                            metavar='PYTHON_MODULE',
                            help='The Python module to import initially. Will autodetect if omitted. '
                                 'Cannot specify both this option and --bus.')
-        group.add_argument('--bus',
+        group.add_argument('--bus', '-b',
                            dest='bus_path',
                            metavar='BUS_PATH',
                            help='The path to the bus.py file. Will autodetect if omitted. '

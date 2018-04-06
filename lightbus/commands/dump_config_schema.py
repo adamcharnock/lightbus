@@ -18,7 +18,7 @@ class Command(BusImportMixin, object):
                                                   "bus' API schema, for that see the more commonly used 'dumpschema' "
                                                   "command",
                                              formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        parser_shell.add_argument('--schema',
+        parser_shell.add_argument('--schema', '-s',
                                   help='File to write config schema to. '
                                        'If omitted schema will be written to standard out.',
                                   metavar='FILE',

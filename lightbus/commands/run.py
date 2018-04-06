@@ -15,10 +15,11 @@ class Command(BusImportMixin, object):
         self.setup_import_parameter(parser_run)
 
         parser_run_action_group = parser_run.add_mutually_exclusive_group()
-        parser_run_action_group.add_argument('--events-only', help='Run Lightbus, but only listen for and handle events', action='store_true')
-        parser_run_action_group.add_argument('--rpcs-only', help='Run Lightbus, but only consume and handle RPCs', action='store_true')
+        parser_run_action_group.add_argument('--events-only', '-E',
+                                             help='Only listen for and handle events, do not respond to RPC calls',
+                                             action='store_true')
         parser_run_action_group.add_argument(
-            '--schema',
+            '--schema', '-s',
             help='Manually load the schema from the given file or directory. '
                  'This will normally be provided by the schema transport, '
                  'but manual loading may be useful during development or testing.',
@@ -28,22 +29,22 @@ class Command(BusImportMixin, object):
 
         parser_run_transport_group = parser_run.add_argument_group(title='Transport options')
         parser_run_transport_group.add_argument(
-            '--rpc-transport', help='RPC transport class to use', default='lightbus.RedisRpcTransport'
+            '--rpc-transport', '-p', help='Default RPC transport class to use', default='lightbus.RedisRpcTransport'
         )
         parser_run_transport_group.add_argument(
-            '--result-transport', help='Result transport class to use', default='lightbus.RedisResultTransport'
+            '--result-transport', '-t', help='Default result transport class to use', default='lightbus.RedisResultTransport'
         )
         parser_run_transport_group.add_argument(
-            '--event-transport', help='Event transport class to use', default='lightbus.RedisEventTransport'
+            '--event-transport', '-e', help='Default event transport class to use', default='lightbus.RedisEventTransport'
         )
         parser_run_transport_group.add_argument(
-            '--schema-transport', help='Schema transport class to use', default='lightbus.RedisSchemaTransport'
+            '--schema-transport', '-a', help='Default schema transport class to use', default='lightbus.RedisSchemaTransport'
         )
 
-        # parser_run_connection_group = parser_run.add_argument_group(title='Connection options')
-        # parser_run_connection_group.add_argument(
-        #     '--redis-url', help='URL to Redis server when using Redis-based transports', default='redis://localhost:6379/0'
-        # )
+        parser_run_connection_group = parser_run.add_argument_group(title='Connection options')
+        parser_run_connection_group.add_argument(
+            '--redis-url', '-r', help='URL to Redis server when using Redis-based transports', default='redis://localhost:6379/0'
+        )
 
     def handle(self, args, dry_run=False):
         try:
@@ -58,10 +59,10 @@ class Command(BusImportMixin, object):
         bus_module = self.import_bus(args)
 
         bus = create(
-            rpc_transport=rpc_transport(),
-            result_transport=result_transport(),
-            event_transport=event_transport(),
-            schema_transport=schema_transport(),
+            rpc_transport=rpc_transport(url=args.redis_url),
+            result_transport=result_transport(url=args.redis_url),
+            event_transport=event_transport(url=args.redis_url),
+            schema_transport=schema_transport(url=args.redis_url),
         )
 
         if args.schema:
@@ -82,7 +83,5 @@ class Command(BusImportMixin, object):
 
         if args.events_only:
             bus.run_forever(consume_rpcs=False)
-        elif args.rpcs_only:
-            bus.run_forever(consume_events=False)
         else:
             bus.run_forever()
