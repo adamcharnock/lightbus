@@ -93,7 +93,6 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
     def __init__(self, *,
                  redis_pool=None,
                  url=None,
-                 track_consumption_progress=False,
                  serializer=ByFieldMessageSerializer(),
                  deserializer=ByFieldMessageDeserializer(RpcMessage),
                  connection_parameters: Mapping=frozendict(maxsize=100),
@@ -101,7 +100,6 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
                  ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self._latest_ids = {}
-        self.track_consumption_progress = track_consumption_progress  # TODO: Implement (rename: replay?)
         self.serializer = serializer
         self.deserializer = deserializer
         self.batch_size = batch_size
@@ -113,14 +111,12 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
                     batch_size: int=10,
                     serializer: str='lightbus.serializers.ByFieldMessageSerializer',
                     deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
-                    track_consumption_progress=False,
                     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(RpcMessage)
 
         return cls(
             url=url,
-            track_consumption_progress=track_consumption_progress,
             serializer=serializer,
             deserializer=deserializer,
             connection_parameters=connection_parameters,
@@ -281,12 +277,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                  url=None,
                  serializer=ByFieldMessageSerializer(),
                  deserializer=ByFieldMessageDeserializer(EventMessage),
-                 track_consumption_progress=False,
                  connection_parameters: Mapping=frozendict(maxsize=100),
                  batch_size=10,
                  ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
-        self.track_consumption_progress = track_consumption_progress  # TODO: Implement (rename: replay?)
         self.serializer = serializer
         self.deserializer = deserializer
         self.batch_size = batch_size
@@ -301,7 +295,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     batch_size: int=10,
                     serializer: str='lightbus.serializers.ByFieldMessageSerializer',
                     deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
-                    track_consumption_progress: bool=False,
                     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(EventMessage)
@@ -313,7 +306,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             batch_size=batch_size,
             serializer=serializer,
             deserializer=deserializer,
-            track_consumption_progress=track_consumption_progress,
         )
 
     async def send_event(self, event_message: EventMessage, options: dict):
