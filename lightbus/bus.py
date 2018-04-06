@@ -1,3 +1,5 @@
+from inspect import isawaitable
+
 import os
 import asyncio
 import contextlib
@@ -297,7 +299,10 @@ class BusClient(object):
 
         start_time = time.time()
         try:
-            result = await api.call(name, kwargs)
+            result = api.call(name, kwargs)
+            if isawaitable(result):
+                result = await result
+            return result
         except (CancelledError, SuddenDeathException):
             raise
         except Exception as e:

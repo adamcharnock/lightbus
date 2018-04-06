@@ -100,7 +100,6 @@ class Api(object, metaclass=ApiMetaclass):
         name = None
 
     async def call(self, procedure_name, kwargs):
-        # TODO: Handling code for sync/async method calls (if we want to support both)
         return getattr(self, procedure_name)(**kwargs)
 
     def get_event(self, name) -> 'Event':
