@@ -123,6 +123,122 @@ apis:
 
 TODO
 
+## Complex types
+
+The Lightbus can derive a schema from both named tuples and classes.
+
+### Named Tuples
+
+Take the following `User` named tuple:
+
+```python
+# bus.py
+from lightbus import Api
+from typing import NamedTuple
+
+
+class User(NamedTuple):
+    username: str
+    name: str
+    email: str
+    is_admin: bool = False
+
+class AuthApi(Api):
+
+    class Meta:
+        name = 'auth'
+
+    def get_user(self, username: str) -> User:
+        return ...
+```
+
+Running `lightbus dumpschema` will produce the following:
+
+```json
+{
+  "auth": {
+    "events": {},
+    "rpcs": {
+      "get_user": {
+        "parameters": {
+          // A single required username string parameter 
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "title": "RPC auth.get_user() parameters",
+          "type": "object"
+          "additionalProperties": false,
+          "properties": {
+            "username": {"type": "string"}
+          },
+          "required": [
+            "username"
+          ],
+        },
+        
+        // A complex object is returned
+        "response": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "title": "RPC auth.get_user() response",
+          "type": "object",
+          "properties": {
+            "username": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "is_admin": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "required": ["username", "name", "email"],
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}
+```
+
+### Classes
+
+The same can be achieved using regular classes. However, there are some notable points:
+
+1. Attributes prefixed with an underscore will be ignored
+2. If used as a type hint for a parameter, then the class .... wait, will a json object get deserialised into a python object?
+   NO, this only happens in the config. I think you'll just get a dict for a parameter value
+TODO 
+
+
+```coffeescript
+from lightbus import Api
+from typing import NamedTuple
+
+
+class User(object):
+    username: str
+    name: str
+    email: str
+    is_admin: bool = False
+    _internal_value: str  # ignored
+
+    def do_something(self):
+        pass
+
+class AuthApi(Api):
+
+    class Meta:
+        name = 'auth'
+
+    def get_user(self, username: str) -> User:
+        return ...
+
+```
+
+
 ## Schema format
 
 You won't need to worry about the schema format in your day-to-day use 

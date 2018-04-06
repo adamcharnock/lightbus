@@ -2,8 +2,7 @@ import pytest
 
 import lightbus
 from lightbus.bus import BusNode
-from lightbus.exceptions import InvalidBusNodeConfiguration
-
+from lightbus.exceptions import InvalidBusNodeConfiguration, InvalidParameters
 
 pytestmark = pytest.mark.unit
 
@@ -46,3 +45,15 @@ async def test_dir(dummy_bus: lightbus.BusNode, dummy_api):
     # Make sure we don't error if the api/rpc/event doesn't exist
     dir(dummy_bus.foo)
     dir(dummy_bus.foo.bar)
+
+
+@pytest.mark.run_loop
+async def test_positional_only_rpc(dummy_bus: lightbus.BusNode):
+    with pytest.raises(InvalidParameters):
+        await dummy_bus.my.dummy.my_proc.call_async(123)
+
+
+@pytest.mark.run_loop
+async def test_positional_only_event(dummy_bus: lightbus.BusNode):
+    with pytest.raises(InvalidParameters):
+        await dummy_bus.my.dummy.event.fire_async(123)

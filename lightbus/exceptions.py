@@ -119,3 +119,7 @@ class NoApisToListenOn(LightbusException):
 
 class InvalidName(LightbusException):
     pass
+
+
+class InvalidParameters(LightbusException):
+    pass

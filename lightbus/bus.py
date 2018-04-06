@@ -12,7 +12,8 @@ from lightbus.config import Config
 from lightbus.schema import Schema
 from lightbus.api import registry, Api
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
-    InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError, NoApisToListenOn, InvalidName
+    InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError, NoApisToListenOn, InvalidName, \
+    InvalidParameters
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
@@ -510,7 +511,13 @@ class BusNode(object):
         # config: rpc_timeout
         return block(self.call_async(**kwargs, bus_options=bus_options), self.bus_client.loop, timeout=1)
 
-    async def call_async(self, *, bus_options=None, **kwargs):
+    async def call_async(self, *args, bus_options=None, **kwargs):
+        if args:
+            raise InvalidParameters(
+                f"You have attempted to call the RPC {self.fully_qualified_name} using positional "
+                f"arguments. Lightbus requires you use keyword arguments. For example, "
+                f"instead of func(1), use func(foo=1)."
+            )
         return await self.bus_client.call_rpc_remote(
             api_name=self.api_name, name=self.name, kwargs=kwargs, options=bus_options
         )
@@ -526,7 +533,13 @@ class BusNode(object):
         # config: event_listener_setup_timeout
         return block(self.listen_async(listener, bus_options=bus_options), self.bus_client.loop, timeout=5)
 
-    async def fire_async(self, *, bus_options: dict=None, **kwargs):
+    async def fire_async(self, *args, bus_options: dict=None, **kwargs):
+        if args:
+            raise InvalidParameters(
+                f"You have attempted to fire the event {self.fully_qualified_name} using positional "
+                f"arguments. Lightbus requires you use keyword arguments. For example, "
+                f"instead of func(1), use func(foo=1)."
+            )
         return await self.bus_client.fire_event(
             api_name=self.api_name, name=self.name, kwargs=kwargs, options=bus_options
         )
