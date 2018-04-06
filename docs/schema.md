@@ -50,23 +50,39 @@ This will dump out the auto-generated schema for the above API. See
 
 ## Supported data types
 
-Lightbus maps Python types to JSON Schema types as follows:
+Lightbus maps Python types to JSON types. While Python-specific values can be sent using Lightbus, 
+these values will arrive in their JSON form. For example, if you send a `string` then a `string` will arrive.
+However, if you send the `Decimal` value `3.124`, then you will receive the `string` value `3.124` instead.
 
-| Python type                               | JSON Schema type                                  |
-| ----------------------------------------- | ------------------------------------------------- |
-| `str`, `bytes`, `Decimal`, `complex`      | `string`                                          |
-| `int`, `float`                            | `number`                                          |
-| `boolean`                                 | `boolean`                                         |
-| `list`, `tuple`                           | `array`                                           |
-| `None`                                    | `null`                                            |
-| `Any`                                     | `{}` (any value)                                  |
-| `Union[...]`                              | `oneOf{...}`                                      |
-| `Enum`                                    | Sets [enum] property                              |
-| `dict`, `Mapping`, etc                    | `object`                                          |
-| `Mapping[str, ...]`                       | `object`, with [pattern properties] set           |
-| `NamedTuple` or `object` with annotations | `object` with [specific typed properties]         |
-| `Tuple[A, B, C]`                          | `array` with [maxItems/minItems] and [items] set. |
+The following types are reasonably interoperable:
 
+
+| Python type sent                          | JSON schema interpretation                        | Type received
+| ----------------------------------------- | ------------------------------------------------- | ---------------
+| `str`                                     | `string`                                          | `str`
+| `int`, `float`                            | `number`                                          | `int`, `float`
+| `bool   `                                 | `boolean`                                         | `bool`
+| `list`, `tuple`                           | `array`                                           | `list`
+| `None`                                    | `null`                                            | `None`
+| `dict`, `Mapping`, etc                    | `object`                                          | `dict`
+| `Mapping[str, ...]`                       | `object`, with [pattern properties] set           | `dict`
+| `Tuple[A, B, C]`                          | `array` with [maxItems/minItems] and [items] set. | `list`
+
+The following types will be successfully encoded and sent, but will arrive as their encoded equivalent:
+
+| Python type                               | JSON Schema type                                  | Value arrives as
+| ----------------------------------------- | ------------------------------------------------- | ---------------
+| `bytes`, `Decimal`, `complex`             | `string`                                          | `str`
+| `NamedTuple` with annotations             | `object` with [specific typed properties]         | `dict`
+| `object` with annotations                 | `object` with [specific typed properties]         | `dict`
+
+Lightbus can also handle the following:
+
+| Python type                               | JSON Schema type                                 
+| ----------------------------------------- | -------------------------------------------------
+| `Any`                                     | `{}` (any value)                                  
+| `Union[...]`                              | `oneOf{...}` (see [oneOf])
+| `Enum`                                    | Sets [enum] property                              
 
 ## Automatic validation
 
@@ -346,6 +362,7 @@ The generalised format is as follows:
     
 
 [type hints]: https://docs.python.org/3/library/typing.html
+[oneOf]: https://spacetelescope.github.io/understanding-json-schema/reference/combining.html#oneof  
 [enum]: https://spacetelescope.github.io/understanding-json-schema/reference/generic.html#enumerated-values
 [pattern properties]: https://spacetelescope.github.io/understanding-json-schema/reference/object.html#pattern-properties
 [specific typed properties]: https://spacetelescope.github.io/understanding-json-schema/reference/object.html#properties
