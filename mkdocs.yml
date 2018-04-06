@@ -10,6 +10,9 @@ site_url: http://lightbus.org
 repo_name: GitHub
 repo_url: https://github.com/adamcharnock/lightbus
 
+theme_dir: /home/docs/checkouts/readthedocs.org/user_builds/lightbus/envs/latest/lib/python3.5/site-packages/material
+custom_dir: /home/docs/checkouts/readthedocs.org/user_builds/lightbus/envs/latest/lib/python3.5/site-packages/material
+
 theme:
   name: material
 
