@@ -26,8 +26,6 @@ from lightbus.utilities.importing import import_from_string
 
 logger = logging.getLogger(__name__)
 
-# TODO: There is a lot of duplicated code here, particularly between the RPC transport & event transport
-
 Since = Union[str, datetime, None]
 
 
