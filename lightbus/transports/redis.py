@@ -388,7 +388,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     items=dict(**event_message.get_metadata(), kwargs=event_message.get_kwargs())
                 ))
 
-                # TODO: Consider subclassing EventMessage as RedisEventMessage
                 event_message.redis_id = message_id
                 event_message.redis_stream = stream
 

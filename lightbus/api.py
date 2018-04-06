@@ -67,19 +67,23 @@ class ApiMetaclass(type):
             options = dict.get('Meta', None)
             if options is None:
                 raise MisconfiguredApiOptions(
-                    "API class {} does not contain a class named 'Meta'. Each API definition "
-                    "must contain a child class named 'Meta' which can contain configurations options. "
-                    "For example, the 'name' option is required and specifies "
-                    "the name used to access the API on the bus."
-                    "".format(name)
+                    f"API class {name} does not contain a class named 'Meta'. Each API definition "
+                    f"must contain a child class named 'Meta' which can contain configurations options. "
+                    f"For example, the 'name' option is required and specifies "
+                    f"the name used to access the API on the bus."
                 )
             cls.sanity_check_options(name, options)
             cls.meta = ApiOptions(cls.Meta.__dict__.copy())
-            # TODO: Disallow any APIs named 'default' or starting with 'default.'
             super(ApiMetaclass, cls).__init__(name, bases, dict)
 
             if cls.meta.auto_register:
                 registry.add(cls())
+
+            if cls.meta.name == 'default' or cls.meta.name.startswith('default.'):
+                raise MisconfiguredApiOptions(
+                    f"API class {name} is named 'default', or starts with 'default.'. "
+                    f"This is a reserved name and is not allowed, please change it to something else."
+                )
 
     def sanity_check_options(cls, name, options):
         if not getattr(options, 'name', None):
