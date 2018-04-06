@@ -157,7 +157,6 @@ def new_redis_pool(_closable, create_redis_pool, server, loop):
             create_redis_pool(server.tcp_address, loop=loop, **kwargs)
         )
         loop.run_until_complete(redis.flushall())
-        # TODO: Tests that error often claim redis tasks are still running.
         return redis
     return make_new
 
@@ -602,7 +601,7 @@ def pytest_pyfunc_call(pyfuncitem):
         loop = funcargs['loop']
         testargs = {arg: funcargs[arg]
                     for arg in pyfuncitem._fixtureinfo.argnames}
-        
+
         loop.run_until_complete(
             _wait_coro(pyfuncitem.obj, testargs,
                        timeout=marker.kwargs.get('timeout', TEST_TIMEOUT),
