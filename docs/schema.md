@@ -73,6 +73,7 @@ The following types will be successfully encoded and sent, but will arrive as th
 | Python type                               | JSON Schema type                                  | Value arrives as
 | ----------------------------------------- | ------------------------------------------------- | ---------------
 | `bytes`, `Decimal`, `complex`             | `string`                                          | `str`
+| `datetime`, `date`                        | `str`                                             | `str` (ISO 8601)
 | `NamedTuple` with annotations             | `object` with [specific typed properties]         | `dict`
 | `object` with annotations                 | `object` with [specific typed properties]         | `dict`
 

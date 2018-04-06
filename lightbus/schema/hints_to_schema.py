@@ -5,6 +5,7 @@ import logging
 from _pydecimal import Decimal
 from typing import Union, Any, Tuple, Sequence, Mapping, Callable
 
+import datetime
 from enum import Enum
 
 import lightbus
@@ -190,6 +191,16 @@ def python_type_to_json_schemas(type_):
         return [{'type': 'array'}]
     elif is_class and issubclass(type_, NoneType):
         return [{'type': 'null'}]
+    elif is_class and issubclass(type_, (datetime.datetime)):
+        return [{
+            'type': 'string',
+            'pattern': '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|[Zz])?$',
+        }]
+    elif is_class and issubclass(type_, (datetime.date)):
+        return [{
+            'type': 'string',
+            'pattern': '^\d{4}-\d\d-\d\d$',
+        }]
     elif is_class and getattr(type_, '__annotations__', None):
         # Custom class
         return [make_custom_object_schema(type_)]

@@ -4,6 +4,7 @@ from typing import Union, Optional, NamedTuple, Tuple, Any, Mapping
 from collections import namedtuple
 
 import pytest
+from datetime import datetime, date
 from enum import Enum
 
 from lightbus.schema.hints_to_schema import make_parameter_schema, python_type_to_json_schemas, make_response_schema, \
@@ -252,3 +253,17 @@ def test_enum_unknown_value_types():
     schema = make_response_schema('api_name', 'rpc_name', func)
     assert 'type' not in schema
     assert 'enum' not in schema
+
+
+def test_datetime():
+    def func(username) -> datetime: pass
+    schema = make_response_schema('api_name', 'rpc_name', func)
+    assert schema['type'] == 'string'
+    assert schema['pattern']
+
+
+def test_date():
+    def func(username) -> date: pass
+    schema = make_response_schema('api_name', 'rpc_name', func)
+    assert schema['type'] == 'string'
+    assert schema['pattern']

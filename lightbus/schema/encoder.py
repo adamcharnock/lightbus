@@ -1,5 +1,6 @@
 from json import JSONEncoder
 
+from datetime import datetime, date
 from enum import Enum
 
 from lightbus.utilities.frozendict import frozendict
@@ -13,6 +14,8 @@ class LightbusEncoder(JSONEncoder):
             return o._dict
         elif isinstance(o, Enum):
             return o.value
+        elif isinstance(o, (datetime, date)):
+            return o.isoformat()
         else:
             super(LightbusEncoder, self).default(o)
 
