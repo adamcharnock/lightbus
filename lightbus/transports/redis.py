@@ -89,28 +89,33 @@ class RedisTransportMixin(object):
 
 
 class RedisRpcTransport(RedisTransportMixin, RpcTransport):
+    """ Redis RPC transport providing at-most-once delivery
+    """
 
     def __init__(self, *,
                  redis_pool=None,
                  url=None,
-                 serializer=ByFieldMessageSerializer(),
-                 deserializer=ByFieldMessageDeserializer(RpcMessage),
+                 serializer=BlobMessageSerializer(),
+                 deserializer=BlobMessageDeserializer(RpcMessage),
                  connection_parameters: Mapping=frozendict(maxsize=100),
                  batch_size=10,
+                 rpc_timeout=5,
                  ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self._latest_ids = {}
         self.serializer = serializer
         self.deserializer = deserializer
         self.batch_size = batch_size
+        self.rpc_timeout = rpc_timeout
 
     @classmethod
     def from_config(cls,
                     url: str='redis://127.0.0.1:6379/0',
                     connection_parameters: Mapping=frozendict(maxsize=100),
                     batch_size: int=10,
-                    serializer: str='lightbus.serializers.ByFieldMessageSerializer',
-                    deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
+                    serializer: str='lightbus.serializers.BlobMessageSerializer',
+                    deserializer: str='lightbus.serializers.BlobMessageDeserializer',
+                    rpc_timeout=5,
                     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(RpcMessage)
@@ -121,30 +126,36 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             deserializer=deserializer,
             connection_parameters=connection_parameters,
             batch_size=batch_size,
+            rpc_timeout=rpc_timeout,
         )
 
     async def call_rpc(self, rpc_message: RpcMessage, options: dict):
-        stream = '{}:stream'.format(rpc_message.api_name)
+        queue_key = f'{rpc_message.api_name}:rpc_queue'
+        expiry_key = f'rpc_expiry_key:{rpc_message.rpc_id}'
         logger.debug(
             LBullets(
-                L("Enqueuing message {} in Redis stream {}", Bold(rpc_message), Bold(stream)),
+                L("Enqueuing message {} in Redis stream {}", Bold(rpc_message), Bold(queue_key)),
                 items=dict(**rpc_message.get_metadata(), kwargs=rpc_message.get_kwargs())
             )
         )
 
         with await self.connection_manager() as redis:
             start_time = time.time()
-            # TODO: MAXLEN
-            await redis.xadd(stream=stream, fields=self.serializer(rpc_message))
+            print('setting ' + expiry_key)
+            p = redis.pipeline()
+            p.rpush(key=queue_key, value=self.serializer(rpc_message))
+            p.set(expiry_key, 1)  # TODO: Test is set
+            p.expire(expiry_key, timeout=self.rpc_timeout)
+            await p.execute()
 
         logger.debug(L(
             "Enqueued message {} in Redis in {} stream {}",
-            Bold(rpc_message), human_time(time.time() - start_time), Bold(stream)
+            Bold(rpc_message), human_time(time.time() - start_time), Bold(queue_key)
         ))
 
     async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         # Get the name of each stream
-        streams = ['{}:stream'.format(api.meta.name) for api in apis]
+        streams = ['{}:rpc_queue'.format(api.meta.name) for api in apis]
         # Get where we last left off in each stream
         latest_ids = [self._latest_ids.get(stream, '$') for stream in streams]
 
@@ -155,30 +166,29 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         ))
 
         with await self.connection_manager() as redis:
-            # TODO: Count/timeout configurable
             try:
-                stream_messages = await redis.xread(streams, latest_ids=latest_ids, count=self.batch_size)
+                stream, data = await redis.blpop(*streams)
             except RuntimeError:
                 # For some reason aio-redis likes to eat the CancelledError and
                 # turn it into a Runtime error:
                 # https://github.com/aio-libs/aioredis/blob/9f5964/aioredis/connection.py#L184
                 raise asyncio.CancelledError('aio-redis task was cancelled and decided it should be a RuntimeError')
 
-        rpc_messages = []
-        for stream, message_id, fields in stream_messages:
             stream = decode(stream, 'utf8')
-            message_id = decode(message_id, 'utf8')
-            rpc_message = self.deserializer(fields)
+            rpc_message = self.deserializer(data)
+            expiry_key = f'rpc_expiry_key:{rpc_message.rpc_id}'
+            print('deleting ' + expiry_key)
+            key_deleted = await redis.delete(expiry_key)
 
-            # See comment on events transport re updating message_id
-            self._latest_ids[stream] = message_id
-            rpc_messages.append(rpc_message)
+            if not key_deleted:
+                return []
+
             logger.debug(LBullets(
-                L("⬅ Received message {} on stream {}", Bold(message_id), Bold(stream)),
+                L("⬅ Received RPC message on stream {}", Bold(stream)),
                 items=dict(**rpc_message.get_metadata(), kwargs=rpc_message.get_kwargs())
             ))
 
-        return rpc_messages
+        return [rpc_message]
 
 
 class RedisResultTransport(RedisTransportMixin, ResultTransport):

@@ -58,6 +58,10 @@ legwork such as data marshalling. For example, converting incoming natural keys
 (e.g. usernames) into the primary keys (i.e. user IDs) that your 
 service's may use internally.
 
+### Timeouts
+
+TODO. Handle timeouts gracefully.
+
 ### Parameter values
 
 When deciding the values your RPC should receive, consider:

@@ -1,10 +1,12 @@
 import asyncio
+import json
 
 import pytest
 
 from lightbus import RedisRpcTransport
 from lightbus.message import RpcMessage
 from lightbus.serializers import BlobMessageSerializer, BlobMessageDeserializer
+from lightbus.utilities.async import cancel
 
 pytestmark = pytest.mark.unit
 
@@ -28,17 +30,52 @@ async def test_call_rpc(redis_rpc_transport, redis_client):
         return_path='abc',
     )
     await redis_rpc_transport.call_rpc(rpc_message, options={})
-    assert await redis_client.keys('*') == [b'my.api:stream']
+    assert set(await redis_client.keys('*')) == {b'my.api:rpc_queue', b'rpc_expiry_key:123abc'}
 
-    messages = await redis_client.xrange('my.api:stream')
+    messages = await redis_client.lrange('my.api:rpc_queue', start=0, stop=100)
     assert len(messages) == 1
-    assert messages[0][1] == {
-        b'rpc_id': b'123abc',
-        b'api_name': b'my.api',
-        b'procedure_name': b'my_proc',
-        b':field': b'"value"',
-        b'return_path': b'abc',
+    message = json.loads(messages[0])
+    assert message == {
+        'metadata': {
+            'rpc_id': '123abc',
+            'api_name': 'my.api',
+            'procedure_name': 'my_proc',
+            'return_path': 'abc',
+        },
+        'kwargs': {
+            'field': 'value'
+        },
     }
+    assert await redis_client.exists('rpc_expiry_key:123abc')
+    assert await redis_client.ttl('rpc_expiry_key:123abc') == redis_rpc_transport.rpc_timeout
+
+
+@pytest.mark.run_loop
+async def test_consume_rpcs_no_expiry_key(redis_client, redis_rpc_transport, dummy_api):
+    """Does call_rpc() add a message to a stream, but where the expiry key is missing
+
+    Transport should assume that the RPC call has timed out and therefore not serve it.
+    """
+    async def co_enqeue():
+        await asyncio.sleep(0.01)
+        # NOT SETTING rpc_expiry_key:123abc
+        return await redis_client.rpush('my.dummy:rpc_queue', value=json.dumps({
+            'metadata': {
+                'rpc_id': '123abc',
+                'api_name': 'my.api',
+                'procedure_name': 'my_proc',
+                'return_path': 'abc',
+            },
+            'kwargs': {
+                'field': 'value'
+            },
+        }))
+
+    async def co_consume():
+        return await redis_rpc_transport.consume_rpcs(apis=[dummy_api])
+
+    enqueue_result, messages = await asyncio.gather(co_enqeue(), co_consume())
+    assert not messages
 
 
 @pytest.mark.run_loop
@@ -46,13 +83,18 @@ async def test_consume_rpcs(redis_client, redis_rpc_transport, dummy_api):
 
     async def co_enqeue():
         await asyncio.sleep(0.01)
-        return await redis_client.xadd('my.dummy:stream', fields={
-            'rpc_id': '123abc',
-            'api_name': 'my.api',
-            'procedure_name': 'my_proc',
-            'return_path': 'abc',
-            ':field': '"value"',
-        })
+        await redis_client.set('rpc_expiry_key:123abc', 1)
+        return await redis_client.rpush('my.dummy:rpc_queue', value=json.dumps({
+            'metadata': {
+                'rpc_id': '123abc',
+                'api_name': 'my.api',
+                'procedure_name': 'my_proc',
+                'return_path': 'abc',
+            },
+            'kwargs': {
+                'field': 'value'
+            },
+        }))
 
     async def co_consume():
         return await redis_rpc_transport.consume_rpcs(apis=[dummy_api])
@@ -87,3 +129,40 @@ async def test_from_config(redis_client):
     assert transport._redis_pool.connection.maxsize == 123
     assert isinstance(transport.serializer, BlobMessageSerializer)
     assert isinstance(transport.deserializer, BlobMessageDeserializer)
+
+
+@pytest.mark.run_loop
+async def test_consume_rpcs_only_once(redis_client, dummy_api, redis_pool):
+    """Ensure that an RPC call gets consumed only once even with multiple listeners"""
+    message_count = 0
+
+    transport1 = RedisRpcTransport(redis_pool=redis_pool)
+    transport2 = RedisRpcTransport(redis_pool=redis_pool)
+
+    async def co_consume(transport):
+        nonlocal message_count
+        messages = await transport.consume_rpcs(apis=[dummy_api])
+        message_count += len(messages)
+
+    consumer1 = asyncio.ensure_future(co_consume(transport1))
+    consumer2 = asyncio.ensure_future(co_consume(transport2))
+    await asyncio.sleep(0.1)
+
+    await redis_client.set('rpc_expiry_key:123abc', 1)
+    await redis_client.rpush('my.dummy:rpc_queue', json.dumps({
+        'metadata': {
+            'rpc_id': '123abc',
+            'api_name': 'my.api',
+            'procedure_name': 'my_proc',
+            'return_path': 'abc',
+        },
+        'kwargs': {
+            'field': 'value'
+        },
+    }))
+    await asyncio.sleep(0.1)
+
+    await cancel(consumer1, consumer2)
+    assert message_count == 1
+
+    assert not await redis_client.exists('rpc_expiry_key:123abc')
