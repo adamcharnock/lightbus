@@ -90,7 +90,6 @@ class ApiConfig(object):
     event_transport: EventTransportSelector = None
     rpc_transport: RpcTransportSelector = None
     result_transport: ResultTransportSelector = None
-    schema_transport: SchemaTransportSelector = None
     strict_validation: bool = False
 
     def __init__(self, **kw):
@@ -107,12 +106,17 @@ class ApiConfig(object):
             self.validate = ApiValidationConfig(**self.validate)
 
 
+class SchemaConfig(NamedTuple):
+    load_timeout: int = 5
+    add_api_timeout: int = 1
+    human_readable: bool = True
+    ttl: int = 60
+    transport: SchemaTransportSelector = None
+
+
 class BusConfig(NamedTuple):
-    schema_load_timeout: int = 5
-    schema_add_api_timeout: int = 1
-    schema_human_readable: bool = True
-    schema_ttl: int = 60
     log_level: LogLevelEnum = LogLevelEnum.INFO
+    schema: SchemaConfig = SchemaConfig()
 
 
 class RootConfig(NamedTuple):

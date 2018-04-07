@@ -122,9 +122,9 @@ async def test_no_transport(loop):
     config = Config.load_dict({
         'apis': {
             # TODO: This needs moving out of the apis config section
-            'default': {'schema_transport': {'redis': {}}},
+            'default': {'event_transport': {'redis': {}}},
         }
-    })
+    }, set_defaults=False)
     bus_client = lightbus.BusClient(config=config)
     with pytest.raises(TransportNotFound):
         await bus_client.call_rpc_remote('my_api', 'test', kwargs={}, options={})
@@ -135,13 +135,12 @@ async def test_no_transport_type(loop):
     # Transports configured, but the wrong type of transport
     config = Config.load_dict({
         'apis': {
-            # TODO: This needs moving out of the apis config section
-            'default': {'schema_transport': {'redis': {}}},
+            'default': {'event_transport': {'redis': {}}},
             'my_api': {
                 'event_transport': {'redis': {}},
             }
         }
-    })
+    }, set_defaults=False)
     bus_client = lightbus.BusClient(config=config)
     with pytest.raises(TransportNotFound):
         await bus_client.call_rpc_remote('my_api', 'test', kwargs={}, options={})

@@ -168,23 +168,31 @@ class TransportRegistry(object):
         rpc: RpcTransport = None
         result: ResultTransport = None
         event: EventTransport = None
-        schema: SchemaTransport = None
+
+    schema_transport: SchemaTransport = None
 
     def __init__(self):
         self._registry: Dict[str, TransportRegistry._RegistryEntry] = {}
 
     def load_config(self, config: 'Config') -> 'TransportRegistry':
         for api_name, api_config in config.apis().items():
-            for transport_type in ('event', 'rpc', 'result', 'schema'):
-                transport_config = self._get_transport_config(api_config, transport_type)
+            for transport_type in ('event', 'rpc', 'result'):
+                transport_selector = getattr(api_config, f'{transport_type}_transport')
+                transport_config = self._get_transport_config(transport_selector)
                 if transport_config:
                     transport_name, transport_config = transport_config
                     transport = self._instantiate_transport(transport_type, transport_name, transport_config)
                     self._set_transport(api_name, transport, transport_type)
+
+        # Schema transport
+        transport_config = self._get_transport_config(config.bus().schema.transport)
+        if transport_config:
+            transport_name, transport_config = transport_config
+            self.schema_transport = self._instantiate_transport('schema', transport_name, transport_config)
+
         return self
 
-    def _get_transport_config(self, api_config: 'ApiConfig', type_: str):
-        transport_selector = getattr(api_config, f'{type_}_transport')
+    def _get_transport_config(self, transport_selector):
         if transport_selector:
             for transport_name in transport_selector._fields:
                 transport_config = getattr(transport_selector, transport_name)
@@ -247,8 +255,8 @@ class TransportRegistry(object):
     def set_event_transport(self, api_name: str, transport):
         self._set_transport(api_name, transport, 'event')
 
-    def set_schema_transport(self, api_name: str, transport):
-        self._set_transport(api_name, transport, 'schema')
+    def set_schema_transport(self, transport):
+        self.schema_transport = transport
 
     def get_rpc_transport(self, api_name: str, default=empty) -> RpcTransport:
         return self._get_transport(api_name, 'rpc', default=default)
@@ -259,21 +267,27 @@ class TransportRegistry(object):
     def get_event_transport(self, api_name: str, default=empty) -> EventTransport:
         return self._get_transport(api_name, 'event', default=default)
 
-    def get_schema_transport(self, api_name: str, default=empty) -> SchemaTransport:
-        # TODO: This is only available globally, not per api. Perhaps it needs to be be under apis in the config
-        return self._get_transport(api_name, 'schema', default=default)
+    def get_schema_transport(self, default=empty) -> SchemaTransport:
+        if self.schema_transport or default != empty:
+            return self.schema_transport or default
+        else:
+            # TODO: Link to docs
+            raise TransportNotFound(
+                'No schema transport is configured for this bus. Check your schema transport '
+                'configuration is setup correctly (config section: bus.schema.transport).'
+            )
 
     def has_rpc_transport(self, api_name: str) -> bool:
-        self._has_transport(api_name, 'rpc')
+        return self._has_transport(api_name, 'rpc')
 
     def has_result_transport(self, api_name: str) -> bool:
-        self._has_transport(api_name, 'result')
+        return self._has_transport(api_name, 'result')
 
     def has_event_transport(self, api_name: str) -> bool:
-        self._has_transport(api_name, 'event')
+        return self._has_transport(api_name, 'event')
 
-    def has_schema_transport(self, api_name: str) -> bool:
-        self._has_transport(api_name, 'schema')
+    def has_schema_transport(self) -> bool:
+        return bool(self.schema_transport)
 
     def get_rpc_transports(self, api_names: Sequence[str]) -> List[Tuple[RpcTransport, List[str]]]:
         """Get a mapping of transports to lists of APIs
@@ -318,7 +332,7 @@ def get_transport(type_, name):
 
 
 def get_transport_name(cls: Type['Transport']):
-    for type_ in ('rpc', 'result', 'event', 'schema'):
+    for type_ in ('rpc', 'result', 'event'):
         for *_, name, class_ in load_entrypoint_classes(f'lightbus_{type_}_transports'):
             if cls == class_:
                 return name

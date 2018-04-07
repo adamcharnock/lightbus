@@ -73,10 +73,12 @@ class Config(object):
         return cls.load_dict(config=yamllib.load(yaml))
 
     @classmethod
-    def load_dict(cls, config: dict):
+    def load_dict(cls, config: dict, set_defaults=True):
         """Instantiate the config from a dictionary"""
         from .structure import RootConfig
-        config = set_default_config(config.copy())
+        config = config.copy()
+        if set_defaults:
+            config = set_default_config(config)
         validate_config(config)
         return cls(
             root_config=mapping_to_named_tuple(config, RootConfig)
@@ -99,12 +101,14 @@ def config_as_json_schema() -> dict:
 
 def set_default_config(config: dict) -> dict:
     config.setdefault('apis', {})
+    config.setdefault('bus', {})
     config['apis'].setdefault('default', {})
+    config['bus'].setdefault('schema', {})
 
-    config['apis']['default'].setdefault('rpc_transport', {'redis': None})
-    config['apis']['default'].setdefault('result_transport', {'redis': None})
-    config['apis']['default'].setdefault('event_transport', {'redis': None})
-    config['apis']['default'].setdefault('schema_transport', {'redis': None})
+    config['apis']['default'].setdefault('rpc_transport', {'redis': {}})
+    config['apis']['default'].setdefault('result_transport', {'redis': {}})
+    config['apis']['default'].setdefault('event_transport', {'redis': {}})
+    config['bus']['schema'].setdefault('transport', {'redis': {}})
     return config
 
 

@@ -181,12 +181,16 @@ async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpc
     logging.warning(f'Server B port: {port_b}')
 
     config = Config.load_dict({
+        'bus': {
+            'schema': {
+                'transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
+            }
+        },
         'apis': {
             # TODO: This needs moving out of the apis config section
             'default': {
                 'rpc_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
                 'result_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
-                'schema_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
             },
             'api_b': {
                 'rpc_transport': {'redis': {'url': f'redis://localhost:{port_b}'}},
@@ -220,11 +224,15 @@ async def test_multiple_event_transports(loop, server, redis_server_b):
     logging.warning(f'Server B port: {port_b}')
 
     config = Config.load_dict({
+        'bus': {
+            'schema': {
+                'transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
+            }
+        },
         'apis': {
             # TODO: This needs moving out of the apis config section
             'default': {
                 'event_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
-                'schema_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
             },
             'api_b': {
                 'event_transport': {'redis': {'url': f'redis://localhost:{port_b}'}},
@@ -345,11 +353,15 @@ async def test_listen_to_multiple_events_across_multiple_transports(loop, server
     logging.warning(f'Server B port: {port_b}')
 
     config = Config.load_dict({
+        'bus': {
+            'schema': {
+                'transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
+            }
+        },
         'apis': {
             # TODO: This needs moving out of the apis config section
             'default': {
                 'event_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
-                'schema_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
             },
             'api_b': {
                 'event_transport': {'redis': {'url': f'redis://localhost:{port_b}'}},

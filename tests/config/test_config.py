@@ -33,30 +33,37 @@ def test_config_as_json_schema_apis():
     schema = config_as_json_schema()
     assert schema['properties']['apis']
     assert '.*' in schema['properties']['apis']['patternProperties']
+
+    bus_config_schema = schema['properties']['bus']
     api_config_schema = schema['properties']['apis']['patternProperties']['.*']['properties']
+
     assert api_config_schema['event_transport']['type'] == 'object'
     assert api_config_schema['rpc_transport']['type'] == 'object'
     assert api_config_schema['result_transport']['type'] == 'object'
-    assert api_config_schema['schema_transport']['type'] == 'object'
 
     assert api_config_schema['rpc_timeout']['type'] == 'number'
     assert api_config_schema['event_listener_setup_timeout']['type'] == 'number'
     assert api_config_schema['event_fire_timeout']['type'] == 'number'
     assert api_config_schema['validate']['oneOf']
 
+    assert bus_config_schema['properties']['schema']['properties']['transport']['type'] == 'object'
+
 
 def test_config_as_json_schema_redis():
     schema = config_as_json_schema()
 
+    bus_config_schema = schema['properties']['bus']
     api_config_schema = schema['properties']['apis']['patternProperties']['.*']['properties']
+
     redis_rpc_transport = api_config_schema['rpc_transport']['properties']['redis']['oneOf'][0]
     redis_result_transport = api_config_schema['result_transport']['properties']['redis']['oneOf'][0]
     redis_event_transport = api_config_schema['event_transport']['properties']['redis']['oneOf'][0]
-    redis_schema_transport = api_config_schema['schema_transport']['properties']['redis']['oneOf'][0]
 
     assert redis_rpc_transport['type'] == 'object'
     assert redis_result_transport['type'] == 'object'
     assert redis_event_transport['type'] == 'object'
+
+    redis_schema_transport = bus_config_schema['properties']['schema']['properties']['transport']['properties']['redis']['oneOf'][0]
     assert redis_schema_transport['type'] == 'object'
 
 
@@ -75,10 +82,10 @@ def test_default_config():
     config = Config.load_dict({})
     assert config.bus()
     assert config.api()
-    assert config.api().rpc_transport.redis is None
-    assert config.api().result_transport.redis is None
-    assert config.api().event_transport.redis is None
-    assert config.api().schema_transport.redis is None
+    assert config.api().rpc_transport.redis
+    assert config.api().result_transport.redis
+    assert config.api().event_transport.redis
+    assert config.bus().schema.transport.redis
 
 
 def test_load_bus_config(tmp_file):

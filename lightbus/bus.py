@@ -49,8 +49,8 @@ class BusClient(object):
         # TODO: Schema transport should not be in registry
         self.schema = Schema(
             schema_transport=self.transport_registry.get_schema_transport('default'),
-            max_age_seconds=self.config.bus().schema_ttl,
-            human_readable=self.config.bus().schema_human_readable,
+            max_age_seconds=self.config.bus().schema.ttl,
+            human_readable=self.config.bus().schema.human_readable,
         )
         self.process_name = process_name or generate_process_name()
         self.loop = loop or get_event_loop()
@@ -78,12 +78,12 @@ class BusClient(object):
         # Load schema
         logger.debug("Loading schema...")
         block(self.schema.load_from_bus(),
-              self.loop, timeout=self.config.bus().schema_load_timeout)
+              self.loop, timeout=self.config.bus().schema.load_timeout)
 
         # Share the schema of the registered APIs
         for api in registry.all():
             block(self.schema.add_api(api),
-                  self.loop, timeout=self.config.bus().schema_add_api_timeout)
+                  self.loop, timeout=self.config.bus().schema.add_api_timeout)
 
         logger.info(LBullets(
             "Loaded the following remote schemas ({})".format(len(self.schema.remote_schemas)),
@@ -733,17 +733,18 @@ def create(
 
     transport_registry = TransportRegistry().load_config(config)
 
-    if not transport_registry.has_rpc_transport('default'):
-        transport_registry.set_rpc_transport('default', rpc_transport or RedisRpcTransport())
+    # Set transports if specified
+    if rpc_transport:
+        transport_registry.set_rpc_transport('default', rpc_transport)
 
-    if not transport_registry.has_result_transport('default'):
-        transport_registry.set_result_transport('default', result_transport or RedisResultTransport())
+    if result_transport:
+        transport_registry.set_result_transport('default', result_transport)
 
-    if not transport_registry.has_event_transport('default'):
-        transport_registry.set_event_transport('default', event_transport or RedisEventTransport())
+    if event_transport:
+        transport_registry.set_event_transport('default', event_transport)
 
-    if not transport_registry.has_schema_transport('default'):
-        transport_registry.set_schema_transport('default', schema_transport or RedisSchemaTransport())
+    if schema_transport:
+        transport_registry.set_schema_transport(schema_transport)
 
     bus_client = client_class(
         transport_registry=transport_registry,

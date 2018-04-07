@@ -12,12 +12,16 @@ pytestmark = pytest.mark.unit
 @pytest.fixture()
 def redis_default_config():
     return Config.load_dict({
+        'bus': {
+            'schema': {
+                'transport': {'redis': {}}
+            }
+        },
         'apis': {
             'default': {
                 'rpc_transport': {'redis': {}},
                 'result_transport': {'redis': {}},
                 'event_transport': {'redis': {}},
-                'schema_transport': {'redis': {}},
             }
         }
     })
@@ -31,7 +35,6 @@ def redis_other_config():
                 'rpc_transport': {'redis': {}},
                 'result_transport': {'redis': {}},
                 'event_transport': {'redis': {}},
-                'schema_transport': {'redis': {}},
             }
         }
     })
@@ -46,7 +49,7 @@ def test_transport_registry_get_does_not_exist_default():
     with pytest.raises(TransportNotFound):
         assert not registry.get_event_transport('default')
     with pytest.raises(TransportNotFound):
-        assert not registry.get_schema_transport('default')
+        assert not registry.get_schema_transport()
 
 
 def test_transport_registry_get_does_not_exist_default_default_value():
@@ -54,7 +57,7 @@ def test_transport_registry_get_does_not_exist_default_default_value():
     assert registry.get_rpc_transport('default', default=None) is None
     assert registry.get_result_transport('default', default=None) is None
     assert registry.get_event_transport('default', default=None) is None
-    assert registry.get_schema_transport('default', default=None) is None
+    assert registry.get_schema_transport(default=None) is None
 
 
 def test_transport_registry_get_does_not_exist_other():
@@ -66,7 +69,7 @@ def test_transport_registry_get_does_not_exist_other():
     with pytest.raises(TransportNotFound):
         assert not registry.get_event_transport('other')
     with pytest.raises(TransportNotFound):
-        assert not registry.get_schema_transport('other')
+        assert not registry.get_schema_transport()
 
 
 def test_transport_registry_get_fallback(redis_default_config):
@@ -135,4 +138,4 @@ def test_get_all_transports(redis_default_config):
     registry = TransportRegistry().load_config(redis_default_config)
     registry.set_event_transport('another', registry.get_event_transport('default'))
     registry.set_event_transport('foo', DebugEventTransport())
-    assert len(registry.get_all_transports()) == 5
+    assert len(registry.get_all_transports()) == 4
