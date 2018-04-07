@@ -46,7 +46,11 @@ class BusClient(object):
         self.config = config
         self.transport_registry = transport_registry or TransportRegistry().load_config(config)
         # TODO: Schema transport should not be in registry
-        self.schema = Schema(schema_transport=self.transport_registry.get_schema_transport('default'))
+        self.schema = Schema(
+            schema_transport=self.transport_registry.get_schema_transport('default'),
+            max_age_seconds=self.config.bus().schema_ttl,
+            human_readable=self.config.bus().schema_human_readable,
+        )
         self.process_name = process_name or generate_process_name()
         self.loop = loop or get_event_loop()
         self._listeners = {}
@@ -72,9 +76,13 @@ class BusClient(object):
 
         # Load schema
         logger.debug("Loading schema...")
-        block(self.schema.load_from_bus(), self.loop, timeout=5)  # config: schema_load_timeout
+        block(self.schema.load_from_bus(),
+              self.loop, timeout=self.config.bus().schema_load_timeout)
+
+        # Share the schema of the registered APIs
         for api in registry.all():
-            block(self.schema.add_api(api), self.loop, timeout=1)  # config: schema_add_api_timeout
+            block(self.schema.add_api(api),
+                  self.loop, timeout=self.config.bus().schema_add_api_timeout)
 
         logger.info(LBullets(
             "Loaded the following remote schemas ({})".format(len(self.schema.remote_schemas)),
@@ -235,7 +243,7 @@ class BusClient(object):
         return_path = result_transport.get_return_path(rpc_message)
         rpc_message.return_path = return_path
         options = options or {}
-        timeout = options.get('timeout', 5)  # config: rpc_timeout
+        timeout = options.get('timeout', self.config.api(api_name).rpc_timeout)
 
         self._validate_name(api_name, 'rpc', name)
 
@@ -264,12 +272,14 @@ class BusClient(object):
             except CancelledError:
                 pass
 
-            # TODO: Include description of possible causes and how to increase the timeout.
             # TODO: Remove RPC from queue. Perhaps add a RpcBackend.cancel() method. Optional,
             #       as not all backends will support it. No point processing calls which have timed out.
-            raise LightbusTimeout('Timeout when calling RPC {} after {} seconds'.format(
-                rpc_message.canonical_name, timeout
-            )) from None
+            raise LightbusTimeout(
+                f"Timeout when calling RPC {rpc_message.canonical_name} after {timeout} seconds. "
+                f"It is possible no Lightbus process is serving this API, or perhaps it is taking "
+                f"too long to process the request. In which case consider raising the 'rpc_timeout' "
+                f"config option."
+            ) from None
 
         await plugin_hook('after_rpc_call', rpc_message=rpc_message, result_message=result_message, bus_client=self)
 
@@ -571,8 +581,12 @@ class BusNode(object):
         return self.call(**kwargs)
 
     def call(self, *, bus_options=None, **kwargs):
-        # config: rpc_timeout
-        return block(self.call_async(**kwargs, bus_options=bus_options), self.bus_client.loop, timeout=1)
+        # Use a larger value of `rpc_timeout` because call_rpc_remote() should
+        # handle timeout
+        rpc_timeout = self.bus_client.config.api(self.api_name).rpc_timeout * 1.5
+        return block(self.call_async(**kwargs, bus_options=bus_options),
+                     loop=self.bus_client.loop,
+                     timeout=rpc_timeout)
 
     async def call_async(self, *args, bus_options=None, **kwargs):
         if args:
@@ -593,8 +607,9 @@ class BusNode(object):
         )
 
     def listen(self, listener, *, bus_options: dict=None):
-        # config: event_listener_setup_timeout
-        return block(self.listen_async(listener, bus_options=bus_options), self.bus_client.loop, timeout=5)
+        return block(self.listen_async(listener, bus_options=bus_options),
+                     self.bus_client.loop,
+                     timeout=self.bus_client.config.api(self.api_name).event_listener_setup_timeout)
 
     async def listen_multiple_async(self, events: List['BusNode'], listener, *, bus_options: dict = None):
         if self.parent:
@@ -625,8 +640,9 @@ class BusNode(object):
         )
 
     def fire(self, *, bus_options: dict=None, **kwargs):
-        # config: event_fire_timeout
-        return block(self.fire_async(**kwargs, bus_options=bus_options), self.bus_client.loop, timeout=5)
+        return block(self.fire_async(**kwargs, bus_options=bus_options),
+                     loop=self.bus_client.loop,
+                     timeout=self.bus_client.config.api(self.api_name).event_fire_timeout)
 
     # Utilities
 

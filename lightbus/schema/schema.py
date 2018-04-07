@@ -33,10 +33,12 @@ class Schema(object):
 
     """
 
-    def __init__(self, schema_transport: 'SchemaTransport', max_age_seconds: Optional[int]=60):
+    def __init__(self, schema_transport: 'SchemaTransport',
+                 max_age_seconds: Optional[int]=60, human_readable: bool=True):
         # TODO: Pull max_age_seconds from configuration
         self.schema_transport = schema_transport
         self.max_age_seconds = max_age_seconds
+        self.human_readable = human_readable
 
         # Schemas which have been provided locally. These will either be locally-available
         # APIs, or schemas which have been loaded from local files
@@ -233,7 +235,9 @@ class Schema(object):
             schema = {api_name: self.get_api_schema(api_name)}
         else:
             schema = {api_name: self.get_api_schema(api_name) for api_name in self.api_names}
-        return json_encode(schema)  # config: schema_human_readable
+
+        indent = 2 if self.human_readable else None
+        return json_encode(schema, indent=indent)
 
 
 class Parameter(inspect.Parameter):

@@ -111,6 +111,7 @@ class BusConfig(NamedTuple):
     schema_load_timeout: int = 5
     schema_add_api_timeout: int = 1
     schema_human_readable: bool = True
+    schema_ttl: int = 60
     log_level: LogLevelEnum = LogLevelEnum.WARNING
 
 

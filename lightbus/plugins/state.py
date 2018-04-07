@@ -64,7 +64,6 @@ class StatePlugin(LightbusPlugin):
             type=int,
             default=self.ping_interval,
         )
-        # config: ping_interval
         state_run_group.add_argument(
             '--no-ping',
             help='Disable sending ping events on the internal.state API. This '
@@ -76,7 +75,7 @@ class StatePlugin(LightbusPlugin):
     async def after_parse_args(self, args: Namespace):
         if args.subcommand == 'run':
             self.ping_enabled = not args.no_ping
-            self.ping_interval = args.ping_interval
+            self.ping_interval = args.ping_interval or self.ping_interval
 
     async def before_server_start(self, *, bus_client: 'BusClient'):
         event_transport = bus_client.transport_registry.get_event_transport('internal.metrics')
