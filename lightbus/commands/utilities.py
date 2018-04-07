@@ -1,6 +1,8 @@
 import importlib.util
 import logging
 
+from lightbus import configure_logging
+from lightbus.config import Config
 from lightbus.utilities.autodiscovery import autodiscover
 
 logger = logging.getLogger(__name__)
@@ -36,3 +38,12 @@ class BusImportMixin(object):
             logger.warning('Could not find a bus.py file, will listen for events only.')
 
         return bus_module
+
+
+class LogLevelMixin(object):
+
+    def setup_logging(self, override: str, config: Config):
+        configure_logging(
+            log_level=(override or config.bus().log_level.value).upper()
+        )
+

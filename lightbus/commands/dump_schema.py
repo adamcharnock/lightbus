@@ -5,12 +5,12 @@ import sys
 from pathlib import Path
 
 import lightbus
-from lightbus.commands.utilities import BusImportMixin
+from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 
 logger = logging.getLogger(__name__)
 
 
-class Command(BusImportMixin, object):
+class Command(LogLevelMixin, BusImportMixin, object):
 
     def setup(self, parser, subparsers):
         parser_shell = subparsers.add_parser('dumpschema',
@@ -25,9 +25,11 @@ class Command(BusImportMixin, object):
         self.setup_import_parameter(parser_shell)
         parser_shell.set_defaults(func=self.handle)
 
-    def handle(self, args):
+    def handle(self, args, config):
+        self.setup_logging(args.log_level or 'warning', config)
+
         self.import_bus(args)
-        bus = lightbus.create()
+        bus = lightbus.create(config)
         bus.schema.save_local(args.schema)
 
         if args.schema:

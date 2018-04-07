@@ -2,14 +2,14 @@ import argparse
 import json
 import logging
 
-from lightbus.commands.utilities import BusImportMixin
+from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.config.config import config_as_json_schema
 from lightbus.schema.encoder import json_encode
 
 logger = logging.getLogger(__name__)
 
 
-class Command(BusImportMixin, object):
+class Command(LogLevelMixin, BusImportMixin, object):
 
     def setup(self, parser, subparsers):
         parser_shell = subparsers.add_parser('dumpconfigschema',
@@ -26,7 +26,9 @@ class Command(BusImportMixin, object):
         self.setup_import_parameter(parser_shell)
         parser_shell.set_defaults(func=self.handle)
 
-    def handle(self, args):
+    def handle(self, args, config):
+        self.setup_logging(args.log_level or 'warning', config)
+
         self.import_bus(args)
 
         schema = json_encode(config_as_json_schema(), indent=2, sort_keys=True)

@@ -3,19 +3,21 @@ import logging
 from inspect import isclass
 
 import lightbus
-from lightbus.commands.utilities import BusImportMixin
+from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 
 logger = logging.getLogger(__name__)
 
 
-class Command(BusImportMixin, object):
+class Command(LogLevelMixin, BusImportMixin, object):
 
     def setup(self, parser, subparsers):
         parser_shell = subparsers.add_parser('shell', help='Provide an interactive Lightbus shell', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         self.setup_import_parameter(parser_shell)
         parser_shell.set_defaults(func=self.handle)
 
-    def handle(self, args, dry_run=False):
+    def handle(self, args, config):
+        self.setup_logging(args.log_level or 'warning', config)
+
         try:
             import bpython
             from bpython.curtsies import main as bpython_main
@@ -27,9 +29,8 @@ class Command(BusImportMixin, object):
         logger = logging.getLogger('lightbus')
         logger.setLevel(logging.WARNING)
 
-        # TODO: Configuration
         bus_module = self.import_bus(args)
-        bus = lightbus.create(plugins={})
+        bus = lightbus.create(config, plugins={})
 
         objects = {
             k: v

@@ -18,15 +18,16 @@ logger = logging.getLogger(__name__)
 def lightbus_entry_point():  # pragma: no cover
     configure_logging()
     args = parse_args()
-    args.func(args)
+    config = load_config(args)
+    args.func(args, config)
 
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description='Lightbus management command.')
     parser.add_argument('--config', help='Config file to load, JSON or YAML', metavar='FILE')
     # TODO: Log level flag (plus honor --config flag)
-    # parser.add_argument('--log-level', help='Set the log level. Overrides any value set in config. '
-    #                                         'One of debug, info, warning, critical, exception.', metavar='LOG_LEVEL')
+    parser.add_argument('--log-level', help='Set the log level. Overrides any value set in config. '
+                                            'One of debug, info, warning, critical, exception.', metavar='LOG_LEVEL')
 
     subparsers = parser.add_subparsers(help='Commands', dest='subcommand')
     subparsers.required = True
@@ -49,3 +50,8 @@ def parse_args(args=None):
     return args
 
 
+def load_config(args) -> Config:
+    if args.config:
+        return Config.load_file(file_path=args.config)
+    else:
+        return Config.load_dict({})

@@ -2,13 +2,13 @@ import argparse
 import logging
 
 from lightbus import create
-from lightbus.commands.utilities import BusImportMixin
+from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.utilities.importing import import_from_string
 
 logger = logging.getLogger(__name__)
 
 
-class Command(BusImportMixin, object):
+class Command(LogLevelMixin, BusImportMixin, object):
 
     def setup(self, parser, subparsers):
         parser_run = subparsers.add_parser('run', help='Run Lightbus', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -46,7 +46,9 @@ class Command(BusImportMixin, object):
             '--redis-url', '-r', help='URL to Redis server when using Redis-based transports', default='redis://localhost:6379/0'
         )
 
-    def handle(self, args, dry_run=False):
+    def handle(self, args, config, dry_run=False):
+        self.setup_logging(args.log_level, config)
+
         try:
             rpc_transport = import_from_string(args.rpc_transport)
             result_transport = import_from_string(args.result_transport)
@@ -59,6 +61,7 @@ class Command(BusImportMixin, object):
         bus_module = self.import_bus(args)
 
         bus = create(
+            config=config,
             rpc_transport=rpc_transport(url=args.redis_url),
             result_transport=result_transport(url=args.redis_url),
             event_transport=event_transport(url=args.redis_url),

@@ -8,8 +8,9 @@ import logging
 import signal
 import time
 from asyncio.futures import CancelledError
-from typing import Optional, List, Sequence, Tuple
+from typing import Optional, List, Sequence, Tuple, Union
 
+from lightbus import configure_logging
 from lightbus.config import Config
 from lightbus.schema import Schema
 from lightbus.api import registry, Api
@@ -708,13 +709,14 @@ class BusNode(object):
 
 
 def create(
+        config: Union[dict, Config]=frozendict(),
+        *,
         rpc_transport: Optional['RpcTransport']=None,
         result_transport: Optional['ResultTransport']=None,
         event_transport: Optional['EventTransport']=None,
         schema_transport: Optional['SchemaTransport']=None,
         client_class=BusClient,
         node_class=BusNode,
-        config: dict=frozenset(),
         plugins=None,
         loop: asyncio.AbstractEventLoop=None,
         flask: bool=False,
@@ -725,7 +727,10 @@ def create(
         return
 
     from lightbus.config import Config
-    config = Config.load_dict(config or {})
+
+    if isinstance(config, dict):
+        config = Config.load_dict(config or {})
+
     transport_registry = TransportRegistry().load_config(config)
 
     if not transport_registry.has_rpc_transport('default'):

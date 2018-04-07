@@ -3,11 +3,10 @@ import logging
 from lightbus.log import LightbusFormatter
 
 logger = logging.getLogger(__name__)
-
 handler = logging.StreamHandler()
 
 
-def configure_logging():
+def configure_logging(log_level=logging.INFO):
     logger = logging.getLogger('lightbus')
 
     formatter = LightbusFormatter(fmt={
@@ -21,4 +20,4 @@ def configure_logging():
 
     logger.removeHandler(handler)
     logger.addHandler(handler)
-    logger.setLevel(logging.INFO)  # config: log_level
+    logger.setLevel(log_level)
