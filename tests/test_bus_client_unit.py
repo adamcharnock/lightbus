@@ -121,7 +121,6 @@ async def test_no_transport(loop):
     # No transports configured for any relevant api
     config = Config.load_dict({
         'apis': {
-            # TODO: This needs moving out of the apis config section
             'default': {'event_transport': {'redis': {}}},
         }
     }, set_defaults=False)

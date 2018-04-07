@@ -187,7 +187,6 @@ async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpc
             }
         },
         'apis': {
-            # TODO: This needs moving out of the apis config section
             'default': {
                 'rpc_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
                 'result_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
@@ -230,7 +229,6 @@ async def test_multiple_event_transports(loop, server, redis_server_b):
             }
         },
         'apis': {
-            # TODO: This needs moving out of the apis config section
             'default': {
                 'event_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
             },
@@ -359,7 +357,6 @@ async def test_listen_to_multiple_events_across_multiple_transports(loop, server
             }
         },
         'apis': {
-            # TODO: This needs moving out of the apis config section
             'default': {
                 'event_transport': {'redis': {'url': f'redis://localhost:{port_a}'}},
             },

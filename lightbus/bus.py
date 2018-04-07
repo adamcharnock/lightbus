@@ -46,7 +46,6 @@ class BusClient(object):
 
         self.config = config
         self.transport_registry = transport_registry or TransportRegistry().load_config(config)
-        # TODO: Schema transport should not be in registry
         self.schema = Schema(
             schema_transport=self.transport_registry.get_schema_transport('default'),
             max_age_seconds=self.config.bus().schema.ttl,
