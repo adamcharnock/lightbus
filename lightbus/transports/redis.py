@@ -189,11 +189,15 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
                  serializer=BlobMessageSerializer(),
                  deserializer=BlobMessageDeserializer(ResultMessage),
                  connection_parameters: Mapping=frozendict(maxsize=100),
+                 result_ttl=60,
+                 rpc_timeout=5,
                  ):
         # NOTE: We use the blob serializer here, as the results come back as values in a list
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self.serializer = serializer
         self.deserializer = deserializer
+        self.result_ttl = result_ttl
+        self.rpc_timeout = rpc_timeout
 
     @classmethod
     def from_config(cls,
@@ -201,6 +205,8 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
                     serializer: str='lightbus.serializers.BlobMessageSerializer',
                     deserializer: str='lightbus.serializers.BlobMessageDeserializer',
                     connection_parameters: Mapping=frozendict(maxsize=100),
+                    result_ttl=60,
+                    rpc_timeout=5,
                     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(ResultMessage)
@@ -210,6 +216,8 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
             serializer=serializer,
             deserializer=deserializer,
             connection_parameters=connection_parameters,
+            result_ttl=result_ttl,
+            rpc_timeout=rpc_timeout,
         )
 
     def get_return_path(self, rpc_message: RpcMessage) -> str:
@@ -230,8 +238,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
             start_time = time.time()
             p = redis.pipeline()
             p.lpush(redis_key, self.serializer(result_message))
-            # TODO: Make result expiry configurable
-            p.expire(redis_key, timeout=60)  # config: result_ttl
+            p.expire(redis_key, timeout=self.result_ttl)
             await p.execute()
 
         logger.debug(L(
@@ -250,8 +257,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
                 # Sometimes blpop() will return None in the case of timeout or
                 # cancellation. We therefore perform this step with a loop to catch
                 # this. A more elegant solution is welcome.
-                # TODO: Make timeout configurable
-                result = await redis.blpop(redis_key, timeout=5)  # config: rpc_timeout
+                result = await redis.blpop(redis_key, timeout=self.rpc_timeout)
             _, serialized = result
 
         result_message = self.deserializer(serialized)
