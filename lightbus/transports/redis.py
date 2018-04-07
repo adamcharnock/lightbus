@@ -90,6 +90,14 @@ class RedisTransportMixin(object):
 
 class RedisRpcTransport(RedisTransportMixin, RpcTransport):
     """ Redis RPC transport providing at-most-once delivery
+
+    This transport uses a redis list and a blocking pop operation
+    to distribute an RPC call to a single RPC consumer.
+
+    Each call also has a corresponding expiry key created. Once the
+    key expires it should be assumed that the RPC call has timed
+    out and that therefore is should be discarded rather than
+    be processed.
     """
 
     def __init__(self, *,
@@ -144,7 +152,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             print('setting ' + expiry_key)
             p = redis.pipeline()
             p.rpush(key=queue_key, value=self.serializer(rpc_message))
-            p.set(expiry_key, 1)  # TODO: Test is set
+            p.set(expiry_key, 1)
             p.expire(expiry_key, timeout=self.rpc_timeout)
             await p.execute()
 
@@ -155,19 +163,17 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
     async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         # Get the name of each stream
-        streams = ['{}:rpc_queue'.format(api.meta.name) for api in apis]
-        # Get where we last left off in each stream
-        latest_ids = [self._latest_ids.get(stream, '$') for stream in streams]
+        queue_keys = ['{}:rpc_queue'.format(api.meta.name) for api in apis]
 
         logger.debug(LBullets(
             'Consuming RPCs from', items=[
-                '{} ({})'.format(s, self._latest_ids.get(s, '$')) for s in streams
+                '{} ({})'.format(s, self._latest_ids.get(s, '$')) for s in queue_keys
             ]
         ))
 
         with await self.connection_manager() as redis:
             try:
-                stream, data = await redis.blpop(*streams)
+                stream, data = await redis.blpop(*queue_keys)
             except RuntimeError:
                 # For some reason aio-redis likes to eat the CancelledError and
                 # turn it into a Runtime error:
@@ -285,7 +291,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
 
 
 class RedisEventTransport(RedisTransportMixin, EventTransport):
-    # TODO: Use a consume group to make sure we don't miss events while the process is
+    # TODO: Use a consumer group to make sure we don't miss events while the process is
     # offline. For example, sending welcome email upon user registration. This means
     # we need to collect an app name somewhere
 
