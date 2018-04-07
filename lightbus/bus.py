@@ -8,7 +8,7 @@ import logging
 import signal
 import time
 from asyncio.futures import CancelledError
-from typing import Optional, List, Sequence, Tuple, Union
+from typing import Optional, List, Sequence, Tuple, Union, Mapping
 
 from lightbus import configure_logging
 from lightbus.config import Config
@@ -728,7 +728,7 @@ def create(
 
     from lightbus.config import Config
 
-    if isinstance(config, dict):
+    if isinstance(config, Mapping):
         config = Config.load_dict(config or {})
 
     transport_registry = TransportRegistry().load_config(config)
