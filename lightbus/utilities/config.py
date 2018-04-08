@@ -20,6 +20,12 @@ def make_from_config_structure(class_name, from_config_method, extra_parameters=
 
     parameters = inspect.signature(from_config_method).parameters.values()
     for parameter in itertools.chain(parameters, extra_parameters):
+        if parameter.name == 'config':
+            # The config parameter is always passed to from_config() in order to
+            # give it access to the global configuration (useful for setting
+            # sensible defaults)
+            continue
+
         if parameter.kind in (parameter.POSITIONAL_ONLY, parameter.VAR_POSITIONAL):
             logger.warning(
                 f'Positional-only arguments are not supported in from_config() on class {class_name}'

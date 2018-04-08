@@ -27,7 +27,7 @@ class TransportMetaclass(type):
 class Transport(object, metaclass=TransportMetaclass):
 
     @classmethod
-    def from_config(cls: Type[T]) -> T:
+    def from_config(cls: Type[T], * config) -> T:
         return cls()
 
     async def close(self):
@@ -181,14 +181,14 @@ class TransportRegistry(object):
                 transport_config = self._get_transport_config(transport_selector)
                 if transport_config:
                     transport_name, transport_config = transport_config
-                    transport = self._instantiate_transport(transport_type, transport_name, transport_config)
+                    transport = self._instantiate_transport(transport_type, transport_name, transport_config, config)
                     self._set_transport(api_name, transport, transport_type)
 
         # Schema transport
         transport_config = self._get_transport_config(config.bus().schema.transport)
         if transport_config:
             transport_name, transport_config = transport_config
-            self.schema_transport = self._instantiate_transport('schema', transport_name, transport_config)
+            self.schema_transport = self._instantiate_transport('schema', transport_name, transport_config, config)
 
         return self
 
@@ -199,9 +199,9 @@ class TransportRegistry(object):
                 if transport_config is not None:
                     return transport_name, transport_config
 
-    def _instantiate_transport(self, type_, name, transport_config: NamedTuple):
+    def _instantiate_transport(self, type_, name, transport_config: NamedTuple, config: 'Config'):
         transport_class = get_transport(type_=type_, name=name)
-        transport = transport_class.from_config(**transport_config._asdict())
+        transport = transport_class.from_config(config=config, **transport_config._asdict())
         return transport
 
     def _set_transport(self, api_name: str, transport: Transport, transport_type: str):

@@ -43,7 +43,7 @@ class LightbusPlugin(object, metaclass=PluginMetaclass):
     priority = 1000
 
     @classmethod
-    def from_config(cls: Type[T]) -> T:
+    def from_config(cls: Type[T], *, config) -> T:
         return cls()
 
     def __str__(self):
@@ -112,6 +112,7 @@ def autoload_plugins(config: 'Config', force=False):
         plugin_config = config.plugin(name)
         if plugin_config.enabled:
             _plugins[name] = instantiate_plugin(
+                config=config,
                 plugin_config=plugin_config,
                 cls=cls,
             )
@@ -133,10 +134,10 @@ def find_plugins() -> Dict[str, Type[LightbusPlugin]]:
     return plugins
 
 
-def instantiate_plugin(plugin_config: NamedTuple, cls: Type[LightbusPlugin]):
+def instantiate_plugin(config: 'Config', plugin_config: NamedTuple, cls: Type[LightbusPlugin]):
     options = plugin_config._asdict()
     options.pop('enabled')
-    return cls.from_config(**options)
+    return cls.from_config(config=config, **options)
 
 
 def manually_set_plugins(plugins: Dict[str, LightbusPlugin]):

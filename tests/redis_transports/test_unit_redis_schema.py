@@ -67,6 +67,7 @@ async def test_from_config(redis_client):
     await redis_client.select(5)
     host, port = redis_client.address
     transport = RedisSchemaTransport.from_config(
+        config=None,
         url=f'redis://127.0.0.1:{port}/5',
         connection_parameters=dict(maxsize=3),
     )

@@ -118,6 +118,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
     @classmethod
     def from_config(cls,
+                    config,
                     url: str='redis://127.0.0.1:6379/0',
                     connection_parameters: Mapping=frozendict(maxsize=100),
                     batch_size: int=10,
@@ -217,6 +218,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
 
     @classmethod
     def from_config(cls,
+                    config,
                     url: str='redis://127.0.0.1:6379/0',
                     serializer: str='lightbus.serializers.BlobMessageSerializer',
                     deserializer: str='lightbus.serializers.BlobMessageDeserializer',
@@ -312,6 +314,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
     @classmethod
     def from_config(cls,
+                    config,
                     url: str='redis://127.0.0.1:6379/0',
                     connection_parameters: Mapping=frozendict(maxsize=100),
                     batch_size: int=10,
@@ -434,6 +437,7 @@ class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
 
     @classmethod
     def from_config(cls,
+                    config,
                     url: str='redis://127.0.0.1:6379/0',
                     connection_parameters: Mapping=frozendict(),
                     ):

@@ -49,7 +49,7 @@ class StatePlugin(LightbusPlugin):
         self.ping_interval = ping_interval
 
     @classmethod
-    def from_config(cls, ping_enabled: bool=True, ping_interval: int=60):
+    def from_config(cls, config, ping_enabled: bool=True, ping_interval: int=60):
         return cls(ping_enabled=ping_enabled, ping_interval=ping_interval)
 
     async def before_parse_args(self, *, parser: ArgumentParser, subparsers: _ArgumentGroup):

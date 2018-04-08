@@ -76,10 +76,11 @@ def test_plugin_config():
     # base plugin's metaclass?
     class PluginWithConfig(LightbusPlugin):
         @classmethod
-        def from_config(cls, first: int=123):
+        def from_config(cls, config, first: int=123):
             pass
 
     assert PluginWithConfig.Config
     assert type(PluginWithConfig.Config) == type
+    assert 'config' not in PluginWithConfig.Config.__annotations__
     assert 'first' in PluginWithConfig.Config.__annotations__
     assert PluginWithConfig.Config().first == 123
