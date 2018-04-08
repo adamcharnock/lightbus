@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytest
 
+from lightbus.config import Config
 from lightbus.message import EventMessage
 from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeserializer, BlobMessageSerializer, \
     BlobMessageDeserializer
@@ -166,7 +167,7 @@ async def test_from_config(redis_client):
     await redis_client.select(5)
     host, port = redis_client.address
     transport = RedisEventTransport.from_config(
-        config=None,
+        config=Config.load_dict({}),
         url=f'redis://127.0.0.1:{port}/5',
         connection_parameters=dict(maxsize=123),
         batch_size=123,

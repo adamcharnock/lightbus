@@ -6,7 +6,6 @@ from typing import Mapping, Union, Type, get_type_hints, TypeVar, Dict, NamedTup
 import jsonschema
 import yaml as yamllib
 
-from lightbus.config.structure import PluginSelector
 from lightbus.schema.hints_to_schema import python_type_to_json_schemas, SCHEMA_URI
 
 if False:
@@ -83,6 +82,12 @@ class Config(object):
         return cls(
             root_config=mapping_to_named_tuple(config, RootConfig)
         )
+
+    def __getattr__(self, item):
+        if hasattr(self._config, item):
+            return getattr(self._config, item)
+        else:
+            raise AttributeError(f"No root-level configuration option named '{item}'")
 
 
 def validate_config(config: dict):

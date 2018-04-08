@@ -24,6 +24,9 @@ from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
 
+if False:
+    from lightbus.config import Config
+
 logger = logging.getLogger(__name__)
 
 Since = Union[str, datetime, None]
@@ -118,7 +121,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
     @classmethod
     def from_config(cls,
-                    config,
+                    config: 'Config',
                     url: str='redis://127.0.0.1:6379/0',
                     connection_parameters: Mapping=frozendict(maxsize=100),
                     batch_size: int=10,
@@ -218,7 +221,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
 
     @classmethod
     def from_config(cls,
-                    config,
+                    config: 'Config',
                     url: str='redis://127.0.0.1:6379/0',
                     serializer: str='lightbus.serializers.BlobMessageSerializer',
                     deserializer: str='lightbus.serializers.BlobMessageDeserializer',
@@ -298,6 +301,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
     # we need to collect an app name somewhere
 
     def __init__(self, redis_pool=None, *,
+                 consumer_group_name: str,
                  url=None,
                  serializer=ByFieldMessageSerializer(),
                  deserializer=ByFieldMessageDeserializer(EventMessage),
@@ -308,13 +312,15 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self.serializer = serializer
         self.deserializer = deserializer
         self.batch_size = batch_size
+        # self.consumer_group_name = consumer_group_name
 
         self._task = None
         self._reload = False
 
     @classmethod
     def from_config(cls,
-                    config,
+                    config: 'Config',
+                    consumer_group_name: str=None,
                     url: str='redis://127.0.0.1:6379/0',
                     connection_parameters: Mapping=frozendict(maxsize=100),
                     batch_size: int=10,
@@ -323,9 +329,11 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(EventMessage)
+        consumer_group_name = consumer_group_name or config.service_name
 
         return cls(
             redis_pool=None,
+            consumer_group_name=consumer_group_name,
             url=url,
             connection_parameters=connection_parameters,
             batch_size=batch_size,

@@ -24,7 +24,7 @@ def redis_result_transport(new_redis_pool, server, loop):
 @pytest.fixture
 def redis_event_transport(new_redis_pool, server, loop):
     """Get a redis transport backed by a running redis server."""
-    return lightbus.RedisEventTransport(redis_pool=new_redis_pool(maxsize=10000))
+    return lightbus.RedisEventTransport(redis_pool=new_redis_pool(maxsize=10000), consumer_group_name='test_cg')
 
 
 @pytest.fixture
