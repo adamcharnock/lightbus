@@ -123,7 +123,8 @@ class BusConfig(NamedTuple):
 
 
 class RootConfig(object):
-    service_name: str = '{hostname}:{pid}'
+    service_name: str = '{random8}'
+    process_name: str = '{random4}'
     bus: BusConfig = BusConfig()
     apis: Dict[str, ApiConfig] = {}
     plugins: PluginSelector = PluginSelector()
@@ -132,11 +133,12 @@ class RootConfig(object):
         for k, v in kw.items():
             setattr(self, k, v)
 
-        self._format_service_name()
+        self.service_name = self._format_name(self.service_name)
+        self.process_name = self._format_name(self.process_name)
 
-    def _format_service_name(self):
+    def _format_name(self, name):
         random_string = ''.join(random.choice(string.ascii_lowercase) for _ in range(16))
-        self.service_name = self.service_name.format(
+        return name.format(
             hostname=socket.gethostname().lower(),
             pid=os.getpid(),
             random4=random_string[:4],

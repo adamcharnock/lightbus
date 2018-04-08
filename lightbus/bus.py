@@ -27,7 +27,7 @@ from lightbus.transports import RpcTransport, ResultTransport, EventTransport, R
 from lightbus.transports.base import SchemaTransport, TransportRegistry
 from lightbus.transports.redis import RedisSchemaTransport
 from lightbus.utilities.frozendict import frozendict
-from lightbus.utilities.human import human_time, generate_process_name
+from lightbus.utilities.human import human_time
 from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loop, cancel
 
 __all__ = ['BusClient', 'BusNode', 'create']
@@ -41,7 +41,6 @@ class BusClient(object):
     def __init__(self,
                  config: 'Config',
                  transport_registry: TransportRegistry=None,
-                 process_name: str='',
                  loop: asyncio.AbstractEventLoop=None):
 
         self.config = config
@@ -51,7 +50,6 @@ class BusClient(object):
             max_age_seconds=self.config.bus().schema.ttl,
             human_readable=self.config.bus().schema.human_readable,
         )
-        self.process_name = process_name or generate_process_name()
         self.loop = loop or get_event_loop()
         self._listeners = {}
 

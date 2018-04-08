@@ -24,3 +24,12 @@ def test_root_config_service_name():
     assert len(service_name) > 3
     # No format parameters in there, should have been formatted upon instantiation
     assert '{' not in service_name
+
+
+def test_root_config_process_name():
+    process_name = RootConfig().process_name
+    assert process_name
+    assert type(process_name) == str
+    assert len(process_name) > 3
+    # No format parameters in there, should have been formatted upon instantiation
+    assert '{' not in process_name

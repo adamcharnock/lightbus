@@ -15,6 +15,7 @@ from lightbus.plugins.metrics import MetricsPlugin
 
 if False:
     from lightbus import BusClient
+    from lightbus.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -44,13 +45,20 @@ class StatePlugin(LightbusPlugin):
     """
     priority = 100
 
-    def __init__(self, ping_enabled: bool=True, ping_interval: int=60):
+    def __init__(self, service_name: str, process_name: str, ping_enabled: bool=True, ping_interval: int=60):
+        self.service_name = service_name
+        self.process_name = process_name
         self.ping_enabled = ping_enabled
         self.ping_interval = ping_interval
 
     @classmethod
-    def from_config(cls, config, ping_enabled: bool=True, ping_interval: int=60):
-        return cls(ping_enabled=ping_enabled, ping_interval=ping_interval)
+    def from_config(cls, config: 'Config', ping_enabled: bool=True, ping_interval: int=60):
+        return cls(
+            service_name=config.service_name,
+            process_name=config.process_name,
+            ping_enabled=ping_enabled,
+            ping_interval=ping_interval
+        )
 
     async def before_parse_args(self, *, parser: ArgumentParser, subparsers: _ArgumentGroup):
         """Add some plugin-related args so behaviour can be customised"""
@@ -102,7 +110,8 @@ class StatePlugin(LightbusPlugin):
         event_transport = bus_client.transport_registry.get_event_transport('internal.metrics')
         await event_transport.send_event(
             EventMessage(api_name='internal.state', event_name='server_stopped', kwargs=dict(
-                process_name=bus_client.process_name,
+                process_name=self.process_name,
+                service_name=self.service_name,
             )),
             options={},
         )
@@ -124,7 +133,8 @@ class StatePlugin(LightbusPlugin):
         """Get the kwargs for a server_started or ping message"""
         max_memory_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         return dict(
-            process_name=bus_client.process_name,
+            process_name=self.process_name,
+            service_name=self.service_name,
             metrics_enabled=is_plugin_loaded(MetricsPlugin),
             api_names=[api.meta.name for api in registry.public()],
             listening_for=['{}.{}'.format(api_name, event_name) for api_name, event_name in bus_client._listeners.keys()],

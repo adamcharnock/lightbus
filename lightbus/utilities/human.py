@@ -41,4 +41,5 @@ def human_time(seconds: float):
 
 
 def generate_process_name():
+    # TODO: No longer used, consider removing
     return '{}-{}-{}'.format(random.choice(_adjectives), random.choice(_nouns), random.randint(1, 1000))

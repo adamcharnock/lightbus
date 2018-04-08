@@ -7,9 +7,23 @@ import lightbus
 from lightbus.message import EventMessage, RpcMessage, ResultMessage
 from lightbus.plugins import LightbusPlugin
 
+if False:
+    from lightbus.config import Config
+
 
 class MetricsPlugin(LightbusPlugin):
     priority = 110
+
+    def __init__(self, service_name: str, process_name: str):
+        self.service_name = service_name
+        self.process_name = process_name
+
+    @classmethod
+    def from_config(cls, config: 'Config'):
+        return cls(
+            service_name=config.service_name,
+            process_name=config.process_name,
+        )
 
     # Client-side RPC hooks
 
@@ -80,7 +94,8 @@ class MetricsPlugin(LightbusPlugin):
         plugin again thereby causing an infinite loop.
         """
         kwargs.setdefault('timestamp', datetime.utcnow().timestamp())
-        kwargs.setdefault('process_name', bus_client.process_name)
+        kwargs.setdefault('service_name', self.service_name)
+        kwargs.setdefault('process_name', self.process_name)
         event_transport = bus_client.transport_registry.get_event_transport('internal.metrics')
         return event_transport.send_event(
             EventMessage(

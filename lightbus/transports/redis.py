@@ -7,6 +7,8 @@ from urllib.parse import urlparse
 
 import aioredis
 import asyncio
+
+import os
 from aioredis import Redis
 from aioredis.pool import ConnectionsPool
 from aioredis.util import decode
@@ -307,6 +309,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                  deserializer=ByFieldMessageDeserializer(EventMessage),
                  connection_parameters: Mapping=frozendict(maxsize=100),
                  batch_size=10,
+                 consumer_name: str=None,
                  ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self.serializer = serializer
@@ -326,10 +329,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     batch_size: int=10,
                     serializer: str='lightbus.serializers.ByFieldMessageSerializer',
                     deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
+                    consumer_name: str = None,
                     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(EventMessage)
         consumer_group_name = consumer_group_name or config.service_name
+        consumer_name = f'lightbus-{os.getpid()}'
 
         return cls(
             redis_pool=None,
