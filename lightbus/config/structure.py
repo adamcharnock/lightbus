@@ -17,10 +17,13 @@ Benefits of this are:
     3. Plugins and transports can be assured of reasonable sane data
 
 """
-import inspect
 import logging
+import socket
+import random
+import string
 from typing import NamedTuple, Optional, Union, Mapping, Type, Dict
 
+import os
 from enum import Enum
 
 from lightbus.transports.base import get_available_transports
@@ -119,7 +122,24 @@ class BusConfig(NamedTuple):
     schema: SchemaConfig = SchemaConfig()
 
 
-class RootConfig(NamedTuple):
+class RootConfig(object):
+    service_name: str = '{hostname}:{pid}'
     bus: BusConfig = BusConfig()
     apis: Dict[str, ApiConfig] = {}
     plugins: PluginSelector = PluginSelector()
+
+    def __init__(self, **kw):
+        for k, v in kw.items():
+            setattr(self, k, v)
+
+        self._format_service_name()
+
+    def _format_service_name(self):
+        random_string = ''.join(random.choice(string.ascii_lowercase) for _ in range(16))
+        self.service_name = self.service_name.format(
+            hostname=socket.gethostname().lower(),
+            pid=os.getpid(),
+            random4=random_string[:4],
+            random8=random_string[:8],
+            random16=random_string[:16],
+        )

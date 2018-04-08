@@ -1,6 +1,6 @@
 import pytest
 
-from lightbus.config.structure import make_transport_selector_structure, ApiConfig
+from lightbus.config.structure import make_transport_selector_structure, ApiConfig, RootConfig
 
 pytestmark = pytest.mark.unit
 
@@ -15,3 +15,12 @@ def test_make_api_config_structure():
     assert 'rpc_transport' in ApiConfig.__annotations__
     assert 'result_transport' in ApiConfig.__annotations__
     assert 'validate' in ApiConfig.__annotations__
+
+
+def test_root_config_service_name():
+    service_name = RootConfig().service_name
+    assert service_name
+    assert type(service_name) == str
+    assert len(service_name) > 3
+    # No format parameters in there, should have been formatted upon instantiation
+    assert '{' not in service_name
