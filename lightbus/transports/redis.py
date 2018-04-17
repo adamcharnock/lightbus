@@ -419,7 +419,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         try:
             while True:
-                yield await queue.get()
+                try:
+                    yield await queue.get()
+                except GeneratorExit:
+                    return
         finally:
             await cancel(fetch_task, reclaim_task)
 

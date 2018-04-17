@@ -88,11 +88,20 @@ async def test_consume_events_since_id(redis_event_transport: RedisEventTranspor
     )
 
     consumer = redis_event_transport.consume([('my.dummy', 'my_event')], {}, since='1515000001500-0', forever=False)
-    messages = [m async for m in consumer]
 
-    assert len(messages) == 2
-    assert messages[0].kwargs['field'] == '2'
-    assert messages[1].kwargs['field'] == '3'
+    yields = []
+
+    async def co():
+        async for m in consumer:
+            yields.append(m)
+    asyncio.ensure_future(co())
+    await asyncio.sleep(0.1)
+
+    assert len(yields) == 4
+    assert yields[0].kwargs['field'] == '2'
+    assert yields[1] is True
+    assert yields[2].kwargs['field'] == '3'
+    assert yields[3] is True
 
 
 @pytest.mark.run_loop
@@ -128,38 +137,20 @@ async def test_consume_events_since_datetime(redis_event_transport: RedisEventTr
     # 1515000001500-0 -> 2018-01-03T17:20:01.500Z
     since_datetime = datetime(2018, 1, 3, 17, 20, 1, 500)
     consumer = redis_event_transport.consume([('my.dummy', 'my_event')], {}, since=since_datetime, forever=False)
-    messages = [m async for m in consumer]
 
-    assert len(messages) == 2
-    assert messages[0].kwargs['field'] == '2'
-    assert messages[1].kwargs['field'] == '3'
+    yields = []
+    
+    async def co():
+        async for m in consumer:
+            yields.append(m)
+    asyncio.ensure_future(co())
+    await asyncio.sleep(0.1)
 
-
-@pytest.mark.run_loop
-async def test_consume_events_starts_from_fixed_point(redis_event_transport: RedisEventTransport, redis_client, dummy_api):
-    """Ensure we track our event consumption from a fixed point, not from '$'
-
-    Tracking from '$' results in lost messages should an error occur
-    when fetching the initial batch of messages. See the comment within
-    RedisEventTransport.fetch() for further details
-    """
-    async def co_enqeue():
-        await asyncio.sleep(0.1)
-        return await redis_client.xadd('my.dummy.my_event:stream', fields={
-            b'api_name': b'my.dummy',
-            b'event_name': b'my_event',
-            b':field': b'"value"',
-        })
-
-    context = {}
-    async def co_consume():
-        async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')], context):
-            return message_
-
-    await asyncio.gather(co_enqeue(), co_consume())
-    assert 'streams' in context
-    assert 'my.dummy.my_event:stream' in context['streams']
-    assert context['streams']['my.dummy.my_event:stream'].endswith('-9999')
+    assert len(yields) == 4
+    assert yields[0].kwargs['field'] == '2'
+    assert yields[1] is True
+    assert yields[2].kwargs['field'] == '3'
+    assert yields[3] is True
 
 
 @pytest.mark.run_loop
