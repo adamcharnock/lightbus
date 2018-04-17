@@ -382,7 +382,8 @@ class BusClient(object):
 
         options = options or {}
         # Set a random default name for this new consumer we are creating
-        options.setdefault('name', random_name(length=4))
+        # TODO: Test this gets used
+        options.setdefault('consumer_name', random_name(length=4))
         listener_context = {}
 
         async def listen_for_event_task(event_transport, events):
