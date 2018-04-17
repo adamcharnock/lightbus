@@ -8,6 +8,7 @@ from typing import Sequence, Optional, Union, Generator, Dict, NamedTuple, Mappi
 from urllib.parse import urlparse
 
 import aioredis
+import aioredis.commands
 import asyncio
 
 import os
@@ -57,7 +58,7 @@ class RedisTransportMixin(object):
                 # If they've passed a raw pool then wrap it up in a Redis object.
                 # aioredis.create_redis_pool() normally does this for us.
                 redis_pool = Redis(redis_pool)
-            if not isinstance(redis_pool, (Redis,)):
+            if not isinstance(redis_pool, (Redis, aioredis.commands.Redis)):
                 raise InvalidRedisPool(
                     'Invalid Redis connection provided: {}. If unsure, use aioredis.create_redis_pool() to '
                     'create your redis connection.'.format(redis_pool)
@@ -418,9 +419,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         try:
             while True:
                 yield await queue.get()
-        except asyncio.CancelledError:
-            cancel(fetch_task, reclaim_task)
-            raise
+        finally:
+            await cancel(fetch_task, reclaim_task)
 
     async def _fetch_new_messages(self, streams, consumer_group, forever):
         redis: Redis
@@ -453,7 +453,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 # Fetch some messages
                 try:
                     # This will block until there are some messages available
-                    stream_messages = await redis.xread(
+                    stream_messages = await redis.xread_group(
+                        group_name=consumer_group,
+                        consumer_name=self.consumer_name,
                         streams=list(streams.keys()),
                         # Using ID '>' indicates we only want new messages which have not
                         # been passed to other consumers in this group
@@ -507,14 +509,14 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
     async def _create_consumer_groups(self, streams, redis, consumer_group):
         for stream, since in streams.items():
-            if not redis.exists(stream):
+            if not await redis.exists(stream):
                 # Add a noop to ensure the stream exists
                 # TODO: Test to ensure noops are ignored in fetch()
-                redis.xadd(stream, fields={})
+                await redis.xadd(stream, fields={'': ''})
 
             try:
                 # Create the group (it may already exist)
-                redis.xgroup_create(stream, consumer_group, latest_id=since)
+                await redis.xgroup_create(stream, consumer_group, latest_id=since)
             except ReplyError as e:
                 if 'BUSYGROUP' not in str(e):
                     raise
