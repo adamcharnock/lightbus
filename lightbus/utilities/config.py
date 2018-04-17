@@ -1,5 +1,7 @@
 import inspect
 import logging
+import random
+import string
 
 from typing import Type, NamedTuple
 
@@ -43,3 +45,7 @@ def make_from_config_structure(class_name, from_config_method, extra_parameters=
     globals_.update(vars)
     exec(code, globals_)
     return globals_[f'{class_name}Config']
+
+
+def random_name(length: int) -> str:
+    return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))

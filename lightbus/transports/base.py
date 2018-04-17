@@ -5,7 +5,7 @@ from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, TypeVar, 
 from lightbus.api import Api
 from lightbus.exceptions import NothingToListenFor, TransportNotFound
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
-from lightbus.utilities.config import make_from_config_structure
+from lightbus.utilities.config import make_from_config_structure, random_name
 from lightbus.utilities.importing import load_entrypoint_classes
 
 T = TypeVar('T')
@@ -90,7 +90,7 @@ class EventTransport(Transport):
         """Publish an event"""
         raise NotImplementedError()
 
-    def consume(self, listen_for: List[Tuple[str, str]], context: dict, **kwargs):
+    def consume(self, listen_for: List[Tuple[str, str]], context: dict, name: str = None, **kwargs):
         """Consume messages for the given APIs
 
         Examples:
@@ -110,18 +110,16 @@ class EventTransport(Transport):
                 'EventTransport.consume() was called without providing anything '
                 'to listen for in the "listen_for" argument.'
             )
-        return self.fetch(listen_for, context, **kwargs)
+        name = name or random_name(length=4)
+        return self.fetch(listen_for, context, name, **kwargs)
 
-    async def fetch(self, listen_for: List[Tuple[str, str]], context:dict, **kwargs) -> Generator[EventMessage, None, None]:
+    async def fetch(self, listen_for: List[Tuple[str, str]], context: dict, name: str, **kwargs) -> Generator[EventMessage, None, None]:
         """Consume RPC messages for the given events
 
         Events the bus is not listening for may be returned, they
         will simply be ignored.
         """
         raise NotImplementedError()
-
-    async def consumption_complete(self, event_message: EventMessage, context: dict):
-        pass
 
 
 class SchemaTransport(Transport):

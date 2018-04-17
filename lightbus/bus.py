@@ -414,9 +414,10 @@ class BusClient(object):
                     if inspect.isawaitable(co):
                         await co
 
-                    # Let the event transport know that it can consider the
-                    # event message to have been successfully consumed
-                    await event_transport.consumption_complete(event_message, listener_context)
+                    # We manually acknowledge here rather than rely on the consumer to continue
+                    # post-yielding. This allows us to trigger the 'after_event_execution' plugin hook
+                    # in the knowledge that the message has actually been acknowledged.
+                    await event_message.acknowledge()
                     await plugin_hook('after_event_execution', event_message=event_message, bus_client=self)
 
         # Get the events transports for the selection of APIs that we are listening on

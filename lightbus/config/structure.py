@@ -28,6 +28,7 @@ from enum import Enum
 
 from lightbus.transports.base import get_available_transports
 from lightbus.plugins import get_plugins, find_plugins
+from lightbus.utilities.config import random_name
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +138,7 @@ class RootConfig(object):
         self.process_name = self._format_name(self.process_name)
 
     def _format_name(self, name):
-        random_string = ''.join(random.choice(string.ascii_lowercase) for _ in range(16))
+        random_string = random_name(length=16)
         return name.format(
             hostname=socket.gethostname().lower(),
             pid=os.getpid(),

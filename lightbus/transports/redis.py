@@ -2,6 +2,8 @@ import json
 import logging
 import time
 from datetime import datetime
+from functools import partial
+from random import random
 from typing import Sequence, Optional, Union, Generator, Dict, NamedTuple, Mapping
 from urllib.parse import urlparse
 
@@ -9,10 +11,12 @@ import aioredis
 import asyncio
 
 import os
-from aioredis import Redis
+from aioredis import Redis, RedisError, ReplyError
 from aioredis.pool import ConnectionsPool
 from aioredis.util import decode
 from collections import OrderedDict
+
+from redis import Redis
 
 from lightbus.api import Api
 from lightbus.exceptions import LightbusException, LightbusShutdownInProgress
@@ -298,24 +302,24 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
 
 
 class RedisEventTransport(RedisTransportMixin, EventTransport):
-    # TODO: Use a consumer group to make sure we don't miss events while the process is
-    # offline. For example, sending welcome email upon user registration. This means
-    # we need to collect an app name somewhere
 
     def __init__(self, redis_pool=None, *,
-                 consumer_group_name: str,
+                 consumer_group_prefix: str,
+                 consumer_name: str,
                  url=None,
                  serializer=ByFieldMessageSerializer(),
                  deserializer=ByFieldMessageDeserializer(EventMessage),
                  connection_parameters: Mapping=frozendict(maxsize=100),
                  batch_size=10,
-                 consumer_name: str=None,
+                 acknowledgement_timeout: int=60,
                  ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self.serializer = serializer
         self.deserializer = deserializer
         self.batch_size = batch_size
-        # self.consumer_group_name = consumer_group_name
+        self.consumer_group_prefix = consumer_group_prefix
+        self.consumer_name = consumer_name
+        self.acknowledgement_timeout = acknowledgement_timeout
 
         self._task = None
         self._reload = False
@@ -323,27 +327,30 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
     @classmethod
     def from_config(cls,
                     config: 'Config',
-                    consumer_group_name: str=None,
+                    consumer_group_prefix: str=None,
+                    consumer_name: str=None,
                     url: str='redis://127.0.0.1:6379/0',
                     connection_parameters: Mapping=frozendict(maxsize=100),
                     batch_size: int=10,
                     serializer: str='lightbus.serializers.ByFieldMessageSerializer',
                     deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
-                    consumer_name: str = None,
+                    acknowledgement_timeout: int=60,
                     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(EventMessage)
-        consumer_group_name = consumer_group_name or config.service_name
-        consumer_name = f'lightbus-{os.getpid()}'
+        consumer_group_prefix = consumer_group_prefix or config.service_name
+        consumer_name = consumer_name or config.process_name
 
         return cls(
             redis_pool=None,
-            consumer_group_name=consumer_group_name,
+            consumer_group_prefix=consumer_group_prefix,
+            consumer_name=consumer_name,
             url=url,
             connection_parameters=connection_parameters,
             batch_size=batch_size,
             serializer=serializer,
             deserializer=deserializer,
+            acknowledgement_timeout=acknowledgement_timeout,
         )
 
     async def send_event(self, event_message: EventMessage, options: dict):
@@ -366,8 +373,11 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             Bold(event_message), human_time(time.time() - start_time), Bold(stream)
         ))
 
-    async def fetch(self, listen_for, context: dict, since: Union[Since, Sequence[Since]] = '$', forever=True
+    async def fetch(self, listen_for, context: dict, name: str,
+                    since: Union[Since, Sequence[Since]] = '$', forever=True
                     ) -> Generator[EventMessage, None, None]:
+
+        consumer_group = f'{self.consumer_group_prefix}-{name}'
 
         if not isinstance(since, (list, tuple)):
             since = [since] * len(listen_for)
@@ -384,58 +394,116 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         for stream_name, stream_since in zip(stream_names, since):
             streams.setdefault(stream_name, stream_since)
 
-        while True:
-            # Fetch some messages
-            with await self.connection_manager() as redis:
+        logger.debug(LBullets(
+            'Consuming events from', items={
+                '{} ({})'.format(*v) for v in streams.items()
+            }
+        ))
+
+        redis: Redis
+        with await self.connection_manager() as redis:
+            # Firstly create the consumer group if we need to
+            await self._create_consumer_groups(streams, redis, consumer_group)
+
+            # Get any messages that this consumer has yet to process.
+            # This can happen in the case where the processes died before acknowledging.
+            pending_messages = await redis.xread_group(
+                group_name=consumer_group,
+                consumer_name=self.consumer_name,
+                streams=list(streams.keys()),
+                # Using ID '0' indicates we want unacked pending messages
+                latest_ids=['0'] * len(streams),
+                timeout=None,  # Don't block, return immediately
+            )
+            for stream, message_id, fields in pending_messages:
+                event_message = self._fields_to_message(redis, stream, message_id, fields, consumer_group)
                 logger.debug(LBullets(
-                    'Consuming events from', items={
-                        '{} ({})'.format(*v) for v in streams.items()
-                    }
+                    L("⬅ Receiving pending event {} on stream {}", Bold(message_id), Bold(stream)),
+                    items=dict(**event_message.get_metadata(), kwargs=event_message.get_kwargs())
                 ))
+                yield event_message
+
+            # We've now cleaned up any old messages that were hanging around.
+            # Now we get on to the main loop which blocks and waits for new messages
+
+            while True:
+                # Fetch some messages
                 try:
                     # This will block until there are some messages available
                     stream_messages = await redis.xread(
                         streams=list(streams.keys()),
-                        latest_ids=list(streams.values()),
+                        # Using ID '>' indicates we only want new messages which have not
+                        # been passed to other consumers in this group
+                        latest_ids=['>'] * len(streams),
                         count=self.batch_size,
                     )
                 except aioredis.ConnectionForcedCloseError:
+                    # TODO: Remove this handler. I think it was only needed because we were
+                    # cancelling the redis connection task before cancelling the consume() task.
                     return
 
-            # Handle the messages we have received
-            for stream, message_id, fields in stream_messages:
-                stream = decode(stream, 'utf8')
-                message_id = decode(message_id, 'utf8')
+                # Handle the messages we have received
+                for stream, message_id, fields in stream_messages:
+                    event_message = self._fields_to_message(redis, fields, message_id, fields, consumer_group)
+                    logger.debug(LBullets(
+                        L("⬅ Received new event {} on stream {}", Bold(message_id), Bold(stream)),
+                        items=dict(**event_message.get_metadata(), kwargs=event_message.get_kwargs())
+                    ))
+                    yield event_message
+                    # Acknowledging is handled on the message itself.
 
-                # Unfortunately, there is an edge-case when BOTH:
-                #  1. We are consuming events from 'now' (i.e. event ID '$'), the default
-                #  2. There is an unhandled error when processing the FIRST batch of events
-                # In which case, the next iteration would start again from '$', in which
-                # case we would loose events. Therefore 'subtract one' from the message ID
-                # and store that immediately. Subtracting one is imprecise, as there is a SLIM
-                # chance we could grab another event in the process. However, if events are
-                # being consumed from 'now' then the developer presumably doesn't care about
-                # a high level of precision.
-                if streams[stream] == '$':
-                    streams[stream] = redis_stream_id_subtract_one(message_id)
+                if not forever:
+                    return
 
-                event_message = self.deserializer(fields)
+    async def _reclaim_lost_messages(self, stream_names, consumer_group):
+        """Reclaim messages that others consumers in the group failed to acknowledge"""
+        await asyncio.sleep(60 + random() * 60)  # TODO: configurable
+        redis: Redis
+        with await self.connection_manager() as redis:
+            for stream in stream_names:
+                old_messages = await redis.xpending(stream, consumer_group, '-', '+', count=100)
+                timeout = self.acknowledgement_timeout * 1000
+                for message_id, consumer_name, ms_since_last_delivery, num_deliveries in old_messages:
+                    message_id = decode(message_id, 'utf8')
+                    consumer_name = decode(consumer_name, 'utf8')
 
-                logger.debug(LBullets(
-                    L("⬅ Received event {} on stream {}", Bold(message_id), Bold(stream)),
-                    items=dict(**event_message.get_metadata(), kwargs=event_message.get_kwargs())
-                ))
+                    if ms_since_last_delivery > timeout:
+                        logger.info(L('Found time out event {} in stream {}. Abandoned by {}. Attempting to reclaim...',
+                                    Bold(message_id), Bold(stream), Bold(consumer_name)))
 
-                event_message.redis_id = message_id
-                event_message.redis_stream = stream
+                    result = await redis.xclaim(stream, consumer_group, self.consumer_name, timeout, message_id)
+                    for claimed_message_id, fields in result:
+                        event_message = self._fields_to_message(
+                            redis, fields, claimed_message_id, fields, consumer_group
+                        )
+                        logger.debug(LBullets(
+                            L("⬅ Reclaimed timed out event {} on stream {}. Abandoned by {}.",
+                              Bold(message_id), Bold(stream), Bold(consumer_name)),
+                            items=dict(**event_message.get_metadata(), kwargs=event_message.get_kwargs())
+                        ))
+                        yield event_message
 
-                yield event_message
+    async def _create_consumer_groups(self, streams, redis, consumer_group):
+        for stream, since in streams.items():
+            if not redis.exists(stream):
+                # Add a noop to ensure the stream exists
+                # TODO: Test to ensure noops are ignored in fetch()
+                redis.xadd(stream, fields={})
 
-            if not forever:
-                return
+            try:
+                # Create the group (it may already exist)
+                redis.xgroup_create(stream, consumer_group, latest_id=since)
+            except ReplyError as e:
+                if 'BUSYGROUP' not in str(e):
+                    raise
 
-    async def consumption_complete(self, event_message: EventMessage, context: dict):
-        context['streams'][event_message.redis_stream] = event_message.redis_id
+    def _fields_to_message(self, redis, stream, message_id, fields, consumer_group) -> EventMessage:
+        event_message = self.deserializer(fields)
+        event_message.on_ack = partial(self._do_ack, redis, stream, consumer_group, decode(message_id, 'utf8'))
+        return event_message
+
+    def _do_ack(self, redis, stream, consumer_group, message_id):
+        return redis.xack(stream, consumer_group, message_id)
 
 
 class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):

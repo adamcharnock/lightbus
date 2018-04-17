@@ -82,7 +82,7 @@ class ResultMessage(Message):
 
     def __init__(self, *, result, rpc_id, error: bool=False, trace: str=None):
         self.rpc_id = rpc_id
-        
+
         if isinstance(result, BaseException):
             self.result = str(result)
             self.error = True
@@ -127,10 +127,11 @@ class ResultMessage(Message):
 class EventMessage(Message):
     required_metadata = ['api_name', 'event_name']
 
-    def __init__(self, *, api_name: str, event_name: str, kwargs: Optional[dict]=None):
+    def __init__(self, *, api_name: str, event_name: str, kwargs: Optional[dict]=None, on_ack=None):
         self.api_name = api_name
         self.event_name = event_name
         self.kwargs = kwargs or {}
+        self.on_ack = on_ack
 
     def __repr__(self):
         return '<{}: {}>'.format(self.__class__.__name__, self)
@@ -157,3 +158,7 @@ class EventMessage(Message):
     @classmethod
     def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> 'EventMessage':
         return cls(**metadata, kwargs=kwargs)
+
+    async def acknowledge(self):
+        if self.on_ack is not None:
+            await self.on_ack()
