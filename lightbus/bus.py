@@ -414,10 +414,10 @@ class BusClient(object):
                     if inspect.isawaitable(co):
                         await co
 
-                    # We manually acknowledge here rather than rely on the consumer to continue
-                    # post-yielding. This allows us to trigger the 'after_event_execution' plugin hook
-                    # in the knowledge that the message has actually been acknowledged.
-                    await event_message.acknowledge()
+                    # Await the consumer again, which is our way of allowing it to
+                    # acknowledge the message. This then allows us to fire the
+                    # `after_event_execution` plugin hook immediately afterwards
+                    await consumer.__anext__()
                     await plugin_hook('after_event_execution', event_message=event_message, bus_client=self)
 
         # Get the events transports for the selection of APIs that we are listening on

@@ -101,7 +101,7 @@ async def test_rpc_error(bus: lightbus.BusNode, dummy_api):
 @pytest.mark.run_loop
 async def test_event(bus: lightbus.BusNode, dummy_api):
     """Full event integration test"""
-
+    manually_set_plugins({})
     received_kwargs = []
     received_api_name = None
     received_event_name = None
@@ -115,6 +115,7 @@ async def test_event(bus: lightbus.BusNode, dummy_api):
     await bus.my.dummy.my_event.listen_async(listener)
     await asyncio.sleep(0.01)
     await bus.my.dummy.my_event.fire_async(field='Hello! 😎')
+    await asyncio.sleep(0.01)
 
     # await asyncio.gather(co_fire_event(), co_listen_for_events())
     assert received_kwargs == [{'field': 'Hello! 😎'}]

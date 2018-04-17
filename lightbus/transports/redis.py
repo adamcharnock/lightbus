@@ -439,7 +439,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 timeout=None,  # Don't block, return immediately
             )
             for stream, message_id, fields in pending_messages:
-                event_message = self._fields_to_message(redis, stream, message_id, fields, consumer_group)
+                event_message = self._fields_to_message(fields)
                 logger.debug(LBullets(
                     L("⬅ Receiving pending event {} on stream {}", Bold(message_id), Bold(stream)),
                     items=dict(**event_message.get_metadata(), kwargs=event_message.get_kwargs())
@@ -469,13 +469,14 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
                 # Handle the messages we have received
                 for stream, message_id, fields in stream_messages:
-                    event_message = self._fields_to_message(redis, fields, message_id, fields, consumer_group)
+                    event_message = self._fields_to_message(fields)
                     logger.debug(LBullets(
                         L("⬅ Received new event {} on stream {}", Bold(message_id), Bold(stream)),
                         items=dict(**event_message.get_metadata(), kwargs=event_message.get_kwargs())
                     ))
                     yield event_message
-                    # Acknowledging is handled on the message itself.
+                    await redis.xack(stream, consumer_group, message_id)
+                    yield True
 
                 if not forever:
                     return
@@ -497,9 +498,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
                     result = await redis.xclaim(stream, consumer_group, self.consumer_name, timeout, message_id)
                     for claimed_message_id, fields in result:
-                        event_message = self._fields_to_message(
-                            redis, fields, claimed_message_id, fields, consumer_group
-                        )
+                        event_message = self._fields_to_message(fields)
                         logger.debug(LBullets(
                             L("⬅ Reclaimed timed out event {} on stream {}. Abandoned by {}.",
                               Bold(message_id), Bold(stream), Bold(consumer_name)),
@@ -521,13 +520,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 if 'BUSYGROUP' not in str(e):
                     raise
 
-    def _fields_to_message(self, redis, stream, message_id, fields, consumer_group) -> EventMessage:
-        event_message = self.deserializer(fields)
-        event_message.on_ack = partial(self._do_ack, redis, stream, consumer_group, decode(message_id, 'utf8'))
-        return event_message
-
-    def _do_ack(self, redis, stream, consumer_group, message_id):
-        return redis.xack(stream, consumer_group, message_id)
+    def _fields_to_message(self, fields) -> EventMessage:
+        return self.deserializer(fields)
 
 
 class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
