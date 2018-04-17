@@ -60,7 +60,7 @@ class DebugEventTransport(EventTransport):
             event_message.kwargs
         ))
 
-    async def fetch(self, listen_for: List[Tuple[str, str]], context: dict, **kwargs) -> Generator[EventMessage, None, None]:
+    async def fetch(self, listen_for: List[Tuple[str, str]], context: dict, name: str, **kwargs) -> Generator[EventMessage, None, None]:
         """Consume RPC events for the given API"""
 
         logger.info("⌛ Faking listening for events {}.".format(self._events))
@@ -68,6 +68,7 @@ class DebugEventTransport(EventTransport):
         while True:
             await asyncio.sleep(0.1)
             yield self._get_fake_message()
+            yield True
 
     def _get_fake_message(self):
         return EventMessage(api_name='my_company.auth', event_name='user_registered', kwargs={'example': 'value'})

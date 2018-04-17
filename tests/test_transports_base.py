@@ -118,7 +118,7 @@ def test_transport_registry_get_rpc_transports(redis_default_config):
 def test_transport_registry_get_event_transports(redis_default_config):
     registry = TransportRegistry().load_config(redis_default_config)
     debug_transport = DebugEventTransport()
-    redis_transport = RedisEventTransport(consumer_group_name='foo')
+    redis_transport = RedisEventTransport(consumer_group_prefix='foo', consumer_name='bar')
 
     registry.set_event_transport('redis1', redis_transport)
     registry.set_event_transport('redis2', redis_transport)

@@ -139,7 +139,7 @@ async def test_consume_events_since_datetime(redis_event_transport: RedisEventTr
     consumer = redis_event_transport.consume([('my.dummy', 'my_event')], {}, since=since_datetime, forever=False)
 
     yields = []
-    
+
     async def co():
         async for m in consumer:
             yields.append(m)

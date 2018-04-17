@@ -26,6 +26,7 @@ from lightbus.transports import RpcTransport, ResultTransport, EventTransport, R
     RedisResultTransport, RedisEventTransport
 from lightbus.transports.base import SchemaTransport, TransportRegistry
 from lightbus.transports.redis import RedisSchemaTransport
+from lightbus.utilities.config import random_name
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loop, cancel
@@ -380,6 +381,8 @@ class BusClient(object):
             self._validate_name(api_name, 'event', name)
 
         options = options or {}
+        # Set a random default name for this new consumer we are creating
+        options.setdefault('name', random_name(length=4))
         listener_context = {}
 
         async def listen_for_event_task(event_transport, events):
