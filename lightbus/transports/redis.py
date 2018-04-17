@@ -26,6 +26,7 @@ from lightbus.schema.encoder import json_encode
 from lightbus.serializers.blob import BlobMessageSerializer, BlobMessageDeserializer
 from lightbus.serializers.by_field import ByFieldMessageSerializer, ByFieldMessageDeserializer
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport, SchemaTransport
+from lightbus.utilities.async import cancel
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
@@ -400,6 +401,28 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             }
         ))
 
+        queue = asyncio.Queue(maxsize=self.batch_size)
+
+        async def fetch_loop():
+            async for message in self._fetch_new_messages(streams, consumer_group, forever):
+                await queue.put(message)
+
+        async def reclaim_loop():
+            await asyncio.sleep(self.acknowledgement_timeout)
+            async for message in self._reclaim_lost_messages(stream_names, consumer_group):
+                await queue.put(message)
+
+        fetch_task = asyncio.ensure_future(fetch_loop())
+        reclaim_task = asyncio.ensure_future(reclaim_loop())
+
+        try:
+            while True:
+                yield await queue.get()
+        except asyncio.CancelledError:
+            cancel(fetch_task, reclaim_task)
+            raise
+
+    async def _fetch_new_messages(self, streams, consumer_group, forever):
         redis: Redis
         with await self.connection_manager() as redis:
             # Firstly create the consumer group if we need to
@@ -457,7 +480,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
     async def _reclaim_lost_messages(self, stream_names, consumer_group):
         """Reclaim messages that others consumers in the group failed to acknowledge"""
-        await asyncio.sleep(60 + random() * 60)  # TODO: configurable
         redis: Redis
         with await self.connection_manager() as redis:
             for stream in stream_names:
