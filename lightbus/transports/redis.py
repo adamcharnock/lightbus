@@ -375,12 +375,15 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             Bold(event_message), human_time(time.time() - start_time), Bold(stream)
         ))
 
-    async def fetch(self, listen_for, context: dict, name: str,
-                    since: Union[Since, Sequence[Since]] = '$', forever=True
+    async def fetch(self,
+                    listen_for,
+                    context: dict,
+                    loop: asyncio.AbstractEventLoop,
+                    consumer_group: str=None,
+                    since: Union[Since, Sequence[Since]] = '$',
+                    forever=True
                     ) -> Generator[EventMessage, None, None]:
-
-        consumer_group = f'{self.consumer_group_prefix}-{name}'
-
+        consumer_group = f'{self.consumer_group_prefix}-{consumer_group}'
         if not isinstance(since, (list, tuple)):
             since = [since] * len(listen_for)
         since = map(normalise_since_value, since)
@@ -397,7 +400,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             streams.setdefault(stream_name, stream_since)
 
         logger.debug(LBullets(
-            'Consuming events from', items={
+            L('Consuming as events as consumer group {} on streams', Bold(consumer_group)), items={
                 '{} ({})'.format(*v) for v in streams.items()
             }
         ))
@@ -417,8 +420,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             async for message in self._reclaim_lost_messages(stream_names, consumer_group):
                 await queue.put(message)
 
-        fetch_task = asyncio.ensure_future(fetch_loop())
-        reclaim_task = asyncio.ensure_future(reclaim_loop())
+        fetch_task = asyncio.ensure_future(fetch_loop(), loop=self.loop)
+        reclaim_task = asyncio.ensure_future(reclaim_loop(), loop=self.loop)
 
         try:
             while True:
@@ -430,7 +433,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             await cancel(fetch_task, reclaim_task)
 
     async def _fetch_new_messages(self, streams, consumer_group, forever):
-        redis: Redis
         with await self.connection_manager() as redis:
             # Firstly create the consumer group if we need to
             await self._create_consumer_groups(streams, redis, consumer_group)
@@ -470,6 +472,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         latest_ids=['>'] * len(streams),
                         count=self.batch_size,
                     )
+                    import pdb; pdb.set_trace()
                 except aioredis.ConnectionForcedCloseError:
                     # TODO: Remove this handler. I think it was only needed because we were
                     # cancelling the redis connection task before cancelling the consume() task.

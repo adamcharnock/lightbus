@@ -1,4 +1,5 @@
 import logging
+from asyncio import AbstractEventLoop
 from itertools import chain
 from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, TypeVar, Type, Set
 
@@ -90,7 +91,13 @@ class EventTransport(Transport):
         """Publish an event"""
         raise NotImplementedError()
 
-    def consume(self, listen_for: List[Tuple[str, str]], context: dict, consumer_name: str = None, **kwargs):
+    def consume(self,
+                listen_for: List[Tuple[str, str]],
+                context: dict,
+                loop: AbstractEventLoop,
+                consumer_group: str=None,
+                **kwargs
+                ):
         """Consume messages for the given APIs
 
         Examples:
@@ -110,10 +117,16 @@ class EventTransport(Transport):
                 'EventTransport.consume() was called without providing anything '
                 'to listen for in the "listen_for" argument.'
             )
-        consumer_name = consumer_name or random_name(length=4)
-        return self.fetch(listen_for, context, consumer_name, **kwargs)
+        consumer_group = consumer_group or random_name(length=4)
+        return self.fetch(listen_for, context, loop, consumer_group, **kwargs)
 
-    async def fetch(self, listen_for: List[Tuple[str, str]], context: dict, consumer_name: str, **kwargs) -> Generator[EventMessage, None, None]:
+    async def fetch(self,
+                    listen_for: List[Tuple[str, str]],
+                    context: dict,
+                    loop: AbstractEventLoop,
+                    consumer_group: str=None,
+                    **kwargs
+                    ) -> Generator[EventMessage, None, None]:
         """Consume RPC messages for the given events
 
         Events the bus is not listening for may be returned, they

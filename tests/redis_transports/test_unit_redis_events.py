@@ -8,7 +8,7 @@ from lightbus.message import EventMessage
 from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeserializer, BlobMessageSerializer, \
     BlobMessageDeserializer
 from lightbus.transports.redis import RedisEventTransport
-
+from lightbus.utilities.async import cancel
 
 pytestmark = pytest.mark.unit
 
@@ -55,6 +55,62 @@ async def test_consume_events(redis_event_transport: RedisEventTransport, redis_
     assert message.api_name == 'my.dummy'
     assert message.event_name == 'my_event'
     assert message.kwargs == {'field': 'value'}
+
+
+@pytest.mark.run_loop
+async def test_consume_events_multiple_consumers(redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+    messages = []
+
+    async def co_consume():
+        async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')], {}):
+            messages.append(message_)
+
+    asyncio.ensure_future(co_consume())
+    asyncio.ensure_future(co_consume())
+
+    await asyncio.sleep(0.1)
+    await redis_client.xadd('my.dummy.my_event:stream', fields={
+        b'api_name': b'my.dummy',
+        b'event_name': b'my_event',
+        b':field': b'"value"',
+    })
+    await asyncio.sleep(0.1)
+
+    # Two messages, to dummy values which indicate events have been acked
+    assert len(messages) == 4
+
+
+@pytest.mark.run_loop
+async def test_consume_events_multiple_consumers_one_group(loop, new_redis_pool, redis_client, dummy_api):
+    messages = []
+
+    async def co_consume(consumer_number):
+        event_transport = RedisEventTransport(
+            redis_pool=new_redis_pool(maxsize=10000),
+            consumer_group_prefix='test_cg',
+            consumer_name=f'test_consumer{consumer_number}'
+        )
+        async for message_ in event_transport.consume([('my.dummy', 'my_event')],
+                                                      {},
+                                                      loop=loop,
+                                                      consumer_group='single_group'):
+            messages.append(message_)
+
+    task1 = asyncio.ensure_future(co_consume(1))
+    task2 = asyncio.ensure_future(co_consume(2))
+
+    await asyncio.sleep(0.1)
+    await redis_client.xadd('my.dummy.my_event:stream', fields={
+        b'api_name': b'my.dummy',
+        b'event_name': b'my_event',
+        b':field': b'"value"',
+    })
+    await asyncio.sleep(0.1)
+
+    # One message, one dummy value which indicate events have been acked
+    assert len(messages) == 2
+
+    await cancel(task1, task2)
 
 
 @pytest.mark.run_loop

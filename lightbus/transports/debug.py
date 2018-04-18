@@ -60,7 +60,7 @@ class DebugEventTransport(EventTransport):
             event_message.kwargs
         ))
 
-    async def fetch(self, listen_for: List[Tuple[str, str]], context: dict, consumer_name: str, **kwargs) -> Generator[EventMessage, None, None]:
+    async def fetch(self, listen_for: List[Tuple[str, str]], context: dict, loop, consumer_group: str=None, **kwargs) -> Generator[EventMessage, None, None]:
         """Consume RPC events for the given API"""
 
         logger.info("⌛ Faking listening for events {}.".format(self._events))
