@@ -424,7 +424,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
             # Get any messages that this consumer has yet to process.
             # This can happen in the case where the processes died before acknowledging.
-            # TODO: Test that pending messages get picked up
             pending_messages = await redis.xread_group(
                 group_name=consumer_group,
                 consumer_name=self.consumer_name,
