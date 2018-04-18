@@ -454,22 +454,17 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             # Now we get on to the main loop which blocks and waits for new messages
 
             while True:
-                # Fetch some messages
-                try:
-                    # This will block until there are some messages available
-                    stream_messages = await redis.xread_group(
-                        group_name=consumer_group,
-                        consumer_name=self.consumer_name,
-                        streams=list(streams.keys()),
-                        # Using ID '>' indicates we only want new messages which have not
-                        # been passed to other consumers in this group
-                        latest_ids=['>'] * len(streams),
-                        count=self.batch_size,
-                    )
-                except aioredis.ConnectionForcedCloseError:
-                    # TODO: Remove this handler. I think it was only needed because we were
-                    # cancelling the redis connection task before cancelling the consume() task.
-                    return
+                # Fetch some messages.
+                # This will block until there are some messages available
+                stream_messages = await redis.xread_group(
+                    group_name=consumer_group,
+                    consumer_name=self.consumer_name,
+                    streams=list(streams.keys()),
+                    # Using ID '>' indicates we only want new messages which have not
+                    # been passed to other consumers in this group
+                    latest_ids=['>'] * len(streams),
+                    count=self.batch_size,
+                )
 
                 # Handle the messages we have received
                 for stream, message_id, fields in stream_messages:
