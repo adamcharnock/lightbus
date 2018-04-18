@@ -8,7 +8,6 @@ from typing import Sequence, Optional, Union, Generator, Dict, NamedTuple, Mappi
 from urllib.parse import urlparse
 
 import aioredis
-import aioredis.commands
 import asyncio
 
 import os
@@ -16,8 +15,6 @@ from aioredis import Redis, RedisError, ReplyError
 from aioredis.pool import ConnectionsPool
 from aioredis.util import decode
 from collections import OrderedDict
-
-from redis import Redis
 
 from lightbus.api import Api
 from lightbus.exceptions import LightbusException, LightbusShutdownInProgress
@@ -58,7 +55,7 @@ class RedisTransportMixin(object):
                 # If they've passed a raw pool then wrap it up in a Redis object.
                 # aioredis.create_redis_pool() normally does this for us.
                 redis_pool = Redis(redis_pool)
-            if not isinstance(redis_pool, (Redis, aioredis.commands.Redis)):
+            if not isinstance(redis_pool, (Redis, )):
                 raise InvalidRedisPool(
                     'Invalid Redis connection provided: {}. If unsure, use aioredis.create_redis_pool() to '
                     'create your redis connection.'.format(redis_pool)
