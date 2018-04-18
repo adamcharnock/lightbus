@@ -377,7 +377,6 @@ class BusClient(object):
 
         options = options or {}
         # Set a random default name for this new consumer we are creating
-        # TODO: Test this gets used
         options.setdefault('consumer_group', random_name(length=4))
         listener_context = {}
 
