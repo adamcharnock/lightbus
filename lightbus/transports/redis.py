@@ -401,7 +401,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 await queue.put(message)
 
         async def reclaim_loop():
-            # TODO: Test reclaiming
             await asyncio.sleep(self.acknowledgement_timeout)
             async for message in self._reclaim_lost_messages(stream_names, consumer_group):
                 await queue.put(message)
