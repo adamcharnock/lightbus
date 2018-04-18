@@ -39,6 +39,23 @@ async def test_send_event(redis_event_transport: RedisEventTransport, redis_clie
 
 
 @pytest.mark.run_loop
+async def test_send_event_per_api_stream(redis_event_transport: RedisEventTransport, redis_client):
+    redis_event_transport.stream_use = StreamUse.PER_API
+    await redis_event_transport.send_event(EventMessage(
+        api_name='my.api',
+        event_name='my_event',
+        kwargs={'field': 'value'},
+    ), options={})
+    messages = await redis_client.xrange('my.api.*:stream')
+    assert len(messages) == 1
+    assert messages[0][1] == {
+        b'api_name': b'my.api',
+        b'event_name': b'my_event',
+        b':field': b'"value"',
+    }
+
+
+@pytest.mark.run_loop
 async def test_consume_events(loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api):
     async def co_enqeue():
         await asyncio.sleep(0.1)

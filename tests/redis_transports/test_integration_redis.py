@@ -9,9 +9,12 @@ from lightbus.api import registry
 from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
 from lightbus.plugins import manually_set_plugins
+from lightbus.transports.redis import StreamUse
 from lightbus.utilities.async import cancel
 
 pytestmark = pytest.mark.integration
+
+stream_use_test_data = [StreamUse.PER_EVENT, StreamUse.PER_API]
 
 
 @pytest.mark.run_loop
@@ -99,8 +102,10 @@ async def test_rpc_error(bus: lightbus.BusNode, dummy_api):
 
 
 @pytest.mark.run_loop
-async def test_event(bus: lightbus.BusNode, dummy_api):
+@pytest.mark.parametrize("stream_use", stream_use_test_data, ids=['stream_per_event', 'stream_per_api'])
+async def test_event(bus: lightbus.BusNode, dummy_api, stream_use):
     """Full event integration test"""
+    bus.bus_client.transport_registry.get_event_transport('default').stream_use = stream_use
     manually_set_plugins({})
     received_kwargs = []
     received_api_name = None

@@ -363,7 +363,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
     async def send_event(self, event_message: EventMessage, options: dict):
         """Publish an event"""
-        stream = '{}.{}:stream'.format(event_message.api_name, event_message.event_name)
+        stream = self._get_stream_names(
+            listen_for=[(event_message.api_name, event_message.event_name)]
+        )[0]
+
         logger.debug(
             LBullets(
                 L("Enqueuing event message {} in Redis stream {}", Bold(event_message), Bold(stream)),
