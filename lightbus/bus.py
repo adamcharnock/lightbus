@@ -106,7 +106,7 @@ class BusClient(object):
         for transport in self.transport_registry.get_all_transports():
             await transport.close()
 
-    def run_forever(self, *, consume_rpcs=True, plugins=None):
+    def run_forever(self, *, consume_rpcs=True):
         rpc_transport = self.transport_registry.get_rpc_transport('default', default=None)
         result_transport = self.transport_registry.get_result_transport('default', default=None)
         event_transport = self.transport_registry.get_event_transport('default', default=None)
@@ -133,7 +133,6 @@ class BusClient(object):
             }
         ))
 
-        self.setup(plugins=plugins)
         registry.add(LightbusStateApi())
         registry.add(LightbusMetricsApi())
 
@@ -659,8 +658,8 @@ class BusNode(object):
                 yield parent
             parent = parent.parent
 
-    def run_forever(self, consume_rpcs=True, plugins=None):
-        self.bus_client.run_forever(consume_rpcs=consume_rpcs, plugins=plugins)
+    def run_forever(self, consume_rpcs=True):
+        self.bus_client.run_forever(consume_rpcs=consume_rpcs)
 
     @property
     def api_name(self):

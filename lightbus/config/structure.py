@@ -29,6 +29,7 @@ from enum import Enum
 from lightbus.transports.base import get_available_transports
 from lightbus.plugins import get_plugins, find_plugins
 from lightbus.utilities.config import random_name
+from lightbus.utilities.human import generate_human_friendly_name
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +124,7 @@ class BusConfig(NamedTuple):
 
 
 class RootConfig(object):
-    service_name: str = '{random8}'
+    service_name: str = '{friendly}'
     process_name: str = '{random4}'
     bus: BusConfig = BusConfig()
     apis: Dict[str, ApiConfig] = {}
@@ -144,4 +145,5 @@ class RootConfig(object):
             random4=random_string[:4],
             random8=random_string[:8],
             random16=random_string[:16],
+            friendly=generate_human_friendly_name(),
         )

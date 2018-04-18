@@ -40,6 +40,5 @@ def human_time(seconds: float):
         return '{} milliseconds'.format(round(seconds * 1000, 2))
 
 
-def generate_process_name():
-    # TODO: No longer used, consider removing
+def generate_human_friendly_name():
     return '{}-{}-{}'.format(random.choice(_adjectives), random.choice(_nouns), random.randint(1, 1000))
