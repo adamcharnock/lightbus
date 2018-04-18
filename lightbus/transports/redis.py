@@ -305,7 +305,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                  deserializer=ByFieldMessageDeserializer(EventMessage),
                  connection_parameters: Mapping=frozendict(maxsize=100),
                  batch_size=10,
-                 acknowledgement_timeout: int=60,
+                 acknowledgement_timeout: float=60,
                  ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self.serializer = serializer
@@ -328,7 +328,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     batch_size: int=10,
                     serializer: str='lightbus.serializers.ByFieldMessageSerializer',
                     deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
-                    acknowledgement_timeout: int=60,
+                    acknowledgement_timeout: float=60,
                     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(EventMessage)
@@ -490,7 +490,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         logger.info(L('Found time out event {} in stream {}. Abandoned by {}. Attempting to reclaim...',
                                     Bold(message_id), Bold(stream), Bold(consumer_name)))
 
-                    result = await redis.xclaim(stream, consumer_group, self.consumer_name, timeout, message_id)
+                    result = await redis.xclaim(stream, consumer_group, self.consumer_name, int(timeout), message_id)
                     for claimed_message_id, fields in result:
                         event_message = self._fields_to_message(fields)
                         logger.debug(LBullets(

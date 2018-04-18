@@ -237,3 +237,37 @@ async def test_from_config(redis_client):
     assert transport._redis_pool.connection.maxsize == 123
     assert isinstance(transport.serializer, BlobMessageSerializer)
     assert isinstance(transport.deserializer, BlobMessageDeserializer)
+
+
+@pytest.mark.run_loop
+async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
+    """Test that messages which another consumer has timed out on can be reclaimed"""
+
+    # Add a message
+    await redis_client.xadd('my.dummy.my_event:stream', fields={
+        b'api_name': b'my.dummy',
+        b'event_name': b'my_event',
+        b':field': b'"value"',
+    })
+    # Create the consumer group
+    await redis_client.xgroup_create('my.dummy.my_event:stream', 'test_group', latest_id='0')
+
+    # Claim it in the name of another consumer
+    await redis_client.xread_group(
+        'test_group', 'bad_consumer', ['my.dummy.my_event:stream'], latest_ids=[0]
+    )
+    # Sleep a moment to fake a short timeout
+    await asyncio.sleep(0.02)
+
+    event_transport = RedisEventTransport(
+        redis_pool=redis_pool,
+        consumer_group_prefix='test_group',
+        consumer_name='good_consumer',
+        acknowledgement_timeout=0.01,  # in ms, short for the sake of testing
+    )
+    reclaimer = event_transport._reclaim_lost_messages(
+        stream_names=['my.dummy.my_event:stream'],
+        consumer_group='test_group'
+    )
+    reclaimed_messages = [m async for m in reclaimer]
+    assert len(reclaimed_messages) == 1
