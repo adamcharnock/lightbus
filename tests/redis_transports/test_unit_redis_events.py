@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from datetime import datetime
 
 import pytest
@@ -427,3 +428,39 @@ async def test_consume_events_create_consumer_group_first(loop, redis_client, re
     await asyncio.sleep(0.1)
     assert len(messages) == 0
     await cancel(task)
+
+
+@pytest.mark.run_loop
+async def test_max_len_truncating(redis_event_transport: RedisEventTransport, redis_client, caplog):
+    """Make sure the event stream gets truncated
+
+    Note that truncation is approximate
+    """
+    caplog.set_level(logging.WARNING)
+    redis_event_transport.max_stream_length = 100
+    for x in range(0, 200):
+        await redis_event_transport.send_event(EventMessage(
+            api_name='my.api',
+            event_name='my_event',
+            kwargs={'field': 'value'},
+        ), options={})
+    messages = await redis_client.xrange('my.api.my_event:stream')
+    assert len(messages) >= 100
+    assert len(messages) < 150
+
+
+@pytest.mark.run_loop
+async def test_max_len_set_to_none(redis_event_transport: RedisEventTransport, redis_client, caplog):
+    """Make sure the event stream does not get truncated when
+    max_stream_length = None
+    """
+    caplog.set_level(logging.WARNING)
+    redis_event_transport.max_stream_length = None
+    for x in range(0, 200):
+        await redis_event_transport.send_event(EventMessage(
+            api_name='my.api',
+            event_name='my_event',
+            kwargs={'field': 'value'},
+        ), options={})
+    messages = await redis_client.xrange('my.api.my_event:stream')
+    assert len(messages) == 200

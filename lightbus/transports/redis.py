@@ -306,6 +306,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                  connection_parameters: Mapping=frozendict(maxsize=100),
                  batch_size=10,
                  acknowledgement_timeout: float=60,
+                 max_stream_length: Optional[int] = 100000
                  ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self.serializer = serializer
@@ -314,6 +315,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self.consumer_group_prefix = consumer_group_prefix
         self.consumer_name = consumer_name
         self.acknowledgement_timeout = acknowledgement_timeout
+        self.max_stream_length = max_stream_length
 
         self._task = None
         self._reload = False
@@ -329,6 +331,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     serializer: str='lightbus.serializers.ByFieldMessageSerializer',
                     deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
                     acknowledgement_timeout: float=60,
+                    max_stream_length: Optional[int]=100000
                     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(EventMessage)
@@ -345,6 +348,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             serializer=serializer,
             deserializer=deserializer,
             acknowledgement_timeout=acknowledgement_timeout,
+            max_stream_length=max_stream_length,
         )
 
     async def send_event(self, event_message: EventMessage, options: dict):
@@ -359,8 +363,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         with await self.connection_manager() as redis:
             start_time = time.time()
-            # TODO: MAXLEN
-            await redis.xadd(stream=stream, fields=self.serializer(event_message))
+            await redis.xadd(
+                stream=stream,
+                fields=self.serializer(event_message),
+                max_len=self.max_stream_length or None,
+                exact_len=False,
+            )
 
         logger.debug(L(
             "Enqueued event message {} in Redis in {} stream {}",
