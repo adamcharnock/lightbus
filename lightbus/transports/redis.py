@@ -408,9 +408,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         queue = asyncio.Queue(maxsize=self.batch_size)
 
-        # TODO: Test messages get delivered only once to a group with multiple consumers
-        # TODO: Test messages get delivered to all consumers when in different groups
-
         async def fetch_loop():
             async for message in self._fetch_new_messages(streams, consumer_group, forever):
                 await queue.put(message)
