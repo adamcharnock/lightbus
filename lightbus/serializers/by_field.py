@@ -46,6 +46,9 @@ class ByFieldMessageDeserializer(MessageDeserializer):
             k = decode_bytes(k)
             v = decode_bytes(v)
 
+            if not k:
+                continue
+
             # kwarg fields start with a ':', everything else is metadata
             if k[0] == ':':
                 # kwarg values need decoding

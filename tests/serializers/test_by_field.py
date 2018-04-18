@@ -30,3 +30,16 @@ def test_by_field_deserializer():
     assert message.api_name == 'my.api'
     assert message.event_name == 'my_event'
     assert message.kwargs == {'field': 'value'}
+
+
+def test_by_field_deserializer_empty_keys_and_values():
+    deserializer = ByFieldMessageDeserializer(EventMessage)
+    message = deserializer({
+        'api_name': 'my.api',
+        'event_name': 'my_event',
+        ':field': '"value"',
+        '': '',
+    })
+    assert message.api_name == 'my.api'
+    assert message.event_name == 'my_event'
+    assert message.kwargs == {'field': 'value'}

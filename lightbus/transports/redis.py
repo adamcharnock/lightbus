@@ -434,6 +434,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             )
             for stream, message_id, fields in pending_messages:
                 event_message = self._fields_to_message(fields)
+                if not event_message:
+                    continue  # noop message
                 logger.debug(LBullets(
                     L("⬅ Receiving pending event {} on stream {}", Bold(message_id), Bold(stream)),
                     items=dict(**event_message.get_metadata(), kwargs=event_message.get_kwargs())
@@ -464,6 +466,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 # Handle the messages we have received
                 for stream, message_id, fields in stream_messages:
                     event_message = self._fields_to_message(fields)
+                    if not event_message:
+                        continue  # noop message
                     logger.debug(LBullets(
                         L("⬅ Received new event {} on stream {}", Bold(message_id), Bold(stream)),
                         items=dict(**event_message.get_metadata(), kwargs=event_message.get_kwargs())
@@ -476,7 +480,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     return
 
     async def _reclaim_lost_messages(self, stream_names, consumer_group):
-        """Reclaim messages that others consumers in the group failed to acknowledge"""
+        """Reclaim messages that other consumers in the group failed to acknowledge"""
         with await self.connection_manager() as redis:
             for stream in stream_names:
                 old_messages = await redis.xpending(stream, consumer_group, '-', '+', count=100)
@@ -492,6 +496,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     result = await redis.xclaim(stream, consumer_group, self.consumer_name, int(timeout), message_id)
                     for claimed_message_id, fields in result:
                         event_message = self._fields_to_message(fields)
+                        if not event_message:
+                            continue  # noop message
                         logger.debug(LBullets(
                             L("⬅ Reclaimed timed out event {} on stream {}. Abandoned by {}.",
                               Bold(message_id), Bold(stream), Bold(consumer_name)),
@@ -503,7 +509,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         for stream, since in streams.items():
             if not await redis.exists(stream):
                 # Add a noop to ensure the stream exists
-                # TODO: Test to ensure noops are ignored in fetch()
                 await redis.xadd(stream, fields={'': ''})
 
             try:
@@ -513,7 +518,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 if 'BUSYGROUP' not in str(e):
                     raise
 
-    def _fields_to_message(self, fields) -> EventMessage:
+    def _fields_to_message(self, fields) -> Optional[EventMessage]:
+        if tuple(fields.items()) == ((b'', b''),):
+            return None
         return self.deserializer(fields)
 
 

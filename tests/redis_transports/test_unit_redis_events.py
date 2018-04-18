@@ -66,8 +66,8 @@ async def test_consume_events_multiple_consumers(loop, redis_event_transport: Re
         async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')], {}, loop):
             messages.append(message_)
 
-    asyncio.ensure_future(co_consume())
-    asyncio.ensure_future(co_consume())
+    task1 = asyncio.ensure_future(co_consume())
+    task2 = asyncio.ensure_future(co_consume())
 
     await asyncio.sleep(0.1)
     await redis_client.xadd('my.dummy.my_event:stream', fields={
@@ -79,6 +79,8 @@ async def test_consume_events_multiple_consumers(loop, redis_event_transport: Re
 
     # Two messages, to dummy values which indicate events have been acked
     assert len(messages) == 4
+
+    await cancel(task1, task2)
 
 
 @pytest.mark.run_loop
@@ -350,9 +352,10 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
         async for message in consumer:
             messages.append(message)
 
-    asyncio.ensure_future(consume(), loop=loop)
+    task = asyncio.ensure_future(consume(), loop=loop)
     await asyncio.sleep(0.1)
     assert len(messages) == 1
+    await cancel(task)
 
 
 @pytest.mark.run_loop
@@ -392,9 +395,35 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
         async for message in consumer:
             messages.append(message)
 
-    asyncio.ensure_future(consume(), loop=loop)
+    task = asyncio.ensure_future(consume(), loop=loop)
     await asyncio.sleep(0.1)
     assert len(messages) == 1
     assert messages[0].api_name == 'my.dummy'
     assert messages[0].event_name == 'my_event'
     assert messages[0].kwargs == {'field': 'value'}
+
+    await cancel(task)
+
+
+@pytest.mark.run_loop
+async def test_consume_events_create_consumer_group_first(loop, redis_client, redis_event_transport, dummy_api):
+    """Create the consumer group before the stream exists
+
+    This should create a noop message which gets ignored by the event transport
+    """
+    consumer = redis_event_transport.consume(
+        listen_for=[('my.dummy', 'my_event')],
+        since='0',
+        loop=loop,
+        context={},
+        consumer_group='test_group',
+    )
+    messages = []
+    async def consume():
+        async for message in consumer:
+            messages.append(message)
+
+    task = asyncio.ensure_future(consume(), loop=loop)
+    await asyncio.sleep(0.1)
+    assert len(messages) == 0
+    await cancel(task)
