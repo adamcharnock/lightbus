@@ -24,9 +24,13 @@ def lightbus_entry_point():  # pragma: no cover
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description='Lightbus management command.')
-    parser.add_argument('service_name')
+    parser.add_argument('--service-name', '-s',
+                        help='Name of service in which this process resides. You should '
+                             'likely set this in production. Will default to a random string.')
+    parser.add_argument('--process-name', '-p',
+                        help='A unique name of this process within the service. Will '
+                             'default to a random string.')
     parser.add_argument('--config', help='Config file to load, JSON or YAML', metavar='FILE')
-    # TODO: Log level flag (plus honor --config flag)
     parser.add_argument('--log-level', help='Set the log level. Overrides any value set in config. '
                                             'One of debug, info, warning, critical, exception.', metavar='LOG_LEVEL')
 
@@ -53,6 +57,14 @@ def parse_args(args=None):
 
 def load_config(args) -> Config:
     if args.config:
-        return Config.load_file(file_path=args.config)
+        config = Config.load_file(file_path=args.config)
     else:
-        return Config.load_dict({})
+        config = Config.load_dict({})
+
+    if args.service_name:
+        config._config.service_name = args.service_name
+
+    if args.process_name:
+        config._config.process_name = args.process_name
+
+    return config

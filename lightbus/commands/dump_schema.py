@@ -16,7 +16,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         parser_shell = subparsers.add_parser('dumpschema',
                                              help='Dumps all currently present bus schemas to a file or directory',
                                              formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        parser_shell.add_argument('--schema', '-s',
+        parser_shell.add_argument('--schema', '-m',
                                   help='File or directory to write schema to. If a directory is '
                                        'specified one schema file will be created for each API. '
                                        'If omitted schema will be written to standard out.',

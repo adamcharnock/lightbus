@@ -57,6 +57,13 @@ class BusClient(object):
         directly. This you be handled for you if you are
         calling `run_forever()`.
         """
+        logger.info(
+            LBullets("Lightbus getting ready to start", items={
+                'service_name (set with -s)': self.config.service_name,
+                'process_name (with with -p)': self.config.process_name,
+            })
+        )
+
         if plugins is None:
             logger.debug("Auto-loading any installed Lightbus plugins...")
             plugins = autoload_plugins(self.config)
@@ -105,7 +112,7 @@ class BusClient(object):
         event_transport = self.transport_registry.get_event_transport('default', default=None)
 
         logger.info(LBullets(
-            "Lightbus getting ready to run. Default transports are:",
+            "Lightbus getting ready to run. Default transports are",
             items={
                 "RPC transport": L(
                     '{}.{}',

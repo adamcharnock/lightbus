@@ -6,6 +6,7 @@ from typing import Mapping, Union, Type, get_type_hints, TypeVar, Dict, NamedTup
 import jsonschema
 import yaml as yamllib
 
+from lightbus.exceptions import UnexpectedConfigurationFormat
 from lightbus.schema.hints_to_schema import python_type_to_json_schemas, SCHEMA_URI
 
 if False:
@@ -69,7 +70,15 @@ class Config(object):
     @classmethod
     def load_yaml(cls, yaml: str):
         """Instantiate the config from a YAML string"""
-        return cls.load_dict(config=yamllib.load(yaml))
+        config = yamllib.load(yaml)
+        if not isinstance(config, dict):
+            raise UnexpectedConfigurationFormat(
+                f"The config file was loaded but it appears to be in an unexpected format. "
+                f"The root of the configuration should be a key/value mapping, but the "
+                f"type '{type(config).__name__}' was found instead. Check your config "
+                f"file is correctly formatted."
+            )
+        return cls.load_dict(config=config)
 
     @classmethod
     def load_dict(cls, config: dict, set_defaults=True):

@@ -19,7 +19,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
                                              help='Only listen for and handle events, do not respond to RPC calls',
                                              action='store_true')
         parser_run_action_group.add_argument(
-            '--schema', '-s',
+            '--schema', '-m',
             help='Manually load the schema from the given file or directory. '
                  'This will normally be provided by the schema transport, '
                  'but manual loading may be useful during development or testing.',
@@ -27,46 +27,12 @@ class Command(LogLevelMixin, BusImportMixin, object):
         )
         parser_run.set_defaults(func=self.handle)
 
-        parser_run_transport_group = parser_run.add_argument_group(title='Transport options')
-        parser_run_transport_group.add_argument(
-            '--rpc-transport', '-p', help='Default RPC transport class to use', default='lightbus.RedisRpcTransport'
-        )
-        parser_run_transport_group.add_argument(
-            '--result-transport', '-t', help='Default result transport class to use', default='lightbus.RedisResultTransport'
-        )
-        parser_run_transport_group.add_argument(
-            '--event-transport', '-e', help='Default event transport class to use', default='lightbus.RedisEventTransport'
-        )
-        parser_run_transport_group.add_argument(
-            '--schema-transport', '-a', help='Default schema transport class to use', default='lightbus.RedisSchemaTransport'
-        )
-
-        parser_run_connection_group = parser_run.add_argument_group(title='Connection options')
-        parser_run_connection_group.add_argument(
-            '--redis-url', '-r', help='URL to Redis server when using Redis-based transports', default='redis://localhost:6379/0'
-        )
-
     def handle(self, args, config, dry_run=False):
         self.setup_logging(args.log_level, config)
 
-        try:
-            rpc_transport = import_from_string(args.rpc_transport)
-            result_transport = import_from_string(args.result_transport)
-            event_transport = import_from_string(args.event_transport)
-            schema_transport = import_from_string(args.schema_transport)
-        except ImportError as e:
-            logger.critical("Error when trying to import transports: {}. Perhaps check your config for typos.".format(e))
-            return
-
         bus_module = self.import_bus(args)
 
-        bus = create(
-            config=config,
-            rpc_transport=rpc_transport(url=args.redis_url),
-            result_transport=result_transport(url=args.redis_url),
-            event_transport=event_transport(url=args.redis_url),
-            schema_transport=schema_transport(url=args.redis_url),
-        )
+        bus = create(config=config)
 
         if args.schema:
             if args.schema == '-':

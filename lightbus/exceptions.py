@@ -131,3 +131,7 @@ class ApisMustUseSameTransport(LightbusException):
 
 class OnlyAvailableOnRootNode(LightbusException):
     pass
+
+
+class UnexpectedConfigurationFormat(LightbusException):
+    pass
