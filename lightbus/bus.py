@@ -307,7 +307,6 @@ class BusClient(object):
             result = api.call(name, kwargs)
             if isawaitable(result):
                 result = await result
-            return result
         except (CancelledError, SuddenDeathException):
             raise
         except Exception as e:
