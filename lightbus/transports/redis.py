@@ -376,7 +376,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     forever=True
                     ) -> Generator[EventMessage, None, None]:
 
-        consumer_group = f'{self.consumer_group_prefix}-{consumer_group}'
+        if self.consumer_group_prefix:
+            consumer_group = f'{self.consumer_group_prefix}-{consumer_group}'
 
         if not isinstance(since, (list, tuple)):
             since = [since] * len(listen_for)

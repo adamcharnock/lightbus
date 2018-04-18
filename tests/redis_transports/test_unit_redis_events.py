@@ -271,3 +271,51 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
     )
     reclaimed_messages = [m async for m in reclaimer]
     assert len(reclaimed_messages) == 1
+
+
+
+@pytest.mark.run_loop
+async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dummy_api):
+    """Test that messages which another consumer has timed out on can be reclaimed
+
+    Unlike the above test, we call consume() here, not _reclaim_lost_messages()
+    """
+
+    # Add a message
+    await redis_client.xadd('my.dummy.my_event:stream', fields={
+        b'api_name': b'my.dummy',
+        b'event_name': b'my_event',
+        b':field': b'"value"',
+    })
+    # Create the consumer group
+    await redis_client.xgroup_create('my.dummy.my_event:stream', 'test_group', latest_id='0')
+
+    # Claim it in the name of another consumer
+    await redis_client.xread_group(
+        'test_group', 'bad_consumer', ['my.dummy.my_event:stream'], latest_ids=[0]
+    )
+    # Sleep a moment to fake a short timeout
+    await asyncio.sleep(0.02)
+
+    event_transport = RedisEventTransport(
+        redis_pool=redis_pool,
+        consumer_group_prefix='',
+        consumer_name='good_consumer',
+        acknowledgement_timeout=0.01,  # in ms, short for the sake of testing
+    )
+    consumer = event_transport.consume(
+        listen_for=[('my.dummy', 'my_event')],
+        since='0',
+        loop=loop,
+        context={},
+        consumer_group='test_group',
+    )
+
+    messages = []
+    async def consume():
+        async for message in consumer:
+            messages.append(messages)
+
+    asyncio.ensure_future(consume(), loop=loop)
+    await asyncio.sleep(0.5)
+    assert len(messages) == 1
