@@ -3,7 +3,6 @@ import logging
 
 from lightbus import create
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
-from lightbus.utilities.importing import import_from_string
 
 logger = logging.getLogger(__name__)
 

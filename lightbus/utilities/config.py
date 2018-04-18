@@ -3,7 +3,7 @@ import logging
 import random
 import string
 
-from typing import Type, NamedTuple
+from typing import Type, NamedTuple  # noqa
 
 import itertools
 

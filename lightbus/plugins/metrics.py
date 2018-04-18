@@ -1,5 +1,4 @@
 """Plugin to broadcast Lightbus' state on the internal.state API"""
-
 from datetime import datetime
 from typing import Coroutine
 

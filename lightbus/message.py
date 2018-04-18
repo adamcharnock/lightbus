@@ -3,9 +3,6 @@ from typing import Optional, Dict, Any, Sequence
 from uuid import uuid1
 
 from base64 import b64encode
-from jsonschema import ValidationError
-
-import lightbus
 
 __all__ = ['Message', 'RpcMessage', 'ResultMessage', 'EventMessage']
 

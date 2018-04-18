@@ -10,10 +10,7 @@ customisation in the long term.
 import logging
 import sys
 
-import re
-
-__all__ = ('escape_codes', 'default_log_colors', 'LightbusFormatter',
-           'LevelFormatter', 'TTYColoredFormatter')
+__all__ = ('escape_codes', 'default_log_colors', 'LightbusFormatter')
 
 # The default colors to use for the debug levels
 default_log_colors = {
