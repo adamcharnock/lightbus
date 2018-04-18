@@ -383,21 +383,16 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     since: Union[Since, Sequence[Since]] = '$',
                     forever=True
                     ) -> Generator[EventMessage, None, None]:
+
         consumer_group = f'{self.consumer_group_prefix}-{consumer_group}'
+
         if not isinstance(since, (list, tuple)):
             since = [since] * len(listen_for)
         since = map(normalise_since_value, since)
 
         # Keys are stream names, values as the latest ID consumed from that stream
         stream_names = ['{}.{}:stream'.format(api, name) for api, name in listen_for]
-
-        # Setup our context to have sensible defaults
-        context.setdefault('streams', OrderedDict())
-        # We'll use the `streams` variable as shorthand for `context['streams']`
-        streams = context['streams']
-
-        for stream_name, stream_since in zip(stream_names, since):
-            streams.setdefault(stream_name, stream_since)
+        streams = OrderedDict(zip(stream_names, since))
 
         logger.debug(LBullets(
             L('Consuming events as consumer {} in group {} on streams',
@@ -491,7 +486,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
     async def _reclaim_lost_messages(self, stream_names, consumer_group):
         """Reclaim messages that others consumers in the group failed to acknowledge"""
-        redis: Redis
         with await self.connection_manager() as redis:
             for stream in stream_names:
                 old_messages = await redis.xpending(stream, consumer_group, '-', '+', count=100)
