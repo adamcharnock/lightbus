@@ -1,35 +1,31 @@
-from inspect import isawaitable
-
-import os
 import asyncio
 import contextlib
 import inspect
 import logging
+import os
 import signal
 import time
 from asyncio.futures import CancelledError
-from typing import Optional, List, Sequence, Tuple, Union, Mapping
+from inspect import isawaitable
+from typing import Optional, List, Tuple, Union, Mapping
 
-from lightbus import configure_logging
-from lightbus.config import Config
-from lightbus.schema import Schema
 from lightbus.api import registry, Api
+from lightbus.config import Config
 from lightbus.exceptions import InvalidEventArguments, InvalidBusNodeConfiguration, UnknownApi, EventNotFound, \
     InvalidEventListener, SuddenDeathException, LightbusTimeout, LightbusServerError, NoApisToListenOn, InvalidName, \
-    InvalidParameters, ApisMustUseSameTransport, OnlyAvailableOnRootNode
+    InvalidParameters, OnlyAvailableOnRootNode
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
 from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
+from lightbus.schema import Schema
 from lightbus.schema.schema import _parameter_names
-from lightbus.transports import RpcTransport, ResultTransport, EventTransport, RedisRpcTransport, \
-    RedisResultTransport, RedisEventTransport
+from lightbus.transports import RpcTransport, ResultTransport, EventTransport
 from lightbus.transports.base import SchemaTransport, TransportRegistry
-from lightbus.transports.redis import RedisSchemaTransport
+from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loop, cancel
 from lightbus.utilities.config import random_name
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
-from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loop, cancel
 
 __all__ = ['BusClient', 'BusNode', 'create']
 

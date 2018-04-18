@@ -1,20 +1,15 @@
+import asyncio
 import json
 import logging
 import time
+from collections import OrderedDict
 from datetime import datetime
-from functools import partial
-from random import random
-from typing import Sequence, Optional, Union, Generator, Dict, NamedTuple, Mapping
-from urllib.parse import urlparse
+from typing import Sequence, Optional, Union, Generator, Dict, Mapping
 
 import aioredis
-import asyncio
-
-import os
-from aioredis import Redis, RedisError, ReplyError
+from aioredis import Redis, ReplyError
 from aioredis.pool import ConnectionsPool
 from aioredis.util import decode
-from collections import OrderedDict
 
 from lightbus.api import Api
 from lightbus.exceptions import LightbusException, LightbusShutdownInProgress
