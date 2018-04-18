@@ -400,7 +400,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             streams.setdefault(stream_name, stream_since)
 
         logger.debug(LBullets(
-            L('Consuming as events as consumer group {} on streams', Bold(consumer_group)), items={
+            L('Consuming events as consumer {} in group {} on streams',
+              Bold(self.consumer_name), Bold(consumer_group)), items={
                 '{} ({})'.format(*v) for v in streams.items()
             }
         ))
@@ -420,8 +421,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             async for message in self._reclaim_lost_messages(stream_names, consumer_group):
                 await queue.put(message)
 
-        fetch_task = asyncio.ensure_future(fetch_loop(), loop=self.loop)
-        reclaim_task = asyncio.ensure_future(reclaim_loop(), loop=self.loop)
+        fetch_task = asyncio.ensure_future(fetch_loop(), loop=loop)
+        reclaim_task = asyncio.ensure_future(reclaim_loop(), loop=loop)
 
         try:
             while True:
@@ -472,7 +473,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         latest_ids=['>'] * len(streams),
                         count=self.batch_size,
                     )
-                    import pdb; pdb.set_trace()
                 except aioredis.ConnectionForcedCloseError:
                     # TODO: Remove this handler. I think it was only needed because we were
                     # cancelling the redis connection task before cancelling the consume() task.

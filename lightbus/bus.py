@@ -392,6 +392,7 @@ class BusClient(object):
             consumer = event_transport.consume(
                 listen_for=events,
                 context=listener_context,
+                loop=self.loop,
                 **options
             )
             with self._register_listener(events):
@@ -439,6 +440,7 @@ class BusClient(object):
                 if api_name in _api_names
             ]
             tasks.append(
+                # TODO: This will swallow and print exceptions. We should probably do something more serious.
                 handle_aio_exceptions(listen_for_event_task(_event_transport, _events)),
             )
 

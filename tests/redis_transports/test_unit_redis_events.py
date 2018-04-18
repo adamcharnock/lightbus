@@ -38,7 +38,7 @@ async def test_send_event(redis_event_transport: RedisEventTransport, redis_clie
 
 
 @pytest.mark.run_loop
-async def test_consume_events(redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+async def test_consume_events(loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api):
     async def co_enqeue():
         await asyncio.sleep(0.1)
         return await redis_client.xadd('my.dummy.my_event:stream', fields={
@@ -48,7 +48,7 @@ async def test_consume_events(redis_event_transport: RedisEventTransport, redis_
         })
 
     async def co_consume():
-        async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')], {}):
+        async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')], {}, loop):
             return message_
 
     enqueue_result, message = await asyncio.gather(co_enqeue(), co_consume())
@@ -58,11 +58,12 @@ async def test_consume_events(redis_event_transport: RedisEventTransport, redis_
 
 
 @pytest.mark.run_loop
-async def test_consume_events_multiple_consumers(redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+async def test_consume_events_multiple_consumers(loop, redis_event_transport: RedisEventTransport,
+                                                 redis_client, dummy_api):
     messages = []
 
     async def co_consume():
-        async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')], {}):
+        async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')], {}, loop):
             messages.append(message_)
 
     asyncio.ensure_future(co_consume())
@@ -81,40 +82,43 @@ async def test_consume_events_multiple_consumers(redis_event_transport: RedisEve
 
 
 @pytest.mark.run_loop
-async def test_consume_events_multiple_consumers_one_group(loop, new_redis_pool, redis_client, dummy_api):
+async def test_consume_events_multiple_consumers_one_group(loop, redis_pool, redis_client, dummy_api):
     messages = []
 
     async def co_consume(consumer_number):
         event_transport = RedisEventTransport(
-            redis_pool=new_redis_pool(maxsize=10000),
+            redis_pool=redis_pool,
             consumer_group_prefix='test_cg',
             consumer_name=f'test_consumer{consumer_number}'
         )
-        async for message_ in event_transport.consume([('my.dummy', 'my_event')],
-                                                      {},
-                                                      loop=loop,
-                                                      consumer_group='single_group'):
+        consumer = event_transport.consume(
+            listen_for=[('my.dummy', 'my_event')],
+            context={},
+            loop=loop,
+            consumer_group='single_group'
+        )
+        async for message_ in consumer:
             messages.append(message_)
 
-    task1 = asyncio.ensure_future(co_consume(1))
-    task2 = asyncio.ensure_future(co_consume(2))
-
+    task1 = asyncio.ensure_future(co_consume(1), loop=loop)
+    task2 = asyncio.ensure_future(co_consume(2), loop=loop)
     await asyncio.sleep(0.1)
+
     await redis_client.xadd('my.dummy.my_event:stream', fields={
         b'api_name': b'my.dummy',
         b'event_name': b'my_event',
         b':field': b'"value"',
     })
     await asyncio.sleep(0.1)
+    await cancel(task1, task2)
 
     # One message, one dummy value which indicate events have been acked
     assert len(messages) == 2
 
-    await cancel(task1, task2)
 
 
 @pytest.mark.run_loop
-async def test_consume_events_since_id(redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+async def test_consume_events_since_id(loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api):
     await redis_client.xadd(
         'my.dummy.my_event:stream',
         fields={
@@ -143,7 +147,8 @@ async def test_consume_events_since_id(redis_event_transport: RedisEventTranspor
         message_id='1515000003000-0',
     )
 
-    consumer = redis_event_transport.consume([('my.dummy', 'my_event')], {}, since='1515000001500-0', forever=False)
+    consumer = redis_event_transport.consume([('my.dummy', 'my_event')], {}, since='1515000001500-0',
+                                             forever=False, loop=loop)
 
     yields = []
 
@@ -161,7 +166,7 @@ async def test_consume_events_since_id(redis_event_transport: RedisEventTranspor
 
 
 @pytest.mark.run_loop
-async def test_consume_events_since_datetime(redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+async def test_consume_events_since_datetime(loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api):
     await redis_client.xadd(
         'my.dummy.my_event:stream',
         fields={
@@ -192,7 +197,8 @@ async def test_consume_events_since_datetime(redis_event_transport: RedisEventTr
 
     # 1515000001500-0 -> 2018-01-03T17:20:01.500Z
     since_datetime = datetime(2018, 1, 3, 17, 20, 1, 500)
-    consumer = redis_event_transport.consume([('my.dummy', 'my_event')], {}, since=since_datetime, forever=False)
+    consumer = redis_event_transport.consume([('my.dummy', 'my_event')], {}, since=since_datetime,
+                                             forever=False, loop=loop)
 
     yields = []
 
