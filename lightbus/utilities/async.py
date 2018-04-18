@@ -3,6 +3,8 @@ import traceback
 import logging
 from typing import Coroutine
 
+import aioredis
+
 from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 
 logger = logging.getLogger(__name__)
@@ -60,7 +62,7 @@ async def cancel(*tasks):
         try:
             await task
             task.result()
-        except asyncio.CancelledError:
+        except (asyncio.CancelledError, aioredis.ConnectionForcedCloseError):
             pass
 
         except Exception as e:

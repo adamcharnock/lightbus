@@ -8,7 +8,7 @@ from lightbus.config import Config
 from lightbus.message import EventMessage
 from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeserializer, BlobMessageSerializer, \
     BlobMessageDeserializer
-from lightbus.transports.redis import RedisEventTransport
+from lightbus.transports.redis import RedisEventTransport, StreamUse
 from lightbus.utilities.async import cancel
 
 pytestmark = pytest.mark.unit
@@ -270,7 +270,8 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
     )
     reclaimer = event_transport._reclaim_lost_messages(
         stream_names=['my.dummy.my_event:stream'],
-        consumer_group='test_group'
+        consumer_group='test_group',
+        expected_events={'my_event'},
     )
     reclaimed_messages = [m async for m in reclaimer]
     assert len(reclaimed_messages) == 1
@@ -305,7 +306,8 @@ async def test_reclaim_lost_messages_ignores_non_timed_out_messages(loop, redis_
     )
     reclaimer = event_transport._reclaim_lost_messages(
         stream_names=['my.dummy.my_event:stream'],
-        consumer_group='test_group'
+        consumer_group='test_group',
+        expected_events={'my_event'},
     )
     reclaimed_messages = [m async for m in reclaimer]
     assert len(reclaimed_messages) == 0
@@ -464,3 +466,43 @@ async def test_max_len_set_to_none(redis_event_transport: RedisEventTransport, r
         ), options={})
     messages = await redis_client.xrange('my.api.my_event:stream')
     assert len(messages) == 200
+
+
+@pytest.mark.run_loop
+async def test_consume_events_per_api_stream(loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+    redis_event_transport.stream_use = StreamUse.PER_API
+
+    event_names = []
+    async def co_consume(event_name):
+        consumer = redis_event_transport.consume([('my.dummy', event_name)], {}, loop)
+        async for message_ in consumer:
+            event_names.append(message_.event_name)
+            await consumer.__anext__()
+
+
+    task1 = asyncio.ensure_future(co_consume('my_event1'))
+    task2 = asyncio.ensure_future(co_consume('my_event2'))
+    task3 = asyncio.ensure_future(co_consume('my_event3'))
+    await asyncio.sleep(0.1)
+
+    await redis_client.xadd('my.dummy.*:stream', fields={
+        b'api_name': b'my.dummy',
+        b'event_name': b'my_event1',
+        b':field': b'"value"',
+    })
+    await redis_client.xadd('my.dummy.*:stream', fields={
+        b'api_name': b'my.dummy',
+        b'event_name': b'my_event2',
+        b':field': b'"value"',
+    })
+    await redis_client.xadd('my.dummy.*:stream', fields={
+        b'api_name': b'my.dummy',
+        b'event_name': b'my_event3',
+        b':field': b'"value"',
+    })
+    await asyncio.sleep(0.1)
+
+    assert len(event_names) == 3
+    assert set(event_names) == {'my_event1', 'my_event2', 'my_event3'}
+
+    await cancel(task1, task2, task3)

@@ -4,7 +4,8 @@ import logging
 import time
 from collections import OrderedDict
 from datetime import datetime
-from typing import Sequence, Optional, Union, Generator, Dict, Mapping
+from typing import Sequence, Optional, Union, Generator, Dict, Mapping, List
+from enum import Enum
 
 import aioredis
 from aioredis import Redis, ReplyError
@@ -30,6 +31,11 @@ if False:
 logger = logging.getLogger(__name__)
 
 Since = Union[str, datetime, None]
+
+
+class StreamUse(Enum):
+    PER_API = 'per_api'
+    PER_EVENT = 'per_event'
 
 
 class RedisTransportMixin(object):
@@ -306,7 +312,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                  connection_parameters: Mapping=frozendict(maxsize=100),
                  batch_size=10,
                  acknowledgement_timeout: float=60,
-                 max_stream_length: Optional[int] = 100000
+                 max_stream_length: Optional[int] = 100000,
+                 stream_use: StreamUse=StreamUse.PER_EVENT,
                  ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self.serializer = serializer
@@ -316,6 +323,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self.consumer_name = consumer_name
         self.acknowledgement_timeout = acknowledgement_timeout
         self.max_stream_length = max_stream_length
+        self.stream_use = stream_use
 
         self._task = None
         self._reload = False
@@ -331,7 +339,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     serializer: str='lightbus.serializers.ByFieldMessageSerializer',
                     deserializer: str='lightbus.serializers.ByFieldMessageDeserializer',
                     acknowledgement_timeout: float=60,
-                    max_stream_length: Optional[int]=100000
+                    max_stream_length: Optional[int]=100000,
+                    stream_use: StreamUse=StreamUse.PER_EVENT,
                     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(EventMessage)
@@ -349,6 +358,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             deserializer=deserializer,
             acknowledgement_timeout=acknowledgement_timeout,
             max_stream_length=max_stream_length,
+            stream_use=stream_use,
         )
 
     async def send_event(self, event_message: EventMessage, options: dict):
@@ -391,9 +401,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             since = [since] * len(listen_for)
         since = map(normalise_since_value, since)
 
+        stream_names = self._get_stream_names(listen_for)
         # Keys are stream names, values as the latest ID consumed from that stream
-        stream_names = ['{}.{}:stream'.format(api, name) for api, name in listen_for]
         streams = OrderedDict(zip(stream_names, since))
+        expected_events = {event_name for _, event_name in listen_for}
 
         logger.debug(LBullets(
             L('Consuming events as consumer {} in group {} on streams',
@@ -405,12 +416,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         queue = asyncio.Queue(maxsize=self.batch_size)
 
         async def fetch_loop():
-            async for message in self._fetch_new_messages(streams, consumer_group, forever):
+            async for message in self._fetch_new_messages(streams, consumer_group, expected_events, forever):
                 await queue.put(message)
 
         async def reclaim_loop():
             await asyncio.sleep(self.acknowledgement_timeout)
-            async for message in self._reclaim_lost_messages(stream_names, consumer_group):
+            async for message in self._reclaim_lost_messages(stream_names, consumer_group, expected_events):
                 await queue.put(message)
 
         fetch_task = asyncio.ensure_future(fetch_loop(), loop=loop)
@@ -425,7 +436,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         finally:
             await cancel(fetch_task, reclaim_task)
 
-    async def _fetch_new_messages(self, streams, consumer_group, forever):
+    async def _fetch_new_messages(self, streams, consumer_group, expected_events, forever):
         with await self.connection_manager() as redis:
             # Firstly create the consumer group if we need to
             await self._create_consumer_groups(streams, redis, consumer_group)
@@ -441,9 +452,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 timeout=None,  # Don't block, return immediately
             )
             for stream, message_id, fields in pending_messages:
-                event_message = self._fields_to_message(fields)
+                event_message = self._fields_to_message(fields, expected_events)
                 if not event_message:
-                    continue  # noop message
+                    # noop message, or message an event we don't care about
+                    continue
                 logger.debug(LBullets(
                     L("⬅ Receiving pending event {} on stream {}", Bold(message_id), Bold(stream)),
                     items=dict(**event_message.get_metadata(), kwargs=event_message.get_kwargs())
@@ -468,9 +480,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
                 # Handle the messages we have received
                 for stream, message_id, fields in stream_messages:
-                    event_message = self._fields_to_message(fields)
+                    event_message = self._fields_to_message(fields, expected_events)
                     if not event_message:
-                        continue  # noop message
+                        # noop message, or message an event we don't care about
+                        continue
                     logger.debug(LBullets(
                         L("⬅ Received new event {} on stream {}", Bold(message_id), Bold(stream)),
                         items=dict(**event_message.get_metadata(), kwargs=event_message.get_kwargs())
@@ -482,7 +495,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 if not forever:
                     return
 
-    async def _reclaim_lost_messages(self, stream_names, consumer_group):
+    async def _reclaim_lost_messages(self, stream_names: List[str], consumer_group: str, expected_events: set):
         """Reclaim messages that other consumers in the group failed to acknowledge"""
         with await self.connection_manager() as redis:
             for stream in stream_names:
@@ -498,9 +511,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
                     result = await redis.xclaim(stream, consumer_group, self.consumer_name, int(timeout), message_id)
                     for claimed_message_id, fields in result:
-                        event_message = self._fields_to_message(fields)
+                        event_message = self._fields_to_message(fields, expected_events)
                         if not event_message:
-                            continue  # noop message
+                            # noop message, or message an event we don't care about
+                            continue
                         logger.debug(LBullets(
                             L("⬅ Reclaimed timed out event {} on stream {}. Abandoned by {}.",
                               Bold(message_id), Bold(stream), Bold(consumer_name)),
@@ -521,10 +535,35 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 if 'BUSYGROUP' not in str(e):
                     raise
 
-    def _fields_to_message(self, fields) -> Optional[EventMessage]:
+    def _fields_to_message(self, fields, expected_event_names) -> Optional[EventMessage]:
         if tuple(fields.items()) == ((b'', b''),):
             return None
-        return self.deserializer(fields)
+        message = self.deserializer(fields)
+        if self.stream_use == StreamUse.PER_API and message.event_name not in expected_event_names:
+            # Only care about events we are listening for. If we have one stream
+            # per API then we're probably going to receive some events we don't care about.
+            return None
+        return message
+
+    def _get_stream_names(self, listen_for):
+        """Convert a list of api names & event names into stream names
+
+        The format of these names will vary based on the stream_use setting.
+        """
+        stream_names = []
+        for api_name, event_name in listen_for:
+            if self.stream_use == StreamUse.PER_EVENT:
+                stream_name = f'{api_name}.{event_name}:stream'
+            elif self.stream_use == StreamUse.PER_API:
+                stream_name = f'{api_name}.*:stream'
+            else:
+                raise ValueError(
+                    'Invalid value for stream_use config option. This should have been caught '
+                    'during config validation.'
+                )
+            if stream_name not in stream_names:
+                stream_names.append(stream_name)
+        return stream_names
 
 
 class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
