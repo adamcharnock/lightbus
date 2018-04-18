@@ -64,7 +64,6 @@ def make_plugin_selector_structure() -> NamedTuple:
     return globals_[class_name]
 
 
-# TODO: Rename to specifiers?
 RpcTransportSelector = make_transport_selector_structure('rpc')
 ResultTransportSelector = make_transport_selector_structure('result')
 EventTransportSelector = make_transport_selector_structure('event')
