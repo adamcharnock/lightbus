@@ -127,11 +127,10 @@ class ResultMessage(Message):
 class EventMessage(Message):
     required_metadata = ['api_name', 'event_name']
 
-    def __init__(self, *, api_name: str, event_name: str, kwargs: Optional[dict]=None, on_ack=None):
+    def __init__(self, *, api_name: str, event_name: str, kwargs: Optional[dict]=None):
         self.api_name = api_name
         self.event_name = event_name
         self.kwargs = kwargs or {}
-        self.on_ack = on_ack
 
     def __repr__(self):
         return '<{}: {}>'.format(self.__class__.__name__, self)
@@ -158,7 +157,3 @@ class EventMessage(Message):
     @classmethod
     def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> 'EventMessage':
         return cls(**metadata, kwargs=kwargs)
-
-    async def acknowledge(self):
-        if self.on_ack is not None:
-            await self.on_ack()
