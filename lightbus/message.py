@@ -10,6 +10,9 @@ __all__ = ['Message', 'RpcMessage', 'ResultMessage', 'EventMessage']
 class Message(object):
     required_metadata: Sequence
 
+    def __init__(self, id: str=''):
+        self.id = id or b64encode(uuid1().bytes).decode('utf8')
+
     def get_metadata(self) -> dict:
         """Get the non-kwarg fields of this message
 
@@ -38,8 +41,7 @@ class RpcMessage(Message):
 
     def __init__(self, *, api_name: str, procedure_name: str, kwargs: Optional[dict]=None,
                  return_path: Any=None, id: str=''):
-
-        self.id = id or b64encode(uuid1().bytes).decode('utf8')
+        super().__init__(id)
         self.api_name = api_name
         self.procedure_name = procedure_name
         self.kwargs = kwargs
@@ -77,7 +79,8 @@ class RpcMessage(Message):
 class ResultMessage(Message):
     required_metadata = ['rpc_message_id']
 
-    def __init__(self, *, result, rpc_message_id: str, error: bool=False, trace: str=None):
+    def __init__(self, *, result, rpc_message_id: str, id: str='', error: bool=False, trace: str=None):
+        super().__init__(id)
         self.rpc_message_id = rpc_message_id
 
         if isinstance(result, BaseException):
@@ -124,7 +127,8 @@ class ResultMessage(Message):
 class EventMessage(Message):
     required_metadata = ['api_name', 'event_name']
 
-    def __init__(self, *, api_name: str, event_name: str, kwargs: Optional[dict]=None):
+    def __init__(self, *, api_name: str, event_name: str, kwargs: Optional[dict]=None, id: str=''):
+        super().__init__(id)
         self.api_name = api_name
         self.event_name = event_name
         self.kwargs = kwargs or {}
