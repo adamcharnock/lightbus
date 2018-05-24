@@ -91,6 +91,10 @@ class BusClient(object):
             items=self.schema.remote_schemas.keys()
         ))
 
+        for transport in self.transport_registry.get_all_transports():
+            block(transport.open(),
+                  self.loop, timeout=self.config.bus().open_transport_timeout)
+
     def close(self):
         block(self.close_async(), loop=self.loop, timeout=5)
 

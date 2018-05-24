@@ -237,3 +237,18 @@ def test_validate_outgoing_enabled(create_bus_client_with_unhappy_schema):
     message = RpcMessage(api_name='api', procedure_name='proc', kwargs={'p': 1})
     with pytest.raises(jsonschema.ValidationError):
         client._validate(message, direction='outgoing', api_name='api', procedure_name='proc')
+
+
+def test_setup_transports_opened(loop, mocker):
+    rpc_transport = lightbus.DebugRpcTransport()
+
+    async def dummy_coroutine(*args, **kwargs):
+        pass
+    m = mocker.patch.object(rpc_transport, 'open', autospec=True, return_value=dummy_coroutine())
+
+    lightbus.create(
+        rpc_transport=rpc_transport,
+        loop=loop,
+        plugins={},
+    )
+    assert m.call_count == 1

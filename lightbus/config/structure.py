@@ -117,6 +117,7 @@ class SchemaConfig(NamedTuple):
 
 class BusConfig(NamedTuple):
     log_level: LogLevelEnum = LogLevelEnum.INFO
+    open_transport_timeout: int = 5
     schema: SchemaConfig = SchemaConfig()
 
 

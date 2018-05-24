@@ -31,6 +31,14 @@ class Transport(object, metaclass=TransportMetaclass):
     def from_config(cls: Type[T], * config) -> T:
         return cls()
 
+    async def open(self):
+        """Setup transport prior to use
+
+
+        Can be used for opening connections, initialisation, etc.
+        """
+        pass
+
     async def close(self):
         """Cleanup prior to termination
 
