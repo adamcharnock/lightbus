@@ -242,6 +242,8 @@ def test_validate_outgoing_enabled(create_bus_client_with_unhappy_schema):
 def test_setup_transports_opened(loop, mocker):
     rpc_transport = lightbus.DebugRpcTransport()
 
+    # TODO: There has to be a cleaner way of patching a coroutine.
+    #       Do a global search for 'dummy_coroutine' if you find it
     async def dummy_coroutine(*args, **kwargs):
         pass
     m = mocker.patch.object(rpc_transport, 'open', autospec=True, return_value=dummy_coroutine())
