@@ -37,7 +37,7 @@ async def test_remote_rpc_call(dummy_bus: BusNode, get_dummy_events):
     assert event_messages[0].event_name == 'rpc_call_sent'
     # Pop these next two as the values are variable
     assert event_messages[0].kwargs.pop('timestamp')
-    assert event_messages[0].kwargs.pop('rpc_id')
+    assert event_messages[0].kwargs.pop('id')
     assert event_messages[0].kwargs == {
         'api_name': 'example.test',
         'procedure_name': 'my_method',
@@ -51,7 +51,7 @@ async def test_remote_rpc_call(dummy_bus: BusNode, get_dummy_events):
     assert event_messages[1].event_name == 'rpc_response_received'
     # Pop these next two as the values are variable
     assert event_messages[1].kwargs.pop('timestamp')
-    assert event_messages[1].kwargs.pop('rpc_id')
+    assert event_messages[1].kwargs.pop('id')
     assert event_messages[1].kwargs == {
         'api_name': 'example.test',
         'procedure_name': 'my_method',
@@ -64,7 +64,7 @@ async def test_remote_rpc_call(dummy_bus: BusNode, get_dummy_events):
 async def test_local_rpc_call(loop, dummy_bus: BusNode, consume_rpcs, get_dummy_events, mocker):
     rpc_transport = dummy_bus.bus_client.transport_registry.get_rpc_transport('default')
     mocker.patch.object(rpc_transport, '_get_fake_messages', return_value=[
-        RpcMessage(rpc_id='123abc', api_name='example.test', procedure_name='my_method', kwargs={'f': 123})
+        RpcMessage(id='123abc', api_name='example.test', procedure_name='my_method', kwargs={'f': 123})
     ])
 
     # Setup the bus and do the call
@@ -86,7 +86,7 @@ async def test_local_rpc_call(loop, dummy_bus: BusNode, consume_rpcs, get_dummy_
     assert event_messages[0].kwargs == {
         'api_name': 'example.test',
         'procedure_name': 'my_method',
-        'rpc_id': '123abc',
+        'id': '123abc',
         'service_name': 'foo',
         'process_name': 'bar',
     }
@@ -98,7 +98,7 @@ async def test_local_rpc_call(loop, dummy_bus: BusNode, consume_rpcs, get_dummy_
     assert event_messages[1].kwargs == {
         'api_name': 'example.test',
         'procedure_name': 'my_method',
-        'rpc_id': '123abc',
+        'id': '123abc',
         'result': 'value',
         'service_name': 'foo',
         'process_name': 'bar',

@@ -129,8 +129,8 @@ async def test_event(bus: lightbus.BusNode, dummy_api, stream_use):
 
 
 @pytest.mark.run_loop
-async def test_rpc_ids(bus: lightbus.BusNode, dummy_api, mocker):
-    """Ensure the rpc_id comes back correctly"""
+async def test_ids(bus: lightbus.BusNode, dummy_api, mocker):
+    """Ensure the id comes back correctly"""
 
     async def co_call_rpc():
         await asyncio.sleep(0.1)
@@ -147,9 +147,9 @@ async def test_rpc_ids(bus: lightbus.BusNode, dummy_api, mocker):
     result_message = kw['result_message']
     consume_task.cancel()
 
-    assert rpc_message.rpc_id
-    assert result_message.rpc_id
-    assert rpc_message.rpc_id == result_message.rpc_id
+    assert rpc_message.id
+    assert result_message.rpc_message_id
+    assert rpc_message.id == result_message.rpc_message_id
 
 
 class ApiA(lightbus.Api):

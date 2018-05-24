@@ -23,7 +23,7 @@ async def test_connection_manager(redis_rpc_transport):
 async def test_call_rpc(redis_rpc_transport, redis_client):
     """Does call_rpc() add a message to a stream"""
     rpc_message = RpcMessage(
-        rpc_id='123abc',
+        id='123abc',
         api_name='my.api',
         procedure_name='my_proc',
         kwargs={'field': 'value'},
@@ -37,7 +37,7 @@ async def test_call_rpc(redis_rpc_transport, redis_client):
     message = json.loads(messages[0])
     assert message == {
         'metadata': {
-            'rpc_id': '123abc',
+            'id': '123abc',
             'api_name': 'my.api',
             'procedure_name': 'my_proc',
             'return_path': 'abc',
@@ -61,7 +61,7 @@ async def test_consume_rpcs_no_expiry_key(redis_client, redis_rpc_transport, dum
         # NOT SETTING rpc_expiry_key:123abc
         return await redis_client.rpush('my.dummy:rpc_queue', value=json.dumps({
             'metadata': {
-                'rpc_id': '123abc',
+                'id': '123abc',
                 'api_name': 'my.api',
                 'procedure_name': 'my_proc',
                 'return_path': 'abc',
@@ -86,7 +86,7 @@ async def test_consume_rpcs(redis_client, redis_rpc_transport, dummy_api):
         await redis_client.set('rpc_expiry_key:123abc', 1)
         return await redis_client.rpush('my.dummy:rpc_queue', value=json.dumps({
             'metadata': {
-                'rpc_id': '123abc',
+                'id': '123abc',
                 'api_name': 'my.api',
                 'procedure_name': 'my_proc',
                 'return_path': 'abc',
@@ -101,7 +101,7 @@ async def test_consume_rpcs(redis_client, redis_rpc_transport, dummy_api):
 
     enqueue_result, messages = await asyncio.gather(co_enqeue(), co_consume())
     message = messages[0]
-    assert message.rpc_id == '123abc'
+    assert message.id == '123abc'
     assert message.api_name == 'my.api'
     assert message.procedure_name == 'my_proc'
     assert message.kwargs == {'field': 'value'}
@@ -152,7 +152,7 @@ async def test_consume_rpcs_only_once(redis_client, dummy_api, redis_pool):
     await redis_client.set('rpc_expiry_key:123abc', 1)
     await redis_client.rpush('my.dummy:rpc_queue', json.dumps({
         'metadata': {
-            'rpc_id': '123abc',
+            'id': '123abc',
             'api_name': 'my.api',
             'procedure_name': 'my_proc',
             'return_path': 'abc',

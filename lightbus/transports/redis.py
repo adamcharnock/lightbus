@@ -149,7 +149,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
     async def call_rpc(self, rpc_message: RpcMessage, options: dict):
         queue_key = f'{rpc_message.api_name}:rpc_queue'
-        expiry_key = f'rpc_expiry_key:{rpc_message.rpc_id}'
+        expiry_key = f'rpc_expiry_key:{rpc_message.id}'
         logger.debug(
             LBullets(
                 L("Enqueuing message {} in Redis stream {}", Bold(rpc_message), Bold(queue_key)),
@@ -192,7 +192,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
             stream = decode(stream, 'utf8')
             rpc_message = self.deserializer(data)
-            expiry_key = f'rpc_expiry_key:{rpc_message.rpc_id}'
+            expiry_key = f'rpc_expiry_key:{rpc_message.id}'
             print('deleting ' + expiry_key)
             key_deleted = await redis.delete(expiry_key)
 
@@ -251,7 +251,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         return 'redis+key://{}.{}:result:{}'.format(
             rpc_message.api_name,
             rpc_message.procedure_name,
-            rpc_message.rpc_id,
+            rpc_message.id,
         )
 
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: str):

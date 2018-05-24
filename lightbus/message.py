@@ -34,12 +34,12 @@ class Message(object):
 
 
 class RpcMessage(Message):
-    required_metadata = ['rpc_id', 'api_name', 'procedure_name', 'return_path']
+    required_metadata = ['id', 'api_name', 'procedure_name', 'return_path']
 
     def __init__(self, *, api_name: str, procedure_name: str, kwargs: Optional[dict]=None,
-                 return_path: Any=None, rpc_id: str=''):
+                 return_path: Any=None, id: str=''):
 
-        self.rpc_id = rpc_id or b64encode(uuid1().bytes).decode('utf8')
+        self.id = id or b64encode(uuid1().bytes).decode('utf8')
         self.api_name = api_name
         self.procedure_name = procedure_name
         self.kwargs = kwargs
@@ -60,7 +60,7 @@ class RpcMessage(Message):
 
     def get_metadata(self) -> dict:
         return {
-            'rpc_id': self.rpc_id,
+            'id': self.id,
             'api_name': self.api_name,
             'procedure_name': self.procedure_name,
             'return_path': self.return_path or '',
@@ -75,10 +75,10 @@ class RpcMessage(Message):
 
 
 class ResultMessage(Message):
-    required_metadata = ['rpc_id']
+    required_metadata = ['rpc_message_id']
 
-    def __init__(self, *, result, rpc_id, error: bool=False, trace: str=None):
-        self.rpc_id = rpc_id
+    def __init__(self, *, result, rpc_message_id: str, error: bool=False, trace: str=None):
+        self.rpc_message_id = rpc_message_id
 
         if isinstance(result, BaseException):
             self.result = str(result)
@@ -104,7 +104,7 @@ class ResultMessage(Message):
 
     def get_metadata(self) -> dict:
         metadata = {
-            'rpc_id': self.rpc_id,
+            'rpc_message_id': self.rpc_message_id,
             'error': self.error,
         }
         if self.error:

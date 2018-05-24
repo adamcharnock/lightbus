@@ -231,7 +231,7 @@ class BusClient(object):
                 # Used to simulate message failure for testing
                 pass
             else:
-                result_message = ResultMessage(result=result, rpc_id=rpc_message.rpc_id)
+                result_message = ResultMessage(result=result, rpc_message_id=rpc_message.id)
                 await plugin_hook('after_rpc_execution', rpc_message=rpc_message, result_message=result_message,
                                   bus_client=self)
 

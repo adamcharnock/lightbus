@@ -180,7 +180,7 @@ def test_rpc_validate_incoming(create_bus_client_with_unhappy_schema):
 def test_result_validate(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema()
 
-    message = ResultMessage(result='123', rpc_id='123')
+    message = ResultMessage(result='123', rpc_message_id='123')
     with pytest.raises(jsonschema.ValidationError):
         client._validate(message, direction='outgoing', api_name='api', procedure_name='proc')
     jsonschema.validate.assert_called_with('123', {})

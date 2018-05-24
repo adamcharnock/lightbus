@@ -4,7 +4,7 @@ These serializers handle moving data to/from a dictionary
 format. The format looks like this::
 
     # Message metadata first. Each value is implicitly a utf8 string
-    rpc_id: 'ZOCTLh1CEeimW3gxwcOTbg=='
+    id: 'ZOCTLh1CEeimW3gxwcOTbg=='
     api_name: 'my_company.auth'
     procedure_name: 'check_password'
     return_path: 'redis+key://my_company.auth.check_password:result:ZOCTLh1CEeimW3gxwcOTbg=='
