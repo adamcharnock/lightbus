@@ -54,12 +54,12 @@ class TransactionalEventTransport(EventTransport):
         )
 
     async def open(self):
-        self.database = self.database_class.create()
+        self.database = await self.database_class.create()
 
     async def send_event(self, event_message: EventMessage, options: dict):
         assert self.database, 'Transport has not been opened yet'
 
-        await self.database.send_message(event_message)
+        await self.database.send_message(event_message, options)
         await self.publish_pending()  # TODO: Specific ID
 
     async def fetch(self,
@@ -118,7 +118,7 @@ T = TypeVar('T')
 class DatabaseConnection(object):
 
     @staticmethod
-    def create(cls: Type[T]) -> T:
+    async def create(cls: Type[T]) -> T:
         raise NotImplementedError()
 
     async def in_transaction(self) -> bool:
@@ -159,7 +159,7 @@ class DuplicateMessage(Exception): pass
 class DjangoConnection(object):
 
     @classmethod
-    def create(cls: Type[T]) -> T:
+    async def create(cls: Type[T]) -> T:
         if not DJANGO_AVAILABLE:
             raise DjangoNotInstalled(
                 "You are trying to use the Django database for you transactional event transport, "
@@ -169,7 +169,7 @@ class DjangoConnection(object):
         import django.db.connection
         return django.db.connection.get_connection()
 
-    # ... all the othe methods. Need to consult django docs...
+    # ... all the other methods. Need to consult django docs...
 
 
 class DjangoNotInstalled(LightbusException): pass
