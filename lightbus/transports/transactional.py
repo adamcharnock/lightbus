@@ -109,7 +109,7 @@ class TransactionalEventTransport(EventTransport):
     async def publish_pending(self):
         async for message, options in self.database.consume_pending_messages():
             await self.child_transport.send_event(message, options)
-            await self.database.delete_pending_message(message.id)  # TODO: Event messages needs IDs too
+            await self.database.delete_pending_message(message.id)
 
 
 T = TypeVar('T')
