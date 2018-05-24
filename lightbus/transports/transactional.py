@@ -59,7 +59,7 @@ class TransactionalEventTransport(EventTransport):
     async def send_event(self, event_message: EventMessage, options: dict):
         assert self.database, 'Transport has not been opened yet'
 
-        await self.database.send_message(event_message, options)
+        await self.database.send_event(event_message, options)
         await self.publish_pending()  # TODO: Specific ID
 
     async def fetch(self,
@@ -88,13 +88,19 @@ class TransactionalEventTransport(EventTransport):
         for message in consumer:
             try:
                 await self.database.start_transaction()
-                if await self.database.is_message_duplicate(message):
-                    logger.info(f'Duplicate message detected, ignoring. Message ID: {message.id}')
+
+                # Catch duplicate events up-front where possible, rather than
+                # perform the processing and get an integrity error later
+                if await self.database.is_event_duplicate(message):
+                    logger.info(f'Duplicate event detected, ignoring. Event ID: {message.id}')
                     continue
 
-                self.database.store_processed_message(message)
+                self.database.store_processed_event(message)
                 yield message
             except Exception:
+                logger.warning(
+                    f'Error encountered while processing event ID {message.id}. Rolling back transaction.'
+                )
                 await self.database.rollback_transaction()
                 raise
             else:
@@ -102,14 +108,16 @@ class TransactionalEventTransport(EventTransport):
                     await self.database.commit_transaction()
                 except DuplicateMessage:
                     logger.info(
-                        f'Duplicate message discovered upon commit, ignoring. Duplicates were '
-                        f'probably being processed simultaneously. Message ID: {message.id}'
+                        f'Duplicate event discovered upon commit, will rollback transaction. '
+                        f'Duplicates were probably being processed simultaneously, otherwise '
+                        f'this would have been caught earlier. Event ID: {message.id}'
                     )
+                    await self.database.rollback_transaction()
 
     async def publish_pending(self):
-        async for message, options in self.database.consume_pending_messages():
+        async for message, options in self.database.consume_pending_events():
             await self.child_transport.send_event(message, options)
-            await self.database.delete_pending_message(message.id)
+            await self.database.remove_pending_event(message.id)
 
 
 T = TypeVar('T')
@@ -134,29 +142,35 @@ class DatabaseConnection(object):
     async def rollback_transaction(self):
         raise NotImplementedError()
 
-    async def is_message_duplicate(self, message: EventMessage) -> bool:
+    async def is_event_duplicate(self, message: EventMessage) -> bool:
         raise NotImplementedError()
 
-    async def store_processed_message(self, message: EventMessage):
+    async def store_processed_event(self, message: EventMessage):
         # Store message in de-duping table
         raise NotImplementedError()
 
-    async def send_message(self, message: EventMessage, options: dict):
+    async def send_event(self, message: EventMessage, options: dict):
         # Store message in messages-to-be-published table
         raise NotImplementedError()
 
-    async def consume_pending_messages(self, message_id: Optional[str]=None) -> AsyncIterable[Tuple[EventMessage, dict]]:
+    async def consume_pending_events(self, message_id: Optional[str]=None) -> AsyncIterable[Tuple[EventMessage, dict]]:
         # Should lock row in db
         raise NotImplementedError()
 
-    async def delete_pending_message(self, message_id):
+    async def remove_pending_event(self, message_id):
         raise NotImplementedError()
 
 
 class DuplicateMessage(Exception): pass
 
 
-class DjangoConnection(object):
+class Pyscopg2Connection(DatabaseConnection):
+
+    def __init__(self, connection: Foo):
+        self.connection = connection
+
+
+class DjangoConnection(Pyscopg2Connection):
 
     @classmethod
     async def create(cls: Type[T]) -> T:
@@ -167,7 +181,8 @@ class DjangoConnection(object):
                 "want to be using the Django database?"
             )
         import django.db.connection
-        return django.db.connection.get_connection()
+        # Get the underlying django psycopg2 connection
+        return DjangoConnection(connection)
 
     # ... all the other methods. Need to consult django docs...
 
