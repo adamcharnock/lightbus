@@ -138,7 +138,7 @@ class DatabaseConnection(object):
     message_serializer = BlobMessageSerializer()
     message_deserializer = BlobMessageDeserializer(EventMessage)
     options_serializer = partial(json_encode, indent=None, sort_keys=False)
-    options_deserializer = json.loads
+    options_deserializer = staticmethod(json.loads)
 
     @staticmethod
     async def create(cls: Type[T], database_url: str) -> T:
@@ -218,18 +218,18 @@ class AsyncPostgresConnection(DatabaseConnection):
 
     async def commit_transaction(self, transaction: Transaction):
         # TODO: Should raise DuplicateMessage() if unique key on de-duping table is violated
-        transaction.commit()
+        await transaction.commit()
 
     async def rollback_transaction(self, transaction: Transaction):
-        transaction.rollback()
+        await transaction.rollback()
 
     async def is_event_duplicate(self, message: EventMessage) -> bool:
-        sql = 'SELECT EXISTS(SELECT 1 FROM lightbus_processed_events WHERE message_id = ?)'
+        sql = 'SELECT EXISTS(SELECT 1 FROM lightbus_processed_events WHERE message_id = $1)'
         return await self.connection.fetchval(sql, message.id)
 
     async def store_processed_event(self, message: EventMessage):
         # Store message in de-duping table
-        sql = 'INSERT INTO lightbus_processed_events (message_id) VALUES (?)'
+        sql = 'INSERT INTO lightbus_processed_events (message_id) VALUES ($1)'
         await self.connection.execute(sql, message.id)
 
     async def send_event(self, message: EventMessage, options: dict):
@@ -242,7 +242,7 @@ class AsyncPostgresConnection(DatabaseConnection):
                 f"when sending an event on the bus. By default this encoding uses JSON, "
                 f"although this can be customised. The error was: {e}"
             )
-        sql = 'INSERT INTO lightbus_event_outbox (message_id, message, options) VALUES (?, ?, ?)'
+        sql = 'INSERT INTO lightbus_event_outbox (message_id, message, options) VALUES ($1, $2, $3)'
         await self.connection.execute(sql, message.id, self.message_serializer(message), encoded_options)
 
     async def consume_pending_events(self, message_id: Optional[str]=None) \
@@ -251,7 +251,7 @@ class AsyncPostgresConnection(DatabaseConnection):
         while True:
             # Filter be message ID if specified
             if message_id:
-                where = 'WHERE message_id = ?'
+                where = 'WHERE message_id = $1'
                 args = [message_id]
             else:
                 where = ''
@@ -271,7 +271,7 @@ class AsyncPostgresConnection(DatabaseConnection):
                 )
 
     async def remove_pending_event(self, message_id):
-        sql = 'DELETE FROM lightbus_event_outbox WHERE message_id = ?'
+        sql = 'DELETE FROM lightbus_event_outbox WHERE message_id = $1'
         await self.connection.execute(sql, message_id)
 
 

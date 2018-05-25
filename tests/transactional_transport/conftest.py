@@ -22,7 +22,9 @@ def asyncpg_connection(pg_url, loop):
 
 
 @pytest.fixture()
-def asyncpg_database(asyncpg_connection):
+def asyncpg_database(asyncpg_connection, loop):
+    block(asyncpg_connection.execute('DROP TABLE IF EXISTS lightbus_processed_events'), loop=loop, timeout=1)
+    block(asyncpg_connection.execute('DROP TABLE IF EXISTS lightbus_event_outbox'), loop=loop, timeout=1)
     return AsyncPostgresConnection(connection=asyncpg_connection)
 
 
