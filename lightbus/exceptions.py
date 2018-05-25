@@ -135,3 +135,7 @@ class OnlyAvailableOnRootNode(LightbusException):
 
 class UnexpectedConfigurationFormat(LightbusException):
     pass
+
+
+class UnsupportedOptionValue(LightbusException):
+    pass

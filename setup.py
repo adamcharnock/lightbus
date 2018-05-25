@@ -19,6 +19,9 @@ setup(
         'jsonschema==2.6.0',
         'pyyaml>=3.12,<4',
     ],
+    extras_require={
+        'transactions_asyncpg': ['asyncpg>=0.15,<1'],
+    },
     include_package_data=True,
     entry_points={
         'console_scripts': [
