@@ -196,14 +196,14 @@ class AsyncPostgresConnection(DatabaseConnection):
     async def migrate(self):
         # TODO: smarter version handling
         # TODO: cleanup old entries after x time
-        self.connection.execute("""
+        await self.connection.execute("""
             CREATE TABLE IF NOT EXISTS lightbus_processed_events (
                 message_id VARCHAR(100) PRIMARY KEY,
                 processed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             )
         """)
 
-        self.connection.execute("""
+        await self.connection.execute("""
             CREATE TABLE IF NOT EXISTS lightbus_event_outbox (
                 message_id VARCHAR(100) PRIMARY KEY,
                 message JSON,
