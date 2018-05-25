@@ -183,6 +183,7 @@ class AsyncPostgresConnection(DatabaseConnection):
 
     @classmethod
     async def create(cls: Type[T], database_url: str) -> T:
+        # TODO: Taking a database URL probably isn't the right course of action here
         if not asyncpg:
             raise AsyncPgNotInstalled(
                 "The 'asyncpg' dependency has not been installed. You should install this using "
@@ -279,7 +280,7 @@ class AsyncPgNotInstalled(LightbusException): pass
 
 class Pyscopg2Connection(DatabaseConnection):
 
-    def __init__(self, connection: Foo):
+    def __init__(self, connection):
         self.connection = connection
 
 
