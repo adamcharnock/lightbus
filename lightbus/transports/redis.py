@@ -218,7 +218,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
                  result_ttl=60,
                  rpc_timeout=5,
                  ):
-        # NOTE: We use the blob serializer here, as the results come back as values in a list
+        # NOTE: We use the blob message_serializer here, as the results come back as values in a list
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self.serializer = serializer
         self.deserializer = deserializer
