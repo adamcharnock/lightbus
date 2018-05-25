@@ -2,8 +2,12 @@ from datetime import datetime, timezone
 
 from enum import Enum
 
+import pytest
+
 from lightbus.schema.encoder import json_encode
 from lightbus.utilities.frozendict import frozendict
+
+pytestmark = pytest.mark.unit
 
 
 def test_json_encode_datetime():
