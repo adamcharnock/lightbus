@@ -4,6 +4,7 @@ import asyncpg
 import pytest
 
 from lightbus import EventMessage
+from lightbus.exceptions import UnsupportedOptionValue
 from lightbus.transports.transactional import AsyncPostgresConnection
 from tests.transactional_transport.conftest import verification_connection
 
@@ -91,4 +92,24 @@ async def test_send_event_ok(asyncpg_database: AsyncPostgresConnection):
     retrieved_message, options = await asyncpg_database.consume_pending_events(message_id='123').__anext__()
     assert retrieved_message.id == '123'
     assert retrieved_message.get_kwargs() == {'field': 'abc'}
-    assert retrieved_message.get_metadata() == {}
+    assert retrieved_message.get_metadata() == {'api_name': 'api', 'event_name': 'event', 'id': '123'}
+    assert options == {'key': 'value'}
+
+
+@pytest.mark.run_loop
+async def test_send_event_bad_option_value(asyncpg_database: AsyncPostgresConnection):
+    await asyncpg_database.migrate()
+    message = EventMessage(api_name='api', event_name='event', kwargs={'field': 'abc'}, id='123')
+    options = {'key': range(1,100)}  # not json-serializable
+    with pytest.raises(UnsupportedOptionValue):
+        await asyncpg_database.send_event(message, options)
+
+
+@pytest.mark.run_loop
+async def test_remove_pending_event(asyncpg_database: AsyncPostgresConnection):
+    await asyncpg_database.migrate()
+    message = EventMessage(api_name='api', event_name='event', kwargs={'field': 'abc'}, id='123')
+    await asyncpg_database.send_event(message, options={})
+    assert await outbox_size() == 1
+    await asyncpg_database.remove_pending_event(message_id='123')
+    assert await outbox_size() == 0

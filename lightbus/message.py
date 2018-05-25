@@ -107,6 +107,7 @@ class ResultMessage(Message):
 
     def get_metadata(self) -> dict:
         metadata = {
+            'id': self.id,
             'rpc_message_id': self.rpc_message_id,
             'error': self.error,
         }
@@ -148,6 +149,7 @@ class EventMessage(Message):
 
     def get_metadata(self) -> dict:
         return {
+            'id': self.id,
             'api_name': self.api_name,
             'event_name': self.event_name,
         }
