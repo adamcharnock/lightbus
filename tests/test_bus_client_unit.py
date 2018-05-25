@@ -250,6 +250,7 @@ def test_setup_transports_opened(loop, mocker):
 
     lightbus.create(
         rpc_transport=rpc_transport,
+        schema_transport=lightbus.DebugSchemaTransport(),
         loop=loop,
         plugins={},
     )
