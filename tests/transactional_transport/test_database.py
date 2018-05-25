@@ -9,6 +9,9 @@ from lightbus.transports.transactional import AsyncPostgresConnection
 from tests.transactional_transport.conftest import verification_connection
 
 
+# Utility functions
+
+
 async def total_processed_events():
     connection = await verification_connection()
     return await connection.fetchval('SELECT COUNT(*) FROM lightbus_processed_events')
@@ -28,6 +31,8 @@ async def get_outbox():
     connection = await verification_connection()
     return await connection.fetch('SELECT * FROM lightbus_event_outbox')
 
+
+# Tests
 
 
 @pytest.mark.run_loop

@@ -96,9 +96,8 @@ class TransactionalEventTransport(EventTransport):
             **kwargs
         )
         for message in consumer:
+            transaction = await self.database.start_transaction()
             try:
-                await self.database.start_transaction()
-
                 # Catch duplicate events up-front where possible, rather than
                 # perform the processing and get an integrity error later
                 if await self.database.is_event_duplicate(message):
@@ -111,21 +110,21 @@ class TransactionalEventTransport(EventTransport):
                 logger.warning(
                     f'Error encountered while processing event ID {message.id}. Rolling back transaction.'
                 )
-                await self.database.rollback_transaction()
+                await self.database.rollback_transaction(transaction)
                 raise
             else:
                 try:
-                    await self.database.commit_transaction()
+                    await self.database.commit_transaction(transaction)
                 except DuplicateMessage:
                     logger.info(
                         f'Duplicate event discovered upon commit, will rollback transaction. '
                         f'Duplicates were probably being processed simultaneously, otherwise '
                         f'this would have been caught earlier. Event ID: {message.id}'
                     )
-                    await self.database.rollback_transaction()
+                    await self.database.rollback_transaction(transaction)
 
-    async def publish_pending(self):
-        async for message, options in await self.database.consume_pending_events():
+    async def publish_pending(self, message_id=None):
+        async for message, options in await self.database.consume_pending_events(message_id):
             await self.child_transport.send_event(message, options)
             await self.database.remove_pending_event(message.id)
 
