@@ -18,53 +18,57 @@ pytestmark = pytest.mark.unit
 def test_config_as_json_schema():
     schema = config_as_json_schema()
 
-    assert '$schema' in schema
-    assert 'bus' in schema['properties']
-    assert schema['additionalProperties'] == False
-    assert schema['type'] == 'object'
+    assert "$schema" in schema
+    assert "bus" in schema["properties"]
+    assert schema["additionalProperties"] == False
+    assert schema["type"] == "object"
 
 
 def test_config_as_json_schema_bus():
     schema = config_as_json_schema()
-    assert schema['properties']['bus']
+    assert schema["properties"]["bus"]
 
 
 def test_config_as_json_schema_apis():
     schema = config_as_json_schema()
-    assert schema['properties']['apis']
-    assert '.*' in schema['properties']['apis']['patternProperties']
+    assert schema["properties"]["apis"]
+    assert ".*" in schema["properties"]["apis"]["patternProperties"]
 
-    bus_config_schema = schema['properties']['bus']
-    api_config_schema = schema['properties']['apis']['patternProperties']['.*']['properties']
+    bus_config_schema = schema["properties"]["bus"]
+    api_config_schema = schema["properties"]["apis"]["patternProperties"][".*"]["properties"]
 
-    assert api_config_schema['event_transport']['type'] == 'object'
-    assert api_config_schema['rpc_transport']['type'] == 'object'
-    assert api_config_schema['result_transport']['type'] == 'object'
+    assert api_config_schema["event_transport"]["type"] == "object"
+    assert api_config_schema["rpc_transport"]["type"] == "object"
+    assert api_config_schema["result_transport"]["type"] == "object"
 
-    assert api_config_schema['rpc_timeout']['type'] == 'number'
-    assert api_config_schema['event_listener_setup_timeout']['type'] == 'number'
-    assert api_config_schema['event_fire_timeout']['type'] == 'number'
-    assert api_config_schema['validate']['oneOf']
+    assert api_config_schema["rpc_timeout"]["type"] == "number"
+    assert api_config_schema["event_listener_setup_timeout"]["type"] == "number"
+    assert api_config_schema["event_fire_timeout"]["type"] == "number"
+    assert api_config_schema["validate"]["oneOf"]
 
-    assert bus_config_schema['properties']['schema']['properties']['transport']['type'] == 'object'
+    assert bus_config_schema["properties"]["schema"]["properties"]["transport"]["type"] == "object"
 
 
 def test_config_as_json_schema_redis():
     schema = config_as_json_schema()
 
-    bus_config_schema = schema['properties']['bus']
-    api_config_schema = schema['properties']['apis']['patternProperties']['.*']['properties']
+    bus_config_schema = schema["properties"]["bus"]
+    api_config_schema = schema["properties"]["apis"]["patternProperties"][".*"]["properties"]
 
-    redis_rpc_transport = api_config_schema['rpc_transport']['properties']['redis']['oneOf'][0]
-    redis_result_transport = api_config_schema['result_transport']['properties']['redis']['oneOf'][0]
-    redis_event_transport = api_config_schema['event_transport']['properties']['redis']['oneOf'][0]
+    redis_rpc_transport = api_config_schema["rpc_transport"]["properties"]["redis"]["oneOf"][0]
+    redis_result_transport = api_config_schema["result_transport"]["properties"]["redis"]["oneOf"][
+        0
+    ]
+    redis_event_transport = api_config_schema["event_transport"]["properties"]["redis"]["oneOf"][0]
 
-    assert redis_rpc_transport['type'] == 'object'
-    assert redis_result_transport['type'] == 'object'
-    assert redis_event_transport['type'] == 'object'
+    assert redis_rpc_transport["type"] == "object"
+    assert redis_result_transport["type"] == "object"
+    assert redis_event_transport["type"] == "object"
 
-    redis_schema_transport = bus_config_schema['properties']['schema']['properties']['transport']['properties']['redis']['oneOf'][0]
-    assert redis_schema_transport['type'] == 'object'
+    redis_schema_transport = bus_config_schema["properties"]["schema"]["properties"]["transport"][
+        "properties"
+    ]["redis"]["oneOf"][0]
+    assert redis_schema_transport["type"] == "object"
 
 
 def test_config_as_json_schema_dump():
@@ -89,90 +93,71 @@ def test_default_config():
 
 
 def test_load_bus_config(tmp_file):
-    tmp_file.write('bus: { log_level: warning }')
+    tmp_file.write("bus: { log_level: warning }")
     tmp_file.flush()
     config = Config.load_file(tmp_file.name)
-    assert config.bus().log_level == 'warning'
+    assert config.bus().log_level == "warning"
 
 
 def test_mapping_to_named_tuple_ok():
-    root_config = mapping_to_named_tuple({'bus': {'log_level': 'warning'}}, RootConfig)
-    assert root_config.bus.log_level == 'warning'
+    root_config = mapping_to_named_tuple({"bus": {"log_level": "warning"}}, RootConfig)
+    assert root_config.bus.log_level == "warning"
 
 
 def test_mapping_to_named_tuple_apis():
-    root_config = mapping_to_named_tuple({'apis': {'my_api': {'rpc_timeout': 1}}}, RootConfig)
-    assert root_config.apis['my_api'].rpc_timeout == 1
+    root_config = mapping_to_named_tuple({"apis": {"my_api": {"rpc_timeout": 1}}}, RootConfig)
+    assert root_config.apis["my_api"].rpc_timeout == 1
 
 
 def test_mapping_to_named_tuple_unknown_property():
-    root_config = mapping_to_named_tuple({'bus': {'foo': 'xyz'}}, RootConfig)
-    assert not hasattr(root_config.bus, 'foo')
+    root_config = mapping_to_named_tuple({"bus": {"foo": "xyz"}}, RootConfig)
+    assert not hasattr(root_config.bus, "foo")
 
 
 def test_api_config_default():
     config = Config.load_yaml(EXAMPLE_VALID_YAML)
-    assert config.api('foo').event_transport.redis.batch_size == 50
+    assert config.api("foo").event_transport.redis.batch_size == 50
 
 
 def test_api_config_customised():
     config = Config.load_yaml(EXAMPLE_VALID_YAML)
-    assert config.api('my.api').event_transport.redis.batch_size == 1
+    assert config.api("my.api").event_transport.redis.batch_size == 1
 
 
 def test_mapping_to_named_tuple_validate():
-    root_config = mapping_to_named_tuple({'apis': {'my_api': {'validate': {
-        'incoming': True,
-        'outgoing': False,
-    }}}}, RootConfig)
-    assert root_config.apis['my_api'].validate.incoming == True
-    assert root_config.apis['my_api'].validate.outgoing == False
+    root_config = mapping_to_named_tuple(
+        {"apis": {"my_api": {"validate": {"incoming": True, "outgoing": False}}}}, RootConfig
+    )
+    assert root_config.apis["my_api"].validate.incoming == True
+    assert root_config.apis["my_api"].validate.outgoing == False
 
 
 def test_plugin_selector_config():
     config = Config.load_dict({})
-    assert hasattr(config._config.plugins, 'internal_state')
-    assert hasattr(config._config.plugins, 'internal_metrics')
-    assert config.plugin('internal_state').ping_enabled is True
-    assert config.plugin('internal_state').ping_interval > 0
-    assert config.plugin('internal_state').enabled is True
+    assert hasattr(config._config.plugins, "internal_state")
+    assert hasattr(config._config.plugins, "internal_metrics")
+    assert config.plugin("internal_state").ping_enabled is True
+    assert config.plugin("internal_state").ping_interval > 0
+    assert config.plugin("internal_state").enabled is True
 
 
 def test_plugin_selector_custom_config():
-    config = Config.load_dict({
-        'plugins': {
-            'internal_state': {
-                'ping_interval': 123,
-            }
-        }
-    })
-    assert config.plugin('internal_state').ping_interval == 123
+    config = Config.load_dict({"plugins": {"internal_state": {"ping_interval": 123}}})
+    assert config.plugin("internal_state").ping_interval == 123
 
 
 def test_plugin_disabled():
-    config = Config.load_dict({
-        'plugins': {
-            'internal_state': {
-                'enabled': False,
-            }, 'internal_metrics': {
-                'enabled': False,
-            }
-        }
-    })
+    config = Config.load_dict(
+        {"plugins": {"internal_state": {"enabled": False}, "internal_metrics": {"enabled": False}}}
+    )
     plugins = autoload_plugins(config)
     assert not plugins
 
 
 def test_plugin_enabled():
-    config = Config.load_dict({
-        'plugins': {
-            'internal_state': {
-                'enabled': True,
-            }, 'internal_metrics': {
-                'enabled': True,
-            }
-        }
-    })
+    config = Config.load_dict(
+        {"plugins": {"internal_state": {"enabled": True}, "internal_metrics": {"enabled": True}}}
+    )
     plugins = autoload_plugins(config)
     assert plugins
 

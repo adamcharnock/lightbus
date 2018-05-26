@@ -14,7 +14,11 @@ import sys
 import lightbus
 from lightbus.exceptions import InvalidApiForSchemaCreation, InvalidSchema, SchemaNotFound
 from lightbus.schema.encoder import json_encode
-from lightbus.schema.hints_to_schema import make_response_schema, make_rpc_parameter_schema, make_event_parameter_schema
+from lightbus.schema.hints_to_schema import (
+    make_response_schema,
+    make_rpc_parameter_schema,
+    make_event_parameter_schema,
+)
 from lightbus.transports.base import SchemaTransport
 from lightbus.utilities.io import make_file_safe_api_name
 
@@ -33,8 +37,12 @@ class Schema(object):
 
     """
 
-    def __init__(self, schema_transport: 'SchemaTransport',
-                 max_age_seconds: Optional[int]=60, human_readable: bool=True):
+    def __init__(
+        self,
+        schema_transport: "SchemaTransport",
+        max_age_seconds: Optional[int] = 60,
+        human_readable: bool = True,
+    ):
         self.schema_transport = schema_transport
         self.max_age_seconds = max_age_seconds
         self.human_readable = human_readable
@@ -51,7 +59,7 @@ class Schema(object):
     def __contains__(self, item):
         return item in self.local_schemas or item in self.remote_schemas
 
-    async def add_api(self, api: 'Api'):
+    async def add_api(self, api: "Api"):
         """Adds an API locally, and sends to to the transport"""
         schema = api_to_schema(api)
         self.local_schemas[api.meta.name] = schema
@@ -63,14 +71,14 @@ class Schema(object):
         if not api_schema:
             # TODO: Add link to docs in error message
             raise SchemaNotFound(
-                'No schema could be found for API {}. You should ensure that either this '
-                'API is being served by another lightbus process, or you can load this schema manually.'
-                ''.format(api_name)
+                "No schema could be found for API {}. You should ensure that either this "
+                "API is being served by another lightbus process, or you can load this schema manually."
+                "".format(api_name)
             )
         return api_schema
 
     def get_event_schema(self, api_name, event_name):
-        event_schemas = self.get_api_schema(api_name)['events']
+        event_schemas = self.get_api_schema(api_name)["events"]
         try:
             return event_schemas[event_name]
         except KeyError:
@@ -80,7 +88,7 @@ class Schema(object):
             )
 
     def get_rpc_schema(self, api_name, rpc_name):
-        rpc_schemas = self.get_api_schema(api_name)['rpcs']
+        rpc_schemas = self.get_api_schema(api_name)["rpcs"]
         try:
             return rpc_schemas[rpc_name]
         except KeyError:
@@ -113,7 +121,7 @@ class Schema(object):
         This will raise an `jsonschema.ValidationError` exception on error,
         or return None if valid.
         """
-        json_schema = self.get_event_or_rpc_schema(api_name, event_or_rpc_name)['parameters']
+        json_schema = self.get_event_or_rpc_schema(api_name, event_or_rpc_name)["parameters"]
         jsonschema.validate(parameters, json_schema)
 
     def validate_response(self, api_name, rpc_name, response):
@@ -125,7 +133,7 @@ class Schema(object):
         Note that only RPCs have responses. Accessing this property for an
         event will result in a SchemaNotFound error.
         """
-        json_schema = self.get_rpc_schema(api_name, rpc_name)['response']
+        json_schema = self.get_rpc_schema(api_name, rpc_name)["response"]
         jsonschema.validate(response, json_schema)
 
     @property
@@ -156,14 +164,16 @@ class Schema(object):
                 await asyncio.sleep(interval)
                 # Keep alive our local schemas
                 for api_name, schema in self.local_schemas.items():
-                    await self.schema_transport.ping(api_name, schema, ttl_seconds=self.max_age_seconds)
+                    await self.schema_transport.ping(
+                        api_name, schema, ttl_seconds=self.max_age_seconds
+                    )
 
                 # Read the entire schema back from the bus
                 await self.load_from_bus()
         except asyncio.CancelledError:
             return
 
-    def save_local(self, destination: Union[str, Path, TextIO]=None):
+    def save_local(self, destination: Union[str, Path, TextIO] = None):
         """Save all present schemas to a local file
 
         This will save both local & remote schemas to a local file
@@ -173,14 +183,14 @@ class Schema(object):
 
         if destination is None:
             self._dump_to_file(sys.stdout)
-            sys.stdout.write('\n')
+            sys.stdout.write("\n")
         elif destination.is_dir():
             self._dump_to_directory(destination)
         else:
-            with destination.open('w', encoding='utf8') as f:
+            with destination.open("w", encoding="utf8") as f:
                 self._dump_to_file(f)
 
-    def load_local(self, source: Union[str, Path, TextIO]=None):
+    def load_local(self, source: Union[str, Path, TextIO] = None):
         """Load schemas from a local file
 
         These files will be treated as local schemas, and will not be sent to the bus.
@@ -193,27 +203,27 @@ class Schema(object):
             try:
                 return json.loads(file_data)
             except JSONDecodeError as e:
-                raise InvalidSchema('Could not parse schema file {}: {}'.format(path, e.msg))
+                raise InvalidSchema("Could not parse schema file {}: {}".format(path, e.msg))
 
         if source is None:
             # No source, read from stdin
-            schema = _load_schema('[stdin]', sys.stdin.read())
-        elif hasattr(source, 'is_dir') and source.is_dir():
+            schema = _load_schema("[stdin]", sys.stdin.read())
+        elif hasattr(source, "is_dir") and source.is_dir():
             # Read each json file in directory
             schemas = []
-            for file_path in source.glob('*.json'):
-                schemas.append(_load_schema(file_path, file_path.read_text(encoding='utf8')))
+            for file_path in source.glob("*.json"):
+                schemas.append(_load_schema(file_path, file_path.read_text(encoding="utf8")))
             schema = ChainMap(*schemas)
-        elif hasattr(source, 'read'):
+        elif hasattr(source, "read"):
             # Read file handle
             schema = _load_schema(source.name, source.read())
-        elif hasattr(source, 'read_text'):
+        elif hasattr(source, "read_text"):
             # Read pathlib Path
             schema = _load_schema(source.name, source.read_text())
         else:
             raise InvalidSchema(
-                'Did not recognise provided source as either a '
-                'directory path, file path, or file handle: {}'.format(source)
+                "Did not recognise provided source as either a "
+                "directory path, file path, or file handle: {}".format(source)
             )
 
         for api_name, api_schema in schema.items():
@@ -223,8 +233,8 @@ class Schema(object):
 
     def _dump_to_directory(self, destination: Path):
         for api_name in self.api_names:
-            file_name = '{}.json'.format(make_file_safe_api_name(api_name))
-            (destination / file_name).write_text(self._get_dump(api_name), encoding='utf8')
+            file_name = "{}.json".format(make_file_safe_api_name(api_name))
+            (destination / file_name).write_text(self._get_dump(api_name), encoding="utf8")
 
     def _dump_to_file(self, f):
         f.write(self._get_dump())
@@ -244,10 +254,9 @@ class Parameter(inspect.Parameter):
     empty = inspect.Parameter.empty
 
     def __init__(self, name, annotation=empty, *, default=empty):
-        super(Parameter, self).__init__(name, inspect.Parameter.KEYWORD_ONLY,
-                                        default=default,
-                                        annotation=annotation
-                                        )
+        super(Parameter, self).__init__(
+            name, inspect.Parameter.KEYWORD_ONLY, default=default, annotation=annotation
+        )
 
 
 class WildcardParameter(inspect.Parameter):
@@ -258,18 +267,12 @@ class WildcardParameter(inspect.Parameter):
 
     def __init__(self):
         super(WildcardParameter, self).__init__(
-            name='kwargs',
-            kind=inspect.Parameter.VAR_KEYWORD,
-            default={},
-            annotation=dict
+            name="kwargs", kind=inspect.Parameter.VAR_KEYWORD, default={}, annotation=dict
         )
 
 
-def api_to_schema(api: 'lightbus.Api') -> dict:
-    schema = {
-        'rpcs': {},
-        'events': {},
-    }
+def api_to_schema(api: "lightbus.Api") -> dict:
+    schema = {"rpcs": {}, "events": {}}
 
     if isinstance(api, type):
         raise InvalidApiForSchemaCreation(
@@ -279,7 +282,7 @@ def api_to_schema(api: 'lightbus.Api') -> dict:
         )
 
     for member_name, member in inspect.getmembers(api):
-        if member_name.startswith('_'):
+        if member_name.startswith("_"):
             # Don't create schema from private methods
             continue
         if hasattr(lightbus.Api, member_name):
@@ -287,13 +290,13 @@ def api_to_schema(api: 'lightbus.Api') -> dict:
             continue
 
         if inspect.ismethod(member):
-            schema['rpcs'][member_name] = {
-                'parameters': make_rpc_parameter_schema(api.meta.name, member_name, method=member),
-                'response': make_response_schema(api.meta.name, member_name, method=member),
+            schema["rpcs"][member_name] = {
+                "parameters": make_rpc_parameter_schema(api.meta.name, member_name, method=member),
+                "response": make_response_schema(api.meta.name, member_name, method=member),
             }
         elif isinstance(member, lightbus.Event):
-            schema['events'][member_name] = {
-                'parameters': make_event_parameter_schema(api.meta.name, member_name, event=member),
+            schema["events"][member_name] = {
+                "parameters": make_event_parameter_schema(api.meta.name, member_name, event=member)
             }
 
     return schema
@@ -301,8 +304,4 @@ def api_to_schema(api: 'lightbus.Api') -> dict:
 
 def _parameter_names(parameters) -> set:
     """Take a list of parameters (as strings or Parameter) and return a list of parameter names"""
-    return {
-        p.name if isinstance(p, Parameter) else p
-        for p
-        in parameters
-    }
+    return {p.name if isinstance(p, Parameter) else p for p in parameters}

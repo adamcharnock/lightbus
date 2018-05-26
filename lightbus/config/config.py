@@ -25,23 +25,23 @@ class Config(object):
     will normally have a default catch-all definition, but can be customised
     on a per-api basis.
     """
-    _config: 'RootConfig'
+    _config: "RootConfig"
 
-    def __init__(self, root_config: 'RootConfig'):
+    def __init__(self, root_config: "RootConfig"):
         self._config = root_config
 
-    def bus(self) -> 'BusConfig':
+    def bus(self) -> "BusConfig":
         return self._config.bus
 
-    def api(self, api_name=None) -> 'ApiConfig':
+    def api(self, api_name=None) -> "ApiConfig":
         """Returns config for the given API
 
         If there is no API-specific config available for the
         given api_name, then the root API config will be returned.
         """
-        return self._config.apis.get(api_name, None) or self._config.apis['default']
+        return self._config.apis.get(api_name, None) or self._config.apis["default"]
 
-    def apis(self) -> Dict[str, 'ApiConfig']:
+    def apis(self) -> Dict[str, "ApiConfig"]:
         return self._config.apis
 
     def plugin(self, plugin_name) -> NamedTuple:
@@ -55,9 +55,9 @@ class Config(object):
         file will be parsed as YAML.
         """
         file_path = Path(file_path)
-        encoded_config = file_path.read_text(encoding='utf8')
+        encoded_config = file_path.read_text(encoding="utf8")
 
-        if file_path.name.endswith('.json'):
+        if file_path.name.endswith(".json"):
             return cls.load_json(encoded_config)
         else:
             return cls.load_yaml(encoded_config)
@@ -84,13 +84,12 @@ class Config(object):
     def load_dict(cls, config: dict, set_defaults=True):
         """Instantiate the config from a dictionary"""
         from .structure import RootConfig
+
         config = config.copy()
         if set_defaults:
             config = set_default_config(config)
         validate_config(config)
-        return cls(
-            root_config=mapping_to_named_tuple(config, RootConfig)
-        )
+        return cls(root_config=mapping_to_named_tuple(config, RootConfig))
 
     def __getattr__(self, item):
         if hasattr(self._config, item):
@@ -108,25 +107,26 @@ def validate_config(config: dict):
 def config_as_json_schema() -> dict:
     """Get the configuration structure as a json schema"""
     from .structure import RootConfig
+
     schema, = python_type_to_json_schemas(RootConfig)
-    schema['$schema'] = SCHEMA_URI
+    schema["$schema"] = SCHEMA_URI
     return schema
 
 
 def set_default_config(config: dict) -> dict:
-    config.setdefault('apis', {})
-    config.setdefault('bus', {})
-    config['apis'].setdefault('default', {})
-    config['bus'].setdefault('schema', {})
+    config.setdefault("apis", {})
+    config.setdefault("bus", {})
+    config["apis"].setdefault("default", {})
+    config["bus"].setdefault("schema", {})
 
-    config['apis']['default'].setdefault('rpc_transport', {'redis': {}})
-    config['apis']['default'].setdefault('result_transport', {'redis': {}})
-    config['apis']['default'].setdefault('event_transport', {'redis': {}})
-    config['bus']['schema'].setdefault('transport', {'redis': {}})
+    config["apis"]["default"].setdefault("rpc_transport", {"redis": {}})
+    config["apis"]["default"].setdefault("result_transport", {"redis": {}})
+    config["apis"]["default"].setdefault("event_transport", {"redis": {}})
+    config["bus"]["schema"].setdefault("transport", {"redis": {}})
     return config
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
@@ -140,6 +140,7 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
     expected configuration structures.
     """
     import lightbus.config.structure
+
     hints = get_type_hints(named_tuple, None, lightbus.config.structure.__dict__)
     parameters = {}
 
@@ -154,8 +155,13 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
             continue
 
         # Is this an Optional[] hint (which looks like Union[Thing, None)
-        subs_tree = hint._subs_tree() if hasattr(hint, '_subs_tree') else None
-        if type(hint) == type(Union) and len(subs_tree) == 3 and subs_tree[2] == type(None) and value is not None:
+        subs_tree = hint._subs_tree() if hasattr(hint, "_subs_tree") else None
+        if (
+            type(hint) == type(Union)
+            and len(subs_tree) == 3
+            and subs_tree[2] == type(None)
+            and value is not None
+        ):
             hint = subs_tree[1]
 
         if is_namedtuple(hint):
@@ -173,6 +179,6 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
 def is_namedtuple(v):
     """Figuring out if an object is a named tuple is not as trivial as one may expect"""
     try:
-        return issubclass(v, tuple) and hasattr(v, '_fields')
+        return issubclass(v, tuple) and hasattr(v, "_fields")
     except TypeError:
         return False

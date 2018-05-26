@@ -9,6 +9,7 @@ Event = object  # A simple event/signal system
 
 # client.py
 
+
 class AuthApi(Api):
     user_registered = Event()
     user_account_closed = Event()
@@ -18,6 +19,7 @@ class AuthApi(Api):
 
     def check_password(self, password: str) -> bool:
         pass
+
 
 api = AuthApi.as_client()
 
@@ -29,13 +31,11 @@ class AuthImplementation(AuthApi):  # Inherits from client definition
 
     def get_user(self, username: str) -> dict:
         # Actual implementation
-        return {
-            'name': 'Test User',
-            'email': 'test@example.com',
-        }
+        return {"name": "Test User", "email": "test@example.com"}
 
     def check_password(self, password: str) -> dict:
-        return (password == 'Passw0rd!')
+        return password == "Passw0rd!"
+
 
 api = AuthImplementation.as_server()
 
@@ -46,19 +46,18 @@ api = AuthImplementation.as_server()
 
 # client_server.py
 
+
 class AuthImplementation(Api):
     user_registered = Event()
     user_account_closed = Event()
 
     def get_user(self, username: str) -> dict:
         # Actual implementation
-        return {
-            'name': 'Test User',
-            'email': 'test@example.com',
-        }
+        return {"name": "Test User", "email": "test@example.com"}
 
     def check_password(self, password: str) -> dict:
-        return password == 'Passw0rd!'
+        return password == "Passw0rd!"
+
 
 client = AuthImplementation.as_client()
 server = AuthImplementation.as_server()
@@ -84,10 +83,11 @@ server = AuthImplementation.as_server()
 apis = [
     SparePartsApi.as_server(),  # This is the spare parts application, so serve its API
     AuthApi.as_client(),  # We need the Auth API in order to authenticate clients
-    CustomersApi.as_client(only=['support_ticket_opened']),  # Select only certain events
-    MetricsApi.as_client(exclude=['page_view']),  # Filter out high-volume events we don't care about
+    CustomersApi.as_client(only=["support_ticket_opened"]),  # Select only certain events
+    MetricsApi.as_client(
+        exclude=["page_view"]
+    ),  # Filter out high-volume events we don't care about
 ]
 
 # Warren would be able to read this list of APIs and setup the necessary AMQP bindings.
 # Each API gets its own queue to avoid high activity on one API blocking all others.
-

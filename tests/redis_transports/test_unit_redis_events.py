@@ -6,8 +6,12 @@ import pytest
 
 from lightbus.config import Config
 from lightbus.message import EventMessage
-from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeserializer, BlobMessageSerializer, \
-    BlobMessageDeserializer
+from lightbus.serializers import (
+    ByFieldMessageSerializer,
+    ByFieldMessageDeserializer,
+    BlobMessageSerializer,
+    BlobMessageDeserializer,
+)
 from lightbus.transports.redis import RedisEventTransport, StreamUse
 from lightbus.utilities.async import cancel
 
@@ -24,75 +28,75 @@ async def test_connection_manager(redis_event_transport):
 
 @pytest.mark.run_loop
 async def test_send_event(redis_event_transport: RedisEventTransport, redis_client):
-    await redis_event_transport.send_event(EventMessage(
-        api_name='my.api',
-        event_name='my_event',
-        kwargs={'field': 'value'},
-    ), options={})
-    messages = await redis_client.xrange('my.api.my_event:stream')
+    await redis_event_transport.send_event(
+        EventMessage(api_name="my.api", event_name="my_event", kwargs={"field": "value"}),
+        options={},
+    )
+    messages = await redis_client.xrange("my.api.my_event:stream")
     assert len(messages) == 1
     assert messages[0][1] == {
-        b'api_name': b'my.api',
-        b'event_name': b'my_event',
-        b':field': b'"value"',
+        b"api_name": b"my.api",
+        b"event_name": b"my_event",
+        b":field": b'"value"',
     }
 
 
 @pytest.mark.run_loop
 async def test_send_event_per_api_stream(redis_event_transport: RedisEventTransport, redis_client):
     redis_event_transport.stream_use = StreamUse.PER_API
-    await redis_event_transport.send_event(EventMessage(
-        api_name='my.api',
-        event_name='my_event',
-        kwargs={'field': 'value'},
-    ), options={})
-    messages = await redis_client.xrange('my.api.*:stream')
+    await redis_event_transport.send_event(
+        EventMessage(api_name="my.api", event_name="my_event", kwargs={"field": "value"}),
+        options={},
+    )
+    messages = await redis_client.xrange("my.api.*:stream")
     assert len(messages) == 1
     assert messages[0][1] == {
-        b'api_name': b'my.api',
-        b'event_name': b'my_event',
-        b':field': b'"value"',
+        b"api_name": b"my.api",
+        b"event_name": b"my_event",
+        b":field": b'"value"',
     }
 
 
 @pytest.mark.run_loop
-async def test_consume_events(loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+async def test_consume_events(
+    loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
+):
+
     async def co_enqeue():
         await asyncio.sleep(0.1)
-        return await redis_client.xadd('my.dummy.my_event:stream', fields={
-            b'api_name': b'my.dummy',
-            b'event_name': b'my_event',
-            b':field': b'"value"',
-        })
+        return await redis_client.xadd(
+            "my.dummy.my_event:stream",
+            fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+        )
 
     async def co_consume():
-        async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')], {}, loop):
+        async for message_ in redis_event_transport.consume([("my.dummy", "my_event")], {}, loop):
             return message_
 
     enqueue_result, message = await asyncio.gather(co_enqeue(), co_consume())
-    assert message.api_name == 'my.dummy'
-    assert message.event_name == 'my_event'
-    assert message.kwargs == {'field': 'value'}
+    assert message.api_name == "my.dummy"
+    assert message.event_name == "my_event"
+    assert message.kwargs == {"field": "value"}
 
 
 @pytest.mark.run_loop
-async def test_consume_events_multiple_consumers(loop, redis_event_transport: RedisEventTransport,
-                                                 redis_client, dummy_api):
+async def test_consume_events_multiple_consumers(
+    loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
+):
     messages = []
 
     async def co_consume():
-        async for message_ in redis_event_transport.consume([('my.dummy', 'my_event')], {}, loop):
+        async for message_ in redis_event_transport.consume([("my.dummy", "my_event")], {}, loop):
             messages.append(message_)
 
     task1 = asyncio.ensure_future(co_consume())
     task2 = asyncio.ensure_future(co_consume())
 
     await asyncio.sleep(0.1)
-    await redis_client.xadd('my.dummy.my_event:stream', fields={
-        b'api_name': b'my.dummy',
-        b'event_name': b'my_event',
-        b':field': b'"value"',
-    })
+    await redis_client.xadd(
+        "my.dummy.my_event:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+    )
     await asyncio.sleep(0.1)
 
     # Two messages, to dummy values which indicate events have been acked
@@ -102,20 +106,22 @@ async def test_consume_events_multiple_consumers(loop, redis_event_transport: Re
 
 
 @pytest.mark.run_loop
-async def test_consume_events_multiple_consumers_one_group(loop, redis_pool, redis_client, dummy_api):
+async def test_consume_events_multiple_consumers_one_group(
+    loop, redis_pool, redis_client, dummy_api
+):
     messages = []
 
     async def co_consume(consumer_number):
         event_transport = RedisEventTransport(
             redis_pool=redis_pool,
-            consumer_group_prefix='test_cg',
-            consumer_name=f'test_consumer{consumer_number}'
+            consumer_group_prefix="test_cg",
+            consumer_name=f"test_consumer{consumer_number}",
         )
         consumer = event_transport.consume(
-            listen_for=[('my.dummy', 'my_event')],
+            listen_for=[("my.dummy", "my_event")],
             context={},
             loop=loop,
-            consumer_group='single_group'
+            consumer_group="single_group",
         )
         async for message_ in consumer:
             messages.append(message_)
@@ -124,11 +130,10 @@ async def test_consume_events_multiple_consumers_one_group(loop, redis_pool, red
     task2 = asyncio.ensure_future(co_consume(2), loop=loop)
     await asyncio.sleep(0.1)
 
-    await redis_client.xadd('my.dummy.my_event:stream', fields={
-        b'api_name': b'my.dummy',
-        b'event_name': b'my_event',
-        b':field': b'"value"',
-    })
+    await redis_client.xadd(
+        "my.dummy.my_event:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+    )
     await asyncio.sleep(0.1)
     await cancel(task1, task2)
 
@@ -136,102 +141,85 @@ async def test_consume_events_multiple_consumers_one_group(loop, redis_pool, red
     assert len(messages) == 2
 
 
-
 @pytest.mark.run_loop
-async def test_consume_events_since_id(loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+async def test_consume_events_since_id(
+    loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
+):
     await redis_client.xadd(
-        'my.dummy.my_event:stream',
-        fields={
-            b'api_name': b'my.dummy',
-            b'event_name': b'my_event',
-            b':field': b'"1"',
-        },
-        message_id='1515000001000-0',
+        "my.dummy.my_event:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"1"'},
+        message_id="1515000001000-0",
     )
     await redis_client.xadd(
-        'my.dummy.my_event:stream',
-        fields={
-            b'api_name': b'my.dummy',
-            b'event_name': b'my_event',
-            b':field': b'"2"',
-        },
-        message_id='1515000002000-0',
+        "my.dummy.my_event:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"2"'},
+        message_id="1515000002000-0",
     )
     await redis_client.xadd(
-        'my.dummy.my_event:stream',
-        fields={
-            b'api_name': b'my.dummy',
-            b'event_name': b'my_event',
-            b':field': b'"3"',
-        },
-        message_id='1515000003000-0',
+        "my.dummy.my_event:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"3"'},
+        message_id="1515000003000-0",
     )
 
-    consumer = redis_event_transport.consume([('my.dummy', 'my_event')], {}, since='1515000001500-0',
-                                             forever=False, loop=loop)
+    consumer = redis_event_transport.consume(
+        [("my.dummy", "my_event")], {}, since="1515000001500-0", forever=False, loop=loop
+    )
 
     yields = []
 
     async def co():
         async for m in consumer:
             yields.append(m)
+
     asyncio.ensure_future(co())
     await asyncio.sleep(0.1)
 
     assert len(yields) == 4
-    assert yields[0].kwargs['field'] == '2'
+    assert yields[0].kwargs["field"] == "2"
     assert yields[1] is True
-    assert yields[2].kwargs['field'] == '3'
+    assert yields[2].kwargs["field"] == "3"
     assert yields[3] is True
 
 
 @pytest.mark.run_loop
-async def test_consume_events_since_datetime(loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+async def test_consume_events_since_datetime(
+    loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
+):
     await redis_client.xadd(
-        'my.dummy.my_event:stream',
-        fields={
-            b'api_name': b'my.dummy',
-            b'event_name': b'my_event',
-            b':field': b'"1"',
-        },
-        message_id='1515000001000-0',
+        "my.dummy.my_event:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"1"'},
+        message_id="1515000001000-0",
     )
     await redis_client.xadd(
-        'my.dummy.my_event:stream',
-        fields={
-            b'api_name': b'my.dummy',
-            b'event_name': b'my_event',
-            b':field': b'"2"',
-        },
-        message_id='1515000002000-0',
+        "my.dummy.my_event:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"2"'},
+        message_id="1515000002000-0",
     )
     await redis_client.xadd(
-        'my.dummy.my_event:stream',
-        fields={
-            b'api_name': b'my.dummy',
-            b'event_name': b'my_event',
-            b':field': b'"3"',
-        },
-        message_id='1515000003000-0',
+        "my.dummy.my_event:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"3"'},
+        message_id="1515000003000-0",
     )
 
     # 1515000001500-0 -> 2018-01-03T17:20:01.500Z
     since_datetime = datetime(2018, 1, 3, 17, 20, 1, 500)
-    consumer = redis_event_transport.consume([('my.dummy', 'my_event')], {}, since=since_datetime,
-                                             forever=False, loop=loop)
+    consumer = redis_event_transport.consume(
+        [("my.dummy", "my_event")], {}, since=since_datetime, forever=False, loop=loop
+    )
 
     yields = []
 
     async def co():
         async for m in consumer:
             yields.append(m)
+
     asyncio.ensure_future(co())
     await asyncio.sleep(0.1)
 
     assert len(yields) == 4
-    assert yields[0].kwargs['field'] == '2'
+    assert yields[0].kwargs["field"] == "2"
     assert yields[1] is True
-    assert yields[2].kwargs['field'] == '3'
+    assert yields[2].kwargs["field"] == "3"
     assert yields[3] is True
 
 
@@ -241,18 +229,18 @@ async def test_from_config(redis_client):
     host, port = redis_client.address
     transport = RedisEventTransport.from_config(
         config=Config.load_dict({}),
-        url=f'redis://127.0.0.1:{port}/5',
+        url=f"redis://127.0.0.1:{port}/5",
         connection_parameters=dict(maxsize=123),
         batch_size=123,
         # Non default serializers, event though they wouldn't make sense in this context
-        serializer='lightbus.serializers.BlobMessageSerializer',
-        deserializer='lightbus.serializers.BlobMessageDeserializer',
+        serializer="lightbus.serializers.BlobMessageSerializer",
+        deserializer="lightbus.serializers.BlobMessageDeserializer",
     )
     with await transport.connection_manager() as transport_client:
-        assert transport_client.connection.address == ('127.0.0.1', port)
+        assert transport_client.connection.address == ("127.0.0.1", port)
         assert transport_client.connection.db == 5
-        await transport_client.set('x', 1)
-        assert await redis_client.get('x')
+        await transport_client.set("x", 1)
+        assert await redis_client.get("x")
 
     assert transport._redis_pool.connection.maxsize == 123
     assert isinstance(transport.serializer, BlobMessageSerializer)
@@ -264,67 +252,67 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
     """Test that messages which another consumer has timed out on can be reclaimed"""
 
     # Add a message
-    await redis_client.xadd('my.dummy.my_event:stream', fields={
-        b'api_name': b'my.dummy',
-        b'event_name': b'my_event',
-        b':field': b'"value"',
-    })
+    await redis_client.xadd(
+        "my.dummy.my_event:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+    )
     # Create the consumer group
-    await redis_client.xgroup_create('my.dummy.my_event:stream', 'test_group', latest_id='0')
+    await redis_client.xgroup_create("my.dummy.my_event:stream", "test_group", latest_id="0")
 
     # Claim it in the name of another consumer
     await redis_client.xread_group(
-        'test_group', 'bad_consumer', ['my.dummy.my_event:stream'], latest_ids=[0]
+        "test_group", "bad_consumer", ["my.dummy.my_event:stream"], latest_ids=[0]
     )
     # Sleep a moment to fake a short timeout
     await asyncio.sleep(0.02)
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
-        consumer_group_prefix='test_group',
-        consumer_name='good_consumer',
+        consumer_group_prefix="test_group",
+        consumer_name="good_consumer",
         acknowledgement_timeout=0.01,  # in ms, short for the sake of testing
     )
     reclaimer = event_transport._reclaim_lost_messages(
-        stream_names=['my.dummy.my_event:stream'],
-        consumer_group='test_group',
-        expected_events={'my_event'},
+        stream_names=["my.dummy.my_event:stream"],
+        consumer_group="test_group",
+        expected_events={"my_event"},
     )
     reclaimed_messages = [m async for m in reclaimer]
     assert len(reclaimed_messages) == 1
 
 
 @pytest.mark.run_loop
-async def test_reclaim_lost_messages_ignores_non_timed_out_messages(loop, redis_client, redis_pool, dummy_api):
+async def test_reclaim_lost_messages_ignores_non_timed_out_messages(
+    loop, redis_client, redis_pool, dummy_api
+):
     """Ensure messages which have not timed out are not reclaimed"""
 
     # Add a message
-    await redis_client.xadd('my.dummy.my_event:stream', fields={
-        b'api_name': b'my.dummy',
-        b'event_name': b'my_event',
-        b':field': b'"value"',
-    })
+    await redis_client.xadd(
+        "my.dummy.my_event:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+    )
     # Create the consumer group
-    await redis_client.xgroup_create('my.dummy.my_event:stream', 'test_group', latest_id='0')
+    await redis_client.xgroup_create("my.dummy.my_event:stream", "test_group", latest_id="0")
 
     # Claim it in the name of another consumer
     await redis_client.xread_group(
-        'test_group', 'bad_consumer', ['my.dummy.my_event:stream'], latest_ids=[0]
+        "test_group", "bad_consumer", ["my.dummy.my_event:stream"], latest_ids=[0]
     )
     # Sleep a moment to fake a short timeout
     await asyncio.sleep(0.02)
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
-        consumer_group_prefix='test_group',
-        consumer_name='good_consumer',
+        consumer_group_prefix="test_group",
+        consumer_name="good_consumer",
         # in ms, longer as we want to check that the messages is not reclaimed
         acknowledgement_timeout=0.9,
     )
     reclaimer = event_transport._reclaim_lost_messages(
-        stream_names=['my.dummy.my_event:stream'],
-        consumer_group='test_group',
-        expected_events={'my_event'},
+        stream_names=["my.dummy.my_event:stream"],
+        consumer_group="test_group",
+        expected_events={"my_event"},
     )
     reclaimed_messages = [m async for m in reclaimer]
     assert len(reclaimed_messages) == 0
@@ -338,36 +326,36 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
     """
 
     # Add a message
-    await redis_client.xadd('my.dummy.my_event:stream', fields={
-        b'api_name': b'my.dummy',
-        b'event_name': b'my_event',
-        b':field': b'"value"',
-    })
+    await redis_client.xadd(
+        "my.dummy.my_event:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+    )
     # Create the consumer group
-    await redis_client.xgroup_create('my.dummy.my_event:stream', 'test_group', latest_id='0')
+    await redis_client.xgroup_create("my.dummy.my_event:stream", "test_group", latest_id="0")
 
     # Claim it in the name of another consumer
     await redis_client.xread_group(
-        'test_group', 'bad_consumer', ['my.dummy.my_event:stream'], latest_ids=[0]
+        "test_group", "bad_consumer", ["my.dummy.my_event:stream"], latest_ids=[0]
     )
     # Sleep a moment to fake a short timeout
     await asyncio.sleep(0.02)
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
-        consumer_group_prefix='',
-        consumer_name='good_consumer',
+        consumer_group_prefix="",
+        consumer_name="good_consumer",
         acknowledgement_timeout=0.01,  # in ms, short for the sake of testing
     )
     consumer = event_transport.consume(
-        listen_for=[('my.dummy', 'my_event')],
-        since='0',
+        listen_for=[("my.dummy", "my_event")],
+        since="0",
         loop=loop,
         context={},
-        consumer_group='test_group',
+        consumer_group="test_group",
     )
 
     messages = []
+
     async def consume():
         async for message in consumer:
             messages.append(message)
@@ -384,33 +372,31 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
     """
 
     # Add a message
-    await redis_client.xadd('my.dummy.my_event:stream', fields={
-        b'api_name': b'my.dummy',
-        b'event_name': b'my_event',
-        b':field': b'"value"',
-    })
+    await redis_client.xadd(
+        "my.dummy.my_event:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+    )
     # Create the consumer group
-    await redis_client.xgroup_create('my.dummy.my_event:stream', 'test_group', latest_id='0')
+    await redis_client.xgroup_create("my.dummy.my_event:stream", "test_group", latest_id="0")
 
     # Claim it in the name of ourselves
     await redis_client.xread_group(
-        'test_group', 'good_consumer', ['my.dummy.my_event:stream'], latest_ids=[0]
+        "test_group", "good_consumer", ["my.dummy.my_event:stream"], latest_ids=[0]
     )
 
     event_transport = RedisEventTransport(
-        redis_pool=redis_pool,
-        consumer_group_prefix='',
-        consumer_name='good_consumer',
+        redis_pool=redis_pool, consumer_group_prefix="", consumer_name="good_consumer"
     )
     consumer = event_transport.consume(
-        listen_for=[('my.dummy', 'my_event')],
-        since='0',
+        listen_for=[("my.dummy", "my_event")],
+        since="0",
         loop=loop,
         context={},
-        consumer_group='test_group',
+        consumer_group="test_group",
     )
 
     messages = []
+
     async def consume():
         async for message in consumer:
             messages.append(message)
@@ -418,27 +404,30 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
     task = asyncio.ensure_future(consume(), loop=loop)
     await asyncio.sleep(0.1)
     assert len(messages) == 1
-    assert messages[0].api_name == 'my.dummy'
-    assert messages[0].event_name == 'my_event'
-    assert messages[0].kwargs == {'field': 'value'}
+    assert messages[0].api_name == "my.dummy"
+    assert messages[0].event_name == "my_event"
+    assert messages[0].kwargs == {"field": "value"}
 
     await cancel(task)
 
 
 @pytest.mark.run_loop
-async def test_consume_events_create_consumer_group_first(loop, redis_client, redis_event_transport, dummy_api):
+async def test_consume_events_create_consumer_group_first(
+    loop, redis_client, redis_event_transport, dummy_api
+):
     """Create the consumer group before the stream exists
 
     This should create a noop message which gets ignored by the event transport
     """
     consumer = redis_event_transport.consume(
-        listen_for=[('my.dummy', 'my_event')],
-        since='0',
+        listen_for=[("my.dummy", "my_event")],
+        since="0",
         loop=loop,
         context={},
-        consumer_group='test_group',
+        consumer_group="test_group",
     )
     messages = []
+
     async def consume():
         async for message in consumer:
             messages.append(message)
@@ -458,68 +447,67 @@ async def test_max_len_truncating(redis_event_transport: RedisEventTransport, re
     caplog.set_level(logging.WARNING)
     redis_event_transport.max_stream_length = 100
     for x in range(0, 200):
-        await redis_event_transport.send_event(EventMessage(
-            api_name='my.api',
-            event_name='my_event',
-            kwargs={'field': 'value'},
-        ), options={})
-    messages = await redis_client.xrange('my.api.my_event:stream')
+        await redis_event_transport.send_event(
+            EventMessage(api_name="my.api", event_name="my_event", kwargs={"field": "value"}),
+            options={},
+        )
+    messages = await redis_client.xrange("my.api.my_event:stream")
     assert len(messages) >= 100
     assert len(messages) < 150
 
 
 @pytest.mark.run_loop
-async def test_max_len_set_to_none(redis_event_transport: RedisEventTransport, redis_client, caplog):
+async def test_max_len_set_to_none(
+    redis_event_transport: RedisEventTransport, redis_client, caplog
+):
     """Make sure the event stream does not get truncated when
     max_stream_length = None
     """
     caplog.set_level(logging.WARNING)
     redis_event_transport.max_stream_length = None
     for x in range(0, 200):
-        await redis_event_transport.send_event(EventMessage(
-            api_name='my.api',
-            event_name='my_event',
-            kwargs={'field': 'value'},
-        ), options={})
-    messages = await redis_client.xrange('my.api.my_event:stream')
+        await redis_event_transport.send_event(
+            EventMessage(api_name="my.api", event_name="my_event", kwargs={"field": "value"}),
+            options={},
+        )
+    messages = await redis_client.xrange("my.api.my_event:stream")
     assert len(messages) == 200
 
 
 @pytest.mark.run_loop
-async def test_consume_events_per_api_stream(loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+async def test_consume_events_per_api_stream(
+    loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
+):
     redis_event_transport.stream_use = StreamUse.PER_API
 
     event_names = []
+
     async def co_consume(event_name):
-        consumer = redis_event_transport.consume([('my.dummy', event_name)], {}, loop)
+        consumer = redis_event_transport.consume([("my.dummy", event_name)], {}, loop)
         async for message_ in consumer:
             event_names.append(message_.event_name)
             await consumer.__anext__()
 
-
-    task1 = asyncio.ensure_future(co_consume('my_event1'))
-    task2 = asyncio.ensure_future(co_consume('my_event2'))
-    task3 = asyncio.ensure_future(co_consume('my_event3'))
+    task1 = asyncio.ensure_future(co_consume("my_event1"))
+    task2 = asyncio.ensure_future(co_consume("my_event2"))
+    task3 = asyncio.ensure_future(co_consume("my_event3"))
     await asyncio.sleep(0.1)
 
-    await redis_client.xadd('my.dummy.*:stream', fields={
-        b'api_name': b'my.dummy',
-        b'event_name': b'my_event1',
-        b':field': b'"value"',
-    })
-    await redis_client.xadd('my.dummy.*:stream', fields={
-        b'api_name': b'my.dummy',
-        b'event_name': b'my_event2',
-        b':field': b'"value"',
-    })
-    await redis_client.xadd('my.dummy.*:stream', fields={
-        b'api_name': b'my.dummy',
-        b'event_name': b'my_event3',
-        b':field': b'"value"',
-    })
+    await redis_client.xadd(
+        "my.dummy.*:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event1", b":field": b'"value"'},
+    )
+    await redis_client.xadd(
+        "my.dummy.*:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event2", b":field": b'"value"'},
+    )
+    await redis_client.xadd(
+        "my.dummy.*:stream",
+        fields={b"api_name": b"my.dummy", b"event_name": b"my_event3", b":field": b'"value"'},
+    )
     await asyncio.sleep(0.1)
 
     assert len(event_names) == 3
-    assert set(event_names) == {'my_event1', 'my_event2', 'my_event3'}
+    assert set(event_names) == {"my_event1", "my_event2", "my_event3"}
 
     await cancel(task1, task2, task3)

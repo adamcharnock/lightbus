@@ -8,7 +8,12 @@ from collections import OrderedDict
 
 import lightbus
 from lightbus.schema.schema import Parameter
-from lightbus.exceptions import PluginsNotLoaded, PluginHookNotFound, InvalidPlugins, LightbusShutdownInProgress
+from lightbus.exceptions import (
+    PluginsNotLoaded,
+    PluginHookNotFound,
+    InvalidPlugins,
+    LightbusShutdownInProgress,
+)
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
@@ -18,23 +23,23 @@ if False:
 
 _plugins = None
 _hooks_names = []
-ENTRYPOINT_NAME = 'lightbus_plugins'
+ENTRYPOINT_NAME = "lightbus_plugins"
 
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class PluginMetaclass(type):
 
     def __new__(mcs, name, bases, attrs, **kwds):
         cls = super().__new__(mcs, name, bases, attrs)
-        if not hasattr(cls, f'{name}Config') and hasattr(cls, 'from_config'):
+        if not hasattr(cls, f"{name}Config") and hasattr(cls, "from_config"):
             cls.Config = make_from_config_structure(
                 class_name=name,
                 from_config_method=cls.from_config,
-                extra_parameters=[Parameter('enabled', bool, default=True)],
+                extra_parameters=[Parameter("enabled", bool, default=True)],
             )
         return cls
 
@@ -47,7 +52,7 @@ class LightbusPlugin(object, metaclass=PluginMetaclass):
         return cls()
 
     def __str__(self):
-        return '{}.{}'.format(self.__class__.__module__, self.__class__.__name__)
+        return "{}.{}".format(self.__class__.__module__, self.__class__.__name__)
 
     async def before_parse_args(self, *, parser: ArgumentParser, subparsers: _ArgumentGroup):
         """
@@ -65,38 +70,62 @@ class LightbusPlugin(object, metaclass=PluginMetaclass):
         """
         pass
 
-    async def before_server_start(self, *, bus_client: 'lightbus.bus.BusClient'):
+    async def before_server_start(self, *, bus_client: "lightbus.bus.BusClient"):
         pass
 
-    async def after_server_stopped(self, *, bus_client: 'lightbus.bus.BusClient'):
+    async def after_server_stopped(self, *, bus_client: "lightbus.bus.BusClient"):
         pass
 
-    async def before_rpc_call(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def before_rpc_call(
+        self, *, rpc_message: RpcMessage, bus_client: "lightbus.bus.BusClient"
+    ):
         pass
 
-    async def after_rpc_call(self, *, rpc_message: RpcMessage, result_message: ResultMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def after_rpc_call(
+        self,
+        *,
+        rpc_message: RpcMessage,
+        result_message: ResultMessage,
+        bus_client: "lightbus.bus.BusClient",
+    ):
         pass
 
-    async def before_rpc_execution(self, *, rpc_message: RpcMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def before_rpc_execution(
+        self, *, rpc_message: RpcMessage, bus_client: "lightbus.bus.BusClient"
+    ):
         pass
 
-    async def after_rpc_execution(self, *, rpc_message: RpcMessage, result_message: ResultMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def after_rpc_execution(
+        self,
+        *,
+        rpc_message: RpcMessage,
+        result_message: ResultMessage,
+        bus_client: "lightbus.bus.BusClient",
+    ):
         pass
 
-    async def before_event_sent(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def before_event_sent(
+        self, *, event_message: EventMessage, bus_client: "lightbus.bus.BusClient"
+    ):
         pass
 
-    async def after_event_sent(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def after_event_sent(
+        self, *, event_message: EventMessage, bus_client: "lightbus.bus.BusClient"
+    ):
         pass
 
-    async def before_event_execution(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def before_event_execution(
+        self, *, event_message: EventMessage, bus_client: "lightbus.bus.BusClient"
+    ):
         pass
 
-    async def after_event_execution(self, *, event_message: EventMessage, bus_client: 'lightbus.bus.BusClient'):
+    async def after_event_execution(
+        self, *, event_message: EventMessage, bus_client: "lightbus.bus.BusClient"
+    ):
         pass
 
 
-def autoload_plugins(config: 'Config', force=False):
+def autoload_plugins(config: "Config", force=False):
     global _plugins, _hooks_names
     load_hook_names()
 
@@ -111,11 +140,7 @@ def autoload_plugins(config: 'Config', force=False):
     for name, cls in find_plugins().items():
         plugin_config = config.plugin(name)
         if plugin_config.enabled:
-            _plugins[name] = instantiate_plugin(
-                config=config,
-                plugin_config=plugin_config,
-                cls=cls,
-            )
+            _plugins[name] = instantiate_plugin(config=config, plugin_config=plugin_config, cls=cls)
     return _plugins
 
 
@@ -134,9 +159,9 @@ def find_plugins() -> Dict[str, Type[LightbusPlugin]]:
     return plugins
 
 
-def instantiate_plugin(config: 'Config', plugin_config: NamedTuple, cls: Type[LightbusPlugin]):
+def instantiate_plugin(config: "Config", plugin_config: NamedTuple, cls: Type[LightbusPlugin]):
     options = plugin_config._asdict()
-    options.pop('enabled')
+    options.pop("enabled")
     return cls.from_config(config=config, **options)
 
 
@@ -158,7 +183,7 @@ def manually_set_plugins(plugins: Dict[str, LightbusPlugin]):
 def load_hook_names():
     """Load a list of valid hook names"""
     global _hooks_names
-    _hooks_names = [k for k in LightbusPlugin.__dict__ if not k.startswith('_')]
+    _hooks_names = [k for k in LightbusPlugin.__dict__ if not k.startswith("_")]
 
 
 def remove_all_plugins():
@@ -183,31 +208,32 @@ def is_plugin_loaded(plugin_class: Type[LightbusPlugin]):
 async def plugin_hook(name, **kwargs):
     global _plugins
     if _plugins is None:
-        raise PluginsNotLoaded("You must call load_plugins() before calling plugin_hook('{}').".format(name))
+        raise PluginsNotLoaded(
+            "You must call load_plugins() before calling plugin_hook('{}').".format(name)
+        )
     if name not in _hooks_names:
-        raise PluginHookNotFound("Plugin hook '{}' could not be found. Must be one of: {}".format(
-            name,
-            ', '.join(_hooks_names)
-        ))
+        raise PluginHookNotFound(
+            "Plugin hook '{}' could not be found. Must be one of: {}".format(
+                name, ", ".join(_hooks_names)
+            )
+        )
 
     return_values = []
     for plugin in _plugins.values():
         handler = getattr(plugin, name, None)
         if handler:
             try:
-                return_values.append(
-                    await handler(**kwargs)
-                )
+                return_values.append(await handler(**kwargs))
             except asyncio.CancelledError:
                 raise
             except LightbusShutdownInProgress as e:
-                logger.info('Shutdown in progress: {}'.format(e))
+                logger.info("Shutdown in progress: {}".format(e))
             except Exception as e:
-                logger.error('Exception while executing plugin hook {}.{}.{}'.format(
-                    plugin.__module__,
-                    plugin.__class__.__name__,
-                    name
-                ))
+                logger.error(
+                    "Exception while executing plugin hook {}.{}.{}".format(
+                        plugin.__module__, plugin.__class__.__name__, name
+                    )
+                )
                 logger.exception(e)
                 traceback.print_exc()
 

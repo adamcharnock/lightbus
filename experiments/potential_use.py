@@ -4,13 +4,13 @@
 from mycompany.common.auth import api
 
 # Blocking calls
-user_info = api.get_user(username='testuser')
-password_ok = api.check_passsword(password='Passw0rd1')
+user_info = api.get_user(username="testuser")
+password_ok = api.check_passsword(password="Passw0rd1")
 api.user_registered.listen(my_callback)
 
 # Parallel calls
-async_result1 = api.get_user.async(username='testuser')
-async_result2 = api.check_passsword.async(password='Passw0rd1')
+async_result1 = api.get_user.async(username="testuser")
+async_result2 = api.check_passsword.async(password="Passw0rd1")
 user_info = async_result1.wait()
 password_ok = async_result2.wait()
 
@@ -31,11 +31,11 @@ api.debug.enable()
 api.debug.disable()
 # Enables/disables debugging for calls using this api instance
 
-api.debug.info('get_user')
+api.debug.info("get_user")
 # Shows: number of consumers, consumer information, last call timestamp, last call args, last call response,
 # last handled by
 
-api.debug.trace('get_user', username='testuser')
+api.debug.trace("get_user", username="testuser")
 # Shows:
 #     - "WARNING: Only works when working with other warren consumers & producers"
 #     - Total number of handlers listening for this api call/event [1]

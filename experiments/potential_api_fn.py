@@ -1,5 +1,6 @@
 # api.py
 
+
 @method()
 def resize_image(data: bytes) -> dict:
     pass
@@ -20,5 +21,3 @@ def resize_image(data: bytes) -> dict:
 # Cons:
 #   - IDE's won't warn about definition/implementation signatures not matching
 #   - Not DRY
-
-

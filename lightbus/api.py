@@ -1,16 +1,22 @@
 from typing import Dict
 
-from lightbus.exceptions import UnknownApi, InvalidApiRegistryEntry, EventNotFound, MisconfiguredApiOptions
+from lightbus.exceptions import (
+    UnknownApi,
+    InvalidApiRegistryEntry,
+    EventNotFound,
+    MisconfiguredApiOptions,
+)
 
 
-__all__ = ['Api', 'Event']
+__all__ = ["Api", "Event"]
 
 
 class Registry(object):
+
     def __init__(self):
         self._apis: Dict[str, Api] = dict()
 
-    def add(self, api: 'Api'):
+    def add(self, api: "Api"):
         if isinstance(api, type):
             raise InvalidApiRegistryEntry(
                 "An attempt was made to add a type to the API registry. This "
@@ -20,7 +26,7 @@ class Registry(object):
 
         self._apis[api.meta.name] = api
 
-    def get(self, name) -> 'Api':
+    def get(self, name) -> "Api":
         try:
             return self._apis[name]
         except KeyError:
@@ -53,18 +59,18 @@ class ApiOptions(object):
 
     def __init__(self, options):
         for k, v in options.items():
-            if not k.startswith('_'):
+            if not k.startswith("_"):
                 setattr(self, k, v)
 
 
 class ApiMetaclass(type):
 
     def __init__(cls, name, bases=None, dict=None):
-        is_api_base_class = (name == 'Api' and bases == (object,))
+        is_api_base_class = name == "Api" and bases == (object,)
         if is_api_base_class:
             super(ApiMetaclass, cls).__init__(name, bases, dict)
         else:
-            options = dict.get('Meta', None)
+            options = dict.get("Meta", None)
             if options is None:
                 raise MisconfiguredApiOptions(
                     f"API class {name} does not contain a class named 'Meta'. Each API definition "
@@ -79,14 +85,14 @@ class ApiMetaclass(type):
             if cls.meta.auto_register:
                 registry.add(cls())
 
-            if cls.meta.name == 'default' or cls.meta.name.startswith('default.'):
+            if cls.meta.name == "default" or cls.meta.name.startswith("default."):
                 raise MisconfiguredApiOptions(
                     f"API class {name} is named 'default', or starts with 'default.'. "
                     f"This is a reserved name and is not allowed, please change it to something else."
                 )
 
     def sanity_check_options(cls, name, options):
-        if not getattr(options, 'name', None):
+        if not getattr(options, "name", None):
             raise MisconfiguredApiOptions(
                 "API class {} does not specify a name option with its "
                 "'Meta' options."
@@ -102,7 +108,7 @@ class Api(object, metaclass=ApiMetaclass):
     async def call(self, procedure_name, kwargs):
         return getattr(self, procedure_name)(**kwargs)
 
-    def get_event(self, name) -> 'Event':
+    def get_event(self, name) -> "Event":
         event = getattr(self, name, None)
         if isinstance(event, Event):
             return event

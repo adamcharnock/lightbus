@@ -15,7 +15,7 @@ empty = inspect.Signature.empty
 logger = logging.getLogger(__name__)
 
 
-SCHEMA_URI = 'http://json-schema.org/draft-04/schema#'
+SCHEMA_URI = "http://json-schema.org/draft-04/schema#"
 
 
 def make_rpc_parameter_schema(api_name, method_name, method):
@@ -23,7 +23,7 @@ def make_rpc_parameter_schema(api_name, method_name, method):
     """
     parameters = inspect.signature(method).parameters.values()
     schema = make_parameter_schema(parameters)
-    schema['title'] = 'RPC {}.{}() parameters'.format(api_name, method_name)
+    schema["title"] = "RPC {}.{}() parameters".format(api_name, method_name)
     return schema
 
 
@@ -32,17 +32,17 @@ def make_response_schema(api_name: str, method_name: str, method: Callable):
     """
     sig = inspect.signature(method)
     schema = return_type_to_schema(sig.return_annotation)
-    schema['title'] = 'RPC {}.{}() response'.format(api_name, method_name)
-    schema['$schema'] = SCHEMA_URI
+    schema["title"] = "RPC {}.{}() response".format(api_name, method_name)
+    schema["$schema"] = SCHEMA_URI
     return schema
 
 
-def make_event_parameter_schema(api_name, method_name, event: 'lightbus.Event'):
+def make_event_parameter_schema(api_name, method_name, event: "lightbus.Event"):
     """Create a full parameter JSON schema for the given event
     """
     parameters = _normalise_event_parameters(event.parameters)
     schema = make_parameter_schema(parameters)
-    schema['title'] = 'Event {}.{} parameters'.format(api_name, method_name)
+    schema["title"] = "Event {}.{} parameters".format(api_name, method_name)
     return schema
 
 
@@ -50,29 +50,33 @@ def make_parameter_schema(parameters: Sequence[inspect.Parameter]):
     """Create a full JSON schema for the given parameters
     """
     parameter_schema = {
-        '$schema': SCHEMA_URI,
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {},
-        'required': [],
+        "$schema": SCHEMA_URI,
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {},
+        "required": [],
     }
 
     for parameter in parameters:
         if parameter.kind in (parameter.POSITIONAL_ONLY, parameter.VAR_POSITIONAL):
-            logger.warning('Positional-only arguments are not supported in event or RPC parameters: {}'.format(parameter))
+            logger.warning(
+                "Positional-only arguments are not supported in event or RPC parameters: {}".format(
+                    parameter
+                )
+            )
             continue
 
         if parameter.kind == parameter.VAR_KEYWORD:
-            parameter_schema['additionalProperties'] = True
+            parameter_schema["additionalProperties"] = True
             continue
 
-        parameter_schema['properties'][parameter.name] = parameter_to_schema(parameter)
+        parameter_schema["properties"][parameter.name] = parameter_to_schema(parameter)
         if parameter.default is empty:
-            parameter_schema['required'].append(parameter.name)
+            parameter_schema["required"].append(parameter.name)
 
     # required key should not be present if it is empty
-    if not parameter_schema['required']:
-        parameter_schema.pop('required')
+    if not parameter_schema["required"]:
+        parameter_schema.pop("required")
 
     return parameter_schema
 
@@ -91,7 +95,7 @@ def parameter_to_schema(parameter):
     schemas = []
     for type_schema in type_schemas:
         if parameter.default is not empty:
-            type_schema['default'] = parameter.default
+            type_schema["default"] = parameter.default
         schemas.append(type_schema)
 
     return wrap_with_one_of(schemas)
@@ -140,7 +144,7 @@ def python_type_to_json_schemas(type_):
     """
     is_class = inspect.isclass(type_)
 
-    if hasattr(type_, '_subs_tree') and isinstance(type_._subs_tree(), Sequence):
+    if hasattr(type_, "_subs_tree") and isinstance(type_._subs_tree(), Sequence):
         subs_tree = type_._subs_tree()
     else:
         subs_tree = None
@@ -153,20 +157,24 @@ def python_type_to_json_schemas(type_):
     elif type_ in (Any, ...):
         return [{}]
     elif is_class and issubclass(type_, (str, bytes, Decimal, complex)):
-        return [{'type': 'string'}]
-    elif is_class and issubclass(type_, (bool, )):
-        return [{'type': 'boolean'}]
+        return [{"type": "string"}]
+    elif is_class and issubclass(type_, (bool,)):
+        return [{"type": "boolean"}]
     elif is_class and issubclass(type_, (int, float)):
-        return [{'type': 'number'}]
-    elif is_class and issubclass(type_, (Mapping, )) and subs_tree and subs_tree[1] == str:
+        return [{"type": "number"}]
+    elif is_class and issubclass(type_, (Mapping,)) and subs_tree and subs_tree[1] == str:
         # Mapping with strings as keys
-        return [{
-            'type': 'object',
-            'patternProperties': {'.*': wrap_with_one_of(python_type_to_json_schemas(subs_tree[2]))}
-        }]
+        return [
+            {
+                "type": "object",
+                "patternProperties": {
+                    ".*": wrap_with_one_of(python_type_to_json_schemas(subs_tree[2]))
+                },
+            }
+        ]
     elif is_class and issubclass(type_, (dict, Mapping)):
-        return [{'type': 'object'}]
-    elif is_class and issubclass(type_, tuple) and hasattr(type_, '_fields'):
+        return [{"type": "object"}]
+    elif is_class and issubclass(type_, tuple) and hasattr(type_, "_fields"):
         # Named tuple
         return [make_custom_object_schema(type_, property_names=type_._fields)]
     elif is_class and issubclass(type_, Enum) and type_.__members__:
@@ -174,38 +182,42 @@ def python_type_to_json_schemas(type_):
         enum_first_value = list(type_.__members__.values())[0].value
         schema = {}
         try:
-            schema['type'] = python_type_to_json_schemas(type(enum_first_value))[0]['type']
-            schema['enum'] = [v.value for v in type_.__members__.values()]
+            schema["type"] = python_type_to_json_schemas(type(enum_first_value))[0]["type"]
+            schema["enum"] = [v.value for v in type_.__members__.values()]
         except KeyError:
-            logger.warning(f'Could not determine type for values in enum: {type_}')
+            logger.warning(f"Could not determine type for values in enum: {type_}")
         return [schema]
     elif type(type_) == type(Tuple) and len(subs_tree) > 1:
         sub_types = subs_tree[1:]
-        return [{
-            'type': 'array',
-            'maxItems': len(sub_types),
-            'minItems': len(sub_types),
-            'items': [wrap_with_one_of(python_type_to_json_schemas(sub_type)) for sub_type in sub_types]
-        }]
+        return [
+            {
+                "type": "array",
+                "maxItems": len(sub_types),
+                "minItems": len(sub_types),
+                "items": [
+                    wrap_with_one_of(python_type_to_json_schemas(sub_type))
+                    for sub_type in sub_types
+                ],
+            }
+        ]
     elif is_class and issubclass(type_, (list, tuple)):
-        return [{'type': 'array'}]
+        return [{"type": "array"}]
     elif is_class and issubclass(type_, NoneType):
-        return [{'type': 'null'}]
+        return [{"type": "null"}]
     elif is_class and issubclass(type_, (datetime.datetime)):
-        return [{
-            'type': 'string',
-            'pattern': '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|[Zz])?$',
-        }]
+        return [
+            {
+                "type": "string",
+                "pattern": "^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|[Zz])?$",
+            }
+        ]
     elif is_class and issubclass(type_, (datetime.date)):
-        return [{
-            'type': 'string',
-            'pattern': '^\d{4}-\d\d-\d\d$',
-        }]
-    elif is_class and getattr(type_, '__annotations__', None):
+        return [{"type": "string", "pattern": "^\d{4}-\d\d-\d\d$"}]
+    elif is_class and getattr(type_, "__annotations__", None):
         # Custom class
         return [make_custom_object_schema(type_)]
     else:
-        logger.warning('Could not convert python type to json schema type: {}'.format(type_))
+        logger.warning("Could not convert python type to json schema type: {}".format(type_))
         return [{}]
 
 
@@ -219,7 +231,9 @@ def make_custom_object_schema(type_, property_names=None):
     general classes.
     """
     if property_names is None:
-        property_names = [p for p in set(list(type_.__annotations__.keys()) + dir(type_)) if p[0] != '_']
+        property_names = [
+            p for p in set(list(type_.__annotations__.keys()) + dir(type_)) if p[0] != "_"
+        ]
 
     properties = {}
     required = []
@@ -228,7 +242,7 @@ def make_custom_object_schema(type_, property_names=None):
 
         if issubclass(type_, tuple):
             # namedtuple
-            if hasattr(type_, '_field_defaults'):
+            if hasattr(type_, "_field_defaults"):
                 default = type_._field_defaults.get(property_name, empty)
         else:
             default = getattr(type_, property_name, empty)
@@ -236,11 +250,9 @@ def make_custom_object_schema(type_, property_names=None):
         if callable(default):
             default = empty
 
-        if hasattr(type_, '__annotations__'):
+        if hasattr(type_, "__annotations__"):
             properties[property_name] = wrap_with_one_of(
-                python_type_to_json_schemas(
-                    type_.__annotations__.get(property_name, None)
-                )
+                python_type_to_json_schemas(type_.__annotations__.get(property_name, None))
             )
         elif default is not empty:
             properties[property_name] = wrap_with_one_of(python_type_to_json_schemas(type(default)))
@@ -250,19 +262,19 @@ def make_custom_object_schema(type_, property_names=None):
         if default is empty:
             required.append(property_name)
         else:
-            properties[property_name]['default'] = default
+            properties[property_name]["default"] = default
 
     schema = {
-        'type': 'object',
-        'title': type_.__name__,
-        'properties': properties,
-        'required': required,
-        'additionalProperties': False,
+        "type": "object",
+        "title": type_.__name__,
+        "properties": properties,
+        "required": required,
+        "additionalProperties": False,
     }
 
     # required key should not be present if it is empty
-    if not schema['required']:
-        schema.pop('required')
+    if not schema["required"]:
+        schema.pop("required")
 
     return schema
 
@@ -272,7 +284,7 @@ def wrap_with_one_of(schemas: Sequence):
     if len(schemas) == 1:
         return schemas[0]
     else:
-        return {'oneOf': schemas}
+        return {"oneOf": schemas}
 
 
 def _normalise_event_parameters(parameters: Sequence) -> Sequence:

@@ -10,55 +10,46 @@ customisation in the long term.
 import logging
 import sys
 
-__all__ = ('escape_codes', 'default_log_colors', 'LightbusFormatter')
+__all__ = ("escape_codes", "default_log_colors", "LightbusFormatter")
 
 # The default colors to use for the debug levels
 default_log_colors = {
-    'DEBUG': 'white',
-    'INFO': 'green',
-    'WARNING': 'yellow',
-    'ERROR': 'red',
-    'CRITICAL': 'bold_red',
+    "DEBUG": "white",
+    "INFO": "green",
+    "WARNING": "yellow",
+    "ERROR": "red",
+    "CRITICAL": "bold_red",
 }
 
 # The default format to use for each style
 default_formats = {
-    '%': '%(log_color)s%(levelname)s:%(name)s:%(message)s',
-    '{': '{log_color}{levelname}:{name}:{message}',
-    '$': '${log_color}${levelname}:${name}:${message}'
+    "%": "%(log_color)s%(levelname)s:%(name)s:%(message)s",
+    "{": "{log_color}{levelname}:{name}:{message}",
+    "$": "${log_color}${levelname}:${name}:${message}",
 }
+
 
 def esc(*x):
-    return '\033[' + ';'.join(x) + 'm'
+    return "\033[" + ";".join(x) + "m"
 
 
-escape_codes = {
-    'reset': esc('0'),
-    'bold': esc('01'),
-    'thin': esc('02')
-}
+escape_codes = {"reset": esc("0"), "bold": esc("01"), "thin": esc("02")}
 
 # The color names
-COLORS = [
-    'black',
-    'red',
-    'green',
-    'yellow',
-    'blue',
-    'purple',
-    'cyan',
-    'white'
-]
+COLORS = ["black", "red", "green", "yellow", "blue", "purple", "cyan", "white"]
 
 PREFIXES = [
     # Foreground without prefix
-    ('3', ''), ('01;3', 'bold_'), ('02;3', 'thin_'),
-
+    ("3", ""),
+    ("01;3", "bold_"),
+    ("02;3", "thin_"),
     # Foreground with fg_ prefix
-    ('3', 'fg_'), ('01;3', 'fg_bold_'), ('02;3', 'fg_thin_'),
-
+    ("3", "fg_"),
+    ("01;3", "fg_bold_"),
+    ("02;3", "fg_thin_"),
     # Background with bg_ prefix - bold/light works differently
-    ('4', 'bg_'), ('10', 'bg_bold_'),
+    ("4", "bg_"),
+    ("10", "bg_bold_"),
 ]
 
 for prefix, prefix_name in PREFIXES:
@@ -68,7 +59,7 @@ for prefix, prefix_name in PREFIXES:
 
 def parse_colors(sequence):
     """Return escape codes from a color sequence."""
-    return ''.join(escape_codes[n] for n in sequence.split(',') if n)
+    return "".join(escape_codes[n] for n in sequence.split(",") if n)
 
 
 class LightbusLogRecord(object):
@@ -82,7 +73,7 @@ class LightbusLogRecord(object):
     def __init__(self, record):
         """Add attributes from the escape_codes dict and the record."""
         self.is_tty = True
-        self.additional_line_prefix = ''
+        self.additional_line_prefix = ""
         self.msg_cb = None
         record.name = record.name.ljust(30)
 
@@ -95,7 +86,7 @@ class LightbusLogRecord(object):
 
     def getMessage(self):
         # Render the message if necessary (i.e. because it is an instance of the L class)
-        if hasattr(self.msg, 'render'):
+        if hasattr(self.msg, "render"):
             self.msg = self.msg.render(
                 tty=self.is_tty,
                 additional_line_prefix=self.additional_line_prefix,
@@ -119,9 +110,16 @@ class LightbusFormatter(logging.Formatter):
     Intended to help in creating more readable logging output.
     """
 
-    def __init__(self, fmt=None, datefmt=None, style='%',
-                 log_colors=None, reset=True,
-                 secondary_log_colors=None, stream=None):
+    def __init__(
+        self,
+        fmt=None,
+        datefmt=None,
+        style="%",
+        log_colors=None,
+        reset=True,
+        secondary_log_colors=None,
+        stream=None,
+    ):
         """
         Set the format and colors the LightbusFormatter will use.
 
@@ -154,8 +152,7 @@ class LightbusFormatter(logging.Formatter):
         self.stream = stream or sys.stdout
         reset = reset and self.stream.isatty()
 
-        self.log_colors = (
-            log_colors if log_colors is not None else default_log_colors)
+        self.log_colors = log_colors if log_colors is not None else default_log_colors
         self.secondary_log_colors = secondary_log_colors
         self.reset = reset
         self.style = style
@@ -178,7 +175,7 @@ class LightbusFormatter(logging.Formatter):
         if self.secondary_log_colors:
             for name, log_colors in self.secondary_log_colors.items():
                 color = self.color(log_colors, record.levelname)
-                setattr(record, name + '_log_color', color)
+                setattr(record, name + "_log_color", color)
 
         # Set format for this particular log level
         if isinstance(self.fmt, dict):
@@ -186,8 +183,7 @@ class LightbusFormatter(logging.Formatter):
             # Update self._style because we've changed self._fmt
             # (code based on stdlib's logging.Formatter.__init__())
             if self.style not in logging._STYLES:
-                raise ValueError('Style must be one of: %s' % ','.join(
-                    logging._STYLES.keys()))
+                raise ValueError("Style must be one of: %s" % ",".join(logging._STYLES.keys()))
             self._style = logging._STYLES[self.style][0](self._fmt)
 
         # Format the message
@@ -196,25 +192,23 @@ class LightbusFormatter(logging.Formatter):
 
         # Add a reset code to the end of the message
         # (if it wasn't explicitly added in format str)
-        if self.reset and not message.endswith(escape_codes['reset']):
-            message += escape_codes['reset']
+        if self.reset and not message.endswith(escape_codes["reset"]):
+            message += escape_codes["reset"]
 
         return message
 
     def get_additional_line_prefix(self, record):
-        fmt_before_msg = self._fmt.split('%(msg)s', 1)
+        fmt_before_msg = self._fmt.split("%(msg)s", 1)
         if len(fmt_before_msg) == 1:
             return 0
         formatted_prefix = fmt_before_msg[0] % {
-            k: '' if 'color' in k else ' ' * len(str(v))
-            for k, v
-            in record.__dict__.items()
+            k: "" if "color" in k else " " * len(str(v)) for k, v in record.__dict__.items()
         }
         return formatted_prefix
 
 
 class L(object):
-    style = ''
+    style = ""
 
     def __init__(self, log_message, *values):
         self.log_message = log_message
@@ -226,12 +220,11 @@ class L(object):
     def __repr__(self):
         return repr(self.__str__())
 
-    def render(self, parent_style='', style='', tty=True, additional_line_prefix='', msg_cb=None):
+    def render(self, parent_style="", style="", tty=True, additional_line_prefix="", msg_cb=None):
         style = style or self.style
         keys = [
-            v.render(parent_style=style, tty=tty) if hasattr(v, 'render') else v
-            for v in
-            self.values
+            v.render(parent_style=style, tty=tty) if hasattr(v, "render") else v
+            for v in self.values
         ]
         if tty:
             msg = str(self.log_message)
@@ -239,31 +232,31 @@ class L(object):
                 msg = str(self.log_message).format(*keys)
             if msg_cb:
                 msg = msg_cb(msg, is_tty=tty)
-            return style + msg + escape_codes['reset'] + parent_style
+            return style + msg + escape_codes["reset"] + parent_style
         else:
             return str(self.log_message).format(*keys)
 
 
 class Bold(L):
-    style = escape_codes['bold']
+    style = escape_codes["bold"]
 
 
 class LBullets(L):
 
-    def __init__(self, log_message, *values, items, bullet='∙', indent=4):
+    def __init__(self, log_message, *values, items, bullet="∙", indent=4):
         super().__init__(log_message, *values)
         self.items = items
         self.bullet = bullet
         self.indent = indent
 
-    def render(self, parent_style='', style='', tty=True, additional_line_prefix='', msg_cb=None):
+    def render(self, parent_style="", style="", tty=True, additional_line_prefix="", msg_cb=None):
         if not tty:
-            return '{}: {}'.format(self.log_message, ', '.join(self.items))
+            return "{}: {}".format(self.log_message, ", ".join(self.items))
 
         style = style or self.style
 
         def render_child(item) -> str:
-            if hasattr(item, 'render'):
+            if hasattr(item, "render"):
                 return item.render(parent_style=style, tty=tty)
             else:
                 return item
@@ -272,18 +265,22 @@ class LBullets(L):
         if isinstance(self.items, dict):
             key_width = max(map(len, self.items.keys())) + 1
             for k, v in self.items.items():
-                rendered_items.append('{}: {}'.format(render_child(k).ljust(key_width), render_child(v)))
+                rendered_items.append(
+                    "{}: {}".format(render_child(k).ljust(key_width), render_child(v))
+                )
         else:
             for item in self.items:
                 rendered_items.append(render_child(item))
 
         indent = self.indent
-        msg = "\n".join([
-            '{}:'.format(self.log_message),
-        ] + [
-            '{}{}{} {}'.format(additional_line_prefix, ' ' * indent, self.bullet, item) for item in rendered_items
-        ] + [additional_line_prefix])
+        msg = "\n".join(
+            ["{}:".format(self.log_message)]
+            + [
+                "{}{}{} {}".format(additional_line_prefix, " " * indent, self.bullet, item)
+                for item in rendered_items
+            ]
+            + [additional_line_prefix]
+        )
         if msg_cb:
             msg = msg_cb(msg, is_tty=tty)
-        return style + msg + escape_codes['reset'] + parent_style
-
+        return style + msg + escape_codes["reset"] + parent_style

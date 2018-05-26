@@ -1,3 +1,4 @@
+# fmt: off
 from typing import Any
 
 
@@ -43,7 +44,7 @@ class CheckPassword(lightbus.Rpc):
         }
 
     def handle(self):
-        return username == 'admin' and password == 'secret'return
+        return username == 'admin' and password == 'secret'
 
 
 # Ok, take 2
@@ -146,6 +147,7 @@ AuthApi.get_user.add_schema(python=Any)
         }
     ]
 }
+
 >> bus.dump_schema(path='./schema.json')
 >> bus.dump_schema(path='./schema/', multiple=True)  # Multiple files, one for each api
 

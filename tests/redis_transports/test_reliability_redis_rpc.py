@@ -27,17 +27,16 @@ async def test_timeouts(bus: lightbus.BusNode, caplog, dummy_api, loop):
 
     async def co_call_rpc():
         await asyncio.sleep(0.1)
-        fut = asyncio.gather(*[
-            do_single_call(n)
-            for n in range(0, 100)
-        ])
+        fut = asyncio.gather(*[do_single_call(n) for n in range(0, 100)])
         await fut
         return fut.result()
 
     async def co_consume_rpcs():
         return await bus.bus_client.consume_rpcs(apis=[dummy_api])
 
-    (call_task, ), (consume_task, ) = await asyncio.wait([co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED)
+    (call_task,), (consume_task,) = await asyncio.wait(
+        [co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED
+    )
     call_task.result()
     consume_task.cancel()
     try:

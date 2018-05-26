@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 def import_from_string(name):
-    components = name.split('.')
+    components = name.split(".")
     mod = __import__(components[0])
     for comp in components[1:]:
         mod = getattr(mod, comp)

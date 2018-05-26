@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class DirectRpcTransport(RpcTransport):
 
-    def __init__(self, result_transport: 'DirectResultTransport'):
+    def __init__(self, result_transport: "DirectResultTransport"):
         self.result_transport = result_transport
 
     async def call_rpc(self, rpc_message: RpcMessage, options: dict):
@@ -22,8 +22,7 @@ class DirectRpcTransport(RpcTransport):
         logger.debug("Directly executing RPC call for message {}".format(rpc_message))
         api = registry.get(rpc_message.api_name)
         result = await api.call(
-            procedure_name=rpc_message.procedure_name,
-            kwargs=rpc_message.kwargs
+            procedure_name=rpc_message.procedure_name, kwargs=rpc_message.kwargs
         )
 
         logger.debug("Sending result for message {}".format(rpc_message))
@@ -32,7 +31,9 @@ class DirectRpcTransport(RpcTransport):
             result_message=ResultMessage(result=result),
             return_path=rpc_message.return_path,
         )
-        logger.info("⚡️  Directly executed RPC call & sent result for message {}.".format(rpc_message))
+        logger.info(
+            "⚡️  Directly executed RPC call & sent result for message {}.".format(rpc_message)
+        )
 
     async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         raise UnsupportedUse(
@@ -49,11 +50,15 @@ class DirectResultTransport(ResultTransport):
         # We can return a future rather than a string because we know it won't have to be serialised
         return asyncio.Future()
 
-    async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: asyncio.Future):
+    async def send_result(
+        self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: asyncio.Future
+    ):
         logger.info(L("⚡️  Directly sending RPC result: {}", Bold(result_message)))
         return_path.set_result(result_message)
 
-    async def receive_result(self, rpc_message: RpcMessage, return_path: asyncio.Future, options: dict) -> ResultMessage:
+    async def receive_result(
+        self, rpc_message: RpcMessage, return_path: asyncio.Future, options: dict
+    ) -> ResultMessage:
         logger.info(L("⌛️  Awaiting result for RPC message: {}", Bold(rpc_message)))
         result = await return_path
         logger.info(L("⬅  Received result for RPC message {}: {}", rpc_message, Bold(result)))

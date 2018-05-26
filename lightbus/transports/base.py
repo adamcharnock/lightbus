@@ -9,7 +9,7 @@ from lightbus.message import RpcMessage, EventMessage, ResultMessage
 from lightbus.utilities.config import make_from_config_structure, random_name
 from lightbus.utilities.importing import load_entrypoint_classes
 
-T = TypeVar('T')
+T = TypeVar("T")
 logger = logging.getLogger(__name__)
 
 
@@ -17,10 +17,9 @@ class TransportMetaclass(type):
 
     def __new__(mcs, name, bases, attrs, **kwds):
         cls = super().__new__(mcs, name, bases, attrs)
-        if not hasattr(cls, f'{name}Config') and hasattr(cls, 'from_config'):
+        if not hasattr(cls, f"{name}Config") and hasattr(cls, "from_config"):
             cls.Config = make_from_config_structure(
-                class_name=name,
-                from_config_method=cls.from_config,
+                class_name=name, from_config_method=cls.from_config
             )
         return cls
 
@@ -28,7 +27,7 @@ class TransportMetaclass(type):
 class Transport(object, metaclass=TransportMetaclass):
 
     @classmethod
-    def from_config(cls: Type[T], * config) -> T:
+    def from_config(cls: Type[T], *config) -> T:
         return cls()
 
     async def open(self):
@@ -68,7 +67,9 @@ class ResultTransport(Transport):
     def get_return_path(self, rpc_message: RpcMessage) -> str:
         raise NotImplementedError()
 
-    async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: str):
+    async def send_result(
+        self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: str
+    ):
         """Send a result back to the caller
 
         Args:
@@ -79,7 +80,9 @@ class ResultTransport(Transport):
         """
         raise NotImplementedError()
 
-    async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict) -> ResultMessage:
+    async def receive_result(
+        self, rpc_message: RpcMessage, return_path: str, options: dict
+    ) -> ResultMessage:
         """Receive the result for the given message
 
         Args:
@@ -99,13 +102,14 @@ class EventTransport(Transport):
         """Publish an event"""
         raise NotImplementedError()
 
-    def consume(self,
-                listen_for: List[Tuple[str, str]],
-                context: dict,
-                loop: AbstractEventLoop,
-                consumer_group: str=None,
-                **kwargs
-                ):
+    def consume(
+        self,
+        listen_for: List[Tuple[str, str]],
+        context: dict,
+        loop: AbstractEventLoop,
+        consumer_group: str = None,
+        **kwargs,
+    ):
         """Consume messages for the given APIs
 
         Examples:
@@ -122,19 +126,20 @@ class EventTransport(Transport):
         """
         if not listen_for:
             raise NothingToListenFor(
-                'EventTransport.consume() was called without providing anything '
+                "EventTransport.consume() was called without providing anything "
                 'to listen for in the "listen_for" argument.'
             )
         consumer_group = consumer_group or random_name(length=4)
         return self.fetch(listen_for, context, loop, consumer_group, **kwargs)
 
-    async def fetch(self,
-                    listen_for: List[Tuple[str, str]],
-                    context: dict,
-                    loop: AbstractEventLoop,
-                    consumer_group: str=None,
-                    **kwargs
-                    ) -> Generator[EventMessage, None, None]:
+    async def fetch(
+        self,
+        listen_for: List[Tuple[str, str]],
+        context: dict,
+        loop: AbstractEventLoop,
+        consumer_group: str = None,
+        **kwargs,
+    ) -> Generator[EventMessage, None, None]:
         """Consume RPC messages for the given events
 
         Events the bus is not listening for may be returned, they
@@ -168,7 +173,7 @@ class SchemaTransport(Transport):
         raise NotImplementedError()
 
 
-empty = NamedTuple('Empty')
+empty = NamedTuple("Empty")
 
 
 class TransportRegistry(object):
@@ -193,21 +198,25 @@ class TransportRegistry(object):
     def __init__(self):
         self._registry: Dict[str, TransportRegistry._RegistryEntry] = {}
 
-    def load_config(self, config: 'Config') -> 'TransportRegistry':
+    def load_config(self, config: "Config") -> "TransportRegistry":
         for api_name, api_config in config.apis().items():
-            for transport_type in ('event', 'rpc', 'result'):
-                transport_selector = getattr(api_config, f'{transport_type}_transport')
+            for transport_type in ("event", "rpc", "result"):
+                transport_selector = getattr(api_config, f"{transport_type}_transport")
                 transport_config = self._get_transport_config(transport_selector)
                 if transport_config:
                     transport_name, transport_config = transport_config
-                    transport = self._instantiate_transport(transport_type, transport_name, transport_config, config)
+                    transport = self._instantiate_transport(
+                        transport_type, transport_name, transport_config, config
+                    )
                     self._set_transport(api_name, transport, transport_type)
 
         # Schema transport
         transport_config = self._get_transport_config(config.bus().schema.transport)
         if transport_config:
             transport_name, transport_config = transport_config
-            self.schema_transport = self._instantiate_transport('schema', transport_name, transport_config, config)
+            self.schema_transport = self._instantiate_transport(
+                "schema", transport_name, transport_config, config
+            )
 
         return self
 
@@ -218,7 +227,7 @@ class TransportRegistry(object):
                 if transport_config is not None:
                     return transport_name, transport_config
 
-    def _instantiate_transport(self, type_, name, transport_config: NamedTuple, config: 'Config'):
+    def _instantiate_transport(self, type_, name, transport_config: NamedTuple, config: "Config"):
         transport_class = get_transport(type_=type_, name=name)
         transport = transport_class.from_config(config=config, **transport_config._asdict())
         return transport
@@ -233,9 +242,9 @@ class TransportRegistry(object):
         if registry_entry:
             api_transport = getattr(registry_entry, transport_type)
 
-        if not api_transport and api_name != 'default':
+        if not api_transport and api_name != "default":
             try:
-                api_transport = self._get_transport('default', transport_type)
+                api_transport = self._get_transport("default", transport_type)
             except TransportNotFound:
                 pass
 
@@ -249,7 +258,9 @@ class TransportRegistry(object):
         else:
             return api_transport
 
-    def _get_transports(self, api_names: Sequence[str], transport_type: str) -> List[Tuple[Transport, List[str]]]:
+    def _get_transports(
+        self, api_names: Sequence[str], transport_type: str
+    ) -> List[Tuple[Transport, List[str]]]:
         apis_by_transport: Dict[Transport, List[str]] = {}
         for api_name in api_names:
             transport = self._get_transport(api_name, transport_type)
@@ -266,25 +277,25 @@ class TransportRegistry(object):
             return True
 
     def set_rpc_transport(self, api_name: str, transport):
-        self._set_transport(api_name, transport, 'rpc')
+        self._set_transport(api_name, transport, "rpc")
 
     def set_result_transport(self, api_name: str, transport):
-        self._set_transport(api_name, transport, 'result')
+        self._set_transport(api_name, transport, "result")
 
     def set_event_transport(self, api_name: str, transport):
-        self._set_transport(api_name, transport, 'event')
+        self._set_transport(api_name, transport, "event")
 
     def set_schema_transport(self, transport):
         self.schema_transport = transport
 
     def get_rpc_transport(self, api_name: str, default=empty) -> RpcTransport:
-        return self._get_transport(api_name, 'rpc', default=default)
+        return self._get_transport(api_name, "rpc", default=default)
 
     def get_result_transport(self, api_name: str, default=empty) -> ResultTransport:
-        return self._get_transport(api_name, 'result', default=default)
+        return self._get_transport(api_name, "result", default=default)
 
     def get_event_transport(self, api_name: str, default=empty) -> EventTransport:
-        return self._get_transport(api_name, 'event', default=default)
+        return self._get_transport(api_name, "event", default=default)
 
     def get_schema_transport(self, default=empty) -> SchemaTransport:
         if self.schema_transport or default != empty:
@@ -292,18 +303,18 @@ class TransportRegistry(object):
         else:
             # TODO: Link to docs
             raise TransportNotFound(
-                'No schema transport is configured for this bus. Check your schema transport '
-                'configuration is setup correctly (config section: bus.schema.transport).'
+                "No schema transport is configured for this bus. Check your schema transport "
+                "configuration is setup correctly (config section: bus.schema.transport)."
             )
 
     def has_rpc_transport(self, api_name: str) -> bool:
-        return self._has_transport(api_name, 'rpc')
+        return self._has_transport(api_name, "rpc")
 
     def has_result_transport(self, api_name: str) -> bool:
-        return self._has_transport(api_name, 'result')
+        return self._has_transport(api_name, "result")
 
     def has_event_transport(self, api_name: str) -> bool:
-        return self._has_transport(api_name, 'event')
+        return self._has_transport(api_name, "event")
 
     def has_schema_transport(self) -> bool:
         return bool(self.schema_transport)
@@ -313,14 +324,16 @@ class TransportRegistry(object):
 
         This is useful when multiple APIs can be served by a single transport
         """
-        return self._get_transports(api_names, 'rpc')
+        return self._get_transports(api_names, "rpc")
 
-    def get_event_transports(self, api_names: Sequence[str]) -> List[Tuple[EventTransport, List[str]]]:
+    def get_event_transports(
+        self, api_names: Sequence[str]
+    ) -> List[Tuple[EventTransport, List[str]]]:
         """Get a mapping of transports to lists of APIs
 
         This is useful when multiple APIs can be served by a single transport
         """
-        return self._get_transports(api_names, 'event')
+        return self._get_transports(api_names, "event")
 
     def get_all_transports(self) -> Set[Transport]:
         """Get a set of all transports irrespective of type"""
@@ -329,13 +342,9 @@ class TransportRegistry(object):
 
 
 def get_available_transports(type_):
-    loaded = load_entrypoint_classes(f'lightbus_{type_}_transports')
+    loaded = load_entrypoint_classes(f"lightbus_{type_}_transports")
 
-    return {
-        name: class_
-        for module_name, name, class_
-        in loaded
-    }
+    return {name: class_ for module_name, name, class_ in loaded}
 
 
 def get_transport(type_, name):
@@ -350,9 +359,9 @@ def get_transport(type_, name):
     )
 
 
-def get_transport_name(cls: Type['Transport']):
-    for type_ in ('rpc', 'result', 'event'):
-        for *_, name, class_ in load_entrypoint_classes(f'lightbus_{type_}_transports'):
+def get_transport_name(cls: Type["Transport"]):
+    for type_ in ("rpc", "result", "event"):
+        for *_, name, class_ in load_entrypoint_classes(f"lightbus_{type_}_transports"):
             if cls == class_:
                 return name
 

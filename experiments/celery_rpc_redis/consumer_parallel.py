@@ -15,7 +15,8 @@ def do_it():
     for result in results:
         result.get()
 
+
 do_it()
 
 seconds = timeit.timeit(do_it, number=1) / TOTAL_MESSAGES
-print('Time per call: {}ms'.format(round(seconds * 1000, 2)))
+print("Time per call: {}ms".format(round(seconds * 1000, 2)))

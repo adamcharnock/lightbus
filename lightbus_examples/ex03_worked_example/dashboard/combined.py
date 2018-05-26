@@ -5,15 +5,15 @@ page_views = {}
 
 
 def home_view(request):
-    html = '<h1>Dashboard</h1>\n'
-    html += '<p>Total store views</p>\n'
+    html = "<h1>Dashboard</h1>\n"
+    html += "<p>Total store views</p>\n"
 
-    html += '<ul>'
+    html += "<ul>"
     for url, total_views in page_views.items():
-        html += f'<li>URL <code>{url}</code>: {total_views} views</li>'
-    html += '</ul>'
+        html += f"<li>URL <code>{url}</code>: {total_views} views</li>"
+    html += "</ul>"
 
-    return web.Response(body=html, content_type='text/html')
+    return web.Response(body=html, content_type="text/html")
 
 
 def handle_page_view(api_name, event_name, url):
@@ -25,7 +25,7 @@ async def start_listener(app):
     # Create the asyncio task which will listen for the page_view event
     listener_task = await app.bus.store.page_view.listen_async(handle_page_view)
     # Store it against app in case we need it later
-    app['page_view_listener'] = listener_task
+    app["page_view_listener"] = listener_task
 
 
 async def cleanup(app):
@@ -42,7 +42,7 @@ def main():
     bus = lightbus.create()
     app = web.Application()
 
-    app.router.add_route('GET', '/', home_view)
+    app.router.add_route("GET", "/", home_view)
     app.on_startup.append(start_listener)
     app.on_cleanup.append(cleanup)
 
@@ -50,8 +50,8 @@ def main():
     # in start_listener() and cleanup()
     app.bus = bus
 
-    web.run_app(app, host='127.0.0.1', port=5000)
+    web.run_app(app, host="127.0.0.1", port=5000)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

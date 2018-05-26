@@ -23,18 +23,28 @@ def lightbus_entry_point():  # pragma: no cover
 
 
 def parse_args(args=None):
-    parser = argparse.ArgumentParser(description='Lightbus management command.')
-    parser.add_argument('--service-name', '-s',
-                        help='Name of service in which this process resides. You should '
-                             'likely set this in production. Will default to a random string.')
-    parser.add_argument('--process-name', '-p',
-                        help='A unique name of this process within the service. Will '
-                             'default to a random string.')
-    parser.add_argument('--config', help='Config file to load, JSON or YAML', metavar='FILE')
-    parser.add_argument('--log-level', help='Set the log level. Overrides any value set in config. '
-                                            'One of debug, info, warning, critical, exception.', metavar='LOG_LEVEL')
+    parser = argparse.ArgumentParser(description="Lightbus management command.")
+    parser.add_argument(
+        "--service-name",
+        "-s",
+        help="Name of service in which this process resides. You should "
+        "likely set this in production. Will default to a random string.",
+    )
+    parser.add_argument(
+        "--process-name",
+        "-p",
+        help="A unique name of this process within the service. Will "
+        "default to a random string.",
+    )
+    parser.add_argument("--config", help="Config file to load, JSON or YAML", metavar="FILE")
+    parser.add_argument(
+        "--log-level",
+        help="Set the log level. Overrides any value set in config. "
+        "One of debug, info, warning, critical, exception.",
+        metavar="LOG_LEVEL",
+    )
 
-    subparsers = parser.add_subparsers(help='Commands', dest='subcommand')
+    subparsers = parser.add_subparsers(help="Commands", dest="subcommand")
     subparsers.required = True
 
     lightbus.commands.run.Command().setup(parser, subparsers)
@@ -46,10 +56,10 @@ def parse_args(args=None):
     autoload_plugins(config=Config.load_dict({}))
 
     loop = get_event_loop()
-    block(plugin_hook('before_parse_args', parser=parser, subparsers=subparsers), loop, timeout=5)
+    block(plugin_hook("before_parse_args", parser=parser, subparsers=subparsers), loop, timeout=5)
 
     args = parser.parse_args(sys.argv[1:] if args is None else args)
-    block(plugin_hook('after_parse_args', args=args), loop, timeout=5)
+    block(plugin_hook("after_parse_args", args=args), loop, timeout=5)
 
     remove_all_plugins()
 

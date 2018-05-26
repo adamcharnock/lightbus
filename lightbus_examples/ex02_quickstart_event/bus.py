@@ -1,21 +1,22 @@
 # bus.py
 from lightbus import Api, Event
 
+
 class AuthApi(Api):
-    user_registered = Event(parameters=('username', 'email'))
+    user_registered = Event(parameters=("username", "email"))
 
     class Meta:
-        name = 'auth'
+        name = "auth"
 
     def check_password(self, username, password):
-        return username == 'admin' and password == 'secret'
+        return username == "admin" and password == "secret"
 
 
 def send_welcome_email(api_name, event_name, username, email):
     # In our example we'll just print something to the console,
     # rather than send an actual email
-    print(f'Subject: Welcome to our site, {username}')
-    print(f'To: {email}')
+    print(f"Subject: Welcome to our site, {username}")
+    print(f"To: {email}")
 
 
 def before_server_start(bus):

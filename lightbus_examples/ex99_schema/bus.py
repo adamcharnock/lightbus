@@ -2,12 +2,10 @@ from lightbus import Api, Event, Parameter
 
 
 class AuthApi(Api):
-    user_registered = Event(parameters=[
-        Parameter('username', str)
-    ])
+    user_registered = Event(parameters=[Parameter("username", str)])
 
     class Meta:
-        name = 'auth'
+        name = "auth"
 
     def check_password(self, username: str, password: str):
-        return username == 'admin' and password == 'secret'
+        return username == "admin" and password == "secret"

@@ -21,10 +21,10 @@ def main():
     context = zmq.Context()
     sockets = {}
 
-    with Connection('amqp://guest:guest@127.0.0.1:5672//') as conn:
-        simple_queue = conn.SimpleQueue('simple_queue')
+    with Connection("amqp://guest:guest@127.0.0.1:5672//") as conn:
+        simple_queue = conn.SimpleQueue("simple_queue")
         # Block until we get the 'ready to start' message
-        print('Waiting for kick-off message from producer')
+        print("Waiting for kick-off message from producer")
         simple_queue.get(block=True).ack()
         print("Got it! Let's go...")
 
@@ -33,30 +33,30 @@ def main():
 
             with amqp_timer:
                 message = simple_queue.get(block=True)
-            message_id = message.headers.get('id')
-            addr = message.headers.get('reply-to')
+            message_id = message.headers.get("id")
+            addr = message.headers.get("reply-to")
 
             if not addr:
                 with amqp_timer:
                     message.ack()
-                log('Message with no reply-to header. Ignoring.')
+                log("Message with no reply-to header. Ignoring.")
                 return
 
             if addr not in sockets:
-                log('Opening socket to: {}'.format(addr))
+                log("Opening socket to: {}".format(addr))
                 with zmq_timer:
                     socket = context.socket(zmq.PUSH)
                     socket.connect(addr)
                 sockets[addr] = socket
 
             socket = sockets[addr]
-            log('Sending response for {} to: {}'.format(message_id, addr))
+            log("Sending response for {} to: {}".format(message_id, addr))
 
             # Send the message ID back plus some data
             with zmq_timer:
-                socket.send(bytes(message_id, 'utf8') + b' x' * 1024)
+                socket.send(bytes(message_id, "utf8") + b" x" * 1024)
 
-            log('Sent')
+            log("Sent")
 
             with amqp_timer:
                 message.ack()
@@ -69,5 +69,5 @@ def main():
         simple_queue.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

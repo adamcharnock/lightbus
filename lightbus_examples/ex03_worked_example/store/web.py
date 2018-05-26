@@ -15,31 +15,29 @@ lightbus.configure_logging()
 bus = lightbus.create(flask=True)
 
 PETS = (
-    'http://store.company.com/image1.jpg',
-    'http://store.company.com/image2.jpg',
-    'http://store.company.com/image3.jpg',
+    "http://store.company.com/image1.jpg",
+    "http://store.company.com/image2.jpg",
+    "http://store.company.com/image3.jpg",
 )
 
-@app.route('/')
+
+@app.route("/")
 def home():
-    html = '<h1>Online pet store</h1><br>'
+    html = "<h1>Online pet store</h1><br>"
 
     for pet_num, image_url in enumerate(PETS):
         resized_url = bus.image.resize(url=image_url, width=200, height=200)
-        html += (
-            f'<a href="/pet/{pet_num}">'
-            f'<img src="{resized_url}">'
-            f'</a> '
-        )
+        html += f'<a href="/pet/{pet_num}">' f'<img src="{resized_url}">' f"</a> "
 
-    bus.store.page_view.fire(url='/')
+    bus.store.page_view.fire(url="/")
     return html
 
-@app.route('/pet/<int:pet_num>')
+
+@app.route("/pet/<int:pet_num>")
 def pet(pet_num):
     resized_url = bus.image.resize(url=PETS[pet_num], width=200, height=200)
-    bus.store.page_view.fire(url=f'/pet/{pet_num}')
+    bus.store.page_view.fire(url=f"/pet/{pet_num}")
 
-    html = f'<h1>Pet {pet_num}</h1>'
+    html = f"<h1>Pet {pet_num}</h1>"
     html = f'<img src="{resized_url}"><br />'
     return html

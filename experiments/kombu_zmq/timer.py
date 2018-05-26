@@ -2,6 +2,7 @@ from time import time
 
 
 class Timer(object):
+
     def __init__(self):
         self.totals = []
         self.stack = []
@@ -13,7 +14,7 @@ class Timer(object):
         self.totals.append(time() - self.stack.pop())
 
     def __str__(self):
-        return '{}ms'.format(round(self.total * 1000, 2))
+        return "{}ms".format(round(self.total * 1000, 2))
 
     @property
     def total(self):

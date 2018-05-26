@@ -8,13 +8,17 @@ pytestmark = pytest.mark.unit
 
 def test_api_named_default():
     with pytest.raises(MisconfiguredApiOptions):
+
         class BadApi(Api):
+
             class Meta:
-                name = 'default'
+                name = "default"
 
 
 def test_api_named_default_dot_something():
     with pytest.raises(MisconfiguredApiOptions):
+
         class BadApi(Api):
+
             class Meta:
-                name = 'default.foo'
+                name = "default.foo"

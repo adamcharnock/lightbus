@@ -16,7 +16,7 @@ async def handle_aio_exceptions(fn):
     except asyncio.CancelledError:
         raise
     except LightbusShutdownInProgress as e:
-        logger.info('Shutdown in progress: {}'.format(e))
+        logger.info("Shutdown in progress: {}".format(e))
     except Exception as e:
         logger.exception(e)
         traceback.print_exc()

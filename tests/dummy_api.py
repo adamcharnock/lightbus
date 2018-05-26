@@ -5,15 +5,13 @@ from lightbus.exceptions import SuddenDeathException
 
 
 class DummyApi(Api):
-    my_event = Event([
-        Parameter('field', str)
-    ])
+    my_event = Event([Parameter("field", str)])
 
     class Meta:
-        name = 'my.dummy'
+        name = "my.dummy"
 
     def my_proc(self, field) -> str:
-        return 'value: {}'.format(field)
+        return "value: {}".format(field)
 
     def sudden_death(self, n):
         raise SuddenDeathException()
@@ -24,4 +22,4 @@ class DummyApi(Api):
         return n
 
     def general_error(self):
-        raise RuntimeError('Oh no, there was some kind of error')
+        raise RuntimeError("Oh no, there was some kind of error")

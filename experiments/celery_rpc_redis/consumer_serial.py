@@ -12,5 +12,6 @@ def do_it():
         result = test_task.delay()
         result.get()
 
+
 seconds = timeit.timeit(do_it, number=1) / TOTAL_MESSAGES
-print('Time per call: {}ms'.format(round(seconds * 1000, 2)))
+print("Time per call: {}ms".format(round(seconds * 1000, 2)))

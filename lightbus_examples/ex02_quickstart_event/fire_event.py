@@ -6,7 +6,4 @@ import lightbus_examples.ex02_quickstart_event.bus
 bus = lightbus.create()
 
 # Fire the event. There is no return value when firing events
-bus.auth.user_registered.fire(
-    username='admin',
-    email='admin@example.com'
-)
+bus.auth.user_registered.fire(username="admin", email="admin@example.com")

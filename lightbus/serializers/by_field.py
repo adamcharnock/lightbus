@@ -16,19 +16,24 @@ format. The format looks like this::
 """
 
 import lightbus
-from lightbus.serializers import decode_bytes, sanity_check_metadata, MessageSerializer, MessageDeserializer
+from lightbus.serializers import (
+    decode_bytes,
+    sanity_check_metadata,
+    MessageSerializer,
+    MessageDeserializer,
+)
 
 
 class ByFieldMessageSerializer(MessageSerializer):
 
-    def __call__(self, message: 'lightbus.Message') -> dict:
+    def __call__(self, message: "lightbus.Message") -> dict:
         """Takes a message object and returns a serialised dictionary representation
 
         See the module-level docs (above) for further details
         """
         serialized = message.get_metadata()
         for k, v in message.get_kwargs().items():
-            serialized[':{}'.format(k)] = self.encoder(v)
+            serialized[":{}".format(k)] = self.encoder(v)
         return serialized
 
 
@@ -50,7 +55,7 @@ class ByFieldMessageDeserializer(MessageDeserializer):
                 continue
 
             # kwarg fields start with a ':', everything else is metadata
-            if k[0] == ':':
+            if k[0] == ":":
                 # kwarg values need decoding
                 kwargs[k[1:]] = self.decoder(v)
             else:
@@ -59,11 +64,4 @@ class ByFieldMessageDeserializer(MessageDeserializer):
 
         sanity_check_metadata(self.message_class, metadata)
 
-        return self.message_class.from_dict(
-            metadata=metadata,
-            kwargs=kwargs,
-        )
-
-
-
-
+        return self.message_class.from_dict(metadata=metadata, kwargs=kwargs)

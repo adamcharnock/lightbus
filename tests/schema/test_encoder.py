@@ -20,6 +20,8 @@ def test_json_encode_frozendict():
 
 
 def test_json_encode_enum():
+
     class Color(Enum):
-        red = 'red'
+        red = "red"
+
     assert json_encode(Color.red, indent=None) == '"red"'

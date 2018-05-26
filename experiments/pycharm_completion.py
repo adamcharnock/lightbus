@@ -1,6 +1,6 @@
 from typing import TypeVar, Type
 
-T = TypeVar('T', bound='Parent')
+T = TypeVar("T", bound="Parent")
 
 
 class Parent(object):
@@ -25,4 +25,6 @@ class Child(Parent):
 # Child().instance_method().bad()  # Invalid
 
 
-import pdb; pdb.set_trace()
+import pdb
+
+pdb.set_trace()

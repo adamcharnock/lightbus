@@ -1,5 +1,3 @@
-
-
 class LightbusException(Exception):
     pass
 
@@ -138,4 +136,8 @@ class UnexpectedConfigurationFormat(LightbusException):
 
 
 class UnsupportedOptionValue(LightbusException):
+    pass
+
+
+class DatabaseConnectionRequired(LightbusException):
     pass
