@@ -19,7 +19,10 @@ setup(
         "jsonschema==2.6.0",
         "pyyaml>=3.12,<4",
     ],
-    extras_require={"transactions_asyncpg": ["asyncpg>=0.15,<1"]},
+    extras_require={
+        "transactions_asyncpg": ["asyncpg>=0.15,<1"],
+        "development": ["pre-commit", "black"],
+    },
     include_package_data=True,
     entry_points={
         "console_scripts": ["lightbus = lightbus.commands:lightbus_entry_point"],
