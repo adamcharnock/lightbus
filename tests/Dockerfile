@@ -59,7 +59,7 @@ RUN chmod +x /cc-test-reporter
 COPY setup.py VERSION requirements.txt ./
 COPY tests/requirements.txt ./test-requirements.txt
 
-RUN pip install -r requirements.txt -r test-requirements.txt .[transactions_asyncpg]
+RUN pip install -r requirements.txt -r test-requirements.txt .[development]
 
 COPY lightbus ./lightbus
 COPY tests ./tests

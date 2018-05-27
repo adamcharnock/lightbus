@@ -141,3 +141,11 @@ class UnsupportedOptionValue(LightbusException):
 
 class DatabaseConnectionRequired(LightbusException):
     pass
+
+
+class DuplicateMessage(LightbusException):
+    pass
+
+
+class NoApisSpecified(LightbusException):
+    pass

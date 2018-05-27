@@ -3,6 +3,7 @@
 These serializers handle moving data to/from a string-based format.
 
 """
+from typing import Union
 
 import lightbus
 from lightbus.serializers.base import (
@@ -23,10 +24,16 @@ class BlobMessageSerializer(MessageSerializer):
 
 class BlobMessageDeserializer(MessageDeserializer):
 
-    def __call__(self, serialized: str):
+    def __call__(self, serialized: Union[str, dict]):
         # Reverse of BlobMessageSerializer
-        serialized = decode_bytes(serialized)
-        decoded = self.decoder(serialized)
+
+        # Allow for receiving dicts on the assumption that this will be
+        # json which has already been decoded.
+        if isinstance(serialized, dict):
+            decoded = serialized
+        else:
+            serialized = decode_bytes(serialized)
+            decoded = self.decoder(serialized)
 
         metadata = decoded.get("metadata", {})
         kwargs = decoded.get("kwargs", {})

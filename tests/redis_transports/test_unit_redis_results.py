@@ -49,7 +49,7 @@ async def test_send_result(redis_result_transport: RedisResultTransport, redis_c
             kwargs={"field": "value"},
             return_path="abc",
         ),
-        result_message=ResultMessage(rpc_message_id="123abc", result="All done! 😎"),
+        result_message=ResultMessage(id="345", rpc_message_id="123abc", result="All done! 😎"),
         return_path="redis+key://my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e",
     )
     assert await redis_client.keys("*") == [
@@ -58,7 +58,7 @@ async def test_send_result(redis_result_transport: RedisResultTransport, redis_c
 
     result = await redis_client.lpop("my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e")
     assert json.loads(result) == {
-        "metadata": {"error": False, "rpc_message_id": "123abc"},
+        "metadata": {"error": False, "rpc_message_id": "123abc", "id": "345"},
         "kwargs": {"result": "All done! 😎"},
     }
 
@@ -70,7 +70,7 @@ async def test_receive_result(redis_result_transport: RedisResultTransport, redi
         key="my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e",
         value=json.dumps(
             {
-                "metadata": {"rpc_message_id": "123abc", "error": False},
+                "metadata": {"rpc_message_id": "123abc", "error": False, "id": "123"},
                 "kwargs": {"result": "All done! 😎"},
             }
         ),
@@ -89,6 +89,7 @@ async def test_receive_result(redis_result_transport: RedisResultTransport, redi
     )
     assert result_message.result == "All done! 😎"
     assert result_message.rpc_message_id == "123abc"
+    assert result_message.id == "123"
     assert result_message.error == False
 
 

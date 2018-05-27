@@ -29,7 +29,7 @@ async def test_connection_manager(redis_event_transport):
 @pytest.mark.run_loop
 async def test_send_event(redis_event_transport: RedisEventTransport, redis_client):
     await redis_event_transport.send_event(
-        EventMessage(api_name="my.api", event_name="my_event", kwargs={"field": "value"}),
+        EventMessage(api_name="my.api", event_name="my_event", id="123", kwargs={"field": "value"}),
         options={},
     )
     messages = await redis_client.xrange("my.api.my_event:stream")
@@ -37,6 +37,7 @@ async def test_send_event(redis_event_transport: RedisEventTransport, redis_clie
     assert messages[0][1] == {
         b"api_name": b"my.api",
         b"event_name": b"my_event",
+        b"id": b"123",
         b":field": b'"value"',
     }
 
@@ -45,7 +46,7 @@ async def test_send_event(redis_event_transport: RedisEventTransport, redis_clie
 async def test_send_event_per_api_stream(redis_event_transport: RedisEventTransport, redis_client):
     redis_event_transport.stream_use = StreamUse.PER_API
     await redis_event_transport.send_event(
-        EventMessage(api_name="my.api", event_name="my_event", kwargs={"field": "value"}),
+        EventMessage(api_name="my.api", event_name="my_event", kwargs={"field": "value"}, id="123"),
         options={},
     )
     messages = await redis_client.xrange("my.api.*:stream")
@@ -53,6 +54,7 @@ async def test_send_event_per_api_stream(redis_event_transport: RedisEventTransp
     assert messages[0][1] == {
         b"api_name": b"my.api",
         b"event_name": b"my_event",
+        b"id": b"123",
         b":field": b'"value"',
     }
 
@@ -66,7 +68,12 @@ async def test_consume_events(
         await asyncio.sleep(0.1)
         return await redis_client.xadd(
             "my.dummy.my_event:stream",
-            fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+            fields={
+                b"api_name": b"my.dummy",
+                b"event_name": b"my_event",
+                b"id": b"123",
+                b":field": b'"value"',
+            },
         )
 
     async def co_consume():
@@ -95,7 +102,12 @@ async def test_consume_events_multiple_consumers(
     await asyncio.sleep(0.1)
     await redis_client.xadd(
         "my.dummy.my_event:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b":field": b'"value"',
+        },
     )
     await asyncio.sleep(0.1)
 
@@ -132,7 +144,12 @@ async def test_consume_events_multiple_consumers_one_group(
 
     await redis_client.xadd(
         "my.dummy.my_event:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b":field": b'"value"',
+        },
     )
     await asyncio.sleep(0.1)
     await cancel(task1, task2)
@@ -147,17 +164,32 @@ async def test_consume_events_since_id(
 ):
     await redis_client.xadd(
         "my.dummy.my_event:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"1"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b":field": b'"1"',
+        },
         message_id="1515000001000-0",
     )
     await redis_client.xadd(
         "my.dummy.my_event:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"2"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b":field": b'"2"',
+        },
         message_id="1515000002000-0",
     )
     await redis_client.xadd(
         "my.dummy.my_event:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"3"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b":field": b'"3"',
+        },
         message_id="1515000003000-0",
     )
 
@@ -187,17 +219,32 @@ async def test_consume_events_since_datetime(
 ):
     await redis_client.xadd(
         "my.dummy.my_event:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"1"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b":field": b'"1"',
+        },
         message_id="1515000001000-0",
     )
     await redis_client.xadd(
         "my.dummy.my_event:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"2"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b":field": b'"2"',
+        },
         message_id="1515000002000-0",
     )
     await redis_client.xadd(
         "my.dummy.my_event:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"3"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b":field": b'"3"',
+        },
         message_id="1515000003000-0",
     )
 
@@ -254,7 +301,12 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
     # Add a message
     await redis_client.xadd(
         "my.dummy.my_event:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b":field": b'"value"',
+        },
     )
     # Create the consumer group
     await redis_client.xgroup_create("my.dummy.my_event:stream", "test_group", latest_id="0")
@@ -290,7 +342,12 @@ async def test_reclaim_lost_messages_ignores_non_timed_out_messages(
     # Add a message
     await redis_client.xadd(
         "my.dummy.my_event:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b":field": b'"value"',
+        },
     )
     # Create the consumer group
     await redis_client.xgroup_create("my.dummy.my_event:stream", "test_group", latest_id="0")
@@ -328,7 +385,12 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
     # Add a message
     await redis_client.xadd(
         "my.dummy.my_event:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b":field": b'"value"',
+        },
     )
     # Create the consumer group
     await redis_client.xgroup_create("my.dummy.my_event:stream", "test_group", latest_id="0")
@@ -374,7 +436,12 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
     # Add a message
     await redis_client.xadd(
         "my.dummy.my_event:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event", b":field": b'"value"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b":field": b'"value"',
+        },
     )
     # Create the consumer group
     await redis_client.xgroup_create("my.dummy.my_event:stream", "test_group", latest_id="0")
@@ -495,15 +562,30 @@ async def test_consume_events_per_api_stream(
 
     await redis_client.xadd(
         "my.dummy.*:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event1", b":field": b'"value"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event1",
+            b"id": b"1",
+            b":field": b'"value"',
+        },
     )
     await redis_client.xadd(
         "my.dummy.*:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event2", b":field": b'"value"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event2",
+            b"id": b"2",
+            b":field": b'"value"',
+        },
     )
     await redis_client.xadd(
         "my.dummy.*:stream",
-        fields={b"api_name": b"my.dummy", b"event_name": b"my_event3", b":field": b'"value"'},
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event3",
+            b"id": b"3",
+            b":field": b'"value"',
+        },
     )
     await asyncio.sleep(0.1)
 
