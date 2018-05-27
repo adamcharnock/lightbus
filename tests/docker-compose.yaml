@@ -17,8 +17,8 @@ services:
       context: ..
       dockerfile: tests/Dockerfile
     volumes:
-      - .coverage:/lightbus/.coverage
-    command: pytest --cov=lightbus --cov-report=xml:/local/.coverage
+      - ../.coverage:/lightbus/.coverage
+    command: pytest --cov=lightbus
     environment:
       PG_URL: "postgres://travis_db:5432/postgres"
     depends_on:

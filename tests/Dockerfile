@@ -64,6 +64,7 @@ COPY tests/requirements.txt ./test-requirements.txt
 
 RUN pip install -r requirements.txt -r test-requirements.txt .[development]
 
+COPY .coveragerc .
 COPY lightbus ./lightbus
 COPY tests ./tests
 RUN mkdir .coverage
