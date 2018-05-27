@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from lightbus import BusNode, TransactionalEventTransport, DebugEventTransport
@@ -63,3 +65,41 @@ async def test_aenter(atomic_context, aiopg_connection):
     assert atomic_context.cursor
     assert atomic_context.transport.connection == aiopg_connection
     assert atomic_context.transport.cursor
+
+
+@pytest.mark.run_loop
+async def test_aexit_success(atomic_context, mocker):
+    f = asyncio.Future()
+    f.set_result(None)
+    rollback_mock = mocker.patch.object(
+        atomic_context.transport, "rollback_and_finish", return_value=f
+    )
+    commit_mock = mocker.patch.object(atomic_context.transport, "commit_and_finish", return_value=f)
+
+    await atomic_context.__aenter__()
+    cursor = atomic_context.cursor
+
+    await atomic_context.__aexit__(None, None, None)
+    assert not rollback_mock.called
+    assert commit_mock.called
+    assert not atomic_context.cursor
+    assert cursor.closed
+
+
+@pytest.mark.run_loop
+async def test_aexit_exception(atomic_context, mocker):
+    f = asyncio.Future()
+    f.set_result(None)
+    rollback_mock = mocker.patch.object(
+        atomic_context.transport, "rollback_and_finish", return_value=f
+    )
+    commit_mock = mocker.patch.object(atomic_context.transport, "commit_and_finish", return_value=f)
+
+    await atomic_context.__aenter__()
+    cursor = atomic_context.cursor
+
+    await atomic_context.__aexit__(True, True, True)
+    assert rollback_mock.called
+    assert not commit_mock.called
+    assert not atomic_context.cursor
+    assert cursor.closed
