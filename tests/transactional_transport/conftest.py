@@ -1,13 +1,14 @@
 import asyncio
 import os
+import urllib.parse
 
 import pytest
 
-from lightbus.transports.transactional import AsyncPostgresConnection
+from lightbus.transports.transactional import DbApiConnection
 from lightbus.utilities.async import block
 
 if False:
-    import asyncpg
+    import aiopg
 
 
 @pytest.fixture()
@@ -16,20 +17,42 @@ def pg_url():
 
 
 @pytest.fixture()
-def asyncpg_connection(pg_url, loop):
-    import asyncpg
+def pg_kwargs(pg_url):
+    parsed = urllib.parse.urlparse(pg_url)
+    assert parsed.scheme == "postgres"
+    return {
+        "dbname": parsed.path.strip("/") or "postgres",
+        "user": parsed.username or "postgres",
+        "password": parsed.password,
+        "host": parsed.hostname,
+        "port": parsed.port or 5432,
+    }
 
-    return block(asyncpg.connect(pg_url, loop=loop), loop=loop, timeout=2)
+
+@pytest.yield_fixture()
+def aiopg_connection(pg_kwargs, loop):
+    import aiopg
+
+    connection = block(aiopg.connect(loop=loop, **pg_kwargs), loop=loop, timeout=2)
+    yield connection
+    connection.close()
 
 
 @pytest.fixture()
-def asyncpg_database(asyncpg_connection, loop):
-    # block(asyncpg_connection.execute('DROP TABLE IF EXISTS lightbus_processed_events'), loop=loop, timeout=1)
-    # block(asyncpg_connection.execute('DROP TABLE IF EXISTS lightbus_event_outbox'), loop=loop, timeout=1)
-    return AsyncPostgresConnection(connection=asyncpg_connection)
+def aiopg_cursor(aiopg_connection, loop):
+    return block(aiopg_connection.cursor(), loop=loop, timeout=1)
 
 
-async def verification_connection() -> "asyncpg.Connection":
-    import asyncpg
+@pytest.fixture()
+def dbapi_database(aiopg_connection, aiopg_cursor, loop):
+    block(
+        aiopg_cursor.execute("DROP TABLE IF EXISTS lightbus_processed_events"), loop=loop, timeout=1
+    )
+    block(aiopg_cursor.execute("DROP TABLE IF EXISTS lightbus_event_outbox"), loop=loop, timeout=1)
+    return DbApiConnection(aiopg_connection, aiopg_cursor)
 
-    return await asyncpg.connect(pg_url(), loop=asyncio.get_event_loop())
+
+def verification_connection() -> "aiopg.Connection":
+    import aiopg
+
+    return aiopg.connect(**pg_kwargs(pg_url()), loop=asyncio.get_event_loop())

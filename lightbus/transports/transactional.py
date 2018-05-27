@@ -1,24 +1,15 @@
 import json
 import logging
 from asyncio import AbstractEventLoop
-from functools import partial, wraps
-
-from typing import (
-    List,
-    Tuple,
-    Generator,
-    Type,
-    TypeVar,
-    Optional,
-    Sequence,
-    AsyncIterable,
-    AsyncGenerator,
-)
+from functools import partial
+from typing import List, Tuple, Generator, Type, TypeVar, Optional, AsyncIterable, AsyncGenerator
 
 from lightbus.exceptions import (
     LightbusException,
     UnsupportedOptionValue,
-    DatabaseConnectionRequired,
+    ApisMustUseSameTransport,
+    NoApisSpecified,
+    DuplicateMessage,
 )
 from lightbus.schema.encoder import json_encode
 from lightbus.serializers import BlobMessageSerializer, BlobMessageDeserializer
@@ -32,37 +23,46 @@ except ImportError:
 
 
 try:
-    import asyncpg
+    import psycopg2
+    import psycopg2.extensions
 except ImportError:
-    asyncpg = None
+    psycopg2 = None
+
+
+try:
+    import aiopg
+except ImportError:
+    aiopg = None
 
 
 if False:
-    from lightbus.config.structure import EventTransportSelector
     from lightbus.config import Config
+    from lightbus.bus import BusNode
 
 logger = logging.getLogger(__name__)
 
 
 class TransactionalEventTransport(EventTransport):
-    """ Implement the sending/consumption of events over a given transport.
+    """ Combines database interactions and message sending into an atomic unit
+
+    This is done by first writing the messages to the database within the
+    same transaction as any other database interactions. Once the transaction is
+    complete the messages are placed onto the bus.
+
+    Additionally, incoming messages are de-duplicated.
     """
 
-    def __init__(
-        self,
-        child_transport: EventTransport,
-        database_url: str,
-        database_class: Type["DatabaseConnection"],
-    ):
-        self.postgres_url = database_url
+    def __init__(self, child_transport: EventTransport, database_class: Type["DatabaseConnection"]):
         self.child_transport = child_transport
         self.database_class = database_class
+        self.connection = None
+        self.cursor = None
+        self.database: DatabaseConnection = None
 
     @classmethod
     def from_config(
         cls,
         config: "Config",
-        database_url: str,
         # TODO: Figure out how to represent child_transport in the config schema
         #       without circular import problems. May require extracting
         #       the transport selector structures into json schema 'definitions'
@@ -70,31 +70,42 @@ class TransactionalEventTransport(EventTransport):
         child_transport: dict,
         database_class: str = "lightbus.transports.transactional.FooConnection",
     ):
-        child_transport_config = child_transport._asdict()
-        transport_class = get_transport(type_="event", name=child_transport_config.keys()[0])
+        transport_name = list(child_transport.keys())[0]
+        transport_class = get_transport(type_="event", name=transport_name)
         return cls(
-            database_url=database_url,
-            child_transport=transport_class.from_config(config=config, **child_transport_config),
+            child_transport=transport_class.from_config(config=config, **child_transport),
             database_class=import_from_string(database_class),
         )
 
-    def open(self):
-        pass
+    def set_connection(self, connection, cursor, start_transaction: bool):
+        assert (
+            not self.connection
+        ), "Connection already set. Perhaps you need an lightbus_atomic() context?"
+        self.connection = connection
+        self.cursor = cursor
+        self.database = self.database_class(connection, cursor)
+        if start_transaction:
+            self.database.start_transaction()
+
+    async def commit_and_finish(self):
+        """Commit the current transactions, send committed messages, remove connection"""
+        await self.database.commit_transaction()
+        await self.publish_pending()  # TODO: Specific ID?
+        self._clear_connection()
+
+    async def rollback_and_finish(self):
+        """Rollback the current transaction, remove connection"""
+        await self.database.rollback_transaction()
+        self._clear_connection()
+
+    def _clear_connection(self):
+        assert self.connection, "Connection not set. Perhaps you need an lightbus_atomic() context?"
+        self.connection = None
+        self.cursor = None
+        self.database = None
 
     async def send_event(self, event_message: EventMessage, options: dict):
-        connection = options.pop("db_connection", None)
-        if connection is None:
-            raise DatabaseConnectionRequired(
-                f"Event {event_message.canonical_name} was sent via the 'transactional' "
-                f"transport, but was missing the required db_connection key within bus_options. "
-                f"This connection will be used to ensure the message sending and database changes "
-                "happen atomically. Use .fire(bus_options={'db_connection': my_connection})"
-            )
-        self.database_class.validate_connection(connection)
-        database = self.database_class(connection)
-
-        await database.send_event(event_message, options)
-        await self.publish_pending()  # TODO: Specific ID
+        await self.database.send_event(event_message, options)
 
     async def fetch(
         self,
@@ -104,14 +115,13 @@ class TransactionalEventTransport(EventTransport):
         consumer_group: str = None,
         **kwargs,
     ) -> Generator[EventMessage, None, None]:
-        assert self.database, "Transport has not been opened yet"
+        assert self.database, "Cannot use this transport outside a lightbus_atomic() context"
 
         # Needs to:
-        # 1. Start transactions
-        # 2. Check if message already processed in messages table
-        # 3. Insert message into messages table
-        # 4. Yield
-        # 5. Commit, catching any exceptions relating to 3.
+        # 1. Check if message already processed in messages table
+        # 2. Insert message into messages table
+        # 3. Yield
+        # 4. Commit, catching any exceptions relating to 3.
 
         consumer = self.child_transport.consume(
             listen_for=listen_for,
@@ -121,32 +131,36 @@ class TransactionalEventTransport(EventTransport):
             **kwargs,
         )
         for message in consumer:
-            transaction = await self.database.start_transaction()
             try:
                 # Catch duplicate events up-front where possible, rather than
                 # perform the processing and get an integrity error later
                 if await self.database.is_event_duplicate(message):
-                    logger.info(f"Duplicate event detected, ignoring. Event ID: {message.id}")
+                    logger.info(
+                        f"Duplicate event {message.canonical_name} detected, ignoring. "
+                        f"Event ID: {message.id}"
+                    )
                     continue
 
                 self.database.store_processed_event(message)
                 yield message
             except Exception:
                 logger.warning(
-                    f"Error encountered while processing event ID {message.id}. Rolling back transaction."
+                    f"Error encountered while processing event {message.canonical_name} "
+                    f"with ID {message.id}. Rolling back transaction."
                 )
-                await self.database.rollback_transaction(transaction)
+                await self.database.rollback_transaction()
                 raise
             else:
                 try:
-                    await self.database.commit_transaction(transaction)
+                    await self.database.commit_transaction()
                 except DuplicateMessage:
                     logger.info(
-                        f"Duplicate event discovered upon commit, will rollback transaction. "
+                        f"Duplicate event {message.canonical_name} discovered upon commit, "
+                        f"will rollback transaction. "
                         f"Duplicates were probably being processed simultaneously, otherwise "
                         f"this would have been caught earlier. Event ID: {message.id}"
                     )
-                    await self.database.rollback_transaction(transaction)
+                    await self.database.rollback_transaction()
 
     async def publish_pending(self, message_id=None):
         async for message, options in await self.database.consume_pending_events(message_id):
@@ -154,27 +168,94 @@ class TransactionalEventTransport(EventTransport):
             await self.database.remove_pending_event(message.id)
 
 
+class LightbusAtomic(object):
+
+    def __init__(
+        self, bus: "BusNode", connection, apis: List[str], start_transaction: Optional[bool] = None
+    ):
+        # Autodetect transaction starting if not specified
+        if start_transaction is None:
+            self.start_transaction = self._autodetect_start_transaction(connection)
+        else:
+            self.start_transaction = start_transaction
+        self.connection = connection
+
+        # Get the transport, and check it is sane
+        transports = {
+            bus.bus_client.transport_registry.get_event_transport(api_name) for api_name in apis
+        }
+        if len(transports) > 1:
+            # This check is not be strictly required, but let's enforce it
+            # for the initial implementation.
+            raise ApisMustUseSameTransport(
+                f"Multiple APIs were specified when starting a lightbus atomic "
+                f"context, but all APIs did not share the same transport. APIs to be "
+                f"used within the same block must use the same transactional event "
+                f"transport. The specified APIs were: {', '.join(apis)}"
+            )
+        elif not transports:
+            raise NoApisSpecified(
+                f"No APIs were specified when starting a lightbus atomic context. At least "
+                f"one API must be specified, and each API must use the same transactional event "
+                f"transport."
+            )
+
+        self.transport: TransactionalEventTransport = list(transports)[0]
+
+    def _autodetect_start_transaction(self, connection) -> Optional[bool]:
+        if psycopg2 and isinstance(connection, psycopg2.extensions.connection):
+            return not connection.autocommit
+        if aiopg and isinstance(connection, aiopg.Connection):
+            return not connection.autocommit
+        else:
+            return True
+
+    async def _get_cursor(self):
+        return self.connection.cursor()
+
+    async def __aenter__(self):
+        self.cursor = await self._get_cursor()
+        self.transport.set_connection(
+            self.connection, self.cursor, start_transaction=self.start_transaction
+        )
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            await self.transport.rollback_and_finish()
+        else:
+            await self.transport.commit_and_finish()
+
+
+lightbus_atomic = LightbusAtomic
+
 T = TypeVar("T")
-Transaction = TypeVar("Transaction")
+
+
+def options_deserializer(serilaized):
+    if isinstance(serilaized, dict):
+        return serilaized
+    else:
+        return json.loads(serilaized)
 
 
 class DatabaseConnection(object):
     message_serializer = BlobMessageSerializer()
     message_deserializer = BlobMessageDeserializer(EventMessage)
     options_serializer = partial(json_encode, indent=None, sort_keys=False)
-    options_deserializer = staticmethod(json.loads)
+    options_deserializer = staticmethod(options_deserializer)
 
-    def __init__(self, connection):
+    def __init__(self, connection, cursor):
         self.connection = connection
+        self.cursor = cursor
 
-    async def start_transaction(self) -> Transaction:
+    async def start_transaction(self):
         raise NotImplementedError()
 
-    async def commit_transaction(self, transaction: Transaction):
+    async def commit_transaction(self):
         # Should raise DuplicateMessage() if unique key on de-duping table is violated
         raise NotImplementedError()
 
-    async def rollback_transaction(self, transaction: Transaction):
+    async def rollback_transaction(self):
         raise NotImplementedError()
 
     async def is_event_duplicate(self, message: EventMessage) -> bool:
@@ -197,42 +278,13 @@ class DatabaseConnection(object):
     async def remove_pending_event(self, message_id):
         raise NotImplementedError()
 
-    @classmethod
-    async def validate_connection(cls, connection):
-        # Raise an exception is the connection object is invalid for any reason
-        # (eg. must be of the expected client library, and have an active transaction)
-        raise NotImplementedError()
 
-
-class DuplicateMessage(LightbusException):
-    pass
-
-
-class AsyncPostgresConnection(DatabaseConnection):
-
-    def __init__(self, connection: asyncpg.Connection):
-        super().__init__(connection)
-        self._instrument_connection()
-
-    def _instrument_connection(self):
-        execute = self.connection.execute
-        if hasattr(execute, "callbacks"):
-            return
-
-        @wraps(execute)
-        async def execute_callback(self_, *args, **kwargs):
-            res = await execute(*args, **kwargs)
-            # while execute_callback.callbacks:
-            #     execute_callback.callbacks.pop()(*args, **kwargs)
-            return res
-
-        execute_callback.callbacks = []
-        self.connection.__class__.execute = execute_callback
+class DbApiConnection(DatabaseConnection):
 
     async def migrate(self):
         # TODO: smarter version handling
         # TODO: cleanup old entries after x time
-        await self.connection.execute(
+        await self.cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS lightbus_processed_events (
                 message_id VARCHAR(100) PRIMARY KEY,
@@ -241,36 +293,40 @@ class AsyncPostgresConnection(DatabaseConnection):
         """
         )
 
-        await self.connection.execute(
+        await self.cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS lightbus_event_outbox (
                 message_id VARCHAR(100) PRIMARY KEY,
                 message JSON,
-                options JSON
+                options JSON,
+                sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             )
         """
         )
 
-    async def start_transaction(self) -> Transaction:
-        transaction = self.connection.transaction(isolation="read_committed")
-        await transaction.start()
-        return transaction
+    async def start_transaction(self):
+        await self.cursor.execute("BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED")
 
-    async def commit_transaction(self, transaction: Transaction):
+    async def commit_transaction(self):
         # TODO: Should raise DuplicateMessage() if unique key on de-duping table is violated
-        await transaction.commit()
+        # We do this manually because self.connection.commit() will not work as per:
+        #   http://initd.org/psycopg/docs/advanced.html#asynchronous-support
+        await self.cursor.execute("COMMIT")
 
-    async def rollback_transaction(self, transaction: Transaction):
-        await transaction.rollback()
+    async def rollback_transaction(self):
+        # We do this manually because self.connection.rollback() will not work as per:
+        #   http://initd.org/psycopg/docs/advanced.html#asynchronous-support
+        await self.cursor.execute("ROLLBACK")
 
     async def is_event_duplicate(self, message: EventMessage) -> bool:
-        sql = "SELECT EXISTS(SELECT 1 FROM lightbus_processed_events WHERE message_id = $1)"
-        return await self.connection.fetchval(sql, message.id)
+        sql = "SELECT EXISTS(SELECT 1 FROM lightbus_processed_events WHERE message_id = %s)"
+        await self.cursor.execute(sql, [message.id])
+        return (await self.cursor.fetchall())[0][0]
 
     async def store_processed_event(self, message: EventMessage):
         # Store message in de-duping table
-        sql = "INSERT INTO lightbus_processed_events (message_id) VALUES ($1)"
-        await self.connection.execute(sql, message.id)
+        sql = "INSERT INTO lightbus_processed_events (message_id) VALUES (%s)"
+        await self.cursor.execute(sql, [message.id])
 
     async def send_event(self, message: EventMessage, options: dict):
         # Store message in messages-to-be-published table
@@ -282,9 +338,9 @@ class AsyncPostgresConnection(DatabaseConnection):
                 f"when sending an event on the bus. By default this encoding uses JSON, "
                 f"although this can be customised. The error was: {e}"
             )
-        sql = "INSERT INTO lightbus_event_outbox (message_id, message, options) VALUES ($1, $2, $3)"
-        await self.connection.execute(
-            sql, message.id, self.message_serializer(message), encoded_options
+        sql = "INSERT INTO lightbus_event_outbox (message_id, message, options) VALUES (%s, %s, %s)"
+        await self.cursor.execute(
+            sql, [message.id, self.message_serializer(message), encoded_options]
         )
 
     async def consume_pending_events(
@@ -294,7 +350,7 @@ class AsyncPostgresConnection(DatabaseConnection):
         while True:
             # Filter be message ID if specified
             if message_id:
-                where = "WHERE message_id = $1"
+                where = "WHERE message_id = %s"
                 args = [message_id]
             else:
                 where = ""
@@ -302,35 +358,24 @@ class AsyncPostgresConnection(DatabaseConnection):
 
             # Select a single event from the outbox, ignoring any locked events, and
             # locking the event we select.
-            sql = "SELECT * FROM lightbus_event_outbox {} LIMIT 1 FOR UPDATE SKIP LOCKED".format(
+            sql = "SELECT message, options FROM lightbus_event_outbox {} LIMIT 1 FOR UPDATE SKIP LOCKED".format(
                 where
             )
-            result = await self.connection.fetchrow(sql, *args)
+            await self.cursor.execute(sql, args)
+            result = await self.cursor.fetchall()
 
             if not result:
                 return
             else:
-                yield (
-                    self.message_deserializer(result["message"]),
-                    self.options_deserializer(result["options"]),
-                )
+                message, options = result[0]
+                yield (self.message_deserializer(message), self.options_deserializer(options))
 
     async def remove_pending_event(self, message_id):
-        sql = "DELETE FROM lightbus_event_outbox WHERE message_id = $1"
-        await self.connection.execute(sql, message_id)
+        sql = "DELETE FROM lightbus_event_outbox WHERE message_id = %s"
+        await self.cursor.execute(sql, [message_id])
 
 
-class AsyncPgNotInstalled(LightbusException):
-    pass
-
-
-class Pyscopg2Connection(DatabaseConnection):
-
-    def __init__(self, connection):
-        self.connection = connection
-
-
-class DjangoConnection(Pyscopg2Connection):
+class DjangoConnection(DbApiConnection):
 
     @classmethod
     async def create(cls: Type[T]) -> T:
@@ -340,7 +385,6 @@ class DjangoConnection(Pyscopg2Connection):
                 "but django could not be imported. Is Django installed? Or perhaps you don't really "
                 "want to be using the Django database?"
             )
-        import django.db.connection
 
         # Get the underlying django psycopg2 connection
         return DjangoConnection(connection)
