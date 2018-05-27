@@ -38,6 +38,15 @@ def aiopg_connection(pg_kwargs, loop):
     connection.close()
 
 
+@pytest.yield_fixture()
+def psycopg2_connection(pg_kwargs, loop):
+    import psycopg2
+
+    connection = psycopg2.connect(**pg_kwargs)
+    yield connection
+    connection.close()
+
+
 @pytest.fixture()
 def aiopg_cursor(aiopg_connection, loop):
     return block(aiopg_connection.cursor(), loop=loop, timeout=1)

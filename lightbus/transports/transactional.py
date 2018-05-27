@@ -217,7 +217,9 @@ class LightbusAtomic(object):
         if psycopg2 and isinstance(connection, psycopg2.extensions.connection):
             return not connection.autocommit
         if aiopg and isinstance(connection, aiopg.Connection):
-            return not connection.autocommit
+            # aiopg must always have autocommit on in order for the underlying
+            # psycopg2 library for function in asynchronous mode
+            return False
         else:
             return True
 
