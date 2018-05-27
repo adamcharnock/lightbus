@@ -8,7 +8,11 @@ services:
     ports:
       - "5432:5432"
 
-  tests:
+  travis_db:
+    image: postgres
+    restart: always
+
+  travis_tests:
     build:
       context: ..
       dockerfile: tests/Dockerfile
@@ -16,4 +20,6 @@ services:
       - ..:/local
     command: pytest --cov=lightbus --cov-report=xml:/local/.coverage
     environment:
-      PG_URL: "postgres://db:5432/postgres"
+      PG_URL: "postgres://travis_db:5432/postgres"
+    depends_on:
+      - travis_db

@@ -16,10 +16,10 @@ services:
 before_install:
 - docker build -t lightbus-test -f tests/Dockerfile .
 - pip install coverage coveralls
-- docker-compose -f tests/docker-compose.yaml up -d db
+- docker-compose -f tests/docker-compose.yaml up -d travis_db
 
 script:
-- docker-compose -f tests/docker-compose.yaml run tests
+- docker-compose -f tests/docker-compose.yaml run travis_tests
 
 after_script:
 - coverage combine .coverage
