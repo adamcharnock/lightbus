@@ -77,6 +77,8 @@ class LightbusAtomic(object):
             # psycopg2 library for function in asynchronous mode
             return False
         else:
+            # Issuing a BEGIN statement twice is not an error, so we can be
+            # liberal about it
             return True
 
     async def _get_cursor(self):
@@ -84,7 +86,7 @@ class LightbusAtomic(object):
 
     async def __aenter__(self):
         self.cursor = await self._get_cursor()
-        self.transport.set_connection(
+        await self.transport.set_connection(
             self.connection, self.cursor, start_transaction=self.start_transaction
         )
 
@@ -93,7 +95,6 @@ class LightbusAtomic(object):
             await self.transport.rollback_and_finish()
         else:
             await self.transport.commit_and_finish()
-        self.cursor.close()
         self.cursor = None
 
 

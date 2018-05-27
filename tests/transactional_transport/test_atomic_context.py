@@ -83,7 +83,7 @@ async def test_aexit_success(atomic_context, mocker):
     assert not rollback_mock.called
     assert commit_mock.called
     assert not atomic_context.cursor
-    assert cursor.closed
+    assert not cursor.closed
 
 
 @pytest.mark.run_loop
@@ -102,4 +102,4 @@ async def test_aexit_exception(atomic_context, mocker):
     assert rollback_mock.called
     assert not commit_mock.called
     assert not atomic_context.cursor
-    assert cursor.closed
+    assert not cursor.closed

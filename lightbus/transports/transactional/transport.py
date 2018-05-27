@@ -2,7 +2,7 @@ import logging
 from asyncio import AbstractEventLoop
 from typing import List, Tuple, Generator, Type
 
-from lightbus.exceptions import DuplicateMessage
+from lightbus.exceptions import DuplicateMessage, LightbusException
 from lightbus.transports.base import get_transport, EventTransport, EventMessage
 from lightbus.utilities.importing import import_from_string
 from .databases import DbApiConnection, DatabaseConnection
@@ -49,28 +49,42 @@ class TransactionalEventTransport(EventTransport):
         transport_name = list(child_transport.keys())[0]
         transport_class = get_transport(type_="event", name=transport_name)
         return cls(
-            child_transport=transport_class.from_config(config=config, **child_transport),
+            child_transport=transport_class.from_config(
+                config=config, **child_transport[transport_name]
+            ),
             database_class=import_from_string(database_class),
         )
 
-    def set_connection(self, connection, cursor, start_transaction: bool):
-        assert (
-            not self.connection
-        ), "Connection already set. Perhaps you need an lightbus_atomic() context?"
+    async def set_connection(self, connection, cursor, start_transaction: bool):
+        if self.connection:
+            raise ConnectionAlreadySet(
+                f"The transactional transport connection has already been set. "
+                f"Perhaps you should use a lightbus_atomic() context?"
+            )
         self.connection = connection
         self.cursor = cursor
         self.database = self.database_class(connection, cursor)
         if start_transaction:
-            self.database.start_transaction()
+            await self.database.start_transaction()
 
     async def commit_and_finish(self):
         """Commit the current transactions, send committed messages, remove connection"""
+        if not self.database:
+            raise DatabaseNotSet(
+                f"The transactional transport database connection has not been setup. "
+                f"Perhaps you should use a lightbus_atomic() context?"
+            )
         await self.database.commit_transaction()
         await self.publish_pending()  # TODO: Specific ID?
         self._clear_connection()
 
     async def rollback_and_finish(self):
         """Rollback the current transaction, remove connection"""
+        if not self.database:
+            raise DatabaseNotSet(
+                f"The transactional transport database connection has not been setup. "
+                f"Perhaps you should use a lightbus_atomic() context?"
+            )
         await self.database.rollback_transaction()
         self._clear_connection()
 
@@ -139,6 +153,14 @@ class TransactionalEventTransport(EventTransport):
                     await self.database.rollback_transaction()
 
     async def publish_pending(self, message_id=None):
-        async for message, options in await self.database.consume_pending_events(message_id):
+        async for message, options in self.database.consume_pending_events(message_id):
             await self.child_transport.send_event(message, options)
             await self.database.remove_pending_event(message.id)
+
+
+class ConnectionAlreadySet(LightbusException):
+    pass
+
+
+class DatabaseNotSet(LightbusException):
+    pass
