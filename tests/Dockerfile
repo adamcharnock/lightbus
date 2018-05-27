@@ -67,6 +67,8 @@ RUN pip install -r requirements.txt -r test-requirements.txt .[development]
 COPY .coveragerc .
 COPY lightbus ./lightbus
 COPY tests ./tests
+# The examples are used in the autodiscovery tests
+COPY lightbus_examples ./lightbus_examples
 RUN mkdir .coverage
 
 CMD py.test
