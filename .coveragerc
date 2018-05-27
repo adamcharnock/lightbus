@@ -2,3 +2,6 @@
 source =
     lightbus/
     /lightbus/lightbus
+
+[run]
+data_file = .coverage/coverage

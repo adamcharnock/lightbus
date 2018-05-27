@@ -66,5 +66,6 @@ RUN pip install -r requirements.txt -r test-requirements.txt .[development]
 
 COPY lightbus ./lightbus
 COPY tests ./tests
+RUN mkdir .coverage
 
 CMD py.test
