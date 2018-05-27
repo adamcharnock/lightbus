@@ -5,3 +5,13 @@ source =
 
 [run]
 data_file = .coverage/coverage
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:

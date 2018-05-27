@@ -62,7 +62,7 @@ def parse_colors(sequence):
     return "".join(escape_codes[n] for n in sequence.split(",") if n)
 
 
-class LightbusLogRecord(object):
+class LightbusLogRecord(object):  # pragma: no cover
     """
     Wraps a LogRecord, adding named escape codes to the internal dict.
 
@@ -103,7 +103,7 @@ class LightbusLogRecord(object):
         return getattr(self._record, name)
 
 
-class LightbusFormatter(logging.Formatter):
+class LightbusFormatter(logging.Formatter):  # pragma: no cover
     """
     A formatter that allows colors to be placed in the format string.
 
