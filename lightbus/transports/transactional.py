@@ -10,6 +10,7 @@ from lightbus.exceptions import (
     ApisMustUseSameTransport,
     NoApisSpecified,
     DuplicateMessage,
+    ApisMustUseTransactionalTransport,
 )
 from lightbus.schema.encoder import json_encode
 from lightbus.serializers import BlobMessageSerializer, BlobMessageDeserializer
@@ -52,7 +53,11 @@ class TransactionalEventTransport(EventTransport):
     Additionally, incoming messages are de-duplicated.
     """
 
-    def __init__(self, child_transport: EventTransport, database_class: Type["DatabaseConnection"]):
+    def __init__(
+        self,
+        child_transport: EventTransport,
+        database_class: Type["DatabaseConnection"] = "DbApiConnection",
+    ):
         self.child_transport = child_transport
         self.database_class = database_class
         self.connection = None
@@ -68,7 +73,7 @@ class TransactionalEventTransport(EventTransport):
         #       the transport selector structures into json schema 'definitions'
         # child_transport: 'EventTransportSelector',
         child_transport: dict,
-        database_class: str = "lightbus.transports.transactional.FooConnection",
+        database_class: str = "lightbus.transports.transactional.DbApiConnection",
     ):
         transport_name = list(child_transport.keys())[0]
         transport_class = get_transport(type_="event", name=transport_name)
@@ -181,11 +186,11 @@ class LightbusAtomic(object):
         self.connection = connection
 
         # Get the transport, and check it is sane
-        transports = {
-            bus.bus_client.transport_registry.get_event_transport(api_name) for api_name in apis
-        }
+        transports = list(
+            {bus.bus_client.transport_registry.get_event_transport(api_name) for api_name in apis}
+        )
         if len(transports) > 1:
-            # This check is not be strictly required, but let's enforce it
+            # This check is not strictly required, but let's enforce it
             # for the initial implementation.
             raise ApisMustUseSameTransport(
                 f"Multiple APIs were specified when starting a lightbus atomic "
@@ -199,8 +204,14 @@ class LightbusAtomic(object):
                 f"one API must be specified, and each API must use the same transactional event "
                 f"transport."
             )
+        elif not isinstance(transports[0], TransactionalEventTransport):
+            raise ApisMustUseTransactionalTransport(
+                f"The specified APIs are not configured to use the TransactionalEventTransport "
+                f"transport. Instead they use {transports[0].__class__}. The "
+                f"specified APIs were: {', '.join(apis)}."
+            )
 
-        self.transport: TransactionalEventTransport = list(transports)[0]
+        self.transport: TransactionalEventTransport = transports[0]
 
     def _autodetect_start_transaction(self, connection) -> Optional[bool]:
         if psycopg2 and isinstance(connection, psycopg2.extensions.connection):
