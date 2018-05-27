@@ -51,7 +51,15 @@ def test_autodetect_start_transaction_psycopg2_without_autocommit(
     assert atomic_context._autodetect_start_transaction(psycopg2_connection) == True
 
 
-def test_autodetect_start_transaction_aiopg(aiopg_connection, atomic_context):
+def test_autodetect_start_transaction_aiopg(atomic_context, aiopg_connection):
     # aiopg must always have autocommit on in order for the underlying
     # psycopg2 library for function in asynchronous mode
     assert atomic_context._autodetect_start_transaction(aiopg_connection) == False
+
+
+@pytest.mark.run_loop
+async def test_aenter(atomic_context, aiopg_connection):
+    await atomic_context.__aenter__()
+    assert atomic_context.cursor
+    assert atomic_context.transport.connection == aiopg_connection
+    assert atomic_context.transport.cursor
