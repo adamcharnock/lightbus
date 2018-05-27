@@ -34,10 +34,8 @@ def prepare_exec_for_file(file: Path):
         file = file.parent / file.name[:-3]
     else:
         raise Exception(
-            "The file provided (%s) does exist but is not a "
-            "valid Python file.  This means that it cannot "
-            "be used as application.  Please change the "
-            "extension to .py" % file
+            f"The file provided ({file}) is not a valid python file. "
+            f"Please change the extension to bus.py."
         )
     file = file.resolve()
 
