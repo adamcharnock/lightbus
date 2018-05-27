@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def discover_bus_py(directory="."):
-    """Try discover a suitable bus.py file to import"""
+    """Try to discover a suitable bus.py file to import"""
     lightbus_directory = Path(__file__).parent.resolve()
     for root, dirs, files in os.walk(directory):
         root = Path(root).resolve()
