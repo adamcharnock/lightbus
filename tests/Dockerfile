@@ -50,6 +50,9 @@ RUN \
     apk add -U gcc python3-dev musl-dev git && \
     rm -rf /var/cache/apk/*
 
+# Postgres
+RUN apk update && apk add postgresql-libs postgresql-dev
+
 WORKDIR /lightbus
 
 COPY --from=redis_etc /usr/local/bin/redis-* /usr/bin/

@@ -7,3 +7,13 @@ services:
     restart: always
     ports:
       - "5432:5432"
+
+  tests:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile
+    volumes:
+      - ..:/local
+    command: pytest --cov=lightbus --cov-report=xml:/local/.coverage
+    environment:
+      PG_URL: "postgres://db:5432/postgres"

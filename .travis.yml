@@ -16,10 +16,10 @@ services:
 before_install:
 - docker build -t lightbus-test -f tests/Dockerfile .
 - pip install coverage coveralls
-- docker-compose -f tests/docker-compose.yaml up -d
+- docker-compose -f tests/docker-compose.yaml up -d db
 
 script:
-- $CMD pytest --cov=lightbus
+- docker-compose -f tests/docker-compose.yaml run tests
 
 after_script:
 - coverage combine .coverage
