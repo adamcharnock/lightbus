@@ -66,6 +66,8 @@ def transactional_bus(dummy_bus: BusNode, new_redis_pool, aiopg_connection, aiop
 def test_table(aiopg_cursor, loop):
     block(aiopg_cursor.execute("DROP TABLE IF EXISTS test_table"), loop=loop, timeout=1)
     block(aiopg_cursor.execute("CREATE TABLE test_table (pk VARCHAR(100))"), loop=loop, timeout=1)
+    block(aiopg_cursor.execute("COMMIT"), loop=loop, timeout=1)
+    block(aiopg_cursor.execute("BEGIN"), loop=loop, timeout=1)
 
     class TestTable(object):
 
@@ -76,6 +78,8 @@ def test_table(aiopg_cursor, loop):
     yield TestTable()
 
     block(aiopg_cursor.execute("DROP TABLE test_table"), loop=loop, timeout=1)
+    block(aiopg_cursor.execute("COMMIT"), loop=loop, timeout=1)
+    block(aiopg_cursor.execute("BEGIN"), loop=loop, timeout=1)
 
 
 # Tests

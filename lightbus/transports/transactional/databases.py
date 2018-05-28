@@ -115,8 +115,6 @@ class DbApiConnection(DatabaseConnection):
             else:
                 raise
 
-        await self.start_transaction()
-
     async def rollback_transaction(self):
         # We do this manually because self.connection.rollback() will not work as per:
         #   http://initd.org/psycopg/docs/advanced.html#asynchronous-support
