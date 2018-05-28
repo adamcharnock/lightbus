@@ -414,6 +414,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             )
         )
 
+        # Performance: I suspect getting a connection from the connection manager each time is causing
+        # performance issues. Need to confirm.
         with await self.connection_manager() as redis:
             start_time = time.time()
             await redis.xadd(
