@@ -8,28 +8,8 @@ from tests.transactional_transport.conftest import verification_connection
 pytestmark = pytest.mark.unit
 
 
-# Utility functions
-
-
-async def get_processed_events():
-    async with verification_connection() as connection:
-        async with connection.cursor() as cursor:
-            await cursor.execute("SELECT * FROM lightbus_processed_events")
-            return await cursor.fetchall()
-
-
-async def get_outbox():
-    async with verification_connection() as connection:
-        async with connection.cursor() as cursor:
-            await cursor.execute("SELECT * FROM lightbus_event_outbox")
-            return await cursor.fetchall()
-
-
-# Tests
-
-
 @pytest.mark.run_loop
-async def test_migrate(dbapi_database: DbApiConnection):
+async def test_migrate(dbapi_database: DbApiConnection, get_processed_events, get_outbox):
     await dbapi_database.migrate()
     # The following would fail if the tables didn't exist
     assert len(await get_processed_events()) == 0
@@ -37,7 +17,7 @@ async def test_migrate(dbapi_database: DbApiConnection):
 
 
 @pytest.mark.run_loop
-async def test_transaction_commit(dbapi_database: DbApiConnection):
+async def test_transaction_commit(dbapi_database: DbApiConnection, get_processed_events):
     await dbapi_database.migrate()
     await dbapi_database.start_transaction()
     await dbapi_database.store_processed_event(
@@ -48,7 +28,7 @@ async def test_transaction_commit(dbapi_database: DbApiConnection):
 
 
 @pytest.mark.run_loop
-async def test_transaction_rollback(dbapi_database: DbApiConnection):
+async def test_transaction_rollback(dbapi_database: DbApiConnection, get_processed_events):
     await dbapi_database.migrate()
     await dbapi_database.start_transaction()
     await dbapi_database.store_processed_event(
@@ -59,7 +39,7 @@ async def test_transaction_rollback(dbapi_database: DbApiConnection):
 
 
 @pytest.mark.run_loop
-async def test_transaction_rollback_continue(dbapi_database: DbApiConnection):
+async def test_transaction_rollback_continue(dbapi_database: DbApiConnection, get_processed_events):
     # Check we can still use the connection following a rollback
     await dbapi_database.migrate()
     await dbapi_database.start_transaction()
@@ -89,7 +69,7 @@ async def test_is_event_duplicate_false(dbapi_database: DbApiConnection):
 
 
 @pytest.mark.run_loop
-async def test_send_event_ok(dbapi_database: DbApiConnection):
+async def test_send_event_ok(dbapi_database: DbApiConnection, get_outbox):
     await dbapi_database.migrate()
     message = EventMessage(api_name="api", event_name="event", kwargs={"field": "abc"}, id="123")
     options = {"key": "value"}
@@ -118,7 +98,7 @@ async def test_send_event_bad_option_value(dbapi_database: DbApiConnection):
 
 
 @pytest.mark.run_loop
-async def test_remove_pending_event(dbapi_database: DbApiConnection):
+async def test_remove_pending_event(dbapi_database: DbApiConnection, get_outbox):
     await dbapi_database.migrate()
     message = EventMessage(api_name="api", event_name="event", kwargs={"field": "abc"}, id="123")
     await dbapi_database.send_event(message, options={})

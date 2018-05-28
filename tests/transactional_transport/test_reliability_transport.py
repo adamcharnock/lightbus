@@ -1,72 +1,14 @@
-import asyncio
-import os
-import urllib.parse
-from typing import AsyncGenerator, Awaitable
-
 import pytest
 
 import lightbus
-from lightbus import TransactionalEventTransport, BusNode
-from lightbus.transports.transactional import DbApiConnection
+from lightbus import BusNode, TransactionalEventTransport
+from lightbus.transports.transactional import lightbus_atomic, DbApiConnection
 from lightbus.utilities.async import block
 
-if False:
-    import aiopg
+from tests.transactional_transport.conftest import verification_connection
 
 
-@pytest.fixture()
-def pg_url():
-    return os.environ.get("PG_URL", "postgres://postgres@localhost:5432/postgres")
-
-
-@pytest.fixture()
-def pg_kwargs(pg_url):
-    parsed = urllib.parse.urlparse(pg_url)
-    assert parsed.scheme == "postgres"
-    return {
-        "dbname": parsed.path.strip("/") or "postgres",
-        "user": parsed.username or "postgres",
-        "password": parsed.password,
-        "host": parsed.hostname,
-        "port": parsed.port or 5432,
-    }
-
-
-@pytest.yield_fixture()
-def aiopg_connection(pg_kwargs, loop):
-    import aiopg
-
-    connection = block(aiopg.connect(loop=loop, **pg_kwargs), loop=loop, timeout=2)
-    yield connection
-    connection.close()
-
-
-@pytest.yield_fixture()
-def psycopg2_connection(pg_kwargs, loop):
-    import psycopg2
-
-    connection = psycopg2.connect(**pg_kwargs)
-    yield connection
-    connection.close()
-
-
-@pytest.fixture()
-def aiopg_cursor(aiopg_connection, loop):
-    cursor = block(aiopg_connection.cursor(), loop=loop, timeout=1)
-    block(cursor.execute("DROP TABLE IF EXISTS lightbus_processed_events"), loop=loop, timeout=1)
-    block(cursor.execute("DROP TABLE IF EXISTS lightbus_event_outbox"), loop=loop, timeout=1)
-    return cursor
-
-
-@pytest.fixture()
-def dbapi_database(aiopg_connection, aiopg_cursor, loop):
-    return DbApiConnection(aiopg_connection, aiopg_cursor)
-
-
-def verification_connection() -> Awaitable["aiopg.Connection"]:
-    import aiopg
-
-    return aiopg.connect(**pg_kwargs(pg_url()), loop=asyncio.get_event_loop())
+# Utility functions & fixtures
 
 
 @pytest.fixture()
@@ -76,18 +18,6 @@ def get_outbox():
         async with verification_connection() as connection:
             async with connection.cursor() as cursor:
                 await cursor.execute("SELECT * FROM lightbus_event_outbox")
-                return await cursor.fetchall()
-
-    return inner
-
-
-@pytest.fixture()
-def get_processed_events():
-
-    async def inner():
-        async with verification_connection() as connection:
-            async with connection.cursor() as cursor:
-                await cursor.execute("SELECT * FROM lightbus_processed_events")
                 return await cursor.fetchall()
 
     return inner
@@ -140,3 +70,50 @@ def test_table(aiopg_cursor, loop):
     block(aiopg_cursor.execute("DROP TABLE test_table"), loop=loop, timeout=1)
     block(aiopg_cursor.execute("COMMIT"), loop=loop, timeout=1)
     block(aiopg_cursor.execute("BEGIN"), loop=loop, timeout=1)
+
+
+# Tests
+
+
+@pytest.mark.run_loop
+async def test_fire_events_all_ok(
+    transactional_bus,
+    aiopg_connection,
+    test_table,
+    dummy_api,
+    aiopg_cursor,
+    messages_in_redis,
+    get_outbox,
+):
+    async with lightbus_atomic(transactional_bus, aiopg_connection, apis=["foo", "bar"]):
+        await transactional_bus.my.dummy.my_event.fire_async(field=1)
+        await aiopg_cursor.execute("INSERT INTO test_table VALUES ('hey')")
+
+    assert await test_table.total_rows() == 1  # Test table has data
+    assert len(await get_outbox()) == 0  # Sent messages are removed from outbox
+    assert len(await messages_in_redis("my.dummy", "my_event")) == 1  # Message in redis
+
+
+@pytest.mark.run_loop
+async def test_fire_events_exception(
+    transactional_bus,
+    aiopg_connection,
+    test_table,
+    dummy_api,
+    aiopg_cursor,
+    messages_in_redis,
+    get_outbox,
+):
+
+    class OhNo(Exception):
+        pass
+
+    with pytest.raises(OhNo):
+        async with lightbus_atomic(transactional_bus, aiopg_connection, apis=["foo", "bar"]):
+            await transactional_bus.my.dummy.my_event.fire_async(field=1)
+            await aiopg_cursor.execute("INSERT INTO test_table VALUES ('hey')")
+            raise OhNo()
+
+    assert await test_table.total_rows() == 0  # No data in tests table
+    assert len(await get_outbox()) == 0  # No messages sat in outbox
+    assert len(await messages_in_redis("my.dummy", "my_event")) == 0  # Nothing in redis
