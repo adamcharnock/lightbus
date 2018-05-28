@@ -167,6 +167,8 @@ class DbApiConnection(DatabaseConnection):
             await self.cursor.execute(sql, args)
             result = await self.cursor.fetchall()
 
+            # test-hook: pending_post_fetch
+
             if not result:
                 return
             else:

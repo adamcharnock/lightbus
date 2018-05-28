@@ -71,4 +71,8 @@ COPY tests ./tests
 COPY lightbus_examples ./lightbus_examples
 RUN mkdir .coverage
 
+RUN \
+    find lightbus/ -type f -name "*.py" -exec \
+    sed -i 's/# test-hook: \([a-z_]*\)/from lightbus.utilities.testing import test_hook; test_hook("\1")/g' {} \;
+
 CMD py.test
