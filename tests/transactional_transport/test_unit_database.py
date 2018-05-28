@@ -7,21 +7,8 @@ from tests.transactional_transport.conftest import verification_connection
 
 pytestmark = pytest.mark.unit
 
+
 # Utility functions
-
-
-async def total_processed_events():
-    async with verification_connection() as connection:
-        async with connection.cursor() as cursor:
-            await cursor.execute("SELECT COUNT(*) FROM lightbus_processed_events")
-            return (await cursor.fetchone())[0]
-
-
-async def outbox_size():
-    async with verification_connection() as connection:
-        async with connection.cursor() as cursor:
-            await cursor.execute("SELECT COUNT(*) FROM lightbus_event_outbox")
-            return (await cursor.fetchone())[0]
 
 
 async def get_processed_events():
@@ -45,8 +32,8 @@ async def get_outbox():
 async def test_migrate(dbapi_database: DbApiConnection):
     await dbapi_database.migrate()
     # The following would fail if the tables didn't exist
-    assert await total_processed_events() == 0
-    assert await outbox_size() == 0
+    assert len(await get_processed_events()) == 0
+    assert len(await get_outbox()) == 0
 
 
 @pytest.mark.run_loop
@@ -57,7 +44,7 @@ async def test_transaction_commit(dbapi_database: DbApiConnection):
         EventMessage(api_name="api", event_name="event", id="123")
     )
     await dbapi_database.commit_transaction()
-    assert await total_processed_events() == 1
+    assert len(await get_processed_events()) == 1
 
 
 @pytest.mark.run_loop
@@ -68,7 +55,7 @@ async def test_transaction_rollback(dbapi_database: DbApiConnection):
         EventMessage(api_name="api", event_name="event", id="123")
     )
     await dbapi_database.rollback_transaction()
-    assert await total_processed_events() == 0
+    assert len(await get_processed_events()) == 0
 
 
 @pytest.mark.run_loop
@@ -83,20 +70,7 @@ async def test_transaction_rollback_continue(dbapi_database: DbApiConnection):
     await dbapi_database.store_processed_event(
         EventMessage(api_name="api", event_name="event", id="123")
     )
-    assert await total_processed_events() == 1
-
-
-@pytest.mark.run_loop
-async def test_transaction_commit_duplicate(dbapi_database: DbApiConnection):
-    await dbapi_database.migrate()
-    await dbapi_database.start_transaction()
-    await dbapi_database.store_processed_event(
-        EventMessage(api_name="api", event_name="event", id="123")
-    )
-    with pytest.raises(DuplicateMessage):
-        await dbapi_database.store_processed_event(
-            EventMessage(api_name="api", event_name="event", id="123")
-        )
+    assert len(await get_processed_events()) == 1
 
 
 @pytest.mark.run_loop
@@ -120,7 +94,7 @@ async def test_send_event_ok(dbapi_database: DbApiConnection):
     message = EventMessage(api_name="api", event_name="event", kwargs={"field": "abc"}, id="123")
     options = {"key": "value"}
     await dbapi_database.send_event(message, options)
-    assert await outbox_size() == 1
+    assert len(await get_outbox()) == 1
     retrieved_message, options = await dbapi_database.consume_pending_events(
         message_id="123"
     ).__anext__()
@@ -148,6 +122,6 @@ async def test_remove_pending_event(dbapi_database: DbApiConnection):
     await dbapi_database.migrate()
     message = EventMessage(api_name="api", event_name="event", kwargs={"field": "abc"}, id="123")
     await dbapi_database.send_event(message, options={})
-    assert await outbox_size() == 1
+    assert len(await get_outbox()) == 1
     await dbapi_database.remove_pending_event(message_id="123")
-    assert await outbox_size() == 0
+    assert len(await get_outbox()) == 0

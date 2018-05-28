@@ -76,6 +76,7 @@ class TransactionalEventTransport(EventTransport):
             )
         await self.database.commit_transaction()
         await self.publish_pending()  # TODO: Specific ID?
+        await self.database.commit_transaction()
         self._clear_connection()
 
     async def rollback_and_finish(self):
@@ -117,15 +118,15 @@ class TransactionalEventTransport(EventTransport):
 
         # Wrap the child transport in order to de-duplicate incoming messages
         async for message in consumer:
-            try:
-                await self.database.store_processed_event(message)
-            except DuplicateMessage:
+            if await self.database.is_event_duplicate(message):
                 logger.info(
                     f"Duplicate event {message.canonical_name} detected with ID {message.id}. "
                     f"Skipping."
                 )
                 await consumer.__anext__()
                 continue
+            else:
+                await self.database.store_processed_event(message)
 
             yield message
             yield await consumer.__anext__()

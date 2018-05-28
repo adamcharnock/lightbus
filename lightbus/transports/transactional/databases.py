@@ -115,6 +115,8 @@ class DbApiConnection(DatabaseConnection):
             else:
                 raise
 
+        await self.start_transaction()
+
     async def rollback_transaction(self):
         # We do this manually because self.connection.rollback() will not work as per:
         #   http://initd.org/psycopg/docs/advanced.html#asynchronous-support
@@ -129,18 +131,7 @@ class DbApiConnection(DatabaseConnection):
     async def store_processed_event(self, message: EventMessage):
         # Store message in de-duping table
         sql = "INSERT INTO lightbus_processed_events (message_id) VALUES (%s)"
-        try:
-            await self.cursor.execute(sql, [message.id])
-        except Exception as e:
-            error_name = e.__class__.__name__.lower()
-            error = str(e).lower()
-            # A bit of a fudge to detect duplicate events
-            # Cannot use actual exception as we do not know which client
-            # library will be used
-            if "integrity" in error_name and "lightbus_processed_events" in error:
-                raise DuplicateMessage(f"Message {message.id} was found to be a duplicate")
-            else:
-                raise
+        await self.cursor.execute(sql, [message.id])
 
     async def send_event(self, message: EventMessage, options: dict):
         # Store message in messages-to-be-published table
@@ -182,7 +173,9 @@ class DbApiConnection(DatabaseConnection):
                 return
             else:
                 message, options = result[0]
-                yield (self.message_deserializer(message), self.options_deserializer(options))
+                deserialized_message = self.message_deserializer(message)
+                deserialized_options = self.options_deserializer(options) if options else {}
+                yield (deserialized_message, deserialized_options)
 
     async def remove_pending_event(self, message_id):
         sql = "DELETE FROM lightbus_event_outbox WHERE message_id = %s"
