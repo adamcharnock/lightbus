@@ -45,7 +45,8 @@ async def consumer_to_messages(consumer):
     messages = []
     async for message in consumer:
         messages.append(message)
-        await consumer.__anext__()
+        dummy_value = await consumer.__anext__()
+        assert not isinstance(dummy_value, EventMessage)
     return messages
 
 
@@ -62,6 +63,9 @@ def transaction_transport_with_consumer(aiopg_connection, aiopg_cursor):
         transport = TransactionalEventTransport(DebugEventTransport())
         await transport.set_connection(aiopg_connection, aiopg_cursor, start_transaction=True)
         await transport.database.migrate()
+        # Commit the migrations
+        await aiopg_cursor.execute("COMMIT")
+        await aiopg_cursor.execute("BEGIN")
         transport.child_transport.fetch = dummy_fetcher
         return transport
 
@@ -157,11 +161,12 @@ async def test_fetch_ok(transaction_transport_with_consumer, aiopg_cursor, loop)
 
 
 @pytest.mark.run_loop
-async def test_fetch_duplicate(transaction_transport_with_consumer, aiopg_cursor, loop):
+async def test_fetch_duplicate_detect_early(
+    transaction_transport_with_consumer, aiopg_cursor, loop
+):
+    # Same IDs = duplicate messages
     message1 = EventMessage(api_name="api", event_name="event", id="1")
-    message2 = EventMessage(
-        api_name="api", event_name="event", id="1"
-    )  # Same IDs = duplicate messages
+    message2 = EventMessage(api_name="api", event_name="event", id="1")
 
     transport = await transaction_transport_with_consumer(event_messages=[message1, message2])
     consumer = transport.consume(listen_for="api.event", context={}, loop=loop)
@@ -171,3 +176,24 @@ async def test_fetch_duplicate(transaction_transport_with_consumer, aiopg_cursor
     await aiopg_cursor.execute("SELECT COUNT(*) FROM lightbus_processed_events")
     total_processed_events = (await aiopg_cursor.fetchone())[0]
     assert total_processed_events == 1
+
+
+@pytest.mark.run_loop
+async def test_fetch_duplicate_detect_upon_commit(
+    aiopg_cursor, transaction_transport_with_consumer, loop
+):
+    message1 = EventMessage(api_name="api", event_name="event", id="1")
+    transport = await transaction_transport_with_consumer(event_messages=[message1])
+
+    async with verification_connection() as another_connection:
+        async with another_connection.cursor() as another_cursor:
+
+            consumer = transport.consume(listen_for="api.event", context={}, loop=loop)
+
+            async for _ in consumer:
+                await another_cursor.execute("BEGIN")
+                await another_cursor.execute(
+                    "INSERT INTO lightbus_processed_events (message_id) VALUES ('1')"
+                )
+                await another_cursor.execute("COMMIT")  # message gets processed elsewhere
+                await consumer.__anext__()

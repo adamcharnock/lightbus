@@ -2,7 +2,7 @@ import json
 from functools import partial
 from typing import Tuple, Optional, AsyncIterable, AsyncGenerator
 
-from lightbus.exceptions import UnsupportedOptionValue
+from lightbus.exceptions import UnsupportedOptionValue, DuplicateMessage
 from lightbus.schema.encoder import json_encode
 from lightbus.serializers import BlobMessageSerializer, BlobMessageDeserializer
 from lightbus.transports.base import EventMessage
@@ -93,10 +93,22 @@ class DbApiConnection(DatabaseConnection):
         await self.cursor.execute("BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED")
 
     async def commit_transaction(self):
-        # TODO: Should raise DuplicateMessage() if unique key on de-duping table is violated
-        # We do this manually because self.connection.commit() will not work as per:
-        #   http://initd.org/psycopg/docs/advanced.html#asynchronous-support
-        await self.cursor.execute("COMMIT")
+        try:
+            # We do this manually because self.connection.commit() will not work as per:
+            #   http://initd.org/psycopg/docs/advanced.html#asynchronous-support
+            await self.cursor.execute("COMMIT")
+        except Exception as e:
+            error = str(e).lower()
+            # A bit of a fudge to detect duplicate events at commit time
+            if "integrity" in error and "lightbus_processed_events" in error:
+                raise DuplicateMessage(
+                    "Duplicate event detected upon commit. We normally catch this "
+                    "preemptively, but it is possible that duplicate messages were "
+                    "being processed in parallel, in which case we only catch it "
+                    "upon commit."
+                )
+            else:
+                raise
 
     async def rollback_transaction(self):
         # We do this manually because self.connection.rollback() will not work as per:

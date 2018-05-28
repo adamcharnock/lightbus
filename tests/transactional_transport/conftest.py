@@ -1,6 +1,7 @@
 import asyncio
 import os
 import urllib.parse
+from typing import AsyncGenerator, Awaitable
 
 import pytest
 
@@ -60,7 +61,7 @@ def dbapi_database(aiopg_connection, aiopg_cursor, loop):
     return DbApiConnection(aiopg_connection, aiopg_cursor)
 
 
-def verification_connection() -> "aiopg.Connection":
+def verification_connection() -> Awaitable["aiopg.Connection"]:
     import aiopg
 
     return aiopg.connect(**pg_kwargs(pg_url()), loop=asyncio.get_event_loop())

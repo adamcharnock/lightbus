@@ -1,7 +1,7 @@
 import pytest
 
 from lightbus import EventMessage
-from lightbus.exceptions import UnsupportedOptionValue
+from lightbus.exceptions import UnsupportedOptionValue, DuplicateMessage
 from lightbus.transports.transactional import DbApiConnection
 from tests.transactional_transport.conftest import verification_connection
 
@@ -50,7 +50,7 @@ async def test_migrate(dbapi_database: DbApiConnection):
 
 
 @pytest.mark.run_loop
-async def test_transaction_start_commit(dbapi_database: DbApiConnection):
+async def test_transaction_commit(dbapi_database: DbApiConnection):
     await dbapi_database.migrate()
     await dbapi_database.start_transaction()
     await dbapi_database.store_processed_event(
@@ -61,7 +61,7 @@ async def test_transaction_start_commit(dbapi_database: DbApiConnection):
 
 
 @pytest.mark.run_loop
-async def test_transaction_start_rollback(dbapi_database: DbApiConnection):
+async def test_transaction_rollback(dbapi_database: DbApiConnection):
     await dbapi_database.migrate()
     await dbapi_database.start_transaction()
     await dbapi_database.store_processed_event(
@@ -72,7 +72,7 @@ async def test_transaction_start_rollback(dbapi_database: DbApiConnection):
 
 
 @pytest.mark.run_loop
-async def test_transaction_start_rollback_continue(dbapi_database: DbApiConnection):
+async def test_transaction_rollback_continue(dbapi_database: DbApiConnection):
     # Check we can still use the connection following a rollback
     await dbapi_database.migrate()
     await dbapi_database.start_transaction()
@@ -84,6 +84,20 @@ async def test_transaction_start_rollback_continue(dbapi_database: DbApiConnecti
         EventMessage(api_name="api", event_name="event", id="123")
     )
     assert await total_processed_events() == 1
+
+
+@pytest.mark.run_loop
+async def test_transaction_commit_duplicate(dbapi_database: DbApiConnection):
+    await dbapi_database.migrate()
+    await dbapi_database.start_transaction()
+    await dbapi_database.store_processed_event(
+        EventMessage(api_name="api", event_name="event", id="123")
+    )
+    await dbapi_database.store_processed_event(
+        EventMessage(api_name="api", event_name="event", id="123")
+    )
+    with pytest.raises(DuplicateMessage):
+        await dbapi_database.commit_transaction()
 
 
 @pytest.mark.run_loop

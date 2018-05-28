@@ -120,18 +120,8 @@ class TransactionalEventTransport(EventTransport):
             consumer_group=consumer_group,
             **kwargs,
         )
-        next_value_is_dummy = False
         async for message in consumer:
             try:
-                if next_value_is_dummy:
-                    # Every other yielded value is a non-message dummy value
-                    assert not isinstance(message, EventMessage)
-                    yield message
-                    next_value_is_dummy = not next_value_is_dummy
-                    continue
-
-                next_value_is_dummy = not next_value_is_dummy
-
                 # Catch duplicate events up-front where possible, rather than
                 # perform the processing and get an integrity error later
                 if await self.database.is_event_duplicate(message):
@@ -139,10 +129,13 @@ class TransactionalEventTransport(EventTransport):
                         f"Duplicate event {message.canonical_name} detected, ignoring. "
                         f"Event ID: {message.id}"
                     )
+                    await consumer.__anext__()
                     continue
 
                 await self.database.store_processed_event(message)
                 yield message
+                await consumer.__anext__()
+                yield True
             except Exception:
                 logger.warning(
                     f"Error encountered while processing event {message.canonical_name} "
@@ -154,6 +147,9 @@ class TransactionalEventTransport(EventTransport):
                 try:
                     await self.database.commit_transaction()
                 except DuplicateMessage:
+                    import pdb
+
+                    pdb.set_trace()
                     logger.info(
                         f"Duplicate event {message.canonical_name} discovered upon commit, "
                         f"will rollback transaction. "
