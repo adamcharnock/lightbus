@@ -141,6 +141,7 @@ class TransactionalEventTransport(EventTransport):
 
             try:
                 await self.database.commit_transaction()
+                await self.database.start_transaction()
             except DuplicateMessage:
                 # TODO: Can this even happen with the appropriate transaction isolation level?
                 logger.info(
@@ -150,6 +151,7 @@ class TransactionalEventTransport(EventTransport):
                     f"this would have been caught earlier. Event ID: {message.id}"
                 )
                 await self.database.rollback_transaction()
+                await self.database.start_transaction()
 
     async def publish_pending(self, message_id=None):
         async for message, options in self.database.consume_pending_events(message_id):

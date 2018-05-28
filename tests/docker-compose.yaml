@@ -7,6 +7,7 @@ services:
     restart: always
     ports:
       - "5432:5432"
+    command: ["postgres", "-c", "log_statement=all"]
 
   travis_db:
     image: postgres

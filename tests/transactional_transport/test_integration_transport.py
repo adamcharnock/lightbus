@@ -1,11 +1,8 @@
 import pytest
 
-import lightbus
-from lightbus import BusNode, TransactionalEventTransport
-from lightbus.transports.transactional import lightbus_atomic, DbApiConnection
-from lightbus.utilities.async import block
+from lightbus.transports.transactional import lightbus_atomic
 
-from tests.transactional_transport.conftest import verification_connection
+pytestmark = pytest.mark.integration
 
 
 @pytest.mark.run_loop

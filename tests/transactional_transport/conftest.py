@@ -4,6 +4,8 @@ import urllib.parse
 from copy import copy
 from typing import AsyncGenerator, Awaitable
 
+import psycopg2
+from psycopg2.extensions import cursor
 import pytest
 
 import lightbus
@@ -14,6 +16,30 @@ from lightbus.utilities.async import block
 
 if False:
     import aiopg
+
+
+@pytest.fixture()
+def cursor_factory():
+
+    class ErrorThrowingCursor(cursor):
+
+        def __init__(self, conn, *args, **kwargs):
+            self.conn = conn
+            super().__init__(conn, *args, **kwargs)
+
+        def execute(self, query, vars=None):
+            result = super().execute(query, vars)
+
+            for notice in self.conn.notices:
+                level, message = notice.split(": ")
+
+                command = query.upper().split(" ")[0]
+                if level == "WARNING":
+                    raise psycopg2.Warning(message.strip())
+
+            return result
+
+    return ErrorThrowingCursor
 
 
 @pytest.fixture()
@@ -53,10 +79,13 @@ def psycopg2_connection(pg_kwargs, loop):
 
 
 @pytest.fixture()
-def aiopg_cursor(aiopg_connection, loop):
-    cursor = block(aiopg_connection.cursor(), loop=loop, timeout=1)
+def aiopg_cursor(aiopg_connection, loop, cursor_factory):
+    cursor = block(aiopg_connection.cursor(cursor_factory=cursor_factory), loop=loop, timeout=1)
+    block(cursor.execute("BEGIN"), loop=loop, timeout=1)
     block(cursor.execute("DROP TABLE IF EXISTS lightbus_processed_events"), loop=loop, timeout=1)
     block(cursor.execute("DROP TABLE IF EXISTS lightbus_event_outbox"), loop=loop, timeout=1)
+    block(cursor.execute("COMMIT"), loop=loop, timeout=1)
+    block(cursor.execute("BEGIN"), loop=loop, timeout=1)
     return cursor
 
 
@@ -160,5 +189,3 @@ def test_table(aiopg_cursor, loop):
     yield TestTable()
 
     block(aiopg_cursor.execute("DROP TABLE test_table"), loop=loop, timeout=1)
-    block(aiopg_cursor.execute("COMMIT"), loop=loop, timeout=1)
-    block(aiopg_cursor.execute("BEGIN"), loop=loop, timeout=1)

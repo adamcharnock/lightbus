@@ -32,7 +32,12 @@ if False:
 class LightbusAtomic(object):
 
     def __init__(
-        self, bus: "BusNode", connection, apis: List[str], start_transaction: Optional[bool] = None
+        self,
+        bus: "BusNode",
+        connection,
+        apis: List[str],
+        start_transaction: Optional[bool] = None,
+        cursor=None,
     ):
         # Autodetect transaction starting if not specified
         if start_transaction is None:
@@ -40,6 +45,7 @@ class LightbusAtomic(object):
         else:
             self.start_transaction = start_transaction
         self.connection = connection
+        self.custom_cursor = cursor
 
         # Get the transport, and check it is sane
         transports = list(
@@ -82,7 +88,7 @@ class LightbusAtomic(object):
             return True
 
     async def _get_cursor(self):
-        return await self.connection.cursor()
+        return self.custom_cursor or (await self.connection.cursor())
 
     async def __aenter__(self):
         self.cursor = await self._get_cursor()

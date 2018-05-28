@@ -6,6 +6,9 @@ import pytest
 from lightbus.transports.transactional import lightbus_atomic
 
 
+pytestmark = pytest.mark.reliability
+
+
 @pytest.mark.run_loop
 async def test_multiple_connections(
     transactional_bus,  # Ensure migrations get run
@@ -18,6 +21,7 @@ async def test_multiple_connections(
     messages_in_redis,
     get_outbox,
     caplog,
+    cursor_factory,
 ):
     import aiopg
 
@@ -26,11 +30,13 @@ async def test_multiple_connections(
     async def start_firing(number):
 
         async with aiopg.connect(loop=loop, **pg_kwargs) as connection:
-            async with connection.cursor() as cursor:
+            async with connection.cursor(cursor_factory=cursor_factory) as cursor:
                 bus = await transactional_bus_factory()
 
                 for x in range(0, 50):
-                    async with lightbus_atomic(bus, connection, apis=["my.dummy"]):
+                    async with lightbus_atomic(
+                        bus, connection, apis=["my.dummy"], start_transaction=True
+                    ):
                         await bus.my.dummy.my_event.fire_async(field=1)
                         await cursor.execute(
                             "INSERT INTO test_table VALUES (%s)", [f"{number}-{x}"]

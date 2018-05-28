@@ -13,6 +13,8 @@ from lightbus.transports.transactional.transport import ConnectionAlreadySet, Da
 from lightbus.utilities.async import block
 from tests.transactional_transport.conftest import verification_connection
 
+pytestmark = pytest.mark.unit
+
 
 # Utilities
 
@@ -34,7 +36,7 @@ async def active_transactions():
 def transaction_transport(aiopg_connection, aiopg_cursor, loop):
     transport = TransactionalEventTransport(DebugEventTransport())
     block(
-        transport.set_connection(aiopg_connection, aiopg_cursor, start_transaction=True),
+        transport.set_connection(aiopg_connection, aiopg_cursor, start_transaction=False),
         loop=loop,
         timeout=1,
     )
@@ -62,7 +64,8 @@ def transaction_transport_with_consumer(aiopg_connection, aiopg_cursor):
                 yield True
 
         transport = TransactionalEventTransport(DebugEventTransport())
-        await transport.set_connection(aiopg_connection, aiopg_cursor, start_transaction=True)
+        # start_transaction=False, as we start a transaction below (using BEGIN)
+        await transport.set_connection(aiopg_connection, aiopg_cursor, start_transaction=False)
         await transport.database.migrate()
         # Commit the migrations
         await aiopg_cursor.execute("COMMIT")
