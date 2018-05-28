@@ -9,20 +9,20 @@ from lightbus.transports.transactional.transport import TransactionalEventTransp
 
 try:
     import django
-except ImportError:
+except ImportError:  # pragma: no cover
     django = None
 
 
 try:
     import psycopg2
     import psycopg2.extensions
-except ImportError:
+except ImportError:  # pragma: no cover
     psycopg2 = None
 
 
 try:
     import aiopg
-except ImportError:
+except ImportError:  # pragma: no cover
     aiopg = None
 
 if False:

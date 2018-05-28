@@ -12,7 +12,7 @@ from lightbus.message import RpcMessage, ResultMessage, EventMessage
 logger = logging.getLogger(__name__)
 
 
-class DirectRpcTransport(RpcTransport):
+class DirectRpcTransport(RpcTransport):  # pragma: no cover
 
     def __init__(self, result_transport: "DirectResultTransport"):
         self.result_transport = result_transport
@@ -44,7 +44,7 @@ class DirectRpcTransport(RpcTransport):
         )
 
 
-class DirectResultTransport(ResultTransport):
+class DirectResultTransport(ResultTransport):  # pragma: no cover
 
     def get_return_path(self, rpc_message: RpcMessage) -> asyncio.Future:
         # We can return a future rather than a string because we know it won't have to be serialised
@@ -65,7 +65,7 @@ class DirectResultTransport(ResultTransport):
         return result
 
 
-class DirectEventTransport(EventTransport):
+class DirectEventTransport(EventTransport):  # pragma: no cover
 
     def __init__(self):
         self.queue = asyncio.Queue()

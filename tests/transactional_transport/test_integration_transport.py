@@ -5,20 +5,10 @@ from lightbus import BusNode, TransactionalEventTransport
 from lightbus.transports.transactional import lightbus_atomic, DbApiConnection
 from lightbus.utilities.async import block
 
-# Utility functions & fixtures
 from tests.transactional_transport.conftest import verification_connection
 
 
-@pytest.fixture()
-def get_processed_events():
-
-    async def inner():
-        async with verification_connection() as connection:
-            async with connection.cursor() as cursor:
-                await cursor.execute("SELECT * FROM lightbus_processed_events")
-                return await cursor.fetchall()
-
-    return inner
+# Utility functions & fixtures
 
 
 @pytest.fixture()
@@ -99,9 +89,9 @@ async def test_fire_events_all_ok(
         await transactional_bus.my.dummy.my_event.fire_async(field=1)
         await aiopg_cursor.execute("INSERT INTO test_table VALUES ('hey')")
 
-    assert await test_table.total_rows() == 1
+    assert await test_table.total_rows() == 1  # Test table has data
     assert len(await get_outbox()) == 0  # Sent messages are removed from outbox
-    assert len(await messages_in_redis("my.dummy", "my_event")) == 1
+    assert len(await messages_in_redis("my.dummy", "my_event")) == 1  # Message in redis
 
 
 @pytest.mark.run_loop
@@ -124,6 +114,6 @@ async def test_fire_events_exception(
             await aiopg_cursor.execute("INSERT INTO test_table VALUES ('hey')")
             raise OhNo()
 
-    assert await test_table.total_rows() == 0
-    assert len(await get_outbox()) == 0
-    assert len(await messages_in_redis("my.dummy", "my_event")) == 0
+    assert await test_table.total_rows() == 0  # No data in tests table
+    assert len(await get_outbox()) == 0  # No messages sat in outbox
+    assert len(await messages_in_redis("my.dummy", "my_event")) == 0  # Nothing in redis
