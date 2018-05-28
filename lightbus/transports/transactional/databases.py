@@ -30,6 +30,9 @@ class DatabaseConnection(object):
         self.connection = connection
         self.cursor = cursor
 
+    async def migrate(self):
+        raise NotImplementedError()
+
     async def start_transaction(self):
         raise NotImplementedError()
 
@@ -103,7 +106,8 @@ class DbApiConnection(DatabaseConnection):
     async def is_event_duplicate(self, message: EventMessage) -> bool:
         sql = "SELECT EXISTS(SELECT 1 FROM lightbus_processed_events WHERE message_id = %s)"
         await self.cursor.execute(sql, [message.id])
-        return (await self.cursor.fetchall())[0][0]
+        result = await self.cursor.fetchall()
+        return result[0][0]
 
     async def store_processed_event(self, message: EventMessage):
         # Store message in de-duping table

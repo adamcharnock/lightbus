@@ -49,15 +49,14 @@ def psycopg2_connection(pg_kwargs, loop):
 
 @pytest.fixture()
 def aiopg_cursor(aiopg_connection, loop):
-    return block(aiopg_connection.cursor(), loop=loop, timeout=1)
+    cursor = block(aiopg_connection.cursor(), loop=loop, timeout=1)
+    block(cursor.execute("DROP TABLE IF EXISTS lightbus_processed_events"), loop=loop, timeout=1)
+    block(cursor.execute("DROP TABLE IF EXISTS lightbus_event_outbox"), loop=loop, timeout=1)
+    return cursor
 
 
 @pytest.fixture()
 def dbapi_database(aiopg_connection, aiopg_cursor, loop):
-    block(
-        aiopg_cursor.execute("DROP TABLE IF EXISTS lightbus_processed_events"), loop=loop, timeout=1
-    )
-    block(aiopg_cursor.execute("DROP TABLE IF EXISTS lightbus_event_outbox"), loop=loop, timeout=1)
     return DbApiConnection(aiopg_connection, aiopg_cursor)
 
 

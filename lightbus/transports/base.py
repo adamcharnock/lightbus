@@ -144,6 +144,11 @@ class EventTransport(Transport):
 
         Events the bus is not listening for may be returned, they
         will simply be ignored.
+
+        Note that this method will be additionally yielded to after each event has been processed.
+        In practice this means any implementation should alternately yield 1) a message,
+        then 2) any arbitrary value (`True`, by convention). This allows for implementations
+        to acknowledge messages with the underlying queue once the message has been processed.
         """
         raise NotImplementedError()
 

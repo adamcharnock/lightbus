@@ -120,8 +120,18 @@ class TransactionalEventTransport(EventTransport):
             consumer_group=consumer_group,
             **kwargs,
         )
-        for message in consumer:
+        next_value_is_dummy = False
+        async for message in consumer:
             try:
+                if next_value_is_dummy:
+                    # Every other yielded value is a non-message dummy value
+                    assert not isinstance(message, EventMessage)
+                    yield message
+                    next_value_is_dummy = not next_value_is_dummy
+                    continue
+
+                next_value_is_dummy = not next_value_is_dummy
+
                 # Catch duplicate events up-front where possible, rather than
                 # perform the processing and get an integrity error later
                 if await self.database.is_event_duplicate(message):
@@ -131,7 +141,7 @@ class TransactionalEventTransport(EventTransport):
                     )
                     continue
 
-                self.database.store_processed_event(message)
+                await self.database.store_processed_event(message)
                 yield message
             except Exception:
                 logger.warning(
