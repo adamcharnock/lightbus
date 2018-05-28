@@ -35,7 +35,13 @@ def cursor_factory():
 
                 command = query.upper().split(" ")[0]
                 if level == "WARNING":
-                    raise psycopg2.Warning(message.strip())
+                    raise psycopg2.Warning(
+                        f"Postgres issued a warning. The best way to check "
+                        f"what is going on is to set log_statement=all in postgres "
+                        f"and view the output (this is how the tests/docker-compose.yaml "
+                        f"file is setup already). However, it is POSSIBLE this query may have "
+                        f"been at fault: {message.strip()}"
+                    )
 
             return result
 
