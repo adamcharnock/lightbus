@@ -1,12 +1,14 @@
 import asyncio
 import os
 import urllib.parse
+from copy import copy
 from typing import AsyncGenerator, Awaitable
 
 import pytest
 
 import lightbus
 from lightbus import TransactionalEventTransport, BusNode
+from lightbus.transports.base import TransportRegistry
 from lightbus.transports.transactional import DbApiConnection
 from lightbus.utilities.async import block
 
@@ -98,6 +100,26 @@ def messages_in_redis(redis_client):
 
     async def inner(api_name, event_name):
         return await redis_client.xrange(f"{api_name}.{event_name}:stream")
+
+    return inner
+
+
+@pytest.fixture()
+def transactional_bus_factory(dummy_bus: BusNode, new_redis_pool, loop):
+    pool = new_redis_pool(maxsize=10000)
+
+    async def inner():
+        transport = TransactionalEventTransport(
+            child_transport=lightbus.RedisEventTransport(
+                redis_pool=pool, consumer_group_prefix="test_cg", consumer_name="test_consumer"
+            )
+        )
+        config = dummy_bus.bus_client.config
+        transport_registry = TransportRegistry().load_config(config)
+        transport_registry.set_event_transport("default", transport)
+        client = lightbus.BusClient(config=config, transport_registry=transport_registry, loop=loop)
+        bus = lightbus.BusNode(name="", parent=None, bus_client=client)
+        return bus
 
     return inner
 

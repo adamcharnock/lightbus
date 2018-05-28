@@ -1,9 +1,8 @@
 import pytest
 
 from lightbus import EventMessage
-from lightbus.exceptions import UnsupportedOptionValue, DuplicateMessage
+from lightbus.exceptions import UnsupportedOptionValue
 from lightbus.transports.transactional import DbApiConnection
-from tests.transactional_transport.conftest import verification_connection
 
 pytestmark = pytest.mark.unit
 

@@ -75,8 +75,16 @@ class TransactionalEventTransport(EventTransport):
                 f"Perhaps you should use a lightbus_atomic() context?"
             )
         await self.database.commit_transaction()
-        await self.publish_pending()  # TODO: Specific ID?
-        await self.database.commit_transaction()
+        await self.database.start_transaction()
+
+        try:
+            await self.publish_pending()
+        except BaseException:
+            await self.database.rollback_transaction()
+            raise
+        else:
+            await self.database.commit_transaction()
+
         self._clear_connection()
 
     async def rollback_and_finish(self):
