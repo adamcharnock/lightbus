@@ -154,3 +154,20 @@ async def test_fetch_ok(transaction_transport_with_consumer, aiopg_cursor, loop)
     await aiopg_cursor.execute("SELECT COUNT(*) FROM lightbus_processed_events")
     total_processed_events = (await aiopg_cursor.fetchone())[0]
     assert total_processed_events == 3
+
+
+@pytest.mark.run_loop
+async def test_fetch_duplicate(transaction_transport_with_consumer, aiopg_cursor, loop):
+    message1 = EventMessage(api_name="api", event_name="event", id="1")
+    message2 = EventMessage(
+        api_name="api", event_name="event", id="1"
+    )  # Same IDs = duplicate messages
+
+    transport = await transaction_transport_with_consumer(event_messages=[message1, message2])
+    consumer = transport.consume(listen_for="api.event", context={}, loop=loop)
+    produced_events = await consumer_to_messages(consumer)
+    assert produced_events == [message1]  # The second message should be ignored
+
+    await aiopg_cursor.execute("SELECT COUNT(*) FROM lightbus_processed_events")
+    total_processed_events = (await aiopg_cursor.fetchone())[0]
+    assert total_processed_events == 1
