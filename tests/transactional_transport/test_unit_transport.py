@@ -38,6 +38,7 @@ def transaction_transport(aiopg_connection, aiopg_cursor, loop):
         loop=loop,
         timeout=1,
     )
+    block(transport.database.migrate(), loop=loop, timeout=1)
     return transport
 
 
@@ -161,9 +162,7 @@ async def test_fetch_ok(transaction_transport_with_consumer, aiopg_cursor, loop)
 
 
 @pytest.mark.run_loop
-async def test_fetch_duplicate_detect_early(
-    transaction_transport_with_consumer, aiopg_cursor, loop
-):
+async def test_fetch_duplicate(transaction_transport_with_consumer, aiopg_cursor, loop):
     # Same IDs = duplicate messages
     message1 = EventMessage(api_name="api", event_name="event", id="1")
     message2 = EventMessage(api_name="api", event_name="event", id="1")
@@ -179,21 +178,22 @@ async def test_fetch_duplicate_detect_early(
 
 
 @pytest.mark.run_loop
-async def test_fetch_duplicate_detect_upon_commit(
-    aiopg_cursor, transaction_transport_with_consumer, loop
-):
+async def test_publish_pending(transaction_transport, mocker):
+    f = asyncio.Future()
+    f.set_result(None)
+    m = mocker.patch.object(transaction_transport.child_transport, "send_event", return_value=f)
+
     message1 = EventMessage(api_name="api", event_name="event", id="1")
-    transport = await transaction_transport_with_consumer(event_messages=[message1])
+    message2 = EventMessage(api_name="api", event_name="event", id="2")
+    message3 = EventMessage(api_name="api", event_name="event", id="3")
 
-    async with verification_connection() as another_connection:
-        async with another_connection.cursor() as another_cursor:
+    await transaction_transport.database.send_event(message1, options={"a": "1"})
+    await transaction_transport.database.send_event(message2, options={"a": "2"})
+    await transaction_transport.database.send_event(message3, options={"a": "3"})
 
-            consumer = transport.consume(listen_for="api.event", context={}, loop=loop)
+    await transaction_transport.publish_pending()
 
-            async for _ in consumer:
-                await another_cursor.execute("BEGIN")
-                await another_cursor.execute(
-                    "INSERT INTO lightbus_processed_events (message_id) VALUES ('1')"
-                )
-                await another_cursor.execute("COMMIT")  # message gets processed elsewhere
-                await consumer.__anext__()
+    assert m.call_count == 3
+    messages = [c[0][0] for c in m.call_args_list]
+    message_ids = [message.id for message in messages]
+    assert message_ids == ["1", "2", "3"]

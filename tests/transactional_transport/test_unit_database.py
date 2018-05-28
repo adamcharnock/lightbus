@@ -93,11 +93,10 @@ async def test_transaction_commit_duplicate(dbapi_database: DbApiConnection):
     await dbapi_database.store_processed_event(
         EventMessage(api_name="api", event_name="event", id="123")
     )
-    await dbapi_database.store_processed_event(
-        EventMessage(api_name="api", event_name="event", id="123")
-    )
     with pytest.raises(DuplicateMessage):
-        await dbapi_database.commit_transaction()
+        await dbapi_database.store_processed_event(
+            EventMessage(api_name="api", event_name="event", id="123")
+        )
 
 
 @pytest.mark.run_loop

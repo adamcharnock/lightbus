@@ -48,6 +48,7 @@ class DatabaseConnection(object):
 
     async def store_processed_event(self, message: EventMessage):
         # Store message in de-duping table
+        # Should raise DuplicateMessage() if message is duplicate
         raise NotImplementedError()
 
     async def send_event(self, message: EventMessage, options: dict):
@@ -56,7 +57,7 @@ class DatabaseConnection(object):
 
     async def consume_pending_events(
         self, message_id: Optional[str] = None
-    ) -> AsyncIterable[Tuple[EventMessage, dict]]:
+    ) -> AsyncGenerator[Tuple[EventMessage, dict], None]:
         # Should lock row in db
         raise NotImplementedError()
 
@@ -98,9 +99,13 @@ class DbApiConnection(DatabaseConnection):
             #   http://initd.org/psycopg/docs/advanced.html#asynchronous-support
             await self.cursor.execute("COMMIT")
         except Exception as e:
+            error_name = e.__class__.__name__.lower()
             error = str(e).lower()
-            # A bit of a fudge to detect duplicate events at commit time
-            if "integrity" in error and "lightbus_processed_events" in error:
+            # A bit of a fudge to detect duplicate events at commit time.
+            # Cannot use actual exception as we do not know which client
+            # library will be used
+            # TODO: Can this even happen with the appropriate transaction isolation level?
+            if "integrity" in error_name and "lightbus_processed_events" in error:
                 raise DuplicateMessage(
                     "Duplicate event detected upon commit. We normally catch this "
                     "preemptively, but it is possible that duplicate messages were "
@@ -124,7 +129,18 @@ class DbApiConnection(DatabaseConnection):
     async def store_processed_event(self, message: EventMessage):
         # Store message in de-duping table
         sql = "INSERT INTO lightbus_processed_events (message_id) VALUES (%s)"
-        await self.cursor.execute(sql, [message.id])
+        try:
+            await self.cursor.execute(sql, [message.id])
+        except Exception as e:
+            error_name = e.__class__.__name__.lower()
+            error = str(e).lower()
+            # A bit of a fudge to detect duplicate events
+            # Cannot use actual exception as we do not know which client
+            # library will be used
+            if "integrity" in error_name and "lightbus_processed_events" in error:
+                raise DuplicateMessage(f"Message {message.id} was found to be a duplicate")
+            else:
+                raise
 
     async def send_event(self, message: EventMessage, options: dict):
         # Store message in messages-to-be-published table

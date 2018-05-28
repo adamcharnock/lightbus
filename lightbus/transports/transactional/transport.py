@@ -107,12 +107,6 @@ class TransactionalEventTransport(EventTransport):
     ) -> Generator[EventMessage, None, None]:
         assert self.database, "Cannot use this transport outside a lightbus_atomic() context"
 
-        # Needs to:
-        # 1. Check if message already processed in messages table
-        # 2. Insert message into messages table
-        # 3. Yield
-        # 4. Commit, catching any exceptions relating to 3.
-
         consumer = self.child_transport.consume(
             listen_for=listen_for,
             context=context,
@@ -120,43 +114,33 @@ class TransactionalEventTransport(EventTransport):
             consumer_group=consumer_group,
             **kwargs,
         )
+
+        # Wrap the child transport in order to de-duplicate incoming messages
         async for message in consumer:
             try:
-                # Catch duplicate events up-front where possible, rather than
-                # perform the processing and get an integrity error later
-                if await self.database.is_event_duplicate(message):
-                    logger.info(
-                        f"Duplicate event {message.canonical_name} detected, ignoring. "
-                        f"Event ID: {message.id}"
-                    )
-                    await consumer.__anext__()
-                    continue
-
                 await self.database.store_processed_event(message)
-                yield message
+            except DuplicateMessage:
+                logger.info(
+                    f"Duplicate event {message.canonical_name} detected with ID {message.id}. "
+                    f"Skipping."
+                )
                 await consumer.__anext__()
-                yield True
-            except Exception:
-                logger.warning(
-                    f"Error encountered while processing event {message.canonical_name} "
-                    f"with ID {message.id}. Rolling back transaction."
+                continue
+
+            yield message
+            yield await consumer.__anext__()
+
+            try:
+                await self.database.commit_transaction()
+            except DuplicateMessage:
+                # TODO: Can this even happen with the appropriate transaction isolation level?
+                logger.info(
+                    f"Duplicate event {message.canonical_name} discovered upon commit, "
+                    f"will rollback transaction. "
+                    f"Duplicates were probably being processed simultaneously, otherwise "
+                    f"this would have been caught earlier. Event ID: {message.id}"
                 )
                 await self.database.rollback_transaction()
-                raise
-            else:
-                try:
-                    await self.database.commit_transaction()
-                except DuplicateMessage:
-                    import pdb
-
-                    pdb.set_trace()
-                    logger.info(
-                        f"Duplicate event {message.canonical_name} discovered upon commit, "
-                        f"will rollback transaction. "
-                        f"Duplicates were probably being processed simultaneously, otherwise "
-                        f"this would have been caught earlier. Event ID: {message.id}"
-                    )
-                    await self.database.rollback_transaction()
 
     async def publish_pending(self, message_id=None):
         async for message, options in self.database.consume_pending_events(message_id):
