@@ -14,7 +14,7 @@ def test_blob_serializer():
         EventMessage(api_name="my.api", event_name="my_event", id="123", kwargs={"field": "value"})
     )
     assert json.loads(serialized) == {
-        "metadata": {"api_name": "my.api", "event_name": "my_event", "id": "123"},
+        "metadata": {"api_name": "my.api", "event_name": "my_event", "id": "123", "version": 1},
         "kwargs": {"field": "value"},
     }
 
@@ -24,7 +24,12 @@ def test_blob_deserializer():
     message = deserializer(
         json.dumps(
             {
-                "metadata": {"api_name": "my.api", "event_name": "my_event", "id": "123"},
+                "metadata": {
+                    "api_name": "my.api",
+                    "event_name": "my_event",
+                    "id": "123",
+                    "version": 1,
+                },
                 "kwargs": {"field": "value"},
             }
         )
@@ -39,7 +44,7 @@ def test_blob_deserializer_dict():
     deserializer = BlobMessageDeserializer(EventMessage)
     message = deserializer(
         {
-            "metadata": {"api_name": "my.api", "event_name": "my_event", "id": "123"},
+            "metadata": {"api_name": "my.api", "event_name": "my_event", "id": "123", "version": 1},
             "kwargs": {"field": "value"},
         }
     )

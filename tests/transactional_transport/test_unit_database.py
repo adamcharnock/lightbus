@@ -94,6 +94,7 @@ async def test_send_event_ok(dbapi_database: DbApiConnection, get_outbox):
         "api_name": "api",
         "event_name": "event",
         "id": "123",
+        "version": 1,
     }
     assert options == {"key": "value"}
 

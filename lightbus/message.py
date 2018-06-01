@@ -128,14 +128,21 @@ class ResultMessage(Message):
 
 
 class EventMessage(Message):
-    required_metadata = ["id", "api_name", "event_name"]
+    required_metadata = ["id", "api_name", "event_name", "version"]
 
     def __init__(
-        self, *, api_name: str, event_name: str, kwargs: Optional[dict] = None, id: str = ""
+        self,
+        *,
+        api_name: str,
+        event_name: str,
+        kwargs: Optional[dict] = None,
+        version: int = 1,
+        id: str = "",
     ):
         super().__init__(id)
         self.api_name = api_name
         self.event_name = event_name
+        self.version = int(version)
         self.kwargs = kwargs or {}
 
     def __repr__(self):
@@ -151,7 +158,12 @@ class EventMessage(Message):
         return "{}.{}".format(self.api_name, self.event_name)
 
     def get_metadata(self) -> dict:
-        return {"id": self.id, "api_name": self.api_name, "event_name": self.event_name}
+        return {
+            "id": self.id,
+            "api_name": self.api_name,
+            "event_name": self.event_name,
+            "version": self.version,
+        }
 
     def get_kwargs(self):
         return self.kwargs

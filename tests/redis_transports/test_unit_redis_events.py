@@ -38,6 +38,7 @@ async def test_send_event(redis_event_transport: RedisEventTransport, redis_clie
         b"api_name": b"my.api",
         b"event_name": b"my_event",
         b"id": b"123",
+        b"version": b"1",
         b":field": b'"value"',
     }
 
@@ -55,6 +56,7 @@ async def test_send_event_per_api_stream(redis_event_transport: RedisEventTransp
         b"api_name": b"my.api",
         b"event_name": b"my_event",
         b"id": b"123",
+        b"version": b"1",
         b":field": b'"value"',
     }
 
@@ -72,6 +74,7 @@ async def test_consume_events(
                 b"api_name": b"my.dummy",
                 b"event_name": b"my_event",
                 b"id": b"123",
+                b"version": b"1",
                 b":field": b'"value"',
             },
         )
@@ -106,6 +109,7 @@ async def test_consume_events_multiple_consumers(
             b"api_name": b"my.dummy",
             b"event_name": b"my_event",
             b"id": b"123",
+            b"version": b"1",
             b":field": b'"value"',
         },
     )
@@ -148,6 +152,7 @@ async def test_consume_events_multiple_consumers_one_group(
             b"api_name": b"my.dummy",
             b"event_name": b"my_event",
             b"id": b"123",
+            b"version": b"1",
             b":field": b'"value"',
         },
     )
@@ -168,6 +173,7 @@ async def test_consume_events_since_id(
             b"api_name": b"my.dummy",
             b"event_name": b"my_event",
             b"id": b"123",
+            b"version": b"1",
             b":field": b'"1"',
         },
         message_id="1515000001000-0",
@@ -178,6 +184,7 @@ async def test_consume_events_since_id(
             b"api_name": b"my.dummy",
             b"event_name": b"my_event",
             b"id": b"123",
+            b"version": b"1",
             b":field": b'"2"',
         },
         message_id="1515000002000-0",
@@ -188,6 +195,7 @@ async def test_consume_events_since_id(
             b"api_name": b"my.dummy",
             b"event_name": b"my_event",
             b"id": b"123",
+            b"version": b"1",
             b":field": b'"3"',
         },
         message_id="1515000003000-0",
@@ -223,6 +231,7 @@ async def test_consume_events_since_datetime(
             b"api_name": b"my.dummy",
             b"event_name": b"my_event",
             b"id": b"123",
+            b"version": b"1",
             b":field": b'"1"',
         },
         message_id="1515000001000-0",
@@ -233,6 +242,7 @@ async def test_consume_events_since_datetime(
             b"api_name": b"my.dummy",
             b"event_name": b"my_event",
             b"id": b"123",
+            b"version": b"1",
             b":field": b'"2"',
         },
         message_id="1515000002000-0",
@@ -243,6 +253,7 @@ async def test_consume_events_since_datetime(
             b"api_name": b"my.dummy",
             b"event_name": b"my_event",
             b"id": b"123",
+            b"version": b"1",
             b":field": b'"3"',
         },
         message_id="1515000003000-0",
@@ -305,6 +316,7 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
             b"api_name": b"my.dummy",
             b"event_name": b"my_event",
             b"id": b"123",
+            b"version": b"1",
             b":field": b'"value"',
         },
     )
@@ -389,6 +401,7 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
             b"api_name": b"my.dummy",
             b"event_name": b"my_event",
             b"id": b"123",
+            b"version": b"1",
             b":field": b'"value"',
         },
     )
@@ -440,6 +453,7 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
             b"api_name": b"my.dummy",
             b"event_name": b"my_event",
             b"id": b"123",
+            b"version": b"1",
             b":field": b'"value"',
         },
     )
@@ -566,6 +580,7 @@ async def test_consume_events_per_api_stream(
             b"api_name": b"my.dummy",
             b"event_name": b"my_event1",
             b"id": b"1",
+            b"version": b"1",
             b":field": b'"value"',
         },
     )
@@ -575,6 +590,7 @@ async def test_consume_events_per_api_stream(
             b"api_name": b"my.dummy",
             b"event_name": b"my_event2",
             b"id": b"2",
+            b"version": b"1",
             b":field": b'"value"',
         },
     )
@@ -584,6 +600,7 @@ async def test_consume_events_per_api_stream(
             b"api_name": b"my.dummy",
             b"event_name": b"my_event3",
             b"id": b"3",
+            b"version": b"1",
             b":field": b'"value"',
         },
     )
