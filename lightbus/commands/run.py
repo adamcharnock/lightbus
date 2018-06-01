@@ -1,8 +1,11 @@
 import argparse
+import asyncio
 import logging
+from inspect import iscoroutine
 
 from lightbus import create
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
+from lightbus.utilities.async import block
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +55,9 @@ class Command(LogLevelMixin, BusImportMixin, object):
         before_server_start = getattr(bus_module, "before_server_start", None)
         if before_server_start:
             logger.debug("Calling {}.before_server_start() callback".format(bus_module.__name__))
-            before_server_start(bus)
+            co = before_server_start(bus)
+            if iscoroutine(co):
+                block(co, asyncio.get_event_loop(), timeout=10)
 
         if dry_run:
             return
