@@ -37,6 +37,12 @@ class StreamUse(Enum):
     PER_API = "per_api"
     PER_EVENT = "per_event"
 
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return self.value == other
+        else:
+            return super().__eq__(other)
+
 
 class RedisTransportMixin(object):
     connection_parameters: dict = {"address": "redis://localhost:6379", "maxsize": 100}
