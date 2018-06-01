@@ -466,6 +466,9 @@ class BusClient(object):
             )
             with self._register_listener(events):
                 async for event_message in consumer:
+                    # TODO: Check events match those requested
+                    # TODO: Support event name of '*', but transports should raise
+                    # TODO: an exception if it is not supported.
                     logger.info(
                         L(
                             "📩  Received event {}.{}".format(
@@ -482,6 +485,7 @@ class BusClient(object):
 
                     # Call the listener
                     co = listener(
+                        # TODO: Pass the whole event object as the first arg
                         # Pass the api & event names as positional arguments,
                         # thereby allowing listeners to have flexibility in the argument names.
                         # (And therefore allowing listeners to use the `even_name` parameter themselves)
