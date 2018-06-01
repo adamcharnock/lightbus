@@ -330,3 +330,21 @@ def test_date():
     schema = make_response_schema("api_name", "rpc_name", func)
     assert schema["type"] == "string"
     assert schema["pattern"]
+
+
+def test_object_with_method():
+
+    class User:
+        username: str
+
+        def my_func(self):
+            pass
+
+    def func(username) -> User:
+        pass
+
+    schema = make_response_schema("api_name", "rpc_name", func)
+    assert schema["type"] == "object"
+    assert schema["properties"] == {"username": {"type": "string"}}
+    assert set(schema["required"]) == {"username"}
+    assert schema["additionalProperties"] == False

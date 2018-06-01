@@ -240,6 +240,10 @@ def make_custom_object_schema(type_, property_names=None):
     for property_name in property_names:
         default = empty
 
+        if callable(getattr(type_, property_name, None)):
+            # is a method
+            continue
+
         if issubclass(type_, tuple):
             # namedtuple
             if hasattr(type_, "_field_defaults"):
