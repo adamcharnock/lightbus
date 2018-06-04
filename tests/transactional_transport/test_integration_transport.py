@@ -1,5 +1,8 @@
+import asyncio
+
 import pytest
 
+from lightbus import BusNode
 from lightbus.transports.transactional import lightbus_atomic
 
 pytestmark = pytest.mark.integration
@@ -47,3 +50,25 @@ async def test_fire_events_exception(
     assert await test_table.total_rows() == 0  # No data in tests table
     assert len(await get_outbox()) == 0  # No messages sat in outbox
     assert len(await messages_in_redis("my.dummy", "my_event")) == 0  # Nothing in redis
+
+
+@pytest.mark.run_loop
+async def test_consume_events(transactional_bus: BusNode, aiopg_connection, dummy_api):
+    events = []
+
+    async def consume():
+
+        def listener(api_name, event_name):
+            events.append((api_name, event_name))
+
+        await transactional_bus.my.dummy.my_event.listen_async(listener)
+
+    task = asyncio.ensure_future(consume())
+    await asyncio.sleep(0.1)
+    with lightbus_atomic(transactional_bus, aiopg_connection, apis=["my.dummy"]):
+        await transactional_bus.my.dummy.my_event.fire_async(field=1)
+    await asyncio.sleep(0.1)
+    task.cancel()
+    await task
+
+    assert len(events) == 1
