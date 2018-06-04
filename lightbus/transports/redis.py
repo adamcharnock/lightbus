@@ -388,6 +388,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         deserializer = import_from_string(deserializer)(EventMessage)
         consumer_group_prefix = consumer_group_prefix or config.service_name
         consumer_name = consumer_name or config.process_name
+        if isinstance(stream_use, str):
+            stream_use = StreamUse[stream_use.upper()]
 
         return cls(
             redis_pool=None,
@@ -643,9 +645,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         if tuple(fields.items()) == ((b"", b""),):
             return None
         message = self.deserializer(fields)
-        if self.stream_use == StreamUse.PER_API and message.event_name not in expected_event_names:
+
+        want_message = ("*" in expected_event_names) or (message.event_name in expected_event_names)
+        if self.stream_use == StreamUse.PER_API and not want_message:
             # Only care about events we are listening for. If we have one stream
             # per API then we're probably going to receive some events we don't care about.
+            logger.debug(f"Ignoring message for unexpected event: {message}")
             return None
         return message
 
