@@ -36,7 +36,7 @@ class LightbusAtomic(object):
         self,
         bus: "BusNode",
         connection,
-        apis: List[str],
+        apis: List[str] = tuple("default"),
         start_transaction: Optional[bool] = None,
         cursor=None,
     ):

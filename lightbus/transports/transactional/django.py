@@ -22,10 +22,7 @@ class TransactionTransportMiddleware(object):
             block(DbApiConnection(connections["default"], cursor).migrate(), self.loop, timeout=5)
 
     def __call__(self, request):
-        # TODO: Can we ditch `apis`?
-        lightbus_transaction_context = lightbus_atomic(
-            self.bus, connections["default"], apis=["foo"]
-        )
+        lightbus_transaction_context = lightbus_atomic(self.bus, connections["default"])
         block(lightbus_transaction_context.__aenter__(), self.loop, timeout=5)
 
         response = self.get_response(request)
