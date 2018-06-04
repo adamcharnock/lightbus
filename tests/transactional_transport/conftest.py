@@ -76,6 +76,23 @@ def aiopg_connection(pg_kwargs, loop):
 
 
 @pytest.yield_fixture()
+def aiopg_connection_factory(pg_kwargs, loop):
+    import aiopg
+
+    connections = []
+
+    async def factory():
+        connection = await aiopg.connect(loop=loop, **pg_kwargs)
+        connections.append(connection)
+        return connection
+
+    yield factory
+
+    for connection in connections:
+        connection.close()
+
+
+@pytest.yield_fixture()
 def psycopg2_connection(pg_kwargs, loop):
     import psycopg2
 

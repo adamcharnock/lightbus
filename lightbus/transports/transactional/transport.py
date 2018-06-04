@@ -126,6 +126,15 @@ class TransactionalEventTransport(EventTransport):
     ) -> Generator[EventMessage, None, None]:
         assert self.database, "Cannot use this transport outside a lightbus_atomic() context"
 
+        # IMPORTANT: Because this method yields control, it is possible that
+        #            the reference to self.database will change during execution,
+        #            we therefore create a local reference to the database here
+        #            as we want to ensure we use the same database throughout all
+        #            the code below.
+        #            This is particularly relevant in testing where one may be both
+        #            firing and listening for events
+        database = self.database
+
         consumer = self.child_transport.consume(
             listen_for=listen_for,
             context=context,
@@ -136,7 +145,7 @@ class TransactionalEventTransport(EventTransport):
 
         # Wrap the child transport in order to de-duplicate incoming messages
         async for message in consumer:
-            if await self.database.is_event_duplicate(message):
+            if await database.is_event_duplicate(message):
                 logger.info(
                     f"Duplicate event {message.canonical_name} detected with ID {message.id}. "
                     f"Skipping."
@@ -144,14 +153,14 @@ class TransactionalEventTransport(EventTransport):
                 await consumer.__anext__()
                 continue
             else:
-                await self.database.store_processed_event(message)
+                await database.store_processed_event(message)
 
             yield message
             yield await consumer.__anext__()
 
             try:
-                await self.database.commit_transaction()
-                await self.database.start_transaction()
+                await database.commit_transaction()
+                await database.start_transaction()
             except DuplicateMessage:
                 # TODO: Can this even happen with the appropriate transaction isolation level?
                 logger.info(
@@ -160,8 +169,8 @@ class TransactionalEventTransport(EventTransport):
                     f"Duplicates were probably being processed simultaneously, otherwise "
                     f"this would have been caught earlier. Event ID: {message.id}"
                 )
-                await self.database.rollback_transaction()
-                await self.database.start_transaction()
+                await database.rollback_transaction()
+                await database.start_transaction()
 
     async def publish_pending(self, message_id=None):
         async for message, options in self.database.consume_pending_events(message_id):

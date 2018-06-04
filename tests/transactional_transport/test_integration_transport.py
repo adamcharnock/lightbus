@@ -4,6 +4,7 @@ import pytest
 
 from lightbus import BusNode
 from lightbus.transports.transactional import lightbus_atomic
+from lightbus.utilities.async import cancel
 
 pytestmark = pytest.mark.integration
 
@@ -53,22 +54,29 @@ async def test_fire_events_exception(
 
 
 @pytest.mark.run_loop
-async def test_consume_events(transactional_bus: BusNode, aiopg_connection, dummy_api):
+async def test_consume_events(transactional_bus: BusNode, aiopg_connection_factory, dummy_api):
     events = []
 
-    async def consume():
+    def listener(event_message, *, field):
+        events.append(event_message)
 
-        def listener(api_name, event_name):
-            events.append((api_name, event_name))
+    connection1 = await aiopg_connection_factory()
+    async with lightbus_atomic(transactional_bus, connection1, apis=["my.dummy"]):
+        listener_co = await transactional_bus.my.dummy.my_event.listen_async(listener)
 
-        await transactional_bus.my.dummy.my_event.listen_async(listener)
+    task = asyncio.ensure_future(listener_co)
+    await asyncio.sleep(0.2)
 
-    task = asyncio.ensure_future(consume())
-    await asyncio.sleep(0.1)
-    with lightbus_atomic(transactional_bus, aiopg_connection, apis=["my.dummy"]):
+    connection2 = await aiopg_connection_factory()
+
+    print("connection 1", connection1)
+    print("connection 2", connection2)
+
+    async with lightbus_atomic(transactional_bus, connection2, apis=["my.dummy"]):
         await transactional_bus.my.dummy.my_event.fire_async(field=1)
-    await asyncio.sleep(0.1)
-    task.cancel()
-    await task
+
+    await asyncio.sleep(0.2)
+
+    await cancel(task)
 
     assert len(events) == 1
