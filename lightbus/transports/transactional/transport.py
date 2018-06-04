@@ -23,6 +23,7 @@ class TransactionalEventTransport(EventTransport):
 
     Additionally, incoming messages are de-duplicated.
     """
+    # TODO: Note in docs that this transport will not work with the metrics and state APIs
 
     def __init__(
         self,
@@ -71,7 +72,8 @@ class TransactionalEventTransport(EventTransport):
         """Commit the current transactions, send committed messages, remove connection"""
         if not self.database:
             raise DatabaseNotSet(
-                f"The transactional transport database connection has not been setup. "
+                f"You are using the transactional event transport but the transport's "
+                f"database connection has not been setup. "
                 f"Perhaps you should use a lightbus_atomic() context?"
             )
         await self.database.commit_transaction()
@@ -91,7 +93,8 @@ class TransactionalEventTransport(EventTransport):
         """Rollback the current transaction, remove connection"""
         if not self.database:
             raise DatabaseNotSet(
-                f"The transactional transport database connection has not been setup. "
+                f"You are using the transactional event transport but the transport's "
+                f"database connection has not been setup. "
                 f"Perhaps you should use a lightbus_atomic() context?"
             )
         await self.database.rollback_transaction()
@@ -104,6 +107,13 @@ class TransactionalEventTransport(EventTransport):
         self.database = None
 
     async def send_event(self, event_message: EventMessage, options: dict):
+        if not self.database:
+            raise DatabaseNotSet(
+                f"You are using the transactional event transport for event "
+                f"{event_message.canonical_name}, but the transactional transport's "
+                f"database connection has not been setup. This is typically done using "
+                f"a lightbus_atomic() context."
+            )
         await self.database.send_event(event_message, options)
 
     async def fetch(
