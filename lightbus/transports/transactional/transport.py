@@ -60,7 +60,7 @@ class TransactionalEventTransport(EventTransport):
         if self.connection:
             raise ConnectionAlreadySet(
                 f"The transactional transport connection has already been set. "
-                f"Perhaps you should use a lightbus_atomic() context?"
+                f"Perhaps you should use a lightbus_set_database() context?"
             )
         self.connection = connection
         self.cursor = cursor
@@ -74,7 +74,7 @@ class TransactionalEventTransport(EventTransport):
             raise DatabaseNotSet(
                 f"You are using the transactional event transport but the transport's "
                 f"database connection has not been setup. "
-                f"Perhaps you should use a lightbus_atomic() context?"
+                f"Perhaps you should use a lightbus_set_database() context?"
             )
         await self.database.commit_transaction()
         await self.database.start_transaction()
@@ -95,13 +95,15 @@ class TransactionalEventTransport(EventTransport):
             raise DatabaseNotSet(
                 f"You are using the transactional event transport but the transport's "
                 f"database connection has not been setup. "
-                f"Perhaps you should use a lightbus_atomic() context?"
+                f"Perhaps you should use a lightbus_set_database() context?"
             )
         await self.database.rollback_transaction()
         self._clear_connection()
 
     def _clear_connection(self):
-        assert self.connection, "Connection not set. Perhaps you need an lightbus_atomic() context?"
+        assert (
+            self.connection
+        ), "Connection not set. Perhaps you need an lightbus_set_database() context?"
         self.connection = None
         self.cursor = None
         self.database = None
@@ -112,7 +114,7 @@ class TransactionalEventTransport(EventTransport):
                 f"You are using the transactional event transport for event "
                 f"{event_message.canonical_name}, but the transactional transport's "
                 f"database connection has not been setup. This is typically done using "
-                f"a lightbus_atomic() context."
+                f"a lightbus_set_database() context."
             )
         await self.database.send_event(event_message, options)
 
@@ -124,7 +126,7 @@ class TransactionalEventTransport(EventTransport):
         consumer_group: str = None,
         **kwargs,
     ) -> Generator[EventMessage, None, None]:
-        assert self.database, "Cannot use this transport outside a lightbus_atomic() context"
+        assert self.database, "Cannot use this transport outside a lightbus_set_database() context"
 
         # IMPORTANT: Because this method yields control, it is possible that
         #            the reference to self.database will change during execution,
