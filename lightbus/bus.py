@@ -524,6 +524,8 @@ class BusClient(object):
             ]
             tasks.append(
                 # TODO: This will swallow and print exceptions. We should probably do something more serious.
+                #       Perhaps create a watcher background task to see if any listeners die, and get the
+                #       result if they do (i.e. propagate the error up).
                 handle_aio_exceptions(listen_for_event_task(_event_transport, _events))
             )
 
