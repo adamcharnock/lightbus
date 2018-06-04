@@ -425,7 +425,7 @@ class BusClient(object):
                     len(kwargs),
                     sorted(kwargs.keys()),
                     len(event.parameters),
-                    sorted(event.parameters),
+                    sorted(_parameter_names(event.parameters)),
                 )
             )
 
