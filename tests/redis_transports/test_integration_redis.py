@@ -117,11 +117,11 @@ async def test_event(bus: lightbus.BusNode, dummy_api, stream_use):
     received_api_name = None
     received_event_name = None
 
-    async def listener(api_name, event_name, **kwargs):
+    async def listener(event_message, **kwargs):
         nonlocal received_kwargs, received_api_name, received_event_name
         received_kwargs.append(kwargs)
-        received_api_name = api_name
-        received_event_name = event_name
+        received_api_name = event_message.api_name
+        received_event_name = event_message.event_name
 
     await bus.my.dummy.my_event.listen_async(listener)
     await asyncio.sleep(0.01)

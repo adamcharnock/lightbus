@@ -16,7 +16,7 @@ def home_view(request):
     return web.Response(body=html, content_type="text/html")
 
 
-def handle_page_view(api_name, event_name, url):
+def handle_page_view(event_message, url):
     page_views.setdefault(url, 0)
     page_views[url] += 1
 

@@ -57,23 +57,15 @@ async def test_listen_for_event_no_positional_args(dummy_bus: lightbus.BusNode):
 
 @pytest.mark.run_loop
 async def test_listen_for_event_one_positional_arg(dummy_bus: lightbus.BusNode):
-    with pytest.raises(InvalidEventListener):
-        await dummy_bus.bus_client.listen_for_event(
-            "my.dummy", "my_event", listener=lambda api_name: None
-        )
+    await dummy_bus.bus_client.listen_for_event(
+        "my.dummy", "my_event", listener=lambda event_message: None
+    )
 
 
 @pytest.mark.run_loop
 async def test_listen_for_event_two_positional_args(dummy_bus: lightbus.BusNode):
     await dummy_bus.bus_client.listen_for_event(
-        "my.dummy", "my_event", listener=lambda api_name, event_name: None
-    )
-
-
-@pytest.mark.run_loop
-async def test_listen_for_event_three_positional_args(dummy_bus: lightbus.BusNode):
-    await dummy_bus.bus_client.listen_for_event(
-        "my.dummy", "my_event", listener=lambda api_name, event_name, other: None
+        "my.dummy", "my_event", listener=lambda event_message, other: None
     )
 
 

@@ -1,32 +1,32 @@
 In the following worked example we will create three services:
- 
+
 1. An image resizing service
 2. An online store
 3. A stats dashboard
 
-This will involve a combination of web interfaces (using [Flask]), and Lightbus APIs. 
+This will involve a combination of web interfaces (using [Flask]), and Lightbus APIs.
 The goal is to show how Lightbus can allow multiple services to interact.
 
 ## Getting started
 
-The code created here can be found in Lightbus example [ex03_worked_example], although 
-the code will be repeated below. There is a directory for each service we will 
+The code created here can be found in Lightbus example [ex03_worked_example], although
+the code will be repeated below. There is a directory for each service we will
 create – `store/`, `dashboard/`, and `image/`.
 
 Before continuing ensure you have installed `flask` and `honcho`:
 
     pip3 install flask honcho
 
-A passing familiarity with [Flask] may be useful, but is not required. [Honcho] 
-will assist us in running the various processes required for our services. 
+A passing familiarity with [Flask] may be useful, but is not required. [Honcho]
+will assist us in running the various processes required for our services.
 
-We will assume you 
-have already read and completed the [installation](installation.md), 
+We will assume you
+have already read and completed the [installation](installation.md),
 [quick start](quick-start.md), and [concepts](concepts.md) sections.
 
 ## Image resizing service
 
-The image resizing service will be a simple Lightbus API, the purpose of which 
+The image resizing service will be a simple Lightbus API, the purpose of which
 is to allow our store to resize images prior to display:
 
 ```python3
@@ -47,7 +47,7 @@ There is no web interface for this service, so this is all we need.
 
 ## Store service
 
-Our store will have both a Lightbus API and a web interface. We'll start 
+Our store will have both a Lightbus API and a web interface. We'll start
 with the API first:
 
 ```python3
@@ -62,7 +62,7 @@ class StoreApi(Api):
         name = 'store'
 ```
 
-This API has a single event called ``page_view``. The store web interface will fire this 
+This API has a single event called ``page_view``. The store web interface will fire this
 event whenever a page is viewed.
 
 Our store web interface uses Flask and is a little longer:
@@ -100,17 +100,17 @@ def home():
             f'<img src="{resized_url}">'
             f'</a> '
         )
-    
+
     # Fire the page view
     bus.store.page_view.fire(url='/')
-    
+
     return html
 
 @app.route('/pet/<int:pet_num>')
 def pet(pet_num):
     # Show an individual pet
     resized_url = bus.image.resize(url=PETS[pet_num], width=200, height=200)
-    
+
     # Fire the page view
     bus.store.page_view.fire(url=f'/pet/{pet_num}')
 
@@ -121,9 +121,9 @@ def pet(pet_num):
 
 ## Interlude: give it a go
 
-We're not quite done yet, but you can now startup the necessary processes and 
+We're not quite done yet, but you can now startup the necessary processes and
 see the store. You will need to run each of these in a separate terminal window:
-    
+
 ```shell
 $ ls
 image/       store/
@@ -135,8 +135,8 @@ $ lightbus run --bus=image/bus.py
 $ FLASK_APP=store/web.py flask run --port=5001
 ```
 
-Now open [127.0.0.1:5001] in your browser and 
-you should see three animal pictures awaiting you. The URL for each 
+Now open [127.0.0.1:5001] in your browser and
+you should see three animal pictures awaiting you. The URL for each
 image was fetched from the image resizing service.
 
 The flask web interface should also have some logging output akin to the following:
@@ -152,11 +152,11 @@ Next we will create the dashboard which will make use of the `store.page_view` e
 
 ## Dashboard service
 
-The dashboard service will provide internal reporting in the form 
+The dashboard service will provide internal reporting in the form
 of page view statistics for the online store.
 
-There dashboard will need to both receive events and provide a web 
-interface. It will therefore need both a lightbus process and a 
+There dashboard will need to both receive events and provide a web
+interface. It will therefore need both a lightbus process and a
 web process (we will later look at how to combine these).
 
 Fist we will start with the `bus.py` file:
@@ -167,7 +167,7 @@ import json
 
 page_views = {}
 
-def handle_page_view(api_name, event_name, url):
+def handle_page_view(event_message, url):
     page_views.setdefault(url, 0)
     page_views[url] += 1
     with open('/tmp/.dashboard.db.json', 'w') as f:
@@ -178,15 +178,15 @@ def before_server_start(bus):
     bus.store.page_view.listen(handle_page_view)
 ```
 
-This is a simple listener for the `bus.store.page_view` event. This is event is fired by the 
+This is a simple listener for the `bus.store.page_view` event. This is event is fired by the
 store's web interface we created above.
 
-Note we do not define any APIs, 
-instead we setup our event listener using the `before_server_start()` hook. Listening for this 
+Note we do not define any APIs,
+instead we setup our event listener using the `before_server_start()` hook. Listening for this
 event is all the dashboard's Lightbus process will do, it will not provide any APIs.
 
-The `handle_page_view()` handler persists each view to the Dashboard services' local database. 
-In a real service this would likely be a DBMS of some form (Postgres, MySQL, 
+The `handle_page_view()` handler persists each view to the Dashboard services' local database.
+In a real service this would likely be a DBMS of some form (Postgres, MySQL,
 Redis, Mongo etc). For simplicity we just store JSON to a file.
 
 Now we'll define our dashboard's web interface:
@@ -214,7 +214,7 @@ def home():
     return html
 ```
 
-This reads the JSON data that was written by the event listener in `dashboard/bus.py` above, 
+This reads the JSON data that was written by the event listener in `dashboard/bus.py` above,
 then render it to HTML.
 
 ## Run it!
@@ -254,8 +254,8 @@ $ lightbus run --bus=dashboard/bus.py
 $ FLASK_APP=dashboard/web.py flask run --port=5000
 ```
 
-**However,** you may find it easier to startup these processes 
-will the `honcho` tool we installed earlier. First, create 
+**However,** you may find it easier to startup these processes
+will the `honcho` tool we installed earlier. First, create
 a file called `Procfile`:
 
 ```shell
@@ -275,7 +275,7 @@ Procfile    dashboard/    image/    store/
 $ honcho start
 ```
 
-If you see an error stating `command not found`, ensure you installed `honcho` as 
+If you see an error stating `command not found`, ensure you installed `honcho` as
 detailed above (`pip3 install honcho`).
 
 Once started, checkout the output for any errors. Each log line will state the process
@@ -283,17 +283,17 @@ it came from. If all is well, you should see something like this:
 
 ![honcho startup logging output][honcho-startup]
 
-You should now be able to access the store's web interface at [127.0.0.1:5001] as you 
+You should now be able to access the store's web interface at [127.0.0.1:5001] as you
 did previously.
 
 Upon viewing the page, the web interface will resize each image and fire the `store.page_view`
-event. The dashboard will receive the `store.page_view` event and create the 
+event. The dashboard will receive the `store.page_view` event and create the
 database for the first time. The logging output should reflect this:
 
 ![honcho page view logging output][honcho-page-view]
 
-At this point you can view the dashboard at [127.0.0.1:5000]. Note that opening the dashboard 
-before this point would have resulted in an error as the database would not have been 
+At this point you can view the dashboard at [127.0.0.1:5000]. Note that opening the dashboard
+before this point would have resulted in an error as the database would not have been
 created.
 
 The dashboard should show a simple list of URLs plus the total number of page views for each.
@@ -301,10 +301,10 @@ Go back to the store and view a few pages. Now refresh the dashboard and note th
 
 ## Wrapping up
 
-While the services we have have created here are very crude, hopefully they have helped 
+While the services we have have created here are very crude, hopefully they have helped
 show how Lightbus can be used as a effective communications infrastructure.
 
-Next we will the detail the ins-and-outs of each area of Lightbus – APIs, RPCs, events, configuration, 
+Next we will the detail the ins-and-outs of each area of Lightbus – APIs, RPCs, events, configuration,
 schemas, and so on.
 
 ## Extra: Combining dashboard processes
@@ -313,9 +313,9 @@ As an extra bonus, below we show how to combine both dashboard processes into on
 This is a bit more advanced and requires some knowledge of Python's asyncio features.
 *You can use Lightbus perfectly well without adding this complexity.*
 
-Behind the scenes Lightbus is powered by Python's asyncio library. Therefore, 
-if we also use an asyncio-based web server we can combine the Lightbus and web 
-processes. In this case we'll use [aiohttp] as our web server, rather than 
+Behind the scenes Lightbus is powered by Python's asyncio library. Therefore,
+if we also use an asyncio-based web server we can combine the Lightbus and web
+processes. In this case we'll use [aiohttp] as our web server, rather than
 Flask which we used earlier.
 
 
@@ -343,7 +343,7 @@ def home_view(request):
     return web.Response(body=html, content_type='text/html')
 
 
-def handle_page_view(url):
+def handle_page_view(event_message, url):
     """Handle an incoming page view"""
     page_views.setdefault(url, 0)
     # Store the incoming view in our `page_views` global variable
@@ -353,7 +353,7 @@ def handle_page_view(url):
 async def start_listener(app):
     # Create the asyncio task which will listen for the page_view event
     listener_task = await app.bus.store.page_view.listen_async(handle_page_view)
-    
+
     # Store the task against `app` in case we need it later (hint: we don't)
     app['page_view_listener'] = listener_task
 
@@ -369,7 +369,7 @@ async def cleanup(app):
 def main():
     # Make sure Lightbus formats its logs correctly
     lightbus.configure_logging()
-    
+
     # Create our lightbus client and our web application
     bus = lightbus.create()
     app = web.Application()
@@ -377,8 +377,8 @@ def main():
     app.router.add_route('GET', '/', home_view)
     app.on_startup.append(start_listener)
     app.on_cleanup.append(cleanup)
-    
-    # Store the bus on `app` as we'll need it 
+
+    # Store the bus on `app` as we'll need it
     # in start_listener() and cleanup()
     app.bus = bus
 
@@ -390,7 +390,7 @@ if __name__ == '__main__':
 
 ```
 
-New create a new Procfile called `Procfile_combined`. This will use your new combined 
+New create a new Procfile called `Procfile_combined`. This will use your new combined
 dashboard process along with the existing image resizer and store services:
 
 ```bash hl_lines="5"
@@ -401,7 +401,7 @@ store_web: FLASK_DEBUG=1 FLASK_APP=store/web.py flask run --port=5001
 dashboard_combined: python dashboard/combined.py
 ```
 
-Note that the `dashboard_web` and `dashboard_lightbus` have gone and `dashboard_combined` 
+Note that the `dashboard_web` and `dashboard_lightbus` have gone and `dashboard_combined`
 has been added.
 
 You can now start up your new collection of services using:

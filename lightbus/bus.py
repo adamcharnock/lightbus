@@ -485,12 +485,10 @@ class BusClient(object):
 
                     # Call the listener
                     co = listener(
-                        # TODO: Pass the whole event object as the first arg
-                        # Pass the api & event names as positional arguments,
+                        # Pass the event message as a positional argument,
                         # thereby allowing listeners to have flexibility in the argument names.
-                        # (And therefore allowing listeners to use the `even_name` parameter themselves)
-                        event_message.api_name,
-                        event_message.event_name,
+                        # (And therefore allowing listeners to use the `event` parameter themselves)
+                        event_message,
                         **event_message.kwargs,
                     )
 
@@ -618,11 +616,11 @@ class BusClient(object):
         if has_variable_positional_args:
             return
 
-        if total_positional_args < 2:
+        if not total_positional_args:
             raise InvalidEventListener(
-                f"The specified event listener {listener} must take at least two positional arguments. "
-                f"These will be the API name and the event name. For example: "
-                f"my_listener(api_name, event_name, other, ...)"
+                f"The specified event listener {listener} must take at one positional argument. "
+                f"This will be the event message. For example: "
+                f"my_listener(event_message, other, ...)"
             )
 
 

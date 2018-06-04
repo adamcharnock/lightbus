@@ -23,7 +23,7 @@ async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events,
     event_ok_ids = dict()
     history = []
 
-    async def listener(api_name, event_name, field, **kwargs):
+    async def listener(event_message, field, **kwargs):
         call_id = field
         event_ok_ids.setdefault(call_id, 0)
         event_ok_ids[call_id] += 1
