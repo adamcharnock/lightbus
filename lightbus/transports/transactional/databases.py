@@ -1,5 +1,6 @@
 import json
 from functools import partial
+from inspect import isawaitable
 from typing import Tuple, Optional, AsyncIterable, AsyncGenerator
 
 from lightbus.exceptions import UnsupportedOptionValue, DuplicateMessage
@@ -70,7 +71,7 @@ class DbApiConnection(DatabaseConnection):
     async def migrate(self):
         # TODO: smarter version handling
         # TODO: cleanup old entries after x time
-        await self.cursor.execute(
+        await self.execute(
             """
             CREATE TABLE IF NOT EXISTS lightbus_processed_events (
                 message_id VARCHAR(100) PRIMARY KEY,
@@ -79,7 +80,7 @@ class DbApiConnection(DatabaseConnection):
         """
         )
 
-        await self.cursor.execute(
+        await self.execute(
             """
             CREATE TABLE IF NOT EXISTS lightbus_event_outbox (
                 message_id VARCHAR(100) PRIMARY KEY,
@@ -91,13 +92,13 @@ class DbApiConnection(DatabaseConnection):
         )
 
     async def start_transaction(self):
-        await self.cursor.execute("BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED")
+        await self.execute("BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED")
 
     async def commit_transaction(self):
         try:
             # We do this manually because self.connection.commit() will not work as per:
             #   http://initd.org/psycopg/docs/advanced.html#asynchronous-support
-            await self.cursor.execute("COMMIT")
+            await self.execute("COMMIT")
         except Exception as e:
             error_name = e.__class__.__name__.lower()
             error = str(e).lower()
@@ -118,18 +119,18 @@ class DbApiConnection(DatabaseConnection):
     async def rollback_transaction(self):
         # We do this manually because self.connection.rollback() will not work as per:
         #   http://initd.org/psycopg/docs/advanced.html#asynchronous-support
-        await self.cursor.execute("ROLLBACK")
+        await self.execute("ROLLBACK")
 
     async def is_event_duplicate(self, message: EventMessage) -> bool:
         sql = "SELECT EXISTS(SELECT 1 FROM lightbus_processed_events WHERE message_id = %s)"
-        await self.cursor.execute(sql, [message.id])
-        result = await self.cursor.fetchall()
+        await self.execute(sql, [message.id])
+        result = await self.fetchall()
         return result[0][0]
 
     async def store_processed_event(self, message: EventMessage):
         # Store message in de-duping table
         sql = "INSERT INTO lightbus_processed_events (message_id) VALUES (%s)"
-        await self.cursor.execute(sql, [message.id])
+        await self.execute(sql, [message.id])
 
     async def send_event(self, message: EventMessage, options: dict):
         # Store message in messages-to-be-published table
@@ -142,9 +143,7 @@ class DbApiConnection(DatabaseConnection):
                 f"although this can be customised. The error was: {e}"
             )
         sql = "INSERT INTO lightbus_event_outbox (message_id, message, options) VALUES (%s, %s, %s)"
-        await self.cursor.execute(
-            sql, [message.id, self.message_serializer(message), encoded_options]
-        )
+        await self.execute(sql, [message.id, self.message_serializer(message), encoded_options])
 
     async def consume_pending_events(
         self, message_id: Optional[str] = None
@@ -164,8 +163,8 @@ class DbApiConnection(DatabaseConnection):
             sql = "SELECT message, options FROM lightbus_event_outbox {} LIMIT 1 FOR UPDATE SKIP LOCKED".format(
                 where
             )
-            await self.cursor.execute(sql, args)
-            result = await self.cursor.fetchall()
+            await self.execute(sql, args)
+            result = await self.fetchall()
 
             # test-hook: pending_post_fetch
 
@@ -179,7 +178,19 @@ class DbApiConnection(DatabaseConnection):
 
     async def remove_pending_event(self, message_id):
         sql = "DELETE FROM lightbus_event_outbox WHERE message_id = %s"
-        await self.cursor.execute(sql, [message_id])
+        await self.execute(sql, [message_id])
+
+    async def execute(self, sql, args=None):
+        result = self.cursor.execute(sql, args or [])
+        if isawaitable(result):
+            result = await result
+        return result
+
+    async def fetchall(self):
+        result = self.cursor.fetchall()
+        if isawaitable(result):
+            result = await result
+        return result
 
 
 #

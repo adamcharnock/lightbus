@@ -1,3 +1,4 @@
+from inspect import isawaitable
 from typing import List, Optional
 
 from lightbus.exceptions import (
@@ -88,7 +89,13 @@ class LightbusAtomic(object):
             return True
 
     async def _get_cursor(self):
-        return self.custom_cursor or (await self.connection.cursor())
+        if self.custom_cursor:
+            return self.custom_cursor
+        else:
+            cursor = self.connection.cursor()
+            if isawaitable(cursor):
+                cursor = await cursor
+            return cursor
 
     async def __aenter__(self):
         self.cursor = await self._get_cursor()
