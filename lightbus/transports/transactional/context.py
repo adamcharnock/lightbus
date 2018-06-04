@@ -1,3 +1,5 @@
+import asyncio
+
 from inspect import isawaitable
 from typing import List, Optional
 
@@ -104,6 +106,12 @@ class LightbusDbContext(object):
         )
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        # This sleep statement is a hack. We need to ensure that we yield control
+        # to any transactional transport listeners that want to set themselves up.
+        # In particular, they need to grab a reference to the database before we
+        # clean it up below
+        await asyncio.sleep(0.0001)
+
         if exc_type:
             await self.transport.rollback_and_finish()
         else:
