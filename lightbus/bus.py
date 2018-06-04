@@ -548,6 +548,10 @@ class BusClient(object):
     @contextlib.contextmanager
     def _register_listener(self, events: List[Tuple[str, str]]):
         """A context manager to help keep track of what the bus is listening for"""
+        logger.info(
+            LBullets(f"Registering listener for", items=[Bold(f"{a}.{e}") for a, e in events])
+        )
+
         for api_name, event_name in events:
             key = (api_name, event_name)
             self._listeners.setdefault(key, 0)
