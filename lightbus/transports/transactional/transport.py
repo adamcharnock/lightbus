@@ -126,7 +126,13 @@ class TransactionalEventTransport(EventTransport):
         consumer_group: str = None,
         **kwargs,
     ) -> Generator[EventMessage, None, None]:
-        assert self.database, "Cannot use this transport outside a lightbus_set_database() context"
+        if not self.database:
+            raise DatabaseNotSet(
+                f"You are trying to consume events on APIs { {a for a, e in listen_for} }. "
+                f"These APIs are configured to use the transaction transport. However, "
+                f"no database has been set on the transport. You should do this using the "
+                f"lightbus_set_database() async context. "
+            )
 
         # IMPORTANT: Because this method yields control, it is possible that
         #            the reference to self.database will change during execution,
