@@ -30,7 +30,7 @@ if False:
     from lightbus.bus import BusNode
 
 
-class LightbusAtomic(object):
+class LightbusDbContext(object):
 
     def __init__(
         self,
@@ -111,4 +111,4 @@ class LightbusAtomic(object):
         self.cursor = None
 
 
-lightbus_atomic = LightbusAtomic
+lightbus_set_database = LightbusDbContext

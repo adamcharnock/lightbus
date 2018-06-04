@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from lightbus import BusNode
-from lightbus.transports.transactional import lightbus_atomic
+from lightbus.transports.transactional import lightbus_set_database
 from lightbus.utilities.async import cancel
 
 pytestmark = pytest.mark.integration
@@ -19,7 +19,7 @@ async def test_fire_events_all_ok(
     messages_in_redis,
     get_outbox,
 ):
-    async with lightbus_atomic(transactional_bus, aiopg_connection, apis=["foo", "bar"]):
+    async with lightbus_set_database(transactional_bus, aiopg_connection, apis=["foo", "bar"]):
         await transactional_bus.my.dummy.my_event.fire_async(field=1)
         await aiopg_cursor.execute("INSERT INTO test_table VALUES ('hey')")
 
@@ -43,7 +43,7 @@ async def test_fire_events_exception(
         pass
 
     with pytest.raises(OhNo):
-        async with lightbus_atomic(transactional_bus, aiopg_connection, apis=["foo", "bar"]):
+        async with lightbus_set_database(transactional_bus, aiopg_connection, apis=["foo", "bar"]):
             await transactional_bus.my.dummy.my_event.fire_async(field=1)
             await aiopg_cursor.execute("INSERT INTO test_table VALUES ('hey')")
             raise OhNo()
@@ -61,7 +61,7 @@ async def test_consume_events(transactional_bus: BusNode, aiopg_connection_facto
         events.append(event_message)
 
     connection1 = await aiopg_connection_factory()
-    async with lightbus_atomic(transactional_bus, connection1, apis=["my.dummy"]):
+    async with lightbus_set_database(transactional_bus, connection1, apis=["my.dummy"]):
         listener_co = await transactional_bus.my.dummy.my_event.listen_async(listener)
 
     task = asyncio.ensure_future(listener_co)
@@ -72,7 +72,7 @@ async def test_consume_events(transactional_bus: BusNode, aiopg_connection_facto
     print("connection 1", connection1)
     print("connection 2", connection2)
 
-    async with lightbus_atomic(transactional_bus, connection2, apis=["my.dummy"]):
+    async with lightbus_set_database(transactional_bus, connection2, apis=["my.dummy"]):
         await transactional_bus.my.dummy.my_event.fire_async(field=1)
 
     await asyncio.sleep(0.2)

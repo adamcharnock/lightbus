@@ -3,7 +3,7 @@ import logging
 
 import pytest
 
-from lightbus.transports.transactional import lightbus_atomic
+from lightbus.transports.transactional import lightbus_set_database
 
 
 pytestmark = pytest.mark.reliability
@@ -34,7 +34,7 @@ async def test_multiple_connections(
                 bus = await transactional_bus_factory()
 
                 for x in range(0, 50):
-                    async with lightbus_atomic(
+                    async with lightbus_set_database(
                         bus, connection, apis=["my.dummy"], start_transaction=True
                     ):
                         await bus.my.dummy.my_event.fire_async(field=1)

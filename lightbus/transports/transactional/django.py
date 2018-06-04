@@ -1,7 +1,7 @@
 import asyncio
 
 import lightbus.bus
-from lightbus.transports.transactional import lightbus_atomic, DbApiConnection
+from lightbus.transports.transactional import lightbus_set_database, DbApiConnection
 from django.db import connections
 
 from lightbus.utilities.async import block
@@ -22,7 +22,7 @@ class TransactionTransportMiddleware(object):
             block(DbApiConnection(connections["default"], cursor).migrate(), self.loop, timeout=5)
 
     def __call__(self, request):
-        lightbus_transaction_context = lightbus_atomic(self.bus, connections["default"])
+        lightbus_transaction_context = lightbus_set_database(self.bus, connections["default"])
         block(lightbus_transaction_context.__aenter__(), self.loop, timeout=5)
 
         response = self.get_response(request)
