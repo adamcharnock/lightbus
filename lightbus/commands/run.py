@@ -3,7 +3,6 @@ import asyncio
 import logging
 from inspect import iscoroutine
 
-from lightbus import create
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.utilities.async import block
 
