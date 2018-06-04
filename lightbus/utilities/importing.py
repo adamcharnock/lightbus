@@ -1,9 +1,14 @@
+import importlib
 import logging
 from typing import Sequence, Tuple, Callable
 
 import pkg_resources
 
 logger = logging.getLogger(__name__)
+
+
+def import_module_from_string(name):
+    return importlib.import_module(name)
 
 
 def import_from_string(name):

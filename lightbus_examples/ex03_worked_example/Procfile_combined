@@ -2,7 +2,7 @@
 
 # The image resizer service has no web UI. I does have an ImageApi
 # which provides a resize() RPC.
-image_resizer_bus: lightbus run --bus=image/bus.py
+image_resizer_bus: lightbus run --bus=image.bus
 
 # The store web interface. This will fire the page_view event
 # on the StoreApi, and call the ImageApi's resize() RPC.

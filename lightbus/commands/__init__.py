@@ -3,6 +3,8 @@ import logging
 import sys
 from asyncio.events import get_event_loop
 
+import lightbus
+import lightbus.bus
 from lightbus.config import Config
 from lightbus.plugins import autoload_plugins, plugin_hook, remove_all_plugins
 from lightbus.utilities.logging import configure_logging
@@ -67,15 +69,6 @@ def parse_args(args=None):
 
 
 def load_config(args) -> Config:
-    if args.config:
-        config = Config.load_file(file_path=args.config)
-    else:
-        config = Config.load_dict({})
-
-    if args.service_name:
-        config._config.service_name = args.service_name
-
-    if args.process_name:
-        config._config.process_name = args.process_name
-
-    return config
+    return lightbus.bus.load_config(
+        from_file=args.config, service_name=args.service_name, process_name=args.process_name
+    )

@@ -129,7 +129,7 @@ $ ls
 image/       store/
 
 # Start our image resizing service
-$ lightbus run --bus=image/bus.py
+$ lightbus run --bus=image.bus
 
 # Start our store's web interface
 $ FLASK_APP=store/web.py flask run --port=5001
@@ -244,13 +244,13 @@ $ ls
 dashboard/    image/    store/
 
 # Image resizer
-$ lightbus run --bus=image/bus.py
+$ lightbus run --bus=image.bus
 
 # Store
 $ FLASK_APP=store/web.py flask run --port=5001
 
 # Dashboard
-$ lightbus run --bus=dashboard/bus.py
+$ lightbus run --bus=dashboard.bus
 $ FLASK_APP=dashboard/web.py flask run --port=5000
 ```
 
@@ -260,9 +260,9 @@ a file called `Procfile`:
 
 ```shell
 # Procfile
-image_resizer_bus: lightbus run --bus=image/bus.py
+image_resizer_bus: lightbus run --bus=image.bus
 store_web:         FLASK_APP=store/web.py flask run --port=5001
-dashboard_bus:     lightbus run --bus=dashboard/bus.py
+dashboard_bus:     lightbus run --bus=dashboard.bus
 dashboard_web:     FLASK_APP=dashboard/web.py flask run --port=5000
 ```
 
@@ -396,7 +396,7 @@ dashboard process along with the existing image resizer and store services:
 ```bash hl_lines="5"
 # Procfile_combined
 
-image_resizer_bus: lightbus run --bus=image/bus.py
+image_resizer_bus: lightbus run --bus=image.bus
 store_web: FLASK_DEBUG=1 FLASK_APP=store/web.py flask run --port=5001
 dashboard_combined: python dashboard/combined.py
 ```

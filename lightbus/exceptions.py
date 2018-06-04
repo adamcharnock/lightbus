@@ -153,3 +153,7 @@ class DuplicateMessage(LightbusException):
 
 class NoApisSpecified(LightbusException):
     pass
+
+
+class FailedToImportBusModule(LightbusException):
+    pass

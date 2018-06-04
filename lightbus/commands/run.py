@@ -41,9 +41,9 @@ class Command(LogLevelMixin, BusImportMixin, object):
         self.setup_logging(args.log_level, config)
 
         bus_module = self.import_bus(args)
+        bus = bus_module.bus
 
-        bus = create(config=config)
-
+        # TODO: Move to lightbus.create()?
         if args.schema:
             if args.schema == "-":
                 # if '-' read from stdin

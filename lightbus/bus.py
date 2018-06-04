@@ -24,6 +24,7 @@ from lightbus.exceptions import (
     InvalidName,
     InvalidParameters,
     OnlyAvailableOnRootNode,
+    FailedToImportBusModule,
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
@@ -37,6 +38,7 @@ from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loo
 from lightbus.utilities.config import random_name
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
+from lightbus.utilities.importing import import_from_string, import_module_from_string
 
 __all__ = ["BusClient", "BusNode", "create"]
 
@@ -74,8 +76,12 @@ class BusClient(object):
             LBullets(
                 "Lightbus getting ready to start",
                 items={
-                    "service_name (set with -s)": self.config.service_name,
-                    "process_name (with with -p)": self.config.process_name,
+                    "service_name (set with -s or LIGHTBUS_SERVICE_NAME)": Bold(
+                        self.config.service_name
+                    ),
+                    "process_name (with with -p or LIGHTBUS_PROCESS_NAME)": Bold(
+                        self.config.process_name
+                    ),
                 },
             )
         )
@@ -809,8 +815,11 @@ class BusNode(object):
 
 
 def create(
-    config: Union[dict, Config] = frozendict(),
+    config: Union[dict, Config] = None,
     *,
+    config_file: str = None,
+    service_name: str = None,
+    process_name: str = None,
     rpc_transport: Optional["RpcTransport"] = None,
     result_transport: Optional["ResultTransport"] = None,
     event_transport: Optional["EventTransport"] = None,
@@ -828,6 +837,11 @@ def create(
         return
 
     from lightbus.config import Config
+
+    if config is None:
+        config = load_config(
+            from_file=config_file, service_name=service_name, process_name=process_name
+        )
 
     if isinstance(config, Mapping):
         config = Config.load_dict(config or {})
@@ -853,3 +867,37 @@ def create(
     bus_client.setup(plugins=plugins)
 
     return node_class(name="", parent=None, bus_client=bus_client)
+
+
+def load_config(
+    from_file: str = None, service_name: str = None, process_name: str = None
+) -> Config:
+    from_file = from_file or os.environ.get("LIGHTBUS_CONFIG")
+    service_name = service_name or os.environ.get("LIGHTBUS_SERVICE_NAME")
+    process_name = process_name or os.environ.get("LIGHTBUS_PROCESS_NAME")
+
+    if from_file:
+        config = Config.load_file(file_path=from_file)
+    else:
+        config = Config.load_dict({})
+
+    if service_name:
+        config._config.service_name = service_name
+
+    if process_name:
+        config._config.process_name = process_name
+
+    return config
+
+
+def import_bus_py(bus_module_name: str = None):
+    bus_module_name = bus_module_name or os.environ.get("LIGHTBUS_MODULE", "bus")
+    logger.info(f"Importing bus.py from {Bold(bus_module_name)}")
+    try:
+        return import_module_from_string(bus_module_name)
+    except ImportError as e:
+        raise FailedToImportBusModule(
+            f"Failed to import bus module at '{bus_module_name}'. Perhaps you "
+            f"need to set the LIGHTBUS_MODULE environment variable? Alternatively "
+            f"you may need to configure your PYTHONPATH. Error was: {e}"
+        )
