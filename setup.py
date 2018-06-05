@@ -16,8 +16,8 @@ setup(
     long_description=open("README.rst").read() if exists("README.rst") else "",
     install_requires=[
         "aioredis",  # TODO: Pin version once streams support is merged
-        "jsonschema==2.6.0",
-        "pyyaml>=3.12,<4",
+        "jsonschema>=2.6.0,<3",
+        "pyyaml",
     ],
     extras_require={"development": ["pre-commit", "black", "aiopg"]},
     include_package_data=True,
