@@ -2,11 +2,12 @@ import inspect
 import itertools
 import json
 import logging
-from _pydecimal import Decimal
+from decimal import Decimal
 from typing import Union, Any, Tuple, Sequence, Mapping, Callable
 
 import datetime
 from enum import Enum
+from uuid import UUID
 
 import lightbus
 
@@ -156,8 +157,10 @@ def python_type_to_json_schemas(type_):
         return [{}]
     elif type_ in (Any, ...):
         return [{}]
-    elif is_class and issubclass(type_, (str, bytes, Decimal, complex)):
+    elif is_class and issubclass(type_, (str, bytes, complex, UUID)):
         return [{"type": "string"}]
+    elif is_class and issubclass(type_, Decimal):
+        return [{"type": "string", "pattern": "^-?\d+(\.\d+)?$"}]
     elif is_class and issubclass(type_, (bool,)):
         return [{"type": "boolean"}]
     elif is_class and issubclass(type_, (int, float)):

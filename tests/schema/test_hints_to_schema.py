@@ -1,7 +1,9 @@
 import inspect
 import logging
+from decimal import Decimal
 from typing import Union, Optional, NamedTuple, Tuple, Any, Mapping
 from collections import namedtuple
+from uuid import UUID
 
 import pytest
 from datetime import datetime, date
@@ -330,6 +332,26 @@ def test_date():
     schema = make_response_schema("api_name", "rpc_name", func)
     assert schema["type"] == "string"
     assert schema["pattern"]
+
+
+def test_decimal():
+
+    def func(username) -> Decimal:
+        pass
+
+    schema = make_response_schema("api_name", "rpc_name", func)
+    assert schema["type"] == "string"
+    assert schema["pattern"]
+
+
+def test_uuid():
+
+    def func(username) -> UUID:
+        pass
+
+    schema = make_response_schema("api_name", "rpc_name", func)
+    assert schema["type"] == "string"
+    assert "pattern" not in schema
 
 
 def test_object_with_method():
