@@ -4,8 +4,9 @@ import pytest
 
 from lightbus import DebugRpcTransport
 from lightbus.config import Config
-from lightbus.config.config import mapping_to_named_tuple, config_as_json_schema
-from lightbus.config.structure import RootConfig, BusConfig
+from lightbus.config.config import config_as_json_schema
+from lightbus.utilities.casting import mapping_to_named_tuple
+from lightbus.config.structure import RootConfig, BusConfig, LogLevelEnum
 from lightbus.plugins import autoload_plugins, manually_set_plugins
 from lightbus.plugins.metrics import MetricsPlugin
 from lightbus.plugins.state import StatePlugin
@@ -96,12 +97,12 @@ def test_load_bus_config(tmp_file):
     tmp_file.write("bus: { log_level: warning }")
     tmp_file.flush()
     config = Config.load_file(tmp_file.name)
-    assert config.bus().log_level == "warning"
+    assert config.bus().log_level == LogLevelEnum.WARNING
 
 
 def test_mapping_to_named_tuple_ok():
     root_config = mapping_to_named_tuple({"bus": {"log_level": "warning"}}, RootConfig)
-    assert root_config.bus.log_level == "warning"
+    assert root_config.bus.log_level == LogLevelEnum.WARNING
 
 
 def test_mapping_to_named_tuple_apis():

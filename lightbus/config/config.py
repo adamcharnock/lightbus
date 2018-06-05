@@ -1,13 +1,13 @@
-import inspect
 import json as jsonlib
 from pathlib import Path
-from typing import Mapping, Union, Type, get_type_hints, TypeVar, Dict, NamedTuple
+from typing import TypeVar, Dict, NamedTuple
 
 import jsonschema
 import yaml as yamllib
 
 from lightbus.exceptions import UnexpectedConfigurationFormat
 from lightbus.schema.hints_to_schema import python_type_to_json_schemas, SCHEMA_URI
+from lightbus.utilities.casting import mapping_to_named_tuple
 
 if False:
     from .structure import RootConfig, BusConfig, ApiConfig
@@ -124,61 +124,3 @@ def set_default_config(config: dict) -> dict:
     config["apis"]["default"].setdefault("event_transport", {"redis": {}})
     config["bus"]["schema"].setdefault("transport", {"redis": {}})
     return config
-
-
-T = TypeVar("T")
-
-
-def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
-    """Convert a dictionary-like object into the given named tuple
-
-    This conversion is performed recursively. If the passed named tuple
-    class contains child named tuples, then the the corresponding
-    child keys of the dictionary will be mapped.
-
-    This is used to take the supplied configuration and load it into the
-    expected configuration structures.
-    """
-    import lightbus.config.structure
-
-    hints = get_type_hints(named_tuple, None, lightbus.config.structure.__dict__)
-    parameters = {}
-
-    if mapping is None:
-        return None
-
-    for key, hint in hints.items():
-        is_class = inspect.isclass(hint)
-        value = mapping.get(key)
-
-        if key not in mapping:
-            continue
-
-        # Is this an Optional[] hint (which looks like Union[Thing, None)
-        subs_tree = hint._subs_tree() if hasattr(hint, "_subs_tree") else None
-        if (
-            type(hint) == type(Union)
-            and len(subs_tree) == 3
-            and subs_tree[2] == type(None)
-            and value is not None
-        ):
-            hint = subs_tree[1]
-
-        if is_namedtuple(hint):
-            parameters[key] = mapping_to_named_tuple(value, hint)
-        elif is_class and issubclass(hint, Mapping) and subs_tree and len(subs_tree) == 3:
-            parameters[key] = dict()
-            for k, v in value.items():
-                parameters[key][k] = mapping_to_named_tuple(v, hint._subs_tree()[2])
-        else:
-            parameters[key] = value
-
-    return named_tuple(**parameters)
-
-
-def is_namedtuple(v):
-    """Figuring out if an object is a named tuple is not as trivial as one may expect"""
-    try:
-        return issubclass(v, tuple) and hasattr(v, "_fields")
-    except TypeError:
-        return False

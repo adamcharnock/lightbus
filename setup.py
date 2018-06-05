@@ -18,6 +18,7 @@ setup(
         "aioredis",  # TODO: Pin version once streams support is merged
         "jsonschema>=2.6.0,<3",
         "pyyaml",
+        "python-dateutil",
     ],
     extras_require={"development": ["pre-commit", "black", "aiopg"]},
     include_package_data=True,

@@ -21,9 +21,7 @@ class DirectRpcTransport(RpcTransport):  # pragma: no cover
         # Direct RPC transport calls API method immediately
         logger.debug("Directly executing RPC call for message {}".format(rpc_message))
         api = registry.get(rpc_message.api_name)
-        result = await api.call(
-            procedure_name=rpc_message.procedure_name, kwargs=rpc_message.kwargs
-        )
+        result = await getattr(api, rpc_message.procedure_name)(**rpc_message.kwargs)
 
         logger.debug("Sending result for message {}".format(rpc_message))
         await self.result_transport.send_result(

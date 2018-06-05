@@ -94,6 +94,8 @@ class ApiConfig(object):
     rpc_transport: RpcTransportSelector = None
     result_transport: ResultTransportSelector = None
     strict_validation: bool = False
+    #: Cast values before calling event listeners and RPCs
+    cast_values: bool = True
 
     def __init__(self, **kw):
         for k, v in kw.items():

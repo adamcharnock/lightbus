@@ -105,9 +105,6 @@ class Api(object, metaclass=ApiMetaclass):
     class Meta:
         name = None
 
-    async def call(self, procedure_name, kwargs):
-        return getattr(self, procedure_name)(**kwargs)
-
     def get_event(self, name) -> "Event":
         event = getattr(self, name, None)
         if isinstance(event, Event):

@@ -35,6 +35,7 @@ from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport, ResultTransport, EventTransport
 from lightbus.transports.base import SchemaTransport, TransportRegistry
 from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loop, cancel
+from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.config import random_name
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
@@ -371,7 +372,10 @@ class BusClient(object):
 
         start_time = time.time()
         try:
-            result = api.call(name, kwargs)
+            method = getattr(api, name)
+            if self.config.api(api_name).cast_values:
+                kwargs = cast_to_signature(kwargs, method)
+            result = method(**kwargs)
             if isawaitable(result):
                 result = await result
         except (CancelledError, SuddenDeathException):
@@ -489,13 +493,20 @@ class BusClient(object):
                         "before_event_execution", event_message=event_message, bus_client=self
                     )
 
+                    if self.config.api(event_message.api_name).cast_values:
+                        parameters = cast_to_signature(
+                            parameters=event_message.kwargs, callable=listener
+                        )
+                    else:
+                        parameters = event_message.kwargs
+
                     # Call the listener
                     co = listener(
                         # Pass the event message as a positional argument,
                         # thereby allowing listeners to have flexibility in the argument names.
                         # (And therefore allowing listeners to use the `event` parameter themselves)
                         event_message,
-                        **event_message.kwargs,
+                        **parameters,
                     )
 
                     # Await it if necessary
