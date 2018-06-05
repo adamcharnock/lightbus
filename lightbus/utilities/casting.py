@@ -1,7 +1,7 @@
 import datetime
 import inspect
 import logging
-from typing import NamedTuple, Mapping, Type, get_type_hints, Union, Any, TypeVar, Optional
+from typing import NamedTuple, Mapping, Type, get_type_hints, Union, Any, TypeVar, Optional, List
 
 import dateutil.parser
 
@@ -28,26 +28,41 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     if optional_hint and value is not None:
         hint = optional_hint
 
+    subs_tree = hint._subs_tree() if hasattr(hint, "_subs_tree") else None
+    subs_tree = subs_tree if isinstance(subs_tree, tuple) else None
+    is_class = inspect.isclass(hint)
+
     if type(hint) == type(Union):
         return value
-
     elif hint == inspect.Parameter.empty:
         # Empty annotation
         return value
-    elif isinstance(value, hint):
+    elif safe_isinstance(value, hint):
         # Already correct type
         return value
-    elif is_namedtuple(hint) and isinstance(value, Mapping):
+    elif is_namedtuple(hint) and safe_isinstance(value, Mapping):
         return mapping_to_named_tuple(mapping=value, named_tuple=hint)
-    elif is_dataclass(hint) and isinstance(value, Mapping):
+    elif is_dataclass(hint) and safe_isinstance(value, Mapping):
         # We can treat dataclasses the same as named tuples
         return mapping_to_named_tuple(mapping=value, named_tuple=hint)
-    elif issubclass(hint, datetime.datetime) and isinstance(value, str):
+    elif is_class and issubclass(hint, datetime.datetime) and safe_isinstance(value, str):
         # Datetime as a string
         return dateutil.parser.parse(value)
-    elif issubclass(hint, datetime.date) and isinstance(value, str):
+    elif is_class and issubclass(hint, datetime.date) and safe_isinstance(value, str):
         # Date as a string
         return dateutil.parser.parse(value).date()
+    if is_class and issubclass(hint, list):
+        # Lists
+        if subs_tree:
+            return [cast_to_hint(i, subs_tree[1]) for i in value]
+        else:
+            return list(value)
+    if is_class and issubclass(hint, tuple):
+        # Tuples
+        if subs_tree:
+            return tuple(cast_to_hint(i, subs_tree[1]) for i in value)
+        else:
+            return tuple(value)
     elif inspect.isclass(hint) and hasattr(hint, "__annotations__"):
         logger.warning(
             f"Cannot cast to arbitrary class {hint}, using un-casted value. "
@@ -130,3 +145,11 @@ def is_optional(hint) -> Optional[Type]:
         return subs_tree[1]
     else:
         return None
+
+
+def safe_isinstance(value, type_):
+    try:
+        return isinstance(value, type_)
+    except TypeError:
+        # Cannot perform isinstance on some types
+        return False

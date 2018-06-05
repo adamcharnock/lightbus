@@ -1,5 +1,5 @@
 from datetime import datetime, timezone, date
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, List, Any, SupportsRound
 
 import pytest
 from dataclasses import dataclass
@@ -81,6 +81,11 @@ def test_cast_to_annotation_none():
     assert casted is None
 
 
+def test_cast_to_annotation_any():
+    casted = cast_to_hint(value="123", hint=Any)
+    assert casted == "123"
+
+
 def test_cast_to_annotation_uncastable():
     casted = cast_to_hint(value="a", hint=int)
     assert casted == "a"
@@ -104,3 +109,23 @@ def test_cast_to_annotation_custom_class():
     casted = cast_to_hint(value="a", hint=CustomClass)
     # Custom classes not supported
     assert casted == "a"
+
+
+def test_cast_to_annotation_list_builtin():
+    casted = cast_to_hint(value=["1", 2], hint=list)
+    assert casted == ["1", 2]
+
+
+def test_cast_to_annotation_list_generic_untyped():
+    casted = cast_to_hint(value=["1", 2], hint=List)
+    assert casted == ["1", 2]
+
+
+def test_cast_to_annotation_list_generic_typed():
+    casted = cast_to_hint(value=["1", 2], hint=List[int])
+    assert casted == [1, 2]
+
+
+def test_cast_to_annotation_unsupported_generic():
+    casted = cast_to_hint(value=["1", 2], hint=SupportsRound)
+    assert casted == ["1", 2]
