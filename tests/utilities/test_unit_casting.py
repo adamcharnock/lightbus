@@ -20,6 +20,17 @@ def test_cast_to_signature_simple():
     assert casted == {"a": 1, "b": "2", "c": obj}
 
 
+def test_cast_to_signature_no_annotations():
+
+    def fn(a, b, c):
+        pass
+
+    obj = object()
+    casted = cast_to_signature(callable=fn, parameters={"a": "1", "b": 2, "c": obj})
+    # Values untouched
+    assert casted == {"a": "1", "b": 2, "c": obj}
+
+
 def test_cast_to_annotation_named_tuple():
 
     class Foo(NamedTuple):
