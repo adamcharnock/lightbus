@@ -79,7 +79,7 @@ class TransactionalEventTransport(EventTransport):
             database_class=import_from_string(database_class),
         )
 
-    async def set_connection(self, connection, cursor, start_transaction: bool):
+    async def set_connection(self, connection, cursor):
         if self.connection:
             raise ConnectionAlreadySet(
                 f"The transactional transport connection has already been set. "
@@ -88,8 +88,9 @@ class TransactionalEventTransport(EventTransport):
         self.connection = connection
         self.cursor = cursor
         self.database = self.database_class(connection, cursor)
-        if start_transaction:
-            await self.database.start_transaction()
+
+    async def start_transaction(self):
+        await self.database.start_transaction()
 
     async def commit_and_finish(self):
         """Commit the current transactions, send committed messages, remove connection"""
@@ -176,6 +177,8 @@ class TransactionalEventTransport(EventTransport):
 
         # Wrap the child transport in order to de-duplicate incoming messages
         async for message in consumer:
+            await database.start_transaction()
+
             if await database.is_event_duplicate(message):
                 logger.info(
                     f"Duplicate event {message.canonical_name} detected with ID {message.id}. "
@@ -191,7 +194,6 @@ class TransactionalEventTransport(EventTransport):
 
             try:
                 await database.commit_transaction()
-                await database.start_transaction()
             except DuplicateMessage:
                 # TODO: Can this even happen with the appropriate transaction isolation level?
                 logger.info(
@@ -201,7 +203,6 @@ class TransactionalEventTransport(EventTransport):
                     f"this would have been caught earlier. Event ID: {message.id}"
                 )
                 await database.rollback_transaction()
-                await database.start_transaction()
 
     async def publish_pending(self, message_id=None):
         async for message, options in self.database.consume_pending_events(message_id):

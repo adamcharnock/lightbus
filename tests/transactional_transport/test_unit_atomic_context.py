@@ -41,24 +41,6 @@ def test_init_multiple_transports(dummy_bus: BusNode, aiopg_connection):
         lightbus_set_database(dummy_bus, aiopg_connection, apis=["some_api", "another_api"])
 
 
-def test_autodetect_start_transaction_psycopg2_with_autocommit(atomic_context, psycopg2_connection):
-    psycopg2_connection.autocommit = True
-    assert atomic_context._autodetect_start_transaction(psycopg2_connection) == False
-
-
-def test_autodetect_start_transaction_psycopg2_without_autocommit(
-    atomic_context, psycopg2_connection
-):
-    psycopg2_connection.autocommit = False
-    assert atomic_context._autodetect_start_transaction(psycopg2_connection) == True
-
-
-def test_autodetect_start_transaction_aiopg(atomic_context, aiopg_connection):
-    # aiopg must always have autocommit on in order for the underlying
-    # psycopg2 library for function in asynchronous mode
-    assert atomic_context._autodetect_start_transaction(aiopg_connection) == False
-
-
 @pytest.mark.run_loop
 async def test_aenter(atomic_context, aiopg_connection):
     await atomic_context.__aenter__()

@@ -92,13 +92,15 @@ class DbApiConnection(DatabaseConnection):
         )
 
     async def start_transaction(self):
-        await self.execute("BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED")
+        await self.execute(
+            "BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED -- DbApiConnection.start_transaction()"
+        )
 
     async def commit_transaction(self):
         try:
             # We do this manually because self.connection.commit() will not work as per:
             #   http://initd.org/psycopg/docs/advanced.html#asynchronous-support
-            await self.execute("COMMIT")
+            await self.execute("COMMIT -- DbApiConnection.commit_transaction()")
         except Exception as e:
             error_name = e.__class__.__name__.lower()
             error = str(e).lower()
@@ -119,7 +121,7 @@ class DbApiConnection(DatabaseConnection):
     async def rollback_transaction(self):
         # We do this manually because self.connection.rollback() will not work as per:
         #   http://initd.org/psycopg/docs/advanced.html#asynchronous-support
-        await self.execute("ROLLBACK")
+        await self.execute("ROLLBACK -- DbApiConnection.rollback_transaction()")
 
     async def is_event_duplicate(self, message: EventMessage) -> bool:
         sql = "SELECT EXISTS(SELECT 1 FROM lightbus_processed_events WHERE message_id = %s)"

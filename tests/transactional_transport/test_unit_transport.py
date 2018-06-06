@@ -35,11 +35,7 @@ async def active_transactions():
 @pytest.fixture()
 def transaction_transport(aiopg_connection, aiopg_cursor, loop):
     transport = TransactionalEventTransport(DebugEventTransport())
-    block(
-        transport.set_connection(aiopg_connection, aiopg_cursor, start_transaction=False),
-        loop=loop,
-        timeout=1,
-    )
+    block(transport.set_connection(aiopg_connection, aiopg_cursor), loop=loop, timeout=1)
     block(transport.database.migrate(), loop=loop, timeout=1)
     return transport
 
@@ -65,11 +61,11 @@ def transaction_transport_with_consumer(aiopg_connection, aiopg_cursor):
 
         transport = TransactionalEventTransport(DebugEventTransport())
         # start_transaction=False, as we start a transaction below (using BEGIN)
-        await transport.set_connection(aiopg_connection, aiopg_cursor, start_transaction=False)
+        await transport.set_connection(aiopg_connection, aiopg_cursor)
+        await aiopg_cursor.execute("BEGIN -- transaction_transport_with_consumer")
         await transport.database.migrate()
         # Commit the migrations
-        await aiopg_cursor.execute("COMMIT")
-        await aiopg_cursor.execute("BEGIN")
+        await aiopg_cursor.execute("COMMIT -- transaction_transport_with_consumer")
         transport.child_transport.fetch = dummy_fetcher
         return transport
 
@@ -92,18 +88,18 @@ def test_from_config():
 @pytest.mark.run_loop
 async def test_set_connection_ok(aiopg_connection, aiopg_cursor):
     transport = TransactionalEventTransport(DebugEventTransport())
-    await transport.set_connection(aiopg_connection, aiopg_cursor, start_transaction=True)
+    await transport.set_connection(aiopg_connection, aiopg_cursor)
     assert transport.connection == aiopg_connection
     assert transport.cursor == aiopg_cursor
-    assert await active_transactions() == 1
+    assert await active_transactions() == 0
 
 
 @pytest.mark.run_loop
 async def test_set_connection_already_set(aiopg_connection, aiopg_cursor):
     transport = TransactionalEventTransport(DebugEventTransport())
-    await transport.set_connection(aiopg_connection, aiopg_cursor, start_transaction=True)
+    await transport.set_connection(aiopg_connection, aiopg_cursor)
     with pytest.raises(ConnectionAlreadySet):
-        await transport.set_connection(aiopg_connection, aiopg_cursor, start_transaction=True)
+        await transport.set_connection(aiopg_connection, aiopg_cursor)
 
 
 @pytest.mark.run_loop
@@ -115,6 +111,7 @@ async def test_commit_and_finish_no_database():
 
 @pytest.mark.run_loop
 async def test_commit_and_finish_ok(transaction_transport):
+    await transaction_transport.database.start_transaction()
     await transaction_transport.commit_and_finish()
     assert await active_transactions() == 0
 
@@ -125,6 +122,7 @@ async def test_commit_and_finish_ok(transaction_transport):
 
 @pytest.mark.run_loop
 async def test_rollback_and_finish_ok(transaction_transport):
+    await transaction_transport.database.start_transaction()
     await transaction_transport.rollback_and_finish()
     assert await active_transactions() == 0
 

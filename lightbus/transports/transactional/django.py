@@ -32,7 +32,15 @@ class TransactionTransportMiddleware(object):
             block(DbApiConnection(connections["default"], cursor).migrate(), self.loop, timeout=5)
 
     def __call__(self, request):
-        lightbus_transaction_context = lightbus_set_database(self.bus, connections["default"])
+        connection = connections["default"]
+        if connection.in_atomic_block:
+            start_transaction = False
+        elif connection.autocommit:
+            start_transaction = True
+        else:
+            start_transaction = None
+
+        lightbus_transaction_context = lightbus_set_database(self.bus, connection)
         block(lightbus_transaction_context.__aenter__(), self.loop, timeout=5)
 
         response = self.get_response(request)

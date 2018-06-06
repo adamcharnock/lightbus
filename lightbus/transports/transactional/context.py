@@ -39,14 +39,10 @@ class LightbusDbContext(object):
         bus: "BusNode",
         connection,
         apis: List[str] = ("default",),
-        start_transaction: Optional[bool] = None,
+        manage_transaction: Optional[bool] = True,
         cursor=None,
     ):
-        # Autodetect transaction starting if not specified
-        if start_transaction is None:
-            self.start_transaction = self._autodetect_start_transaction(connection)
-        else:
-            self.start_transaction = start_transaction
+        self.manage_transaction = manage_transaction
         self.connection = connection
         self.custom_cursor = cursor
 
@@ -78,18 +74,6 @@ class LightbusDbContext(object):
 
         self.transport: TransactionalEventTransport = transports[0]
 
-    def _autodetect_start_transaction(self, connection) -> Optional[bool]:
-        if psycopg2 and isinstance(connection, psycopg2.extensions.connection):
-            return not connection.autocommit
-        if aiopg and isinstance(connection, aiopg.Connection):
-            # aiopg must always have autocommit on in order for the underlying
-            # psycopg2 library for function in asynchronous mode
-            return False
-        else:
-            # Issuing a BEGIN statement twice is not an error, so we can be
-            # liberal about it
-            return True
-
     async def _get_cursor(self):
         if self.custom_cursor:
             return self.custom_cursor
@@ -101,9 +85,9 @@ class LightbusDbContext(object):
 
     async def __aenter__(self):
         self.cursor = await self._get_cursor()
-        await self.transport.set_connection(
-            self.connection, self.cursor, start_transaction=self.start_transaction
-        )
+        await self.transport.set_connection(self.connection, self.cursor)
+        if self.manage_transaction:
+            await self.transport.start_transaction()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         # This sleep statement is a hack. We need to ensure that we yield control
@@ -112,10 +96,11 @@ class LightbusDbContext(object):
         # clean it up below
         await asyncio.sleep(0.0001)
 
-        if exc_type:
-            await self.transport.rollback_and_finish()
-        else:
-            await self.transport.commit_and_finish()
+        if self.manage_transaction:
+            if exc_type:
+                await self.transport.rollback_and_finish()
+            else:
+                await self.transport.commit_and_finish()
         self.cursor = None
 
 

@@ -104,11 +104,10 @@ def psycopg2_connection(pg_kwargs, loop):
 @pytest.fixture()
 def aiopg_cursor(aiopg_connection, loop, cursor_factory):
     cursor = block(aiopg_connection.cursor(cursor_factory=cursor_factory), loop=loop, timeout=1)
-    block(cursor.execute("BEGIN"), loop=loop, timeout=1)
+    block(cursor.execute("BEGIN -- aiopg_cursor"), loop=loop, timeout=1)
     block(cursor.execute("DROP TABLE IF EXISTS lightbus_processed_events"), loop=loop, timeout=1)
     block(cursor.execute("DROP TABLE IF EXISTS lightbus_event_outbox"), loop=loop, timeout=1)
-    block(cursor.execute("COMMIT"), loop=loop, timeout=1)
-    block(cursor.execute("BEGIN"), loop=loop, timeout=1)
+    block(cursor.execute("COMMIT -- aiopg_cursor"), loop=loop, timeout=1)
     return cursor
 
 
@@ -189,19 +188,20 @@ def transactional_bus(dummy_bus: BusNode, new_redis_pool, aiopg_connection, aiop
     registry.set_event_transport("default", transport)
 
     database = DbApiConnection(aiopg_connection, aiopg_cursor)
+
+    block(aiopg_cursor.execute("BEGIN -- transactional_bus"), loop=loop, timeout=1)
     block(database.migrate(), loop=loop, timeout=1)
-    block(aiopg_cursor.execute("COMMIT"), loop=loop, timeout=1)
-    block(aiopg_cursor.execute("BEGIN"), loop=loop, timeout=1)
+    block(aiopg_cursor.execute("COMMIT -- transactional_bus"), loop=loop, timeout=1)
 
     return dummy_bus
 
 
 @pytest.yield_fixture()
 def test_table(aiopg_cursor, loop):
+    block(aiopg_cursor.execute("BEGIN -- test_table (setup)"), loop=loop, timeout=1)
     block(aiopg_cursor.execute("DROP TABLE IF EXISTS test_table"), loop=loop, timeout=1)
     block(aiopg_cursor.execute("CREATE TABLE test_table (pk VARCHAR(100))"), loop=loop, timeout=1)
-    block(aiopg_cursor.execute("COMMIT"), loop=loop, timeout=1)
-    block(aiopg_cursor.execute("BEGIN"), loop=loop, timeout=1)
+    block(aiopg_cursor.execute("COMMIT -- test_table (setup)"), loop=loop, timeout=1)
 
     class TestTable(object):
 
@@ -211,4 +211,6 @@ def test_table(aiopg_cursor, loop):
 
     yield TestTable()
 
+    block(aiopg_cursor.execute("BEGIN -- test_table (tear down)"), loop=loop, timeout=1)
     block(aiopg_cursor.execute("DROP TABLE test_table"), loop=loop, timeout=1)
+    block(aiopg_cursor.execute("COMMIT -- test_table (tear down)"), loop=loop, timeout=1)
