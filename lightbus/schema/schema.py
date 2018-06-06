@@ -272,6 +272,7 @@ class WildcardParameter(inspect.Parameter):
 
 
 def api_to_schema(api: "lightbus.Api") -> dict:
+    """Produce a lightbus schema for the given API"""
     schema = {"rpcs": {}, "events": {}}
 
     if isinstance(api, type):

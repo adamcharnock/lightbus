@@ -31,6 +31,7 @@ from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
 from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
 from lightbus.schema import Schema
+from lightbus.schema.encoder import json_safe_values
 from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport, ResultTransport, EventTransport
 from lightbus.transports.base import SchemaTransport, TransportRegistry
@@ -601,9 +602,11 @@ class BusClient(object):
             return
 
         if isinstance(message, (RpcMessage, EventMessage)):
-            self.schema.validate_parameters(api_name, event_or_rpc_name, message.kwargs)
+            parameters = json_safe_values(message.kwargs)
+            self.schema.validate_parameters(api_name, event_or_rpc_name, parameters)
         elif isinstance(message, (ResultMessage)):
-            self.schema.validate_response(api_name, event_or_rpc_name, message.result)
+            response = json_safe_values(message.result)
+            self.schema.validate_response(api_name, event_or_rpc_name, response)
 
     # Utilities
 
