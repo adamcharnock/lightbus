@@ -38,7 +38,7 @@ class LightbusDbContext(object):
         self,
         bus: "BusNode",
         connection,
-        apis: List[str] = tuple("default"),
+        apis: List[str] = ("default",),
         start_transaction: Optional[bool] = None,
         cursor=None,
     ):
