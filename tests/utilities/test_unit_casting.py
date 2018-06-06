@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, date
+from enum import Enum
 from typing import NamedTuple, Optional, List, Any, SupportsRound
 
 import pytest
@@ -129,3 +130,23 @@ def test_cast_to_annotation_list_generic_typed():
 def test_cast_to_annotation_unsupported_generic():
     casted = cast_to_hint(value=["1", 2], hint=SupportsRound)
     assert casted == ["1", 2]
+
+
+def test_cast_to_annotation_enum():
+
+    class MyEnum(Enum):
+        foo: str = "a"
+        bar: str = "b"
+
+    casted = cast_to_hint(value="a", hint=MyEnum)
+    assert casted is MyEnum.foo
+
+
+def test_cast_to_annotation_enum_bad_value():
+
+    class MyEnum(Enum):
+        foo: str = "a"
+        bar: str = "b"
+
+    casted = cast_to_hint(value="x", hint=MyEnum)
+    assert casted is "x"

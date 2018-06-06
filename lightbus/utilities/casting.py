@@ -1,6 +1,7 @@
 import datetime
 import inspect
 import logging
+from enum import Enum
 from typing import NamedTuple, Mapping, Type, get_type_hints, Union, Any, TypeVar, Optional, List
 
 import dateutil.parser
@@ -51,19 +52,19 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     elif is_class and issubclass(hint, datetime.date) and safe_isinstance(value, str):
         # Date as a string
         return dateutil.parser.parse(value).date()
-    if is_class and issubclass(hint, list):
+    elif is_class and issubclass(hint, list):
         # Lists
         if subs_tree:
             return [cast_to_hint(i, subs_tree[1]) for i in value]
         else:
             return list(value)
-    if is_class and issubclass(hint, tuple):
+    elif is_class and issubclass(hint, tuple):
         # Tuples
         if subs_tree:
             return tuple(cast_to_hint(i, subs_tree[1]) for i in value)
         else:
             return tuple(value)
-    elif inspect.isclass(hint) and hasattr(hint, "__annotations__"):
+    elif inspect.isclass(hint) and hasattr(hint, "__annotations__") and not issubclass(hint, Enum):
         logger.warning(
             f"Cannot cast to arbitrary class {hint}, using un-casted value. "
             f"If you want to receive custom objects you can use a "
