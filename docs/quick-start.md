@@ -25,7 +25,9 @@ circumstances their use should break down as follows:
 * **Other processes (web etc)** – Perform remote procedure calls, fire events
 
 The starting point for the lightbus process is a `bus.py` file. You
-should create this in your project root.
+should create this in your project root. You can also configure
+where Lightbus looks for this module using the `--bus` option or
+by setting the `LIGHTBUS_MODULE` environment variable.
 
 ## Define your API
 
