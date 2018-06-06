@@ -64,7 +64,7 @@ class BusClient(object):
             max_age_seconds=self.config.bus().schema.ttl,
             human_readable=self.config.bus().schema.human_readable,
         )
-        self.loop = loop or get_event_loop()
+        self._loop = loop
         self._listeners = {}
 
     def setup(self, plugins: dict = None):
@@ -137,6 +137,13 @@ class BusClient(object):
 
         for transport in self.transport_registry.get_all_transports():
             await transport.close()
+
+    @property
+    def loop(self):
+        if self._loop:
+            return self._loop
+        else:
+            return get_event_loop()
 
     def run_forever(self, *, consume_rpcs=True):
         rpc_transport = self.transport_registry.get_rpc_transport("default", default=None)

@@ -300,7 +300,7 @@ async def test_from_config(redis_client):
         await transport_client.set("x", 1)
         assert await redis_client.get("x")
 
-    assert transport._redis_pool.connection.maxsize == 123
+    assert transport._local.redis_pool.connection.maxsize == 123
     assert isinstance(transport.serializer, BlobMessageSerializer)
     assert isinstance(transport.deserializer, BlobMessageDeserializer)
 

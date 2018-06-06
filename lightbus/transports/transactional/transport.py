@@ -1,4 +1,5 @@
 import logging
+import threading
 from asyncio import AbstractEventLoop
 from typing import List, Tuple, Generator, Type
 
@@ -32,9 +33,31 @@ class TransactionalEventTransport(EventTransport):
     ):
         self.child_transport = child_transport
         self.database_class = database_class
-        self.connection = None
-        self.cursor = None
-        self.database: DatabaseConnection = None
+        self._local = threading.local()
+
+    @property
+    def connection(self):
+        return getattr(self._local, "connection", None)
+
+    @connection.setter
+    def connection(self, value):
+        self._local.connection = value
+
+    @property
+    def cursor(self):
+        return getattr(self._local, "cursor", None)
+
+    @cursor.setter
+    def cursor(self, value):
+        self._local.cursor = value
+
+    @property
+    def database(self) -> DatabaseConnection:
+        return getattr(self._local, "database", None)
+
+    @database.setter
+    def database(self, value):
+        self._local.database = value
 
     @classmethod
     def from_config(

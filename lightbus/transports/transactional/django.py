@@ -9,12 +9,22 @@ from lightbus.utilities.async import block
 
 class TransactionTransportMiddleware(object):
 
+    # Note this is not thread-safe. In fact, lightbus' use of the
+    # event loop may not be thread safe at all.
     def __init__(self, get_response=None):
         self.get_response = get_response
         bus_module = lightbus.bus.import_bus_py()
         self.bus = bus_module.bus
-        self.loop = asyncio.get_event_loop()
         self.migrate()
+
+    @property
+    def loop(self):
+        try:
+            return asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            return loop
 
     def migrate(self):
         # TODO: This needs to be a core lightbus feature somehow

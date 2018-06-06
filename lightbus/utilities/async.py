@@ -33,7 +33,7 @@ def block(coroutine: Coroutine, loop: asyncio.AbstractEventLoop, *, timeout):
             "In this case the only option is to define you listeners as async."
         )
     try:
-        val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
+        val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout, loop=loop))
     except Exception as e:
         # The intention here is to get sensible stack traces from exceptions within blocking calls
         raise e

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import threading
 import time
 from collections import OrderedDict
 from datetime import datetime
@@ -46,7 +47,6 @@ class StreamUse(Enum):
 
 class RedisTransportMixin(object):
     connection_parameters: dict = {"address": "redis://localhost:6379", "maxsize": 100}
-    _redis_pool: Optional[Redis] = None
 
     def set_redis_pool(
         self,
@@ -54,12 +54,19 @@ class RedisTransportMixin(object):
         url: str = None,
         connection_parameters: Mapping = frozendict(),
     ):
+        self._local = threading.local()
+
         if not redis_pool:
+            # Connect lazily using the provided parameters
+
             self.connection_parameters = self.connection_parameters.copy()
             self.connection_parameters.update(connection_parameters)
             if url:
                 self.connection_parameters["address"] = url
         else:
+            # Use the provided connection
+
+            self.connection_parameters = None
             if isinstance(redis_pool, (ConnectionsPool,)):
                 # If they've passed a raw pool then wrap it up in a Redis object.
                 # aioredis.create_redis_pool() normally does this for us.
@@ -76,14 +83,20 @@ class RedisTransportMixin(object):
                     "If unsure, use aioredis.create_redis_pool() to create your redis connection."
                 )
 
-            self._redis_pool = redis_pool
+            self._local.redis_pool = redis_pool
 
     async def connection_manager(self) -> Redis:
-        if self._redis_pool is None:
-            self._redis_pool = await aioredis.create_redis_pool(**self.connection_parameters)
+        if not hasattr(self._local, "redis_pool"):
+            if self.connection_parameters is None:
+                raise Exception(
+                    f"It looks like you are using the redis transport in a threaded environment. "
+                    f"In this case, you must instantiate the transport using the `connection_parameters` "
+                    f"option, not using redis_pool."
+                )
+            self._local.redis_pool = await aioredis.create_redis_pool(**self.connection_parameters)
 
         try:
-            internal_pool = self._redis_pool._pool_or_conn
+            internal_pool = self._local.redis_pool._pool_or_conn
             if hasattr(internal_pool, "size") and hasattr(internal_pool, "maxsize"):
                 if internal_pool.size == internal_pool.maxsize:
                     logging.critical(
@@ -94,17 +107,17 @@ class RedisTransportMixin(object):
                         "".format(self.connection_parameters.get("maxsize"))
                     )
 
-            return await self._redis_pool
+            return await self._local.redis_pool
         except aioredis.PoolClosedError:
             raise LightbusShutdownInProgress(
                 "Redis connection pool has been closed. Assuming shutdown in progress."
             )
 
     async def close(self):
-        if self._redis_pool:
-            self._redis_pool.close()
-            await self._redis_pool.wait_closed()
-            self._redis_pool = None
+        if self._local.redis_pool:
+            self._local.redis_pool.close()
+            await self._local.redis_pool.wait_closed()
+            self._local.redis_pool = None
 
 
 class RedisRpcTransport(RedisTransportMixin, RpcTransport):
