@@ -31,7 +31,6 @@ async def test_transaction_commit(dbapi_database: DbApiConnection, get_processed
 async def test_transaction_rollback(dbapi_database: DbApiConnection, get_processed_events):
     await dbapi_database.migrate()
     # We're about to rollback, so make sure we commit our migration first
-    await dbapi_database.commit_transaction()
     await dbapi_database.start_transaction()
 
     await dbapi_database.store_processed_event(
@@ -45,10 +44,8 @@ async def test_transaction_rollback(dbapi_database: DbApiConnection, get_process
 async def test_transaction_rollback_continue(dbapi_database: DbApiConnection, get_processed_events):
     # Check we can still use the connection following a rollback
     await dbapi_database.migrate()
-    # We're about to rollback, so make sure we commit our migration first
-    await dbapi_database.commit_transaction()
-    await dbapi_database.start_transaction()
 
+    await dbapi_database.start_transaction()
     await dbapi_database.store_processed_event(
         EventMessage(api_name="api", event_name="event", id="123")
     )
@@ -82,7 +79,6 @@ async def test_send_event_ok(dbapi_database: DbApiConnection, get_outbox):
     message = EventMessage(api_name="api", event_name="event", kwargs={"field": "abc"}, id="123")
     options = {"key": "value"}
     await dbapi_database.send_event(message, options)
-    await dbapi_database.commit_transaction()
 
     assert len(await get_outbox()) == 1
     retrieved_message, options = await dbapi_database.consume_pending_events(
@@ -113,7 +109,6 @@ async def test_remove_pending_event(dbapi_database: DbApiConnection, get_outbox)
     await dbapi_database.migrate()
     message = EventMessage(api_name="api", event_name="event", kwargs={"field": "abc"}, id="123")
     await dbapi_database.send_event(message, options={})
-    await dbapi_database.commit_transaction()
 
     assert len(await get_outbox()) == 1
     await dbapi_database.remove_pending_event(message_id="123")

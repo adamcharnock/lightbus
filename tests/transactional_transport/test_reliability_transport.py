@@ -34,9 +34,7 @@ async def test_multiple_connections(
                 bus = await transactional_bus_factory()
 
                 for x in range(0, 50):
-                    async with lightbus_set_database(
-                        bus, connection, apis=["my.dummy"], start_transaction=True
-                    ):
+                    async with lightbus_set_database(bus, connection, apis=["my.dummy"]):
                         await bus.my.dummy.my_event.fire_async(field=1)
                         await cursor.execute(
                             "INSERT INTO test_table VALUES (%s)", [f"{number}-{x}"]
