@@ -54,5 +54,7 @@ def json_safe_values(v):
         return v.isoformat()
     elif isinstance(v, UUID):
         return str(v)
+    elif type(v) == tuple:
+        return list(v)
     else:
         return v
