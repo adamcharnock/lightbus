@@ -129,7 +129,6 @@ class EventTransport(Transport):
                 "EventTransport.consume() was called without providing anything "
                 'to listen for in the "listen_for" argument.'
             )
-        consumer_group = consumer_group or random_name(length=4)
         return self.fetch(listen_for, context, loop, consumer_group, **kwargs)
 
     async def fetch(
