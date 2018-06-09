@@ -157,3 +157,7 @@ class NoApisSpecified(LightbusException):
 
 class FailedToImportBusModule(LightbusException):
     pass
+
+
+class TransportIsClosed(LightbusException):
+    pass

@@ -14,7 +14,7 @@ from aioredis.pool import ConnectionsPool
 from aioredis.util import decode
 
 from lightbus.api import Api
-from lightbus.exceptions import LightbusException, LightbusShutdownInProgress
+from lightbus.exceptions import LightbusException, LightbusShutdownInProgress, TransportIsClosed
 from lightbus.log import L, Bold, LBullets
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
 from lightbus.schema.encoder import json_encode
@@ -55,6 +55,7 @@ class RedisTransportMixin(object):
         connection_parameters: Mapping = frozendict(),
     ):
         self._local = threading.local()
+        self._closed = False
 
         if not redis_pool:
             # Connect lazily using the provided parameters
@@ -86,6 +87,13 @@ class RedisTransportMixin(object):
             self._local.redis_pool = redis_pool
 
     async def connection_manager(self) -> Redis:
+        if self._closed:
+            # This was first caught when the state plugin tried to send a
+            # message to the bus on upon the after_server_stopped stopped event.
+            raise TransportIsClosed(
+                "Transport has been closed. Connection to Redis is no longer available."
+            )
+
         if not hasattr(self._local, "redis_pool"):
             if self.connection_parameters is None:
                 raise Exception(
@@ -114,10 +122,11 @@ class RedisTransportMixin(object):
             )
 
     async def close(self):
-        if self._local.redis_pool:
+        if getattr(self._local, "redis_pool", None):
             self._local.redis_pool.close()
             await self._local.redis_pool.wait_closed()
-            self._local.redis_pool = None
+            del self._local.redis_pool
+        self._closed = True
 
 
 class RedisRpcTransport(RedisTransportMixin, RpcTransport):
