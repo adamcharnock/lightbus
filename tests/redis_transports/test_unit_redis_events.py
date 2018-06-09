@@ -480,7 +480,8 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
 
     async def consume():
         async for message in consumer:
-            messages.append(message)
+            if isinstance(message, EventMessage):
+                messages.append(message)
 
     task = asyncio.ensure_future(consume(), loop=loop)
     await asyncio.sleep(0.1)
@@ -488,6 +489,10 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
     assert messages[0].api_name == "my.dummy"
     assert messages[0].event_name == "my_event"
     assert messages[0].kwargs == {"field": "value"}
+
+    # Now check that redis believes the message has been consumed
+    total_pending, *_ = await redis_client.xpending("my.dummy.my_event:stream", "test_group")
+    assert total_pending == 0
 
     await cancel(task)
 

@@ -557,6 +557,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     )
                 )
                 yield event_message
+                await redis.xack(stream, consumer_group, message_id)
+                yield True
 
             # We've now cleaned up any old messages that were hanging around.
             # Now we get on to the main loop which blocks and waits for new messages
