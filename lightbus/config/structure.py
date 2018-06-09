@@ -107,6 +107,8 @@ class ApiConfig(object):
         if self.validate in (True, False):
             # Expand out the true/false shortcut
             self.validate = ApiValidationConfig(outgoing=self.validate, incoming=self.validate)
+        elif isinstance(self.validate, dict):
+            self.validate = ApiValidationConfig(**self.validate)
 
 
 class SchemaConfig(NamedTuple):
