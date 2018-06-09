@@ -89,7 +89,7 @@ class ApiConfig(object):
     rpc_timeout: int = 5
     event_listener_setup_timeout: int = 1
     event_fire_timeout: int = 1
-    validate: Optional[Union[ApiValidationConfig, bool]] = True
+    validate: Optional[Union[ApiValidationConfig, bool]] = ApiValidationConfig()
     event_transport: EventTransportSelector = None
     rpc_transport: RpcTransportSelector = None
     result_transport: ResultTransportSelector = None
@@ -107,8 +107,6 @@ class ApiConfig(object):
         if self.validate in (True, False):
             # Expand out the true/false shortcut
             self.validate = ApiValidationConfig(outgoing=self.validate, incoming=self.validate)
-        else:
-            self.validate = ApiValidationConfig(**self.validate)
 
 
 class SchemaConfig(NamedTuple):
