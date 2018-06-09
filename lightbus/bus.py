@@ -198,6 +198,9 @@ class BusClient(object):
 
         self.loop.run_until_complete(plugin_hook("after_server_stopped", bus_client=self))
 
+        # Close the bus (which will in turn close the transports)
+        self.close()
+
     def _run_forever(self, consume_rpcs):
         # Setup RPC consumption
         consume_rpc_task = None
@@ -224,9 +227,6 @@ class BusClient(object):
 
         # Cancel the tasks we created above
         block(cancel(consume_rpc_task, monitor_task), loop=self.loop, timeout=1)
-
-        # Close the bus (which will in turn close the transports)
-        self.close()
 
     # RPCs
 
