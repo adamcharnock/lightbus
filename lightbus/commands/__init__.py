@@ -1,6 +1,7 @@
 import argparse
 import logging
 import sys
+import os
 from asyncio.events import get_event_loop
 
 import lightbus
@@ -29,14 +30,15 @@ def parse_args(args=None):
     parser.add_argument(
         "--service-name",
         "-s",
-        help="Name of service in which this process resides. You should "
-        "likely set this in production. Will default to a random string.",
+        help="Name of service in which this process resides. YOU SHOULD "
+        "LIKELY SET THIS IN PRODUCTION. Can also be set using the "
+        "LIGHTBUS_SERVICE_NAME environment. Will default to a random string.",
     )
     parser.add_argument(
         "--process-name",
         "-p",
-        help="A unique name of this process within the service. Will "
-        "default to a random string.",
+        help="A unique name of this process within the service. Can also be set using the "
+        "LIGHTBUS_PROCESS_NAME environment. Will default to a random string.",
     )
     parser.add_argument("--config", help="Config file to load, JSON or YAML", metavar="FILE")
     parser.add_argument(
@@ -70,5 +72,7 @@ def parse_args(args=None):
 
 def load_config(args) -> Config:
     return lightbus.bus.load_config(
-        from_file=args.config, service_name=args.service_name, process_name=args.process_name
+        from_file=args.config,
+        service_name=args.service_name or os.environ.get("LIGHTBUS_SERVICE_NAME"),
+        process_name=args.process_name or os.environ.get("LIGHTBUS_PROCESS_NAME"),
     )
