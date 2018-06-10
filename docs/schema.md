@@ -1,5 +1,5 @@
 Lightbus processes automatically generate and share schemas for their available APIs.
-These schemes can be used to validate the following: 
+These schemes can be used to validate the following:
 
 * Remote procedure call parameters
 * Remote procedure call return values
@@ -10,12 +10,12 @@ Each Lightbus process will monitor for any schema changes.
 
 ## Specifying types
 
-Lightbus will create a schema by inspecting the parameters 
-and [type hints] of your APIs' events and procedures. 
+Lightbus will create a schema by inspecting the parameters
+and [type hints] of your APIs' events and procedures.
 
-You can use the schema functionality without type hints, but the level of validation 
+You can use the schema functionality without type hints, but the level of validation
 provided will be limited to ensuring parameter names match what is expected.
- 
+
 Take the following API as an example:
 
 ```python3
@@ -32,7 +32,7 @@ class AuthApi(Api):
 
     class Meta:
         name = 'auth'
-    
+
     # We annotate check_password() with the apropriate types
     def check_password(self, username: str, password: str) -> bool:
         return username == 'admin' and password == 'secret'
@@ -44,13 +44,13 @@ Create this in a ``bus.py`` and run:
 $ lightbus dumpschema
 ```
 
-This will dump out the auto-generated schema for the above API. See 
+This will dump out the auto-generated schema for the above API. See
 [schema format](#schema-format) (below) for example output.
 
 
 ## Supported data types
 
-Lightbus maps Python types to JSON types. While Python-specific values can be sent using Lightbus, 
+Lightbus maps Python types to JSON types. While Python-specific values can be sent using Lightbus,
 these values will arrive in their JSON form. For example, if you send a `string` then a `string` will arrive.
 However, if you send the `Decimal` value `3.124`, then you will receive the `string` value `3.124` instead.
 
@@ -79,26 +79,26 @@ The following types will be successfully encoded and sent, but will arrive as th
 
 Lightbus can also handle the following:
 
-| Python type                               | JSON Schema type                                 
+| Python type                               | JSON Schema type
 | ----------------------------------------- | -------------------------------------------------
-| `Any`                                     | `{}` (any value)                                  
+| `Any`                                     | `{}` (any value)
 | `Union[...]`                              | `oneOf{...}` (see [oneOf])
-| `Enum`                                    | Sets [enum] property                              
+| `Enum`                                    | Sets [enum] property
 
 ## Automatic validation
 
-By default this validation will be validated in both the 
-incoming and outgoing directions. Outgoing refers to 
+By default this validation will be validated in both the
+incoming and outgoing directions. Outgoing refers to
 the dispatching of events or procedure calls to the bus.
-Incoming refers to the processing of procedure calls or 
+Incoming refers to the processing of procedure calls or
 handling of received events.
 
-You can configuring this using the ``validate`` 
+You can configuring this using the ``validate``
 [configuration](configuration.md) option.
 
 ### Validation configuration
 
-You can configure the validation behaviour in your 
+You can configure the validation behaviour in your
 bus' `config.yaml`.
 
 #### `validate (bool) = true`
@@ -112,7 +112,7 @@ apis:
         validate: false
 ```
 
-For finer grained control you can specify individual flags for incoming/outgoing 
+For finer grained control you can specify individual flags for incoming/outgoing
 validation:
 
 ```coffeescript
@@ -126,7 +126,7 @@ apis:
 
 #### `strict_validation (bool) = false`
 
-If `strict_validation` is `true` then calling a procedure for which no schema exists will 
+If `strict_validation` is `true` then calling a procedure for which no schema exists will
 result in an error:
 
 ```coffeescript
@@ -178,7 +178,7 @@ Running `lightbus dumpschema` will produce the following:
     "rpcs": {
       "get_user": {
         "parameters": {
-          // A single required username string parameter 
+          // A single required username string parameter
           "$schema": "http://json-schema.org/draft-04/schema#",
           "title": "RPC auth.get_user() parameters",
           "type": "object"
@@ -190,7 +190,7 @@ Running `lightbus dumpschema` will produce the following:
             "username"
           ],
         },
-        
+
         // A complex object is returned
         "response": {
           "$schema": "http://json-schema.org/draft-04/schema#",
@@ -220,6 +220,39 @@ Running `lightbus dumpschema` will produce the following:
 }
 ```
 
+### Dataclasses
+
+[Dataclasses](https://www.python.org/dev/peps/pep-0557/)
+were introduced in Python 3.7, with a
+[backport available](https://pypi.org/project/dataclasses/) for
+Python 3.6.
+
+Lightbus supports dataclasses in the same way as it supports
+[named tuples](#named-tuples). For example:
+
+```python3
+# bus.py
+from lightbus import Api
+from dataclasses import dataclass
+
+@dataclass()
+class User(object):
+    username: str
+    name: str
+    email: str
+    is_admin: bool = False
+
+class AuthApi(Api):
+
+    class Meta:
+        name = 'auth'
+
+    def get_user(self, username: str) -> User:
+        return ...
+```
+
+
+
 ### Classes
 
 The same can be achieved using regular classes. However, there are some notable points:
@@ -227,12 +260,11 @@ The same can be achieved using regular classes. However, there are some notable 
 1. Attributes prefixed with an underscore will be ignored
 2. If used as a type hint for a parameter, then the class .... wait, will a json object get deserialised into a python object?
    NO, this only happens in the config. I think you'll just get a dict for a parameter value
-TODO 
+TODO
 
 
 ```coffeescript
 from lightbus import Api
-from typing import NamedTuple
 
 
 class User(object):
@@ -240,7 +272,8 @@ class User(object):
     name: str
     email: str
     is_admin: bool = False
-    _internal_value: str  # ignored
+    # private attributes are ignored
+    _internal_value: str = ''
 
     def do_something(self):
         pass
@@ -258,8 +291,8 @@ class AuthApi(Api):
 
 ## Schema format
 
-You won't need to worry about the schema format in your day-to-day use 
-of Lightbus. However, an understanding of the format will be very 
+You won't need to worry about the schema format in your day-to-day use
+of Lightbus. However, an understanding of the format will be very
 useful if you decide to build additional tooling.
 
 The Lightbus schema format is simply a collection of child JSON Schemas.
@@ -269,7 +302,7 @@ Below is the schema for the example `auth` API shown above:
 // Auto-generated schema for auth API
 {
   "auth": {
-  
+
     // Events specify only parameters
     "events": {
       "user_registered": {
@@ -297,7 +330,7 @@ Below is the schema for the example `auth` API shown above:
         }
       }
     },
-    
+
     // RPCs specify both parameters and response
     "rpcs": {
       "check_password": {
@@ -319,7 +352,7 @@ Below is the schema for the example `auth` API shown above:
           ],
           "additionalProperties": false
         },
-        
+
         "response": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "title": "RPC auth.check_password() response",
@@ -330,21 +363,21 @@ Below is the schema for the example `auth` API shown above:
   }
 }
 ```
- 
+
 The generalised format is as follows:
 
 ```json
 // Generalised Lightbus schema format
 {
   "<api-name>": {
-  
+
     "events": {
       "<event-name>": {
         "parameters":  { /* json schema */ }
       }
       // additional events
     },
-    
+
     "rpcs": {
       "<rpc-name>": {
         "parameters": { /* json schema */ },
@@ -352,7 +385,7 @@ The generalised format is as follows:
       }
       // additional procedures
     }
-    
+
   }
   // additional APIs
 }
@@ -360,10 +393,10 @@ The generalised format is as follows:
 
 !!! note
     Lightbus will likely upgrade to a newer JSON Schema version once the [jsonschema Python library] has the [requisite support].
-    
+
 
 [type hints]: https://docs.python.org/3/library/typing.html
-[oneOf]: https://spacetelescope.github.io/understanding-json-schema/reference/combining.html#oneof  
+[oneOf]: https://spacetelescope.github.io/understanding-json-schema/reference/combining.html#oneof
 [enum]: https://spacetelescope.github.io/understanding-json-schema/reference/generic.html#enumerated-values
 [pattern properties]: https://spacetelescope.github.io/understanding-json-schema/reference/object.html#pattern-properties
 [specific typed properties]: https://spacetelescope.github.io/understanding-json-schema/reference/object.html#properties

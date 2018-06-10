@@ -6,6 +6,7 @@ the [installation section](installation.md):
 * Installed Python 3.6 or above
 * Installed Lightbus
 * Running a Redis server (built from the Redis unstable branch)
+* Read the [concepts section](concepts.md)
 
 ## Anatomy lesson
 
