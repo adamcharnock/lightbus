@@ -4,6 +4,7 @@ import logging
 from inspect import iscoroutine
 
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
+from lightbus.exceptions import NoBusFoundInBusModule
 from lightbus.utilities.async import block
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,13 @@ class Command(LogLevelMixin, BusImportMixin, object):
         self.setup_logging(args.log_level, config)
 
         bus_module = self.import_bus(args)
-        bus = bus_module.bus
+        try:
+            bus = bus_module.bus
+        except AttributeError:
+            raise NoBusFoundInBusModule(
+                f"Bus module at {bus_module.__file__} contains no variable named 'bus'. "
+                f"Your bus module should contain the line 'bus = lightbus.create()'."
+            )
 
         # TODO: Move to lightbus.create()?
         if args.schema:

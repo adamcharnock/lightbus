@@ -159,5 +159,9 @@ class FailedToImportBusModule(LightbusException):
     pass
 
 
+class NoBusFoundInBusModule(LightbusException):
+    pass
+
+
 class TransportIsClosed(LightbusException):
     pass
