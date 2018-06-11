@@ -1,7 +1,9 @@
-from lightbus import Api
+import lightbus
+
+bus = lightbus.create()
 
 
-class AuthApi(Api):
+class AuthApi(lightbus.Api):
 
     class Meta:
         name = "auth"

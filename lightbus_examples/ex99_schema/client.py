@@ -1,5 +1,4 @@
-import lightbus
+from .bus import bus
 
-
-bus = lightbus.create()
+# TBA
 bus.auth

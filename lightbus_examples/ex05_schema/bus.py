@@ -1,4 +1,6 @@
-from lightbus import Api, Event, Parameter
+from lightbus import Api, Event, Parameter, create
+
+bus = create()
 
 
 class AuthApi(Api):

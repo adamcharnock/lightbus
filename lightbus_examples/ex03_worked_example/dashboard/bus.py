@@ -5,7 +5,9 @@ writes the data to .exampledb.json.
 
 """
 import json
+import lightbus
 
+bus = lightbus.create()
 page_views = {}
 
 
@@ -16,5 +18,5 @@ def handle_page_view(event_message, url):
         json.dump(page_views, f)
 
 
-def before_server_start(bus):
+def before_server_start():
     bus.store.page_view.listen(handle_page_view)

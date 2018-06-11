@@ -1,5 +1,7 @@
 # bus.py
-from lightbus import Api, Event
+from lightbus import Api, Event, create
+
+bus = create()
 
 
 class AuthApi(Api):

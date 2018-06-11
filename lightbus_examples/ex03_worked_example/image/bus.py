@@ -1,5 +1,7 @@
 """A simple image resizing service"""
-from lightbus import Api, Event
+from lightbus import Api, Event, create
+
+bus = create()
 
 
 class ImageApi(Api):
