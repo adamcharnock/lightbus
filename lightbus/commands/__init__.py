@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def lightbus_entry_point():  # pragma: no cover
+    sys.path.insert(0, "")
     configure_logging()
     args = parse_args()
     config = load_config(args)
