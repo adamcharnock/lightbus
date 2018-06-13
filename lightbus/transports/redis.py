@@ -512,8 +512,16 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             ):
                 await queue.put(message)
 
+        # Make sure we surface any exceptions that occur in either task
         fetch_task = asyncio.ensure_future(fetch_loop(), loop=loop)
         reclaim_task = asyncio.ensure_future(reclaim_loop(), loop=loop)
+
+        def check_for_exception(fut):
+            if fut.exception():
+                fut.result()
+
+        fetch_task.add_done_callback(check_for_exception)
+        reclaim_task.add_done_callback(check_for_exception)
 
         try:
             while True:
