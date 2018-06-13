@@ -88,6 +88,7 @@ class StatePlugin(LightbusPlugin):
 
     async def after_parse_args(self, args: Namespace):
         if args.subcommand == "run":
+            # TODO: This probably has no effect as this plugin instance will get thrown away
             self.ping_enabled = not args.no_ping
             self.ping_interval = args.ping_interval or self.ping_interval
 
