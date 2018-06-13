@@ -584,6 +584,14 @@ class BusClient(object):
             if not self._listeners[key]:
                 self._listeners.pop(key)
 
+    @property
+    def listeners(self) -> List[Tuple[str, str]]:
+        """Returns a list of events which are currently being listened to
+
+        Each value is a tuple in the form `(api_name, event_name)`.
+        """
+        return list(self._listeners.keys())
+
     def _validate(self, message: Message, direction: str, api_name=None, procedure_name=None):
         assert direction in ("incoming", "outgoing")
 

@@ -2,7 +2,7 @@ import inspect
 import json
 from json import JSONDecodeError
 from pathlib import Path
-from typing import Optional, TextIO, Union, ChainMap
+from typing import Optional, TextIO, Union, ChainMap, List, Tuple
 import jsonschema
 
 import asyncio
@@ -137,8 +137,36 @@ class Schema(object):
         jsonschema.validate(response, json_schema)
 
     @property
-    def api_names(self):
+    def api_names(self) -> List[str]:
         return list(set(itertools.chain(self.local_schemas.keys(), self.remote_schemas.keys())))
+
+    @property
+    def events(self) -> List[Tuple[str, str]]:
+        """Get a list of all events available on the bus
+
+        Each event is a tuple in the form `(api_name, event_name)`
+        """
+        events = []
+        for api_name in self.api_names:
+            api_schema = self.get_api_schema(api_name)
+            if api_schema:
+                for event_name in api_schema["events"].keys():
+                    events.append((api_name, event_name))
+        return events
+
+    @property
+    def rpcs(self) -> List[Tuple[str, str]]:
+        """Get a list of all RPCs available on the bus
+
+        Each rpc is a tuple in the form `(api_name, rpc_name)`
+        """
+        rpcs = []
+        for api_name in self.api_names:
+            api_schema = self.get_api_schema(api_name)
+            if api_schema:
+                for event_name in api_schema["rpcs"].keys():
+                    rpcs.append((api_name, event_name))
+        return rpcs
 
     async def save_to_bus(self):
         """Save the schema onto the bus

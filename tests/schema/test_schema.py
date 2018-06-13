@@ -353,3 +353,77 @@ async def test_validate_response_invalid(schema, TestApi):
     await schema.add_api(TestApi())
     with pytest.raises(jsonschema.ValidationError):
         schema.validate_response("my.test_api", "my_proc", 123)
+
+
+@pytest.mark.run_loop
+async def test_api_names(tmp_file, schema):
+
+    class TestApi1(Api):
+
+        class Meta:
+            name = "my.test_api1"
+
+    class TestApi2(Api):
+
+        class Meta:
+            name = "my.test_api2"
+
+    await schema.add_api(TestApi1())
+    await schema.add_api(TestApi2())
+    assert set(schema.api_names) == {"my.test_api1", "my.test_api2"}
+
+
+@pytest.mark.run_loop
+async def test_events(tmp_file, schema):
+
+    class TestApi1(Api):
+        my_event_a = Event(["field"])
+        my_event_b = Event(["field"])
+
+        class Meta:
+            name = "my.test_api1"
+
+    class TestApi2(Api):
+        my_event_a = Event(["field"])
+
+        class Meta:
+            name = "my.test_api2"
+
+    await schema.add_api(TestApi1())
+    await schema.add_api(TestApi2())
+    assert set(schema.events) == {
+        ("my.test_api1", "my_event_a"),
+        ("my.test_api1", "my_event_b"),
+        ("my.test_api2", "my_event_a"),
+    }
+
+
+@pytest.mark.run_loop
+async def test_rpcs(tmp_file, schema):
+
+    class TestApi1(Api):
+
+        class Meta:
+            name = "my.test_api1"
+
+        def rpc_a(self):
+            pass
+
+        def rpc_b(self):
+            pass
+
+    class TestApi2(Api):
+
+        class Meta:
+            name = "my.test_api2"
+
+        def rpc_a(self):
+            pass
+
+    await schema.add_api(TestApi1())
+    await schema.add_api(TestApi2())
+    assert set(schema.rpcs) == {
+        ("my.test_api1", "rpc_a"),
+        ("my.test_api1", "rpc_b"),
+        ("my.test_api2", "rpc_a"),
+    }
