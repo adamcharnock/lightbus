@@ -621,7 +621,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     if ms_since_last_delivery > timeout:
                         logger.info(
                             L(
-                                "Found time out event {} in stream {}. Abandoned by {}. Attempting to reclaim...",
+                                "Found timed out event {} in stream {}. Abandoned by {}. Attempting to reclaim...",
                                 Bold(message_id),
                                 Bold(stream),
                                 Bold(consumer_name),
