@@ -55,18 +55,21 @@ class LightbusPlugin(object, metaclass=PluginMetaclass):
         return "{}.{}".format(self.__class__.__module__, self.__class__.__name__)
 
     async def before_parse_args(self, *, parser: ArgumentParser, subparsers: _ArgumentGroup):
-        """
+        """ Setup command line argument parser
 
-        Note: Configuration is not available within the before_parse_args() and  after_parse_args()
-        hooks. These hooks will be called in a separate throw-away instance of this Plugin.
+        Configuration is not available within the before_parse_args()
+        hook. This hooks will be called in a separate throw-away instance of this Plugin.
+
+        Note that we don't have an after_parse_args plugin hook. Instead we use the receive_args
+        hook which is called once we have instantiated our plugins.
         """
         pass
 
-    async def after_parse_args(self, args: Namespace):
-        """
+    async def receive_args(self, args: Namespace):
+        """ Received the parsed command line arguments
 
-        Note: Configuration is not available within the before_parse_args() and  after_parse_args()
-        hooks. These hooks will be called in a separate throw-away instance of this Plugin.
+        This will be called once the plugins have been instantiated. You can therefore
+        safely modify your plugins state at this time (unlike in before_parse_args)
         """
         pass
 

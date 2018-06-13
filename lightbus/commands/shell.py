@@ -1,9 +1,12 @@
 import argparse
+import asyncio
 import logging
 from inspect import isclass
 
 import lightbus
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
+from lightbus.plugins import plugin_hook
+from lightbus.utilities.async import block
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +41,8 @@ class Command(LogLevelMixin, BusImportMixin, object):
 
         objects = {k: v for k, v in lightbus.__dict__.items() if isclass(v)}
         objects.update(bus=bus)
+
+        block(plugin_hook("receive_args", args=args), asyncio.get_event_loop(), timeout=5)
 
         bpython_main(
             args=["-i", "-q"],

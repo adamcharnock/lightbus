@@ -5,6 +5,7 @@ from inspect import iscoroutine
 
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.exceptions import NoBusFoundInBusModule
+from lightbus.plugins import plugin_hook
 from lightbus.utilities.async import block
 
 logger = logging.getLogger(__name__)
@@ -67,6 +68,8 @@ class Command(LogLevelMixin, BusImportMixin, object):
 
         if dry_run:
             return
+
+        block(plugin_hook("receive_args", args=args), asyncio.get_event_loop(), timeout=5)
 
         if args.events_only:
             bus.run_forever(consume_rpcs=False)

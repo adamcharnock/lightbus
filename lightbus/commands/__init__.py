@@ -62,9 +62,9 @@ def parse_args(args=None):
 
     loop = get_event_loop()
     block(plugin_hook("before_parse_args", parser=parser, subparsers=subparsers), loop, timeout=5)
-
     args = parser.parse_args(sys.argv[1:] if args is None else args)
-    block(plugin_hook("after_parse_args", args=args), loop, timeout=5)
+    # Note that we don't have an after_parse_args plugin hook. Instead we use the receive_args
+    # hook which is called once we have instantiated our plugins
 
     remove_all_plugins()
 
