@@ -30,9 +30,12 @@ class TransactionalEventTransport(EventTransport):
         self,
         child_transport: EventTransport,
         database_class: Type[DatabaseConnection] = DbApiConnection,
+        auto_migrate: bool = True,
     ):
         self.child_transport = child_transport
         self.database_class = database_class
+        self.auto_migrate = auto_migrate
+        self._migrated = False
         self._local = threading.local()
 
     @property
@@ -69,6 +72,7 @@ class TransactionalEventTransport(EventTransport):
         # child_transport: 'EventTransportSelector',
         child_transport: dict,
         database_class: str = "lightbus.transports.transactional.DbApiConnection",
+        auto_migrate: bool = True,
     ):
         transport_name = list(child_transport.keys())[0]
         transport_class = get_transport(type_="event", name=transport_name)
@@ -77,6 +81,7 @@ class TransactionalEventTransport(EventTransport):
                 config=config, **child_transport[transport_name]
             ),
             database_class=import_from_string(database_class),
+            auto_migrate=auto_migrate,
         )
 
     async def set_connection(self, connection, cursor):
@@ -88,6 +93,8 @@ class TransactionalEventTransport(EventTransport):
         self.connection = connection
         self.cursor = cursor
         self.database = self.database_class(connection, cursor)
+        if self.auto_migrate and not self._migrated:
+            await self.database.migrate()
 
     async def start_transaction(self):
         await self.database.start_transaction()

@@ -71,6 +71,11 @@ class DbApiConnection(DatabaseConnection):
     async def migrate(self):
         # TODO: smarter version handling
         # TODO: cleanup old entries after x time
+
+        # Note: This may will fail with an integrity error if simultaneously
+        #       executed multiple times, as per:
+        #       https://stackoverflow.com/questions/29900845/
+
         await self.execute(
             """
             CREATE TABLE IF NOT EXISTS lightbus_processed_events (

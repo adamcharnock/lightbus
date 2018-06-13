@@ -17,15 +17,19 @@ async def test_multiple_connections(
     test_table,
     loop,
     dummy_api,
-    # aiopg_cursor,
     messages_in_redis,
     get_outbox,
     caplog,
     cursor_factory,
+    dbapi_database,
 ):
     import aiopg
 
+    # We're going to send a lot of messages. Let's keep the logging sane
     caplog.set_level(logging.WARNING)
+
+    # Migrate now
+    await dbapi_database.migrate()
 
     async def start_firing(number):
 

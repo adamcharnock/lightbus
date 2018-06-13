@@ -188,10 +188,7 @@ def transactional_bus(dummy_bus: BusNode, new_redis_pool, aiopg_connection, aiop
     registry.set_event_transport("default", transport)
 
     database = DbApiConnection(aiopg_connection, aiopg_cursor)
-
-    block(aiopg_cursor.execute("BEGIN -- transactional_bus"), loop=loop, timeout=1)
-    block(database.migrate(), loop=loop, timeout=1)
-    block(aiopg_cursor.execute("COMMIT -- transactional_bus"), loop=loop, timeout=1)
+    # Don't migrate here, that should be handled by the auto-migration
 
     return dummy_bus
 
