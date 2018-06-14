@@ -87,6 +87,8 @@ async def test_consume_events(
     assert message.api_name == "my.dummy"
     assert message.event_name == "my_event"
     assert message.kwargs == {"field": "value"}
+    assert message.native_id
+    assert type(message.native_id) == str
 
 
 @pytest.mark.run_loop
@@ -343,6 +345,8 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
     )
     reclaimed_messages = [m async for m in reclaimer]
     assert len(reclaimed_messages) == 1
+    assert reclaimed_messages[0].native_id
+    assert type(reclaimed_messages[0].native_id) == str
 
 
 @pytest.mark.run_loop
@@ -489,6 +493,8 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
     assert messages[0].api_name == "my.dummy"
     assert messages[0].event_name == "my_event"
     assert messages[0].kwargs == {"field": "value"}
+    assert messages[0].native_id
+    assert type(messages[0].native_id) == str
 
     # Now check that redis believes the message has been consumed
     total_pending, *_ = await redis_client.xpending("my.dummy.my_event:stream", "test_group")

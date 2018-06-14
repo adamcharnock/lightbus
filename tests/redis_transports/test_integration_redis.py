@@ -113,15 +113,11 @@ async def test_event(bus: lightbus.BusNode, dummy_api, stream_use):
     """Full event integration test"""
     bus.bus_client.transport_registry.get_event_transport("default").stream_use = stream_use
     manually_set_plugins({})
-    received_kwargs = []
-    received_api_name = None
-    received_event_name = None
+    received_messages = []
 
     async def listener(event_message, **kwargs):
-        nonlocal received_kwargs, received_api_name, received_event_name
-        received_kwargs.append(kwargs)
-        received_api_name = event_message.api_name
-        received_event_name = event_message.event_name
+        nonlocal received_messages
+        received_messages.append(event_message)
 
     await bus.my.dummy.my_event.listen_async(listener)
     await asyncio.sleep(0.01)
@@ -129,9 +125,11 @@ async def test_event(bus: lightbus.BusNode, dummy_api, stream_use):
     await asyncio.sleep(0.01)
 
     # await asyncio.gather(co_fire_event(), co_listen_for_events())
-    assert received_kwargs == [{"field": "Hello! 😎"}]
-    assert received_api_name == "my.dummy"
-    assert received_event_name == "my_event"
+    assert len(received_messages) == 1
+    assert received_messages[0].kwargs == {"field": "Hello! 😎"}
+    assert received_messages[0].api_name == "my.dummy"
+    assert received_messages[0].event_name == "my_event"
+    assert received_messages[0].native_id
 
 
 @pytest.mark.run_loop

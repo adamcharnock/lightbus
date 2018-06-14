@@ -32,7 +32,7 @@ def test_by_field_deserializer():
             "version": "2",
             ":field": '"value"',
         },
-        native_id="456",
+        native_id=b"456",
     )
     assert message.api_name == "my.api"
     assert message.event_name == "my_event"
@@ -53,7 +53,7 @@ def test_by_field_deserializer_empty_keys_and_values():
             ":field": '"value"',
             "": "",
         },
-        native_id="456",
+        native_id=b"456",
     )
     assert message.api_name == "my.api"
     assert message.event_name == "my_event"

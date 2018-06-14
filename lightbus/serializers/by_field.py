@@ -66,6 +66,8 @@ class ByFieldMessageDeserializer(MessageDeserializer):
 
         extra = {}
         if native_id is not None:
+            if isinstance(native_id, bytes):
+                native_id = native_id.decode("utf8")
             extra["native_id"] = native_id
 
         return self.message_class.from_dict(metadata=metadata, kwargs=kwargs, **extra)

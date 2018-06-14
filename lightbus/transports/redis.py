@@ -552,6 +552,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 timeout=None,  # Don't block, return immediately
             )
             for stream, message_id, fields in pending_messages:
+                message_id = decode(message_id, "utf8")
                 event_message = self._fields_to_message(
                     fields, expected_events, native_id=message_id
                 )
@@ -592,6 +593,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
                 # Handle the messages we have received
                 for stream, message_id, fields in stream_messages:
+                    message_id = decode(message_id, "utf8")
                     event_message = self._fields_to_message(
                         fields, expected_events, native_id=message_id
                     )
@@ -648,8 +650,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         stream, consumer_group, self.consumer_name, int(timeout), message_id
                     )
                     for claimed_message_id, fields in result:
+                        claimed_message_id = decode(claimed_message_id, "utf8")
                         event_message = self._fields_to_message(
-                            fields, expected_events, native_id=message_id
+                            fields, expected_events, native_id=claimed_message_id
                         )
                         if not event_message:
                             # noop message, or message an event we don't care about
@@ -812,8 +815,7 @@ def normalise_since_value(since):
 
 
 def redis_steam_id_to_datetime(message_id):
-    if isinstance(message_id, bytes):
-        message_id = message_id.decode("utf8")
+    message_id = decode(message_id, "utf8")
     milliseconds, seq = map(int, message_id.split("-"))
     # Treat the sequence value as additional microseconds to ensure correct sequencing
     microseconds = (milliseconds % 1000 * 1000) + seq
