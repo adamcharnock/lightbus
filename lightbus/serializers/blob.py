@@ -24,7 +24,7 @@ class BlobMessageSerializer(MessageSerializer):
 
 class BlobMessageDeserializer(MessageDeserializer):
 
-    def __call__(self, serialized: Union[str, dict]):
+    def __call__(self, serialized: Union[str, dict], *, native_id=None):
         # Reverse of BlobMessageSerializer
 
         # Allow for receiving dicts on the assumption that this will be
@@ -37,7 +37,10 @@ class BlobMessageDeserializer(MessageDeserializer):
 
         metadata = decoded.get("metadata", {})
         kwargs = decoded.get("kwargs", {})
+        extra = {}
+        if native_id is not None:
+            extra["native_id"] = native_id
 
         sanity_check_metadata(self.message_class, metadata)
 
-        return self.message_class.from_dict(metadata=metadata, kwargs=kwargs)
+        return self.message_class.from_dict(metadata=metadata, kwargs=kwargs, **extra)

@@ -548,7 +548,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 timeout=None,  # Don't block, return immediately
             )
             for stream, message_id, fields in pending_messages:
-                event_message = self._fields_to_message(fields, expected_events)
+                event_message = self._fields_to_message(
+                    fields, expected_events, native_id=message_id
+                )
                 if not event_message:
                     # noop message, or message an event we don't care about
                     continue
@@ -586,7 +588,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
                 # Handle the messages we have received
                 for stream, message_id, fields in stream_messages:
-                    event_message = self._fields_to_message(fields, expected_events)
+                    event_message = self._fields_to_message(
+                        fields, expected_events, native_id=message_id
+                    )
                     if not event_message:
                         # noop message, or message an event we don't care about
                         continue
@@ -640,7 +644,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         stream, consumer_group, self.consumer_name, int(timeout), message_id
                     )
                     for claimed_message_id, fields in result:
-                        event_message = self._fields_to_message(fields, expected_events)
+                        event_message = self._fields_to_message(
+                            fields, expected_events, native_id=message_id
+                        )
                         if not event_message:
                             # noop message, or message an event we don't care about
                             continue
@@ -673,10 +679,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 if "BUSYGROUP" not in str(e):
                     raise
 
-    def _fields_to_message(self, fields, expected_event_names) -> Optional[EventMessage]:
+    def _fields_to_message(self, fields, expected_event_names, native_id) -> Optional[EventMessage]:
         if tuple(fields.items()) == ((b"", b""),):
             return None
-        message = self.deserializer(fields)
+        message = self.deserializer(fields, native_id=native_id)
 
         want_message = ("*" in expected_event_names) or (message.event_name in expected_event_names)
         if self.stream_use == StreamUse.PER_API and not want_message:

@@ -10,8 +10,9 @@ __all__ = ["Message", "RpcMessage", "ResultMessage", "EventMessage"]
 class Message(object):
     required_metadata: Sequence
 
-    def __init__(self, id: str = ""):
+    def __init__(self, id: str = "", native_id: str = None):
         self.id = id or b64encode(uuid1().bytes).decode("utf8")
+        self.native_id = native_id
 
     def get_metadata(self) -> dict:
         """Get the non-kwarg fields of this message
@@ -28,7 +29,7 @@ class Message(object):
         raise NotImplementedError()
 
     @classmethod
-    def from_dict(cls, metadata: dict, kwargs: dict) -> "Message":
+    def from_dict(cls, metadata: dict, kwargs: dict, **extra) -> "Message":
         """Create a message instance given the metadata and kwargs
 
         Will be used by the serializers
@@ -47,8 +48,9 @@ class RpcMessage(Message):
         kwargs: Optional[dict] = None,
         return_path: Any = None,
         id: str = "",
+        native_id: str = None,
     ):
-        super().__init__(id)
+        super().__init__(id, native_id)
         self.api_name = api_name
         self.procedure_name = procedure_name
         self.kwargs = kwargs
@@ -78,17 +80,24 @@ class RpcMessage(Message):
         return self.kwargs
 
     @classmethod
-    def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> "RpcMessage":
-        return cls(**metadata, kwargs=kwargs)
+    def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any], **extra) -> "RpcMessage":
+        return cls(**metadata, **extra, kwargs=kwargs)
 
 
 class ResultMessage(Message):
     required_metadata = ["id", "rpc_message_id"]
 
     def __init__(
-        self, *, result, rpc_message_id: str, id: str = "", error: bool = False, trace: str = None
+        self,
+        *,
+        result,
+        rpc_message_id: str,
+        id: str = "",
+        error: bool = False,
+        trace: str = None,
+        native_id: str = None,
     ):
-        super().__init__(id)
+        super().__init__(id, native_id)
         self.rpc_message_id = rpc_message_id
 
         if isinstance(result, BaseException):
@@ -123,8 +132,10 @@ class ResultMessage(Message):
         return {"result": self.result}
 
     @classmethod
-    def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> "ResultMessage":
-        return cls(**metadata, result=kwargs.get("result"))
+    def from_dict(
+        cls, metadata: Dict[str, str], kwargs: Dict[str, Any], **extra
+    ) -> "ResultMessage":
+        return cls(**metadata, **extra, result=kwargs.get("result"))
 
 
 class EventMessage(Message):
@@ -138,8 +149,9 @@ class EventMessage(Message):
         kwargs: Optional[dict] = None,
         version: int = 1,
         id: str = "",
+        native_id: str = None,
     ):
-        super().__init__(id)
+        super().__init__(id, native_id)
         self.api_name = api_name
         self.event_name = event_name
         self.version = int(version)
@@ -169,5 +181,5 @@ class EventMessage(Message):
         return self.kwargs
 
     @classmethod
-    def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any]) -> "EventMessage":
-        return cls(**metadata, kwargs=kwargs)
+    def from_dict(cls, metadata: Dict[str, str], kwargs: Dict[str, Any], **extra) -> "EventMessage":
+        return cls(**metadata, **extra, kwargs=kwargs)

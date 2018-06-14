@@ -31,13 +31,15 @@ def test_by_field_deserializer():
             "id": "123",
             "version": "2",
             ":field": '"value"',
-        }
+        },
+        native_id="456",
     )
     assert message.api_name == "my.api"
     assert message.event_name == "my_event"
     assert message.id == "123"
     assert message.kwargs == {"field": "value"}
     assert message.version == 2
+    assert message.native_id == "456"
 
 
 def test_by_field_deserializer_empty_keys_and_values():
@@ -50,10 +52,12 @@ def test_by_field_deserializer_empty_keys_and_values():
             "version": "2",
             ":field": '"value"',
             "": "",
-        }
+        },
+        native_id="456",
     )
     assert message.api_name == "my.api"
     assert message.event_name == "my_event"
     assert message.id == "123"
     assert message.kwargs == {"field": "value"}
     assert message.version == 2
+    assert message.native_id == "456"

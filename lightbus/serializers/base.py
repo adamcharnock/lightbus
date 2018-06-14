@@ -55,5 +55,5 @@ class MessageDeserializer(object):
         self.message_class = message_class
         self.decoder = decoder
 
-    def __call__(self, serialized: SerialisedData) -> "lightbus.Message":
+    def __call__(self, serialized: SerialisedData, *, native_id=None) -> "lightbus.Message":
         raise NotImplementedError()

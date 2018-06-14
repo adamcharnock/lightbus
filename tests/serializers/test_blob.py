@@ -32,12 +32,14 @@ def test_blob_deserializer():
                 },
                 "kwargs": {"field": "value"},
             }
-        )
+        ),
+        native_id="456",
     )
     assert message.api_name == "my.api"
     assert message.event_name == "my_event"
     assert message.id == "123"
     assert message.kwargs == {"field": "value"}
+    assert message.native_id == "456"
 
 
 def test_blob_deserializer_dict():
@@ -46,9 +48,11 @@ def test_blob_deserializer_dict():
         {
             "metadata": {"api_name": "my.api", "event_name": "my_event", "id": "123", "version": 1},
             "kwargs": {"field": "value"},
-        }
+        },
+        native_id="456",
     )
     assert message.api_name == "my.api"
     assert message.event_name == "my_event"
     assert message.id == "123"
     assert message.kwargs == {"field": "value"}
+    assert message.native_id == "456"
