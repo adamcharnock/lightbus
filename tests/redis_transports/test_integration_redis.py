@@ -3,6 +3,8 @@ import logging
 
 import jsonschema
 import pytest
+from aioredis.util import decode
+
 import lightbus
 from lightbus import BusNode
 from lightbus.api import registry
@@ -377,3 +379,91 @@ async def test_listen_to_multiple_events_across_multiple_transports(loop, server
     await asyncio.sleep(0.1)
 
     assert calls == 2
+
+
+@pytest.mark.run_loop
+async def test_event_exception_in_listener_realtime(bus: lightbus.BusNode, dummy_api, redis_client):
+    """Start a listener (which errors) and then add events to the stream.
+    The listener will load them one-by-one."""
+    manually_set_plugins({})
+    received_messages = []
+
+    async def listener(event_message, **kwargs):
+        nonlocal received_messages
+        received_messages.append(event_message)
+        raise Exception()
+
+    await bus.my.dummy.my_event.listen_async(listener, bus_options={"since": "0"})
+    await asyncio.sleep(0.1)
+
+    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+    await asyncio.sleep(0.01)
+    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+    await asyncio.sleep(0.01)
+    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+    await asyncio.sleep(0.01)
+
+    # Died when processing first message, so we only saw one message
+    assert len(received_messages) == 1
+
+    # Now check we have not acked any of them
+
+    messages = await redis_client.xrange("my.dummy.my_event:stream")
+    # Messages 0 is the noop message used to create the stream
+    message0_id, message1_id, message2_id, message3_id = [id_ for id_, *_ in messages]
+
+    pending_messages = await redis_client.xpending(
+        "my.dummy.my_event:stream", "test_cg-default", "-", "+", 10, "test_consumer"
+    )
+    assert len(pending_messages) == 1
+    pending_message_id, pending_message_consumer, _, num_times_delivered = pending_messages[0]
+
+    # Message still pending, i.e. not acked
+    assert pending_message_id == message0_id
+    assert pending_message_consumer == b"test_consumer"
+    assert num_times_delivered == 1
+
+
+@pytest.mark.run_loop
+async def test_event_exception_in_listener_batch_fetch(
+    bus: lightbus.BusNode, dummy_api, redis_client
+):
+    """Add a number of events to a stream the startup a listener which errors.
+    The listener will fetch them all at once."""
+    manually_set_plugins({})
+    received_messages = []
+
+    async def listener(event_message, **kwargs):
+        nonlocal received_messages
+        received_messages.append(event_message)
+        raise Exception()
+
+    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+
+    await bus.my.dummy.my_event.listen_async(listener, bus_options={"since": "0"})
+    await asyncio.sleep(0.1)
+
+    # Died when processing first message, so we only saw one message
+    assert len(received_messages) == 1
+
+    # Now check we have not acked any of them
+
+    messages = await redis_client.xrange("my.dummy.my_event:stream")
+    # No message0 here because the stream already exists (because we've just added events to it)
+    message1_id, message2_id, message3_id = [id_ for id_, *_ in messages]
+
+    pending_messages = await redis_client.xpending(
+        "my.dummy.my_event:stream", "test_cg-default", "-", "+", 10, "test_consumer"
+    )
+    import pdb
+
+    pdb.set_trace()
+    assert len(pending_messages) == 3
+    pending_message_id, pending_message_consumer, _, num_times_delivered = pending_messages[0]
+
+    # Message still pending, i.e. not acked
+    assert pending_message_id == message0_id
+    assert pending_message_consumer == b"test_consumer"
+    assert num_times_delivered == 1

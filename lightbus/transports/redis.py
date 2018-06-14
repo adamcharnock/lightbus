@@ -497,13 +497,24 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             )
         )
 
-        queue = asyncio.Queue(maxsize=self.batch_size)
+        # Here we use a queue to combine messages coming from both the
+        # fetch messages loop and the reclaim messages loop.
+        #
+        # We need to do some fancy footwork here to ensure we don't keep iterating
+        # until the message we put on the queue has been dealt with. Otherwise
+        # we would acknowledge the message with redis before it was processed. We therefore
+        # create a queue of size 1. Each time we put a message on the queue we also put
+        # a noop on the queue. The noop gets ignored below.
+        queue = asyncio.Queue(maxsize=1)
+        QUEUE_NOOP = "noop"
 
         async def fetch_loop():
             async for message in self._fetch_new_messages(
                 streams, consumer_group, expected_events, forever
             ):
+                logging.warning("fetch_loop")
                 await queue.put(message)
+                await queue.put(QUEUE_NOOP)
 
         async def reclaim_loop():
             await asyncio.sleep(self.acknowledgement_timeout)
@@ -511,6 +522,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 stream_names, consumer_group, expected_events
             ):
                 await queue.put(message)
+                await queue.put(QUEUE_NOOP)
 
         # Make sure we surface any exceptions that occur in either task
         fetch_task = asyncio.ensure_future(fetch_loop(), loop=loop)
@@ -529,8 +541,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         try:
             while True:
+                logging.warning("main redis loop")
                 try:
-                    yield await queue.get()
+                    message = await queue.get()
+                    if message == QUEUE_NOOP:
+                        continue
+                    yield message
                 except GeneratorExit:
                     return
         finally:
@@ -572,6 +588,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     )
                 )
                 yield event_message
+                logger.debug(f"Acknowledging successful processing of pending message {message_id}")
                 await redis.xack(stream, consumer_group, message_id)
                 yield True
 
@@ -613,6 +630,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         )
                     )
                     yield event_message
+                    logger.debug(f"Acknowledging successful processing of message {message_id}")
                     await redis.xack(stream, consumer_group, message_id)
                     yield True
 
