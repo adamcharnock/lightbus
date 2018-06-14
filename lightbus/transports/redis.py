@@ -517,8 +517,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         reclaim_task = asyncio.ensure_future(reclaim_loop(), loop=loop)
 
         def check_for_exception(fut):
-            if fut.exception():
-                fut.result()
+            # Perhaps pull out into utility function
+            try:
+                if fut.exception():
+                    fut.result()
+            except asyncio.CancelledError:
+                pass
 
         fetch_task.add_done_callback(check_for_exception)
         reclaim_task.add_done_callback(check_for_exception)
@@ -808,6 +812,8 @@ def normalise_since_value(since):
 
 
 def redis_steam_id_to_datetime(message_id):
+    if isinstance(message_id, bytes):
+        message_id = message_id.decode("utf8")
     milliseconds, seq = map(int, message_id.split("-"))
     # Treat the sequence value as additional microseconds to ensure correct sequencing
     microseconds = (milliseconds % 1000 * 1000) + seq
