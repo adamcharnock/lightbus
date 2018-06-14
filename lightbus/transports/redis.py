@@ -807,5 +807,13 @@ def normalise_since_value(since):
         return since
 
 
+def redis_steam_id_to_datetime(message_id):
+    milliseconds, seq = map(int, message_id.split("-"))
+    # Treat the sequence value as additional microseconds to ensure correct sequencing
+    microseconds = (milliseconds % 1000 * 1000) + seq
+    dt = datetime.utcfromtimestamp(milliseconds // 1000).replace(microsecond=microseconds)
+    return dt
+
+
 class InvalidRedisPool(LightbusException):
     pass
