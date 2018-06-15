@@ -216,6 +216,9 @@ async def test_consume_events_since_id(
     asyncio.ensure_future(co())
     await asyncio.sleep(0.1)
 
+    messages_ids = [m.native_id for m in yields if isinstance(m, EventMessage)]
+
+    assert len(messages_ids) == 2
     assert len(yields) == 4
     assert yields[0].kwargs["field"] == "2"
     assert yields[1] is True
@@ -343,7 +346,7 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
         consumer_group="test_group",
         expected_events={"my_event"},
     )
-    reclaimed_messages = [m async for m in reclaimer]
+    reclaimed_messages = [m async for m, id_ in reclaimer]
     assert len(reclaimed_messages) == 1
     assert reclaimed_messages[0].native_id
     assert type(reclaimed_messages[0].native_id) == str
@@ -437,7 +440,8 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
 
     async def consume():
         async for message in consumer:
-            messages.append(message)
+            if isinstance(message, EventMessage):
+                messages.append(message)
 
     task = asyncio.ensure_future(consume(), loop=loop)
     await asyncio.sleep(0.1)

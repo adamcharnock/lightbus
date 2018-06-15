@@ -397,31 +397,31 @@ async def test_event_exception_in_listener_realtime(bus: lightbus.BusNode, dummy
     await asyncio.sleep(0.1)
 
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
-    await asyncio.sleep(0.01)
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
-    await asyncio.sleep(0.01)
+    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
     await asyncio.sleep(0.01)
 
     # Died when processing first message, so we only saw one message
     assert len(received_messages) == 1
 
-    # Now check we have not acked any of them
+    # Now check we have not acked any messages
 
     messages = await redis_client.xrange("my.dummy.my_event:stream")
     # Messages 0 is the noop message used to create the stream
-    message0_id, message1_id, message2_id, message3_id = [id_ for id_, *_ in messages]
+    message_ids = [id_ for id_, *_ in messages]
 
     pending_messages = await redis_client.xpending(
         "my.dummy.my_event:stream", "test_cg-default", "-", "+", 10, "test_consumer"
     )
-    assert len(pending_messages) == 1
-    pending_message_id, pending_message_consumer, _, num_times_delivered = pending_messages[0]
+    pending_message_ids = [id_ for id_, *_ in pending_messages]
+    # The first 4 messages are still pending. Why 4 messages? Because:
+    #  - 1. The noop message used to create the stream (because we listened before we fired)
+    #  - 2. The first message which caused the error
 
-    # Message still pending, i.e. not acked
-    assert pending_message_id == message0_id
-    assert pending_message_consumer == b"test_consumer"
-    assert num_times_delivered == 1
+    assert len(pending_message_ids) == 2
+    assert pending_message_ids == message_ids[:2]
 
 
 @pytest.mark.run_loop
@@ -457,13 +457,5 @@ async def test_event_exception_in_listener_batch_fetch(
     pending_messages = await redis_client.xpending(
         "my.dummy.my_event:stream", "test_cg-default", "-", "+", 10, "test_consumer"
     )
-    import pdb
 
-    pdb.set_trace()
     assert len(pending_messages) == 3
-    pending_message_id, pending_message_consumer, _, num_times_delivered = pending_messages[0]
-
-    # Message still pending, i.e. not acked
-    assert pending_message_id == message0_id
-    assert pending_message_consumer == b"test_consumer"
-    assert num_times_delivered == 1

@@ -9,7 +9,7 @@ from typing import Sequence, Optional, Union, Generator, Dict, Mapping, List
 from enum import Enum
 
 import aioredis
-from aioredis import Redis, ReplyError
+from aioredis import Redis, ReplyError, ConnectionForcedCloseError
 from aioredis.pool import ConnectionsPool
 from aioredis.util import decode
 
@@ -374,6 +374,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         deserializer=ByFieldMessageDeserializer(EventMessage),
         connection_parameters: Mapping = frozendict(maxsize=100),
         batch_size=10,
+        reclaim_batch_size: int = None,
         acknowledgement_timeout: float = 60,
         max_stream_length: Optional[int] = 100000,
         stream_use: StreamUse = StreamUse.PER_EVENT,
@@ -382,6 +383,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self.serializer = serializer
         self.deserializer = deserializer
         self.batch_size = batch_size
+        self.reclaim_batch_size = reclaim_batch_size if reclaim_batch_size else batch_size * 10
         self.consumer_group_prefix = consumer_group_prefix
         self.consumer_name = consumer_name
         self.acknowledgement_timeout = acknowledgement_timeout
@@ -400,6 +402,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         url: str = "redis://127.0.0.1:6379/0",
         connection_parameters: Mapping = frozendict(maxsize=100),
         batch_size: int = 10,
+        reclaim_batch_size: int = None,
         serializer: str = "lightbus.serializers.ByFieldMessageSerializer",
         deserializer: str = "lightbus.serializers.ByFieldMessageDeserializer",
         acknowledgement_timeout: float = 60,
@@ -420,6 +423,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             url=url,
             connection_parameters=connection_parameters,
             batch_size=batch_size,
+            reclaim_batch_size=reclaim_batch_size,
             serializer=serializer,
             deserializer=deserializer,
             acknowledgement_timeout=acknowledgement_timeout,
@@ -499,30 +503,24 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         # Here we use a queue to combine messages coming from both the
         # fetch messages loop and the reclaim messages loop.
-        #
-        # We need to do some fancy footwork here to ensure we don't keep iterating
-        # until the message we put on the queue has been dealt with. Otherwise
-        # we would acknowledge the message with redis before it was processed. We therefore
-        # create a queue of size 1. Each time we put a message on the queue we also put
-        # a noop on the queue. The noop gets ignored below.
         queue = asyncio.Queue(maxsize=1)
-        QUEUE_NOOP = "noop"
 
         async def fetch_loop():
-            async for message in self._fetch_new_messages(
+            async for message, stream in self._fetch_new_messages(
                 streams, consumer_group, expected_events, forever
             ):
-                logging.warning("fetch_loop")
-                await queue.put(message)
-                await queue.put(QUEUE_NOOP)
+                await queue.put((message, stream))
+                # Wait for the queue to empty before getting trying to get another message
+                await queue.join()
 
         async def reclaim_loop():
             await asyncio.sleep(self.acknowledgement_timeout)
-            async for message in self._reclaim_lost_messages(
+            async for message, stream in self._reclaim_lost_messages(
                 stream_names, consumer_group, expected_events
             ):
-                await queue.put(message)
-                await queue.put(QUEUE_NOOP)
+                await queue.put((message, stream))
+                # Wait for the queue to empty before getting trying to get another message
+                await queue.join()
 
         # Make sure we surface any exceptions that occur in either task
         fetch_task = asyncio.ensure_future(fetch_loop(), loop=loop)
@@ -533,7 +531,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             try:
                 if fut.exception():
                     fut.result()
-            except asyncio.CancelledError:
+            except (asyncio.CancelledError, ConnectionForcedCloseError):
                 pass
 
         fetch_task.add_done_callback(check_for_exception)
@@ -541,12 +539,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         try:
             while True:
-                logging.warning("main redis loop")
                 try:
-                    message = await queue.get()
-                    if message == QUEUE_NOOP:
-                        continue
+                    message, stream = await queue.get()
                     yield message
+                    await self._ack(stream, consumer_group, message.native_id)
+                    queue.task_done()
+                    yield True
                 except GeneratorExit:
                     return
         finally:
@@ -587,10 +585,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         ),
                     )
                 )
-                yield event_message
-                logger.debug(f"Acknowledging successful processing of pending message {message_id}")
-                await redis.xack(stream, consumer_group, message_id)
-                yield True
+                yield event_message, stream
 
             # We've now cleaned up any old messages that were hanging around.
             # Now we get on to the main loop which blocks and waits for new messages
@@ -629,10 +624,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                             ),
                         )
                     )
-                    yield event_message
-                    logger.debug(f"Acknowledging successful processing of message {message_id}")
-                    await redis.xack(stream, consumer_group, message_id)
-                    yield True
+                    yield event_message, stream
 
                 if not forever:
                     return
@@ -643,7 +635,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         """Reclaim messages that other consumers in the group failed to acknowledge"""
         with await self.connection_manager() as redis:
             for stream in stream_names:
-                old_messages = await redis.xpending(stream, consumer_group, "-", "+", count=100)
+                old_messages = await redis.xpending(
+                    stream, consumer_group, "-", "+", count=self.reclaim_batch_size
+                )
                 timeout = self.acknowledgement_timeout * 1000
                 for (
                     message_id,
@@ -689,7 +683,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                                 ),
                             )
                         )
-                        yield event_message
+                        yield event_message, stream
+
+    async def _ack(self, stream, consumer_group, message_id):
+        logger.debug(f"Acknowledging successful processing of message {message_id}")
+        with await self.connection_manager() as redis:
+            await redis.xack(stream, consumer_group, message_id)
 
     async def _create_consumer_groups(self, streams, redis, consumer_group):
         for stream, since in streams.items():
