@@ -17,7 +17,7 @@ Lightbus is designed with developers in mind. The syntax aims to
 be intuitive and familiar, and common problems are caught with
 clear and helpful error messages.
 
-For example, a naive authentication API:
+For example, a naïve authentication API:
 
 ```python3
 class AuthApi(Api):
