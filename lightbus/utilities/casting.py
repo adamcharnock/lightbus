@@ -1,10 +1,18 @@
+# The opposite of deforming. See lightbus.utilities.deforming
 import datetime
 import inspect
 import logging
 from enum import Enum
-from typing import NamedTuple, Mapping, Type, get_type_hints, Union, Any, TypeVar, Optional, List
+from typing import Mapping, Type, get_type_hints, Union, TypeVar
 
 import dateutil.parser
+
+from lightbus.utilities.type_checks import (
+    type_is_namedtuple,
+    type_is_dataclass,
+    is_optional,
+    isinstance_safe,
+)
 
 is_callable = callable
 logger = logging.getLogger(__name__)
@@ -39,21 +47,21 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     elif hint == inspect.Parameter.empty:
         # Empty annotation
         return value
-    elif safe_isinstance(value, hint):
+    elif isinstance_safe(value, hint):
         # Already correct type
         return value
     elif hasattr(hint, "__from_bus__"):
         # Hint supports custom deserializing.
         return hint.__from_bus__(value)
-    elif is_namedtuple(hint) and safe_isinstance(value, Mapping):
+    elif type_is_namedtuple(hint) and isinstance_safe(value, Mapping):
         return mapping_to_named_tuple(mapping=value, named_tuple=hint)
-    elif is_dataclass(hint) and safe_isinstance(value, Mapping):
+    elif type_is_dataclass(hint) and isinstance_safe(value, Mapping):
         # We can treat dataclasses the same as named tuples
         return mapping_to_named_tuple(mapping=value, named_tuple=hint)
-    elif is_class and issubclass(hint, datetime.datetime) and safe_isinstance(value, str):
+    elif is_class and issubclass(hint, datetime.datetime) and isinstance_safe(value, str):
         # Datetime as a string
         return dateutil.parser.parse(value)
-    elif is_class and issubclass(hint, datetime.date) and safe_isinstance(value, str):
+    elif is_class and issubclass(hint, datetime.date) and isinstance_safe(value, str):
         # Date as a string
         return dateutil.parser.parse(value).date()
     elif is_class and issubclass(hint, list):
@@ -120,7 +128,7 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
         if is_optional(hint) and value is not None:
             hint = subs_tree[1]
 
-        if is_namedtuple(hint):
+        if type_is_namedtuple(hint):
             parameters[key] = mapping_to_named_tuple(value, hint)
         elif is_class and issubclass(hint, Mapping) and subs_tree and len(subs_tree) == 3:
             parameters[key] = dict()
@@ -130,31 +138,3 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
             parameters[key] = cast_to_hint(value, hint)
 
     return named_tuple(**parameters)
-
-
-def is_namedtuple(v) -> bool:
-    """Figuring out if an object is a named tuple is not as trivial as one may expect"""
-    try:
-        return issubclass(v, tuple) and hasattr(v, "_fields")
-    except TypeError:
-        return False
-
-
-def is_dataclass(v) -> bool:
-    return hasattr(v, "__dataclass_fields__")
-
-
-def is_optional(hint) -> Optional[Type]:
-    subs_tree = hint._subs_tree() if hasattr(hint, "_subs_tree") else None
-    if type(hint) == type(Union) and len(subs_tree) == 3 and subs_tree[2] == type(None):
-        return subs_tree[1]
-    else:
-        return None
-
-
-def safe_isinstance(value, type_):
-    try:
-        return isinstance(value, type_)
-    except TypeError:
-        # Cannot perform isinstance on some types
-        return False

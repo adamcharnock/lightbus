@@ -228,7 +228,7 @@ def make_custom_object_schema(type_, property_names=None):
     """Convert a named tuple into a JSON schema
 
     While a lot of conversations happen in `python_type_to_json_schemas()`, conversion of
-    named tuples is a little more involved. It therefore gets its own function.
+    annotated classes is a little more involved. It therefore gets its own function.
 
     While this is mainly used for named tuples within lightbus, it can also be used for
     general classes.

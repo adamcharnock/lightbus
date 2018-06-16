@@ -31,13 +31,13 @@ from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
 from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
 from lightbus.schema import Schema
-from lightbus.schema.encoder import json_safe_values
 from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport, ResultTransport, EventTransport
 from lightbus.transports.base import SchemaTransport, TransportRegistry
 from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loop, cancel
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.config import random_name
+from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string, import_module_from_string
@@ -275,6 +275,7 @@ class BusClient(object):
                 # Used to simulate message failure for testing
                 pass
             else:
+                result = deform_to_bus(result)
                 result_message = ResultMessage(result=result, rpc_message_id=rpc_message.id)
                 await plugin_hook(
                     "after_rpc_execution",
@@ -298,6 +299,7 @@ class BusClient(object):
         rpc_transport = self.transport_registry.get_rpc_transport(api_name)
         result_transport = self.transport_registry.get_result_transport(api_name)
 
+        kwargs = deform_to_bus(kwargs)
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)
         return_path = result_transport.get_return_path(rpc_message)
         rpc_message.return_path = return_path
@@ -447,6 +449,7 @@ class BusClient(object):
                 )
             )
 
+        kwargs = deform_to_bus(kwargs)
         event_message = EventMessage(api_name=api.meta.name, event_name=name, kwargs=kwargs)
 
         self._validate(event_message, "outgoing")
@@ -617,11 +620,9 @@ class BusClient(object):
             return
 
         if isinstance(message, (RpcMessage, EventMessage)):
-            parameters = json_safe_values(message.kwargs)
-            self.schema.validate_parameters(api_name, event_or_rpc_name, parameters)
+            self.schema.validate_parameters(api_name, event_or_rpc_name, message.kwargs)
         elif isinstance(message, (ResultMessage)):
-            response = json_safe_values(message.result)
-            self.schema.validate_response(api_name, event_or_rpc_name, response)
+            self.schema.validate_response(api_name, event_or_rpc_name, message.result)
 
     # Utilities
 

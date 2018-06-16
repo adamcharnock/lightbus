@@ -8,6 +8,7 @@ import yaml as yamllib
 from lightbus.exceptions import UnexpectedConfigurationFormat
 from lightbus.schema.hints_to_schema import python_type_to_json_schemas, SCHEMA_URI
 from lightbus.utilities.casting import mapping_to_named_tuple
+from lightbus.utilities.deforming import deform_to_bus
 
 if False:
     from .structure import RootConfig, BusConfig, ApiConfig
@@ -109,6 +110,11 @@ def config_as_json_schema() -> dict:
     from .structure import RootConfig
 
     schema, = python_type_to_json_schemas(RootConfig)
+    # Some of the default values will still be python types,
+    # so let's use deform_to_bus to turn them into something
+    # that'll be json safe
+    schema = deform_to_bus(schema)
+
     schema["$schema"] = SCHEMA_URI
     return schema
 

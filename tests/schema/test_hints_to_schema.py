@@ -267,7 +267,7 @@ def test_mapping_without_types():
 
 
 def test_enum_number():
-    TestEnum = Enum("TestEnum", {"Foo": 1, "Bar": 2})
+    TestEnum = Enum("ExampleEnum", {"Foo": 1, "Bar": 2})
 
     def func(username) -> TestEnum:
         pass
@@ -278,7 +278,7 @@ def test_enum_number():
 
 
 def test_enum_string():
-    TestEnum = Enum("TestEnum", {"Foo": "foo", "Bar": "bar"})
+    TestEnum = Enum("ExampleEnum", {"Foo": "foo", "Bar": "bar"})
 
     def func(username) -> TestEnum:
         pass
@@ -289,7 +289,7 @@ def test_enum_string():
 
 
 def test_enum_empty():
-    TestEnum = Enum("TestEnum", {})
+    TestEnum = Enum("ExampleEnum", {})
 
     def func(username) -> TestEnum:
         pass
@@ -304,7 +304,7 @@ def test_enum_unknown_value_types():
     class UnknownThing(object):
         pass
 
-    TestEnum = Enum("TestEnum", {"Foo": UnknownThing, "Bar": UnknownThing})
+    TestEnum = Enum("ExampleEnum", {"Foo": UnknownThing, "Bar": UnknownThing})
 
     def func(username) -> TestEnum:
         pass

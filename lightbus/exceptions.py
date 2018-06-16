@@ -165,3 +165,7 @@ class NoBusFoundInBusModule(LightbusException):
 
 class TransportIsClosed(LightbusException):
     pass
+
+
+class DeformError(LightbusException):
+    pass

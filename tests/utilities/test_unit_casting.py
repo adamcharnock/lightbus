@@ -1,12 +1,15 @@
 from datetime import datetime, timezone, date
+from decimal import Decimal
 from enum import Enum
 from typing import NamedTuple, Optional, List, Any, SupportsRound
+from uuid import UUID
 
 import pytest
 from dataclasses import dataclass
 
 from lightbus.transports.redis import redis_stream_id_subtract_one
 from lightbus.utilities.casting import cast_to_signature, cast_to_hint
+from lightbus.utilities.frozendict import frozendict
 
 pytestmark = pytest.mark.unit
 
@@ -32,136 +35,148 @@ def test_cast_to_signature_no_annotations():
     assert casted == {"a": "1", "b": 2, "c": obj}
 
 
-def test_cast_to_annotation_named_tuple():
-
-    class Foo(NamedTuple):
-        a: str
-        b: int
-
-    casted = cast_to_hint(value={"a": 1, "b": "2"}, hint=Foo)
-    assert casted == Foo(a="1", b=2)
+class SimpleNamedTuple(NamedTuple):
+    a: str
+    b: int
 
 
-def test_cast_to_annotation_dataclass():
-
-    @dataclass
-    class Foo(object):
-        a: str
-        b: int
-
-    casted = cast_to_hint(value={"a": 1, "b": "2"}, hint=Foo)
-    assert casted == Foo(a="1", b=2)
+@dataclass
+class SimpleDataclass(object):
+    a: str
+    b: int
 
 
-def test_cast_to_annotation_dataclass_with_method():
-
-    @dataclass
-    class Foo(object):
-        a: str
-        b: int
-
-        def bar(self):
-            pass
-
-    casted = cast_to_hint(value={"a": 1, "b": "2"}, hint=Foo)
-    assert casted == Foo(a="1", b=2)
+class ExampleEnum(Enum):
+    foo: str = "a"
+    bar: str = "b"
 
 
-def test_cast_to_annotation_str_to_datetime():
-    casted = cast_to_hint(value="2018-06-05T10:48:12.792937+00:00", hint=datetime)
-    assert casted == datetime(2018, 6, 5, 10, 48, 12, 792937, tzinfo=timezone.utc)
+class ComplexNamedTuple(NamedTuple):
+    val: SimpleNamedTuple
 
 
-def test_cast_to_annotation_str_to_date():
-    casted = cast_to_hint(value="2018-06-05", hint=date)
-    assert casted == date(2018, 6, 5)
+@dataclass
+class ComplexDataclass(object):
+    val: SimpleDataclass
 
 
-def test_cast_to_annotation_none():
-    casted = cast_to_hint(value=None, hint=int)
-    assert casted is None
+@dataclass
+class DataclassWithMethod(object):
+    a: str
+    b: int
 
-
-def test_cast_to_annotation_any():
-    casted = cast_to_hint(value="123", hint=Any)
-    assert casted == "123"
-
-
-def test_cast_to_annotation_uncastable():
-    casted = cast_to_hint(value="a", hint=int)
-    assert casted == "a"
-
-
-def test_cast_to_annotation_optional_present():
-    casted = cast_to_hint(value="123", hint=Optional[int])
-    assert casted == 123
-
-
-def test_cast_to_annotation_optional_none():
-    casted = cast_to_hint(value=None, hint=Optional[int])
-    assert casted is None
-
-
-def test_cast_to_annotation_custom_class():
-
-    class CustomClass(object):
+    def bar(self):
         pass
 
-    casted = cast_to_hint(value="a", hint=CustomClass)
-    # Custom classes not supported
-    assert casted == "a"
+
+class CustomClass(object):
+    pass
 
 
-def test_cast_to_annotation_list_builtin():
-    casted = cast_to_hint(value=["1", 2], hint=list)
-    assert casted == ["1", 2]
+class CustomClassWithMagicMethod(object):
+    value: str = "123"
+
+    @classmethod
+    def __from_bus__(cls, data):
+        o = cls()
+        o.value = data["value"]
+        return o
 
 
-def test_cast_to_annotation_list_generic_untyped():
-    casted = cast_to_hint(value=["1", 2], hint=List)
-    assert casted == ["1", 2]
+@pytest.mark.parametrize(
+    "test_input,hint,expected",
+    [
+        (1, int, 1),
+        ("1", int, 1),
+        (1.23, float, 1.23),
+        ("1.23", float, 1.23),
+        (True, bool, True),
+        ("1", bool, True),
+        ("", bool, False),
+        (None, int, None),
+        ("a", str, "a"),
+        (1, str, "1"),
+        ("1.23", Decimal, Decimal("1.23")),
+        ("(1+2j)", complex, complex("(1+2j)")),
+        ({"a": 1}, frozendict, frozendict(a=1)),
+        (
+            "abf4ddeb-fb9c-44c5-b865-012ba7787469",
+            UUID,
+            UUID("abf4ddeb-fb9c-44c5-b865-012ba7787469"),
+        ),
+        ({"a": 1, "b": "2"}, SimpleNamedTuple, SimpleNamedTuple(a="1", b=2)),
+        ({"a": 1, "b": "2"}, SimpleDataclass, SimpleDataclass(a="1", b=2)),
+        ({"a": 1, "b": "2"}, DataclassWithMethod, DataclassWithMethod(a="1", b=2)),
+        (
+            {"val": {"a": 1, "b": "2"}},
+            ComplexNamedTuple,
+            ComplexNamedTuple(val=SimpleNamedTuple(a="1", b=2)),
+        ),
+        (
+            {"val": {"a": 1, "b": "2"}},
+            ComplexDataclass,
+            ComplexDataclass(val=SimpleDataclass(a="1", b=2)),
+        ),
+        (
+            "2018-06-05T10:48:12.792937+00:00",
+            datetime,
+            datetime(2018, 6, 5, 10, 48, 12, 792937, tzinfo=timezone.utc),
+        ),
+        ("2018-06-05", date, date(2018, 6, 5)),
+        ("123", Any, "123"),
+        ("a", int, "a"),
+        ("123", Optional[int], 123),
+        (None, Optional[int], None),
+        # Custom classes not supported, so the hint is ignored
+        ("a", CustomClass, "a"),
+        (["1", 2], list, ["1", 2]),
+        (["1", 2], List, ["1", 2]),
+        (["1", 2], List[int], [1, 2]),
+        (["1", 2], SupportsRound, ["1", 2]),
+        ("a", ExampleEnum, ExampleEnum.foo),
+        ("x", ExampleEnum, "x"),
+    ],
+    ids=[
+        "int_same",
+        "int_cast",
+        "float_same",
+        "float_cast",
+        "bool_same",
+        "bool_cast_true",
+        "bool_cast_false",
+        "none",
+        "str_same",
+        "str_cast",
+        "decimal",
+        "complex",
+        "frozendict",
+        "uuid",
+        "nametuple",
+        "dataclass",
+        "dataclass_with_method",
+        "complex_namedtuple",
+        "complex_dataclass",
+        "datetime",
+        "date",
+        "str_any",
+        "str_int",
+        "optional_int_present",
+        "optional_int_none",
+        "custom_class",
+        "list_builtin",
+        "list_generic_untyped",
+        "list_generic_typed",
+        "unsupported_generic",
+        "enum",
+        "enum_bad_value",
+    ],
+)
+def test_cast_to_annotation(test_input, hint, expected):
+    casted = cast_to_hint(value=test_input, hint=hint)
+    assert casted == expected
 
 
-def test_cast_to_annotation_list_generic_typed():
-    casted = cast_to_hint(value=["1", 2], hint=List[int])
-    assert casted == [1, 2]
-
-
-def test_cast_to_annotation_unsupported_generic():
-    casted = cast_to_hint(value=["1", 2], hint=SupportsRound)
-    assert casted == ["1", 2]
-
-
-def test_cast_to_annotation_enum():
-
-    class MyEnum(Enum):
-        foo: str = "a"
-        bar: str = "b"
-
-    casted = cast_to_hint(value="a", hint=MyEnum)
-    assert casted is MyEnum.foo
-
-
-def test_cast_to_annotation_enum_bad_value():
-
-    class MyEnum(Enum):
-        foo: str = "a"
-        bar: str = "b"
-
-    casted = cast_to_hint(value="x", hint=MyEnum)
-    assert casted is "x"
-
-
-def test_cast_to_annotation_magic_method():
-
-    class MyClass(object):
-        value: str = "123"
-
-        @classmethod
-        def __from_bus__(cls, data):
-            o = cls()
-            o.value = data["value"]
-            return o
-
-    casted = cast_to_hint(value={"value": "abc"}, hint=MyClass)
+def test_cast_to_annotation_custom_class_with_magic_method():
+    casted = cast_to_hint(value={"value": "abc"}, hint=CustomClassWithMagicMethod)
+    assert isinstance(casted, CustomClassWithMagicMethod)
     assert casted.value == "abc"
