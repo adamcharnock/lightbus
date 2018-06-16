@@ -35,6 +35,7 @@ pages:
   - Concepts: concepts.md
   - Quick start: quick-start.md
   - Worked example: worked-example.md
+  - Typing: typing.md
   - APIs: apis.md
   - Remote prcedure calls: rpcs.md
   - Events: events.md
