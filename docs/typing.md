@@ -1,7 +1,10 @@
 
-Notes:
+## Quick notes
+
+Will be improved upon later.
 
 Inbound: `decode -> deserialise -> cast`
+
 Outbound: `deform -> serialize -> encode`
 
 * Types not transmitted with data
@@ -29,5 +32,16 @@ Outbound: `deform -> serialize -> encode`
 
 Cusom objects can be transmitted on the bus as long as they define the
 `__to_bus__()` magic method. Conversely, custom objects can be recieved
-by providing a type hint for class, where the class defines the
-`__from_bus__()` method.
+by providing a type hint for the class, where the class defines the
+`__from_bus__(value)` static method. For example:
+
+
+```python3
+class UserDatabaseObject(object):
+    def __to_bus__(self):
+        return self.id
+
+    @classmethod
+    def __from_bus__(cls, value):
+        return cls.objects.get(id=value)
+```
