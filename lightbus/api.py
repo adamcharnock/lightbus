@@ -5,6 +5,7 @@ from lightbus.exceptions import (
     InvalidApiRegistryEntry,
     EventNotFound,
     MisconfiguredApiOptions,
+    InvalidApiEventConfiguration,
 )
 
 
@@ -120,4 +121,11 @@ class Event(object):
 
     def __init__(self, parameters=tuple()):
         # Ensure you update the __copy__() method if adding other instance variables below
+        if isinstance(parameters, str):
+            raise InvalidApiEventConfiguration(
+                f"You appear to have passed a string value of {repr(parameters)} "
+                f"for your API's event's parameters. This should be a list or a tuple, "
+                f"not a string. You probably missed a comma when defining your "
+                f"tuple of parameter names."
+            )
         self.parameters = parameters
