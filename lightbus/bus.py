@@ -67,7 +67,7 @@ class BusClient(object):
         self._loop = loop
         self._listeners = {}
 
-    def setup(self, plugins: dict = None):
+    async def setup_async(self, plugins: dict = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
 
         You should call this manually if you are calling `consume_rpcs()`
@@ -104,15 +104,11 @@ class BusClient(object):
 
         # Load schema
         logger.debug("Loading schema...")
-        block(self.schema.load_from_bus(), self.loop, timeout=self.config.bus().schema.load_timeout)
+        await self.schema.load_from_bus()
 
         # Share the schema of the registered APIs
         for api in registry.all():
-            block(
-                self.schema.add_api(api),
-                self.loop,
-                timeout=self.config.bus().schema.add_api_timeout,
-            )
+            await self.schema.add_api(api)
 
         logger.info(
             LBullets(
@@ -122,7 +118,10 @@ class BusClient(object):
         )
 
         for transport in self.transport_registry.get_all_transports():
-            block(transport.open(), self.loop, timeout=self.config.bus().open_transport_timeout)
+            await transport.open()
+
+    def setup(self, plugins: dict = None):
+        block(self.setup_async(plugins), loop=self.loop, timeout=5)
 
     def close(self):
         block(self.close_async(), loop=self.loop, timeout=5)
@@ -850,7 +849,7 @@ class BusNode(object):
         self.bus_client.schema.validate_parameters(self.api_name, self.name, response)
 
 
-def create(
+async def create_async(
     config: Union[dict, Config] = None,
     *,
     config_file: str = None,
@@ -900,9 +899,14 @@ def create(
     bus_client = client_class(
         transport_registry=transport_registry, config=config, loop=loop, **kwargs
     )
-    bus_client.setup(plugins=plugins)
+    await bus_client.setup_async(plugins=plugins)
 
     return node_class(name="", parent=None, bus_client=bus_client)
+
+
+def create(loop=None, *args, **kwargs):
+    loop = loop or asyncio.get_event_loop()
+    return block(create_async(*args, **kwargs), loop=loop, timeout=5)
 
 
 def load_config(

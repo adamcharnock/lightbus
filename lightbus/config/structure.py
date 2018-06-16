@@ -112,7 +112,6 @@ class ApiConfig(object):
 
 
 class SchemaConfig(NamedTuple):
-    load_timeout: int = 5
     add_api_timeout: int = 1
     human_readable: bool = True
     ttl: int = 60
@@ -121,7 +120,6 @@ class SchemaConfig(NamedTuple):
 
 class BusConfig(NamedTuple):
     log_level: LogLevelEnum = LogLevelEnum.INFO
-    open_transport_timeout: int = 5
     schema: SchemaConfig = SchemaConfig()
 
 
