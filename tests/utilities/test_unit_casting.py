@@ -150,3 +150,18 @@ def test_cast_to_annotation_enum_bad_value():
 
     casted = cast_to_hint(value="x", hint=MyEnum)
     assert casted is "x"
+
+
+def test_cast_to_annotation_magic_method():
+
+    class MyClass(object):
+        value: str = "123"
+
+        @classmethod
+        def __from_bus__(cls, data):
+            o = cls()
+            o.value = data["value"]
+            return o
+
+    casted = cast_to_hint(value={"value": "abc"}, hint=MyClass)
+    assert casted.value == "abc"

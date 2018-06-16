@@ -34,6 +34,7 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     is_class = inspect.isclass(hint)
 
     if type(hint) == type(Union):
+        # We don't attempt to deal with unions for now
         return value
     elif hint == inspect.Parameter.empty:
         # Empty annotation
@@ -41,6 +42,9 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     elif safe_isinstance(value, hint):
         # Already correct type
         return value
+    elif hasattr(hint, "__from_bus__"):
+        # Hint supports custom deserializing.
+        return hint.__from_bus__(value)
     elif is_namedtuple(hint) and safe_isinstance(value, Mapping):
         return mapping_to_named_tuple(mapping=value, named_tuple=hint)
     elif is_dataclass(hint) and safe_isinstance(value, Mapping):
