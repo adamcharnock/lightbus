@@ -12,7 +12,7 @@ useful when:
 2. You wish the authoritative service to perform a known
    task in the background
 
-**RPCs provide at-least-once delivery semantics.** Given this,
+**Events provide at-least-once delivery semantics.** Given this,
 your event handlers should be [idempotent].
 
 ## Definition
