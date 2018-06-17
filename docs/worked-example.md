@@ -255,7 +255,7 @@ $ FLASK_APP=dashboard/web.py flask run --port=5000
 ```
 
 **However,** you may find it easier to startup these processes
-will the `honcho` tool we installed earlier. First, create
+with the `honcho` tool we installed earlier. First, create
 a file called `Procfile`:
 
 ```shell
