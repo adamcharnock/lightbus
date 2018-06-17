@@ -1,3 +1,8 @@
+!!! note
+    We recommend read the [concepts](concepts.md) section before continuing
+    as this will give you a useful overview before delving into the details
+    below.
+
 ## Requirements
 
 Before continuing, ensure you have completed the following steps detailed in
@@ -37,10 +42,13 @@ Create the following in a `bus.py` file:
 
 ```python3
 # bus.py
-from lightbus import Api
+import lightbus
 
+# Create your service's bus client. You can import this elsewere
+# in your service's codebase in order to access the bus
+bus = lightbus.create()
 
-class AuthApi(Api):
+class AuthApi(lightbus.Api):
 
     class Meta:
         name = 'auth'
@@ -74,7 +82,8 @@ experiment with accessing the bus.
 # call_procedure.py
 import lightbus
 
-# Create a bus object
+# We'll assume we're writing a new service here,
+# so create a new bus client
 bus = lightbus.create()
 
 # Call the check_password() procedure on our auth API
@@ -111,10 +120,12 @@ that event:
 
 ```python3
 # bus.py
-from lightbus import Api, Event
+import lightbus
 
-class AuthApi(Api):
-    user_registered = Event(parameters=('username', 'email'))
+bus = lightbus.create()
+
+class AuthApi(lightbus.Api):
+    user_registered = lightbus.Event(parameters=('username', 'email'))
 
     class Meta:
         name = 'auth'
@@ -123,7 +134,7 @@ class AuthApi(Api):
         return username == 'admin' and password == 'secret'
 
 
-def before_server_start(bus):
+def before_server_start():
     # before_server_start() is called on lightbus startup,
     # this allows you to setup your listeners.
 
@@ -147,11 +158,10 @@ user registration success handler.
 # fire_event.py
 import lightbus
 
-# Import the AuthApi to make it available to Lightbus
-from .bus import AuthApi
-
-# Create a bus object
-bus = lightbus.create()
+# Here we assume we're writing another module within
+# the same auth service, not creating a new service.
+# Therefore import our bus client from bus.py
+from bus import bus
 
 # Fire the event. There is no return value when firing events
 bus.auth.user_registered.fire(
@@ -160,13 +170,10 @@ bus.auth.user_registered.fire(
 )
 ```
 
-There a two important differences here:
 
-1. We call `bus.auth.user_registered.fire()` to fire the `user_registered` event on
-   the `auth` API. This will place the event onto the bus to be consumed any
-   listening services.
-2. We import the `AuthApi` class. This registers it with Lightbus, thereby indicating
-   we are the authoritative service for this API and can therefore fire events upon it.
+Here we call `bus.auth.user_registered.fire()` to fire the `user_registered` event on
+the `auth` API. This will place the event onto the bus to be consumed any
+listening services.
 
 ## Further reading
 

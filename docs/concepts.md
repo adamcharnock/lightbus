@@ -14,14 +14,18 @@ These processes operate as a tightly-coupled whole.
 For example, your company may run a help desk
 (e.g `support.company.com`) , an online store (`store.company.com`),
 and an internal image resizing service.
-This documentation considers each of these to be a 'service'.
+This documentation considers each of these to be a service.
 
-The support and store services would likely have both a web process and a
+The support and store services would both likely have a web process and a
 Lightbus process each. The image resizing service would likely have a Lightbus
 process only.
 
-All processes in a service should generally share the same API class
-definitions.
+All processes in a service will generally:
+
+* Share the same API class definitions
+* Moreover, they will normally share the same codebase
+* Create a single instance of the bus client in `bus.py` using
+  `bus = lightbus.create()`.
 
 A simple lightbus deployment could look something like this:
 
