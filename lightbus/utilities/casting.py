@@ -79,8 +79,9 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     elif inspect.isclass(hint) and hasattr(hint, "__annotations__") and not issubclass(hint, Enum):
         logger.warning(
             f"Cannot cast to arbitrary class {hint}, using un-casted value. "
-            f"If you want to receive custom objects you can use a "
-            f"NamedTuple or dataclass."
+            f"If you want to receive custom objects you can 1) "
+            f"use a NamedTuple, 2) use a dataclass, or 3) specify the "
+            f"__from_bus__() and __to_bus__() magic methods."
         )
         return value
     else:
