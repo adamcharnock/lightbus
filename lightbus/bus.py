@@ -42,7 +42,7 @@ from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string, import_module_from_string
 
-__all__ = ["BusClient", "BusNode", "create"]
+__all__ = ["BusClient", "BusNode", "create", "create_async"]
 
 
 logger = logging.getLogger(__name__)
