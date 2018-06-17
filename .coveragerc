@@ -5,6 +5,8 @@ source =
 
 [run]
 data_file = .coverage/coverage
+omit =
+    lightbus/utilities/testing.py
 
 [report]
 exclude_lines =
