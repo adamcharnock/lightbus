@@ -5,3 +5,7 @@ INTEREST
 /.cache
 /.coverage
 /site
+/.env
+/.venv
+/Pipfile
+/Pipfile.lock

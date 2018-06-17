@@ -62,7 +62,7 @@ RUN chmod +x /cc-test-reporter
 COPY setup.py VERSION requirements.txt ./
 COPY tests/requirements.txt ./test-requirements.txt
 
-RUN pip install -r requirements.txt -r test-requirements.txt .[development]
+RUN pip install -r requirements.txt .[development]
 
 COPY .coveragerc .
 COPY lightbus ./lightbus
