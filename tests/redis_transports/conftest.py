@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 import pytest
+from aioredis import create_redis_pool
 
 import lightbus
 from lightbus import BusNode
@@ -62,3 +63,27 @@ def fire_dummy_events_fixture(bus):
         logger.warning("TEST: fire_dummy_events() completed")
 
     return fire_dummy_events
+
+
+@pytest.fixture
+def new_bus(loop, new_redis_pool, server):
+
+    async def wrapped():
+        rpc_pool = await create_redis_pool(server.tcp_address, loop=loop, maxsize=1000)
+        result_pool = await create_redis_pool(server.tcp_address, loop=loop, maxsize=1000)
+        event_pool = await create_redis_pool(server.tcp_address, loop=loop, maxsize=1000)
+        schema_pool = await create_redis_pool(server.tcp_address, loop=loop, maxsize=1000)
+
+        return await lightbus.create_async(
+            rpc_transport=lightbus.RedisRpcTransport(redis_pool=rpc_pool),
+            result_transport=lightbus.RedisResultTransport(redis_pool=result_pool),
+            event_transport=lightbus.RedisEventTransport(
+                redis_pool=event_pool,
+                consumer_group_prefix="test_cg",
+                consumer_name="test_consumer",
+            ),
+            schema_transport=lightbus.RedisSchemaTransport(redis_pool=schema_pool),
+            loop=loop,
+        )
+
+    return wrapped
