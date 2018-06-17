@@ -5,6 +5,17 @@ from aioredis import create_redis_pool
 
 import lightbus
 
+pytestmark = pytest.mark.reliability
+
+
+@pytest.mark.run_loop
+async def test_redis_connections_closed(redis_client, loop, dummy_api, new_bus, caplog):
+    bus = await new_bus()
+    await bus.bus_client.close_async()
+
+    info = await redis_client.info()
+    assert int(info["clients"]["connected_clients"]) == 1  # the current connection
+
 
 @pytest.mark.run_loop
 async def test_create_and_destroy_redis_buses(redis_client, loop, dummy_api, new_bus, caplog):

@@ -137,6 +137,8 @@ class BusClient(object):
         for transport in self.transport_registry.get_all_transports():
             await transport.close()
 
+        await self.schema.schema_transport.close()
+
     @property
     def loop(self):
         if self._loop:
