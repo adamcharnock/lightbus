@@ -25,6 +25,7 @@ from lightbus.exceptions import (
     InvalidParameters,
     OnlyAvailableOnRootNode,
     FailedToImportBusModule,
+    ValidationApiNotFound,
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
@@ -621,18 +622,26 @@ class BusClient(object):
         if not getattr(api_config.validate, direction):
             return
 
-        if not strict_validation and api_name not in self.schema:
-            logging.debug(
-                f"Validation is enabled for API {api_name}, but there is no schema present for this API. "
-                f"Validation is therefore not possible. You can force this to be an error by enabling "
-                f"the 'strict_validation' config option. You can silence this message by disabling validation "
-                f"for this API using the 'validate' option."
-            )
-            return
+        if api_name not in self.schema:
+            if strict_validation:
+                raise ValidationApiNotFound(
+                    f"Validation is enabled for API {api_name}, but there is no schema present for this API. "
+                    f"Validation is therefore not possible. You are also seeing this error because the "
+                    f"'strict_validation' setting is enabled. Disabling this setting will turn this exception "
+                    f"into a warning. "
+                )
+            else:
+                logging.warning(
+                    f"Validation is enabled for API {api_name}, but there is no schema present for this API. "
+                    f"Validation is therefore not possible. You can force this to be an error by enabling "
+                    f"the 'strict_validation' config option. You can silence this message by disabling validation "
+                    f"for this API using the 'validate' option."
+                )
+                return
 
         if isinstance(message, (RpcMessage, EventMessage)):
             self.schema.validate_parameters(api_name, event_or_rpc_name, message.kwargs)
-        elif isinstance(message, (ResultMessage)):
+        elif isinstance(message, ResultMessage):
             self.schema.validate_response(api_name, event_or_rpc_name, message.result)
 
     # Utilities

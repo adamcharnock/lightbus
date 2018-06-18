@@ -162,7 +162,7 @@ async def test_no_transport_type(loop):
 def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
     """Schema which always fails to validate"""
 
-    def create_bus_client_with_unhappy_schema(validate=True, strict_validation=True):
+    def create_bus_client_with_unhappy_schema(validate=True, strict_validation=False):
         schema = Schema(schema_transport=None)
         config = Config.load_dict(
             {"apis": {"default": {"validate": validate, "strict_validation": strict_validation}}}
@@ -170,6 +170,7 @@ def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
         fake_schema = {"parameters": {"p": {}}, "response": {}}
         mocker.patch.object(schema, "get_rpc_schema", autospec=True, return_value=fake_schema),
         mocker.patch.object(schema, "get_event_schema", autospec=True, return_value=fake_schema),
+        schema.local_schemas["api"] = fake_schema
         mocker.patch(
             "jsonschema.validate", autospec=True, side_effect=ValidationError("test error")
         ),
