@@ -10,7 +10,7 @@ from lightbus import (
 )
 from lightbus.config import Config
 from lightbus.exceptions import TransportNotFound
-from lightbus.transports.base import TransportRegistry
+from lightbus.transports.base import TransportRegistry, get_transport, get_transport_name
 
 pytestmark = pytest.mark.unit
 
@@ -43,6 +43,23 @@ def redis_other_config():
                 }
             }
         }
+    )
+
+
+@pytest.fixture()
+def redis_no_default_config():
+    return Config.load_dict(
+        {
+            "bus": {"schema": {"transport": {"redis": {}}}},
+            "apis": {
+                "other": {
+                    "rpc_transport": {"redis": {}},
+                    "result_transport": {"redis": {}},
+                    "event_transport": {"redis": {}},
+                }
+            },
+        },
+        set_defaults=False,
     )
 
 
@@ -149,3 +166,44 @@ def test_get_all_transports(redis_default_config):
     registry.set_event_transport("another", registry.get_event_transport("default"))
     registry.set_event_transport("foo", DebugEventTransport())
     assert len(registry.get_all_transports()) == 4
+
+
+def test_has_rpc_transport(redis_no_default_config):
+    registry = TransportRegistry().load_config(redis_no_default_config)
+    assert registry.has_rpc_transport("other")
+    assert not registry.has_rpc_transport("foo")
+
+
+def test_has_result_transport(redis_no_default_config):
+    registry = TransportRegistry().load_config(redis_no_default_config)
+    assert registry.has_result_transport("other")
+    assert not registry.has_result_transport("foo")
+
+
+def test_has_event_transport(redis_no_default_config):
+    registry = TransportRegistry().load_config(redis_no_default_config)
+    assert registry.has_event_transport("other")
+    assert not registry.has_event_transport("foo")
+
+
+def test_has_schema_transport(redis_no_default_config):
+    registry = TransportRegistry().load_config(redis_no_default_config)
+    assert registry.has_schema_transport()
+    registry.schema_transport = None
+    assert not registry.has_schema_transport()
+
+
+def test_get_transport():
+    assert get_transport("rpc", "redis")
+    with pytest.raises(TransportNotFound):
+        get_transport("rpc", "foo")
+
+
+def test_get_transport_name():
+    assert get_transport_name(RedisEventTransport) == "redis"
+
+    class FakeTransport(object):
+        pass
+
+    with pytest.raises(TransportNotFound):
+        get_transport_name(FakeTransport)
