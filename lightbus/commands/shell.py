@@ -28,7 +28,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         try:
             import bpython
             from bpython.curtsies import main as bpython_main
-        except ImportError:
+        except ImportError:  # pragma: no cover
             print("Lightbus shell requires bpython. Run `pip install bpython` to install bpython.")
             exit(1)
             return  # noqa
