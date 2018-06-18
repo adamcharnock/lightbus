@@ -112,7 +112,6 @@ class ApiConfig(object):
 
 
 class SchemaConfig(NamedTuple):
-    add_api_timeout: int = 1
     human_readable: bool = True
     ttl: int = 60
     transport: SchemaTransportSelector = None
@@ -134,8 +133,14 @@ class RootConfig(object):
         for k, v in kw.items():
             setattr(self, k, v)
 
-        self.service_name = self._format_name(self.service_name)
-        self.process_name = self._format_name(self.process_name)
+        self.set_service_name(self.service_name)
+        self.set_process_name(self.process_name)
+
+    def set_service_name(self, name):
+        self.service_name = self._format_name(name)
+
+    def set_process_name(self, name):
+        self.process_name = self._format_name(name)
 
     def _format_name(self, name):
         random_string = random_name(length=16)

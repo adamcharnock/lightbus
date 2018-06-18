@@ -934,10 +934,10 @@ def load_config(
         config = Config.load_dict({})
 
     if service_name:
-        config._config.service_name = service_name
+        config._config.set_service_name(service_name)
 
     if process_name:
-        config._config.process_name = process_name
+        config._config.set_process_name(process_name)
 
     return config
 
