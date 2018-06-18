@@ -1,13 +1,14 @@
 import asyncio
 import json
 from pathlib import Path
+from typing import NamedTuple
 
 import jsonschema
 import os
 import pytest
 
 from lightbus import Event, Api, Parameter, Schema
-from lightbus.exceptions import InvalidApiForSchemaCreation, SchemaNotFound
+from lightbus.exceptions import InvalidApiForSchemaCreation, SchemaNotFound, ValidationError
 from lightbus.schema.schema import api_to_schema
 from lightbus.transports.redis import RedisSchemaTransport
 
@@ -325,7 +326,7 @@ async def test_validate_parameters_rpc_valid(schema, TestApi):
 @pytest.mark.run_loop
 async def test_validate_parameters_rpc_invalid(schema, TestApi):
     await schema.add_api(TestApi())
-    with pytest.raises(jsonschema.ValidationError):
+    with pytest.raises(ValidationError):
         schema.validate_parameters("my.test_api", "my_proc", {"field": 123})
 
 
@@ -338,7 +339,7 @@ async def test_validate_parameters_event_valid(schema, TestApi):
 @pytest.mark.run_loop
 async def test_validate_parameters_event_invalid(schema, TestApi):
     await schema.add_api(TestApi())
-    with pytest.raises(jsonschema.ValidationError):
+    with pytest.raises(ValidationError):
         schema.validate_parameters("my.test_api", "my_event", {"field": 123})
 
 
@@ -351,8 +352,97 @@ async def test_validate_response_valid(schema, TestApi):
 @pytest.mark.run_loop
 async def test_validate_response_invalid(schema, TestApi):
     await schema.add_api(TestApi())
-    with pytest.raises(jsonschema.ValidationError):
+    with pytest.raises(ValidationError):
         schema.validate_response("my.test_api", "my_proc", 123)
+
+
+# Test validation error message types
+
+
+@pytest.mark.run_loop
+async def test_parameter_validation_error_parameter_mismatch(schema, TestApi):
+    # Test omitted parameter / unexpected parameter message
+    await schema.add_api(TestApi())
+    with pytest.raises(ValidationError) as ex_info:
+        schema.validate_parameters("my.test_api", "my_event", {"abc": "xyz"})
+
+    # Error message gives some sensible hints
+    assert "unwanted parameter" in str(ex_info.value)
+    assert "omitted a required" in str(ex_info.value)
+
+
+@pytest.mark.run_loop
+async def test_parameter_validation_error_bad_value(schema, TestApi):
+    # Test incorrect value message
+    await schema.add_api(TestApi())
+    # field should be a bool
+    with pytest.raises(ValidationError) as ex_info:
+        schema.validate_parameters("my.test_api", "my_event", {"field": "xyz"})
+
+    # Error message gives some sensible hints
+    assert "invalid value for the" in str(ex_info.value)
+
+
+@pytest.mark.run_loop
+async def test_parameter_validation_error_bad_structure(schema):
+    # A complex structure with an internal validation error
+    class Address(NamedTuple):
+        line_1: str
+
+    class User(NamedTuple):
+        address: Address
+
+    class UserApi(Api):
+        my_event = Event([Parameter("user", User)])
+
+        class Meta:
+            name = "my.user_api"
+
+    await schema.add_api(UserApi())
+    # field should be a bool
+    with pytest.raises(ValidationError) as ex_info:
+        schema.validate_parameters(
+            "my.user_api", "my_event", {"user": {"address": {"line_1": True}}}
+        )
+
+    # Error message gives some sensible hints
+    assert "internal structure" in str(ex_info.value)
+
+
+@pytest.mark.run_loop
+async def test_parameter_validation_error_response_type(schema, TestApi):
+    # Response should be string, but we use a bool to cause an error
+    await schema.add_api(TestApi())
+    with pytest.raises(ValidationError) as ex_info:
+        schema.validate_response("my.test_api", "my_proc", True)
+
+    # Error message gives some sensible hints
+    assert "incorrect type" in str(ex_info.value)
+
+
+@pytest.mark.run_loop
+async def test_parameter_validation_error_structure(schema, TestApi):
+    # A complex structure with an internal validation error
+    class Address(NamedTuple):
+        line_1: str
+
+    class User(NamedTuple):
+        address: Address
+
+    class UserApi(Api):
+
+        class Meta:
+            name = "my.user_api"
+
+        def my_proc(self) -> User:
+            pass
+
+    await schema.add_api(UserApi())
+    with pytest.raises(ValidationError) as ex_info:
+        schema.validate_response("my.user_api", "my_proc", {"address": {"line_1": True}})
+
+    # Error message gives some sensible hints
+    assert "internal structure" in str(ex_info.value)
 
 
 @pytest.mark.run_loop

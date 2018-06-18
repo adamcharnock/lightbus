@@ -1,5 +1,6 @@
 import inspect
 import json
+import logging
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Optional, TextIO, Union, ChainMap, List, Tuple
@@ -12,7 +13,12 @@ import itertools
 import sys
 
 import lightbus
-from lightbus.exceptions import InvalidApiForSchemaCreation, InvalidSchema, SchemaNotFound
+from lightbus.exceptions import (
+    InvalidApiForSchemaCreation,
+    InvalidSchema,
+    SchemaNotFound,
+    ValidationError,
+)
 from lightbus.schema.encoder import json_encode
 from lightbus.schema.hints_to_schema import (
     make_response_schema,
@@ -21,6 +27,8 @@ from lightbus.schema.hints_to_schema import (
 )
 from lightbus.transports.base import SchemaTransport
 from lightbus.utilities.io import make_file_safe_api_name
+
+logger = logging.getLogger(__name__)
 
 
 class Schema(object):
@@ -122,7 +130,48 @@ class Schema(object):
         or return None if valid.
         """
         json_schema = self.get_event_or_rpc_schema(api_name, event_or_rpc_name)["parameters"]
-        jsonschema.validate(parameters, json_schema)
+        try:
+            jsonschema.validate(parameters, json_schema)
+        except jsonschema.ValidationError as e:
+            logger.error(e)
+            path = list(e.absolute_path)
+            if not path:
+                raise ValidationError(
+                    f"Validation error when using JSON schema to validate parameters for \n"
+                    f"{api_name}.{event_or_rpc_name}.\n"
+                    f"\n"
+                    f"It is likely you have included an unwanted parameter or omitted a required \n"
+                    f"parameter.\n"
+                    f"\n"
+                    f"The error was: {e.message}\n"
+                    f"\n"
+                    f"The full validator error was logged above"
+                ) from None
+            elif len(path) == 1:
+                raise ValidationError(
+                    f"Validation error when using JSON schema to validate parameters for \n"
+                    f"{api_name}.{event_or_rpc_name}.\n"
+                    f"\n"
+                    f"It is likely that you have passed in invalid value for the \n"
+                    f"'{path[0]}' parameter.\n"
+                    f"\n"
+                    f"The error given was: {e.message}\n"
+                    f"\n"
+                    f"The full validator error was logged above"
+                ) from None
+            else:
+                raise ValidationError(
+                    f"Validation error when using JSON schema to validate parameters for \n"
+                    f"{api_name}.{event_or_rpc_name}.\n"
+                    f"\n"
+                    f"This was an error in validating the internal structure of one \n"
+                    f"of the parameters' values. The path to this error is \n"
+                    f"'<root>.{'.'.join(e.absolute_path)}'.\n"
+                    f"\n"
+                    f"The error given was: {e.message}\n"
+                    f"\n"
+                    f"The full validator error was logged above"
+                ) from None
 
     def validate_response(self, api_name, rpc_name, response):
         """Validate the parameters for the given event/rpc
@@ -134,7 +183,36 @@ class Schema(object):
         event will result in a SchemaNotFound error.
         """
         json_schema = self.get_rpc_schema(api_name, rpc_name)["response"]
-        jsonschema.validate(response, json_schema)
+        try:
+            jsonschema.validate(response, json_schema)
+        except jsonschema.ValidationError as e:
+            logger.error(e)
+            path = list(e.absolute_path)
+            if not path:
+                raise ValidationError(
+                    f"Validation error when using JSON schema to validate result from \n"
+                    f"RPC {api_name}.{rpc_name}.\n"
+                    f"\n"
+                    f"It is likely the response was either of the incorrect type, or "
+                    f"some fields were erroneously absent/present.\n"
+                    f"\n"
+                    f"The error was: {e.message}\n"
+                    f"\n"
+                    f"The full validator error was logged above"
+                ) from None
+            else:
+                raise ValidationError(
+                    f"Validation error when using JSON schema to validate result from \n"
+                    f"RPC {api_name}.{rpc_name}.\n"
+                    f"\n"
+                    f"This was an error in validating the internal structure of the \n"
+                    f"data returned values. The path to this error is \n"
+                    f"'<root>.{'.'.join(e.absolute_path)}'.\n"
+                    f"\n"
+                    f"The error given was: {e.message}\n"
+                    f"\n"
+                    f"The full validator error was logged above"
+                ) from None
 
     @property
     def api_names(self) -> List[str]:
