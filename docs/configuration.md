@@ -176,15 +176,22 @@ The API config resides under the [API configuration listing].
 
 Each API can be individually configured using the options below:
 
-* `rpc_timeout` (default: `5`) –
-* `event_listener_setup_timeout` (default: `1`) –
-* `event_fire_timeout` (default: `1`) –
-* `validate` –
-* `event_transport` (default: ``) – Contains the [transport selector].
-* `rpc_transport` (default: ``) – Contains the [transport selector].
-* `result_transport` (default: ``) – Contains the [transport selector].
-* `strict_validation` (default: `False`) –
-* `cast_values` (default: `True`) –
+* `rpc_timeout` (default: `5`) – Timeout when calling RPCs on this API
+* `event_listener_setup_timeout` (default: `1`) – Timeout seconds when setting up event listeners
+  (only applies when using the blocking api)
+* `event_fire_timeout` (default: `1`) – Timeout seconds when firing events on the bus
+  (only applies when using the blocking api)
+* `validate` – Contains the [api validation config]. May also be set to
+  boolean `true` or `false` to blanked enable/disable.
+* `strict_validation` (default: `false`) – Raise an exception if we receive a message
+  from an API for which there is no schema available on the bus. If `false`
+  a warning will be emitted instead.
+* `event_transport` – Contains the [transport selector].
+* `rpc_transport` – Contains the [transport selector].
+* `result_transport`  – Contains the [transport selector].
+* `cast_values` (default: `true`) – If enabled, incoming values will be best-effort
+  casted based on the annotations of the RPC method signature or event listener.
+  See [typing](typing.md).
 
 ## Schema config
 
@@ -199,6 +206,9 @@ The schema config resides under the [bus config].
 * `transport` – Contains the schema [transport selector]
 
 ## Transport selector
+
+The schema config resides under both the [API config] and the
+[schema config].
 
 Transports are specifed as follows:
 
@@ -237,8 +247,22 @@ configurable on a per-api level.
 For more information see [transports](transports.md).
 
 
+## API validation config
 
+The schema config resides under the `validate` key within
+the [API config].
 
+Available options are:
+
+* `outgoing` (default `true`) – Validate outgoing messages against any
+  available API schema.
+* `incoming` (default `true`) – Validate incoming messages against any
+  available API schema.
+
+A warning will be emitted if validation is enabled and the schema
+is not present on the bus.
+You can turn this into an error by enabling `strict_validation`
+within the [API config].
 
 [service-level setup]: #2-service-level-setup
 [root config]: #root-config
@@ -248,3 +272,4 @@ For more information see [transports](transports.md).
 [schema config]: #schema-config
 [transport selector]: #transport-selector
 [api config]: #api-config
+[api validation config]: #api-validation-config
