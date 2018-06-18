@@ -1,16 +1,12 @@
 import os
-import sys
 from tempfile import NamedTemporaryFile
 
-import bpython
 import pytest
-from bpython.curtsies import FullCurtsiesRepl
 
 import lightbus.commands.run
 from lightbus import commands, BusClient
 from lightbus.config import Config
 from lightbus.config.structure import RootConfig
-from lightbus.plugins import autoload_plugins
 
 pytestmark = pytest.mark.unit
 

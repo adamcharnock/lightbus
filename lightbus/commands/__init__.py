@@ -2,14 +2,13 @@ import argparse
 import logging
 import sys
 import os
-from asyncio.events import get_event_loop
 
 import lightbus
 import lightbus.bus
 from lightbus.config import Config
 from lightbus.plugins import autoload_plugins, plugin_hook, remove_all_plugins
 from lightbus.utilities.logging import configure_logging
-from lightbus.utilities.async import block
+from lightbus.utilities.async import block, get_event_loop
 import lightbus.commands.run
 import lightbus.commands.shell
 import lightbus.commands.dump_schema
