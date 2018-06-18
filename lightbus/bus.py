@@ -229,7 +229,7 @@ class BusClient(object):
         # Cancel the tasks we created above
         block(cancel(consume_rpc_task, monitor_task), loop=self.loop, timeout=1)
 
-    def _actually_run_forever(self):
+    def _actually_run_forever(self):  # pragma: no cover
         """Simply start the loop running forever
 
         This just makes testing easier as we can mock out this method

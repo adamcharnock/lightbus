@@ -28,7 +28,8 @@ async def test_fully_qualified_name():
     child_node2 = BusNode(name="auth", parent=child_node1, bus_client=None)
     assert root_node.fully_qualified_name == ""
     assert child_node1.fully_qualified_name == "my_api"
-    assert child_node2.fully_qualified_name == "my_api.auth"
+    assert child_node1.fully_qualified_name == "my_api"
+    assert str(child_node2) == "my_api.auth"
 
 
 @pytest.mark.run_loop

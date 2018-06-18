@@ -275,3 +275,14 @@ def test_run_forever(dummy_bus: lightbus.BusNode, mocker, dummy_api):
     m = mocker.patch.object(dummy_bus.bus_client, "_actually_run_forever")
     dummy_bus.bus_client.run_forever()
     assert m.called
+
+
+def test_register_listener_context_manager(dummy_bus: lightbus.BusNode):
+    client = dummy_bus.bus_client
+    assert len(client._listeners) == 0
+    with client._register_listener([("api_name", "event_name")]):
+        assert client._listeners[("api_name", "event_name")] == 1
+        with client._register_listener([("api_name", "event_name")]):
+            assert client._listeners[("api_name", "event_name")] == 2
+        assert client._listeners[("api_name", "event_name")] == 1
+    assert len(client._listeners) == 0
