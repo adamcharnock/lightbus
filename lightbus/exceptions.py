@@ -169,7 +169,3 @@ class TransportIsClosed(LightbusException):
 
 class DeformError(LightbusException):
     pass
-
-
-class ValidationApiNotFound(LightbusException):
-    pass

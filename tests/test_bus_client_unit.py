@@ -162,7 +162,8 @@ async def test_no_transport_type(loop):
 def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
     """Schema which always fails to validate"""
 
-    def create_bus_client_with_unhappy_schema(validate=True, strict_validation=False):
+    # Note we default to strict_validation for most tests
+    def create_bus_client_with_unhappy_schema(validate=True, strict_validation=True):
         schema = Schema(schema_transport=None)
         config = Config.load_dict(
             {"apis": {"default": {"validate": validate, "strict_validation": strict_validation}}}
@@ -170,6 +171,8 @@ def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
         fake_schema = {"parameters": {"p": {}}, "response": {}}
         mocker.patch.object(schema, "get_rpc_schema", autospec=True, return_value=fake_schema),
         mocker.patch.object(schema, "get_event_schema", autospec=True, return_value=fake_schema),
+        # Make sure the test api named "api" has a schema, otherwise strict_validation
+        # will fail it
         schema.local_schemas["api"] = fake_schema
         mocker.patch(
             "jsonschema.validate", autospec=True, side_effect=ValidationError("test error")
@@ -218,8 +221,23 @@ def test_validate_disabled(create_bus_client_with_unhappy_schema):
 def test_validate_non_strict(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema(strict_validation=False)
 
-    message = RpcMessage(api_name="api", procedure_name="proc", kwargs={"p": 1})
-    client._validate(message, direction="outgoing", api_name="api", procedure_name="proc")
+    # Using 'missing_api', which there is no schema for, so it
+    # should validate just fine as strict_validation=False
+    # (albeit with a warning)
+    message = RpcMessage(api_name="missing_api", procedure_name="proc", kwargs={"p": 1})
+    client._validate(message, direction="outgoing", api_name="missing_api", procedure_name="proc")
+
+
+def test_validate_strict_missing_api(create_bus_client_with_unhappy_schema):
+    client: BusClient = create_bus_client_with_unhappy_schema(strict_validation=True)
+
+    # Using 'missing_api', which there is no schema for, so it
+    # raise an error as strict_validation=True
+    message = RpcMessage(api_name="missing_api", procedure_name="proc", kwargs={"p": 1})
+    with pytest.raises(UnknownApi):
+        client._validate(
+            message, direction="outgoing", api_name="missing_api", procedure_name="proc"
+        )
 
 
 def test_validate_incoming_disabled(create_bus_client_with_unhappy_schema):

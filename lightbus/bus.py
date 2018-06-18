@@ -25,7 +25,6 @@ from lightbus.exceptions import (
     InvalidParameters,
     OnlyAvailableOnRootNode,
     FailedToImportBusModule,
-    ValidationApiNotFound,
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
@@ -624,7 +623,7 @@ class BusClient(object):
 
         if api_name not in self.schema:
             if strict_validation:
-                raise ValidationApiNotFound(
+                raise UnknownApi(
                     f"Validation is enabled for API {api_name}, but there is no schema present for this API. "
                     f"Validation is therefore not possible. You are also seeing this error because the "
                     f"'strict_validation' setting is enabled. Disabling this setting will turn this exception "
