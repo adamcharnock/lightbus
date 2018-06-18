@@ -34,8 +34,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
     def handle(self, args, config):
         self.setup_logging(args.log_level or "warning", config)
 
-        self.import_bus(args)
-        bus = lightbus.create(config)
+        bus_module, bus = self.import_bus(args)
         bus.schema.save_local(args.schema)
 
         if args.schema:

@@ -37,7 +37,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
     def handle(self, args, config):
         self.setup_logging(args.log_level or "warning", config)
 
-        self.import_bus(args)
+        bus_module, bus = self.import_bus(args)
 
         schema = json_encode(config_as_json_schema(), indent=2, sort_keys=True)
 

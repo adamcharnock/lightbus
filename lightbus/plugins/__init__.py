@@ -212,7 +212,7 @@ async def plugin_hook(name, **kwargs):
     global _plugins
     if _plugins is None:
         raise PluginsNotLoaded(
-            "You must call load_plugins() before calling plugin_hook('{}').".format(name)
+            "You must call autoload_plugins() before calling plugin_hook('{}').".format(name)
         )
     if name not in _hooks_names:
         raise PluginHookNotFound(

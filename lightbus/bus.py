@@ -90,7 +90,10 @@ class BusClient(object):
 
         if plugins is None:
             logger.debug("Auto-loading any installed Lightbus plugins...")
-            plugins = autoload_plugins(self.config)
+            # Force auto-loading as many commands need to do config-less best-effort
+            # plugin loading. But now we have the config loaded so we can
+            # make sure we load the plugins properly.
+            plugins = autoload_plugins(self.config, force=True)
         else:
             logger.debug("Loading explicitly specified Lightbus plugins....")
             manually_set_plugins(plugins)
@@ -913,8 +916,8 @@ async def create_async(
     return node_class(name="", parent=None, bus_client=bus_client)
 
 
-def create(loop=None, *args, **kwargs):
-    loop = loop or asyncio.get_event_loop()
+def create(*args, **kwargs):
+    loop = kwargs.get("loop") or asyncio.get_event_loop()
     return block(create_async(*args, **kwargs), loop=loop, timeout=5)
 
 

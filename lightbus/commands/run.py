@@ -38,17 +38,10 @@ class Command(LogLevelMixin, BusImportMixin, object):
         )
         parser_run.set_defaults(func=self.handle)
 
-    def handle(self, args, config, dry_run=False):
+    def handle(self, args, config):
         self.setup_logging(args.log_level, config)
 
-        bus_module = self.import_bus(args)
-        try:
-            bus = bus_module.bus
-        except AttributeError:
-            raise NoBusFoundInBusModule(
-                f"Bus module at {bus_module.__file__} contains no variable named 'bus'. "
-                f"Your bus module should contain the line 'bus = lightbus.create()'."
-            )
+        bus_module, bus = self.import_bus(args)
 
         # TODO: Move to lightbus.create()?
         if args.schema:
@@ -65,9 +58,6 @@ class Command(LogLevelMixin, BusImportMixin, object):
             co = before_server_start(bus)
             if iscoroutine(co):
                 block(co, asyncio.get_event_loop(), timeout=10)
-
-        if dry_run:
-            return
 
         block(plugin_hook("receive_args", args=args), asyncio.get_event_loop(), timeout=5)
 

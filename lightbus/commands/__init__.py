@@ -66,8 +66,6 @@ def parse_args(args=None):
     # Note that we don't have an after_parse_args plugin hook. Instead we use the receive_args
     # hook which is called once we have instantiated our plugins
 
-    remove_all_plugins()
-
     return args
 
 

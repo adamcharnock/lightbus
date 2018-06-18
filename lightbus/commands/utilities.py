@@ -4,6 +4,7 @@ import logging
 from lightbus import configure_logging
 import lightbus.bus
 from lightbus.config import Config
+from lightbus.exceptions import NoBusFoundInBusModule
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,14 @@ class BusImportMixin(object):
         )
 
     def import_bus(self, args):
-        return lightbus.bus.import_bus_py(args.bus_module_name)
+        bus_module = lightbus.bus.import_bus_py(args.bus_module_name)
+        try:
+            return bus_module, bus_module.bus
+        except AttributeError:
+            raise NoBusFoundInBusModule(
+                f"Bus module at {bus_module.__file__} contains no variable named 'bus'. "
+                f"Your bus module should contain the line 'bus = lightbus.create()'."
+            )
 
 
 class LogLevelMixin(object):

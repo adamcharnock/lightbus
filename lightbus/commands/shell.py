@@ -22,7 +22,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         self.setup_import_parameter(parser_shell)
         parser_shell.set_defaults(func=self.handle)
 
-    def handle(self, args, config):
+    def handle(self, args, config, fake_it=False):
         self.setup_logging(args.log_level or "warning", config)
 
         try:
@@ -36,16 +36,17 @@ class Command(LogLevelMixin, BusImportMixin, object):
         logger = logging.getLogger("lightbus")
         logger.setLevel(logging.WARNING)
 
-        bus_module = self.import_bus(args)
-        bus = lightbus.create(config, plugins={})
+        bus_module, bus = self.import_bus(args)
 
         objects = {k: v for k, v in lightbus.__dict__.items() if isclass(v)}
         objects.update(bus=bus)
 
         block(plugin_hook("receive_args", args=args), asyncio.get_event_loop(), timeout=5)
 
-        bpython_main(
-            args=["-i", "-q"],
-            locals_=objects,
-            welcome_message="Welcome to the Lightbus shell. Use `bus` to access your bus.",
-        )
+        # Ability to not start up the repl is useful for testing
+        if not fake_it:
+            bpython_main(
+                args=["-i", "-q"],
+                locals_=objects,
+                welcome_message="Welcome to the Lightbus shell. Use `bus` to access your bus.",
+            )

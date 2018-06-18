@@ -42,6 +42,7 @@ setup(
             # Docs
             "mkdocs==0.17.4",
             "mkdocs-material==2.9.0",
+            "bpython",
         ]
     },
     include_package_data=True,
