@@ -215,7 +215,7 @@ class BusClient(object):
         self.loop.add_signal_handler(signal.SIGTERM, self.loop.stop)
 
         try:
-            self.loop.run_forever()
+            self._actually_run_forever()
             logger.error("Interrupt received. Shutting down...")
         except KeyboardInterrupt:
             logger.error("Keyboard interrupt. Shutting down...")
@@ -228,6 +228,13 @@ class BusClient(object):
 
         # Cancel the tasks we created above
         block(cancel(consume_rpc_task, monitor_task), loop=self.loop, timeout=1)
+
+    def _actually_run_forever(self):
+        """Simply start the loop running forever
+
+        This just makes testing easier as we can mock out this method
+        """
+        self.loop.run_forever()
 
     # RPCs
 

@@ -13,6 +13,7 @@ from lightbus.exceptions import (
     TransportNotFound,
     InvalidName,
 )
+from lightbus.utilities.async import get_event_loop
 
 pytestmark = pytest.mark.unit
 
@@ -267,3 +268,10 @@ def test_setup_transports_opened(loop, mocker):
         plugins={},
     )
     assert m.call_count == 1
+
+
+def test_run_forever(dummy_bus: lightbus.BusNode, mocker, dummy_api):
+    """A simple test to ensure run_forever executes without errors"""
+    m = mocker.patch.object(dummy_bus.bus_client, "_actually_run_forever")
+    dummy_bus.bus_client.run_forever()
+    assert m.called
