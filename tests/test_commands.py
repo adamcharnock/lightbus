@@ -95,7 +95,7 @@ def test_commands_dump_schema(redis_config_file):
     os.remove("/tmp/test_commands_dump_schema.json")
 
 
-def test_commands_dump_config_schema(redis_config_file):
+def test_commands_dump_config_schema(redis_config_file, dummy_api):
     # Prevent the shell mainloop from kicking off
     args = commands.parse_args(
         args=[
