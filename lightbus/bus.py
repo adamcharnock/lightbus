@@ -925,7 +925,7 @@ async def create_async(
 
 
 def create(*args, **kwargs):
-    loop = kwargs.get("loop") or asyncio.get_event_loop()
+    loop = kwargs.get("loop") or get_event_loop()
     return block(create_async(*args, **kwargs), loop=loop, timeout=5)
 
 
