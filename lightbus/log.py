@@ -257,7 +257,7 @@ class LBullets(L):
 
     def render(self, parent_style="", style="", tty=True, additional_line_prefix="", msg_cb=None):
         if not tty:
-            return "{}: {}".format(self.log_message, ", ".join(self.items))
+            return "{}: {}".format(self.log_message, ", ".join(map(str, self.items)))
 
         style = style or self.style
 
