@@ -377,7 +377,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         reclaim_batch_size: int = None,
         acknowledgement_timeout: float = 60,
         max_stream_length: Optional[int] = 100000,
-        stream_use: StreamUse = StreamUse.PER_EVENT,
+        stream_use: StreamUse = StreamUse.PER_API,
     ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self.serializer = serializer
@@ -407,7 +407,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         deserializer: str = "lightbus.serializers.ByFieldMessageDeserializer",
         acknowledgement_timeout: float = 60,
         max_stream_length: Optional[int] = 100000,
-        stream_use: StreamUse = StreamUse.PER_EVENT,
+        stream_use: StreamUse = StreamUse.PER_API,
     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(EventMessage)
