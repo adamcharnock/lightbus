@@ -54,7 +54,8 @@ def deform_to_bus(value):
         raise DeformError(
             f"Failed to deform value of type {type(value)} for "
             f"transmission on the bus. Perhaps specify the "
-            f"__to_bus__() and __from_bus__() methods on the class?."
+            f"__to_bus__() and __from_bus__() methods on the class. Alternatively, "
+            f"transform the data before placing it onto the bus."
         )
     else:
         # A built-in that we missed in the above checks?
