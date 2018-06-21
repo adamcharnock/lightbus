@@ -911,8 +911,10 @@ def load_config(
     process_name = process_name or os.environ.get("LIGHTBUS_PROCESS_NAME")
 
     if from_file:
+        logger.info(f"Loading config from {from_file}")
         config = Config.load_file(file_path=from_file)
     else:
+        logger.info(f"No config file specified, will use default config")
         config = Config.load_dict({})
 
     if service_name:
