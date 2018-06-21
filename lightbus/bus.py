@@ -76,7 +76,7 @@ class BusClient(object):
         """
         logger.info(
             LBullets(
-                "Lightbus getting ready to start",
+                "Lightbus is setting up",
                 items={
                     "service_name (set with -s or LIGHTBUS_SERVICE_NAME)": Bold(
                         self.config.service_name
