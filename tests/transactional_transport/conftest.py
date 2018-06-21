@@ -11,6 +11,7 @@ import pytest
 import lightbus
 from lightbus import TransactionalEventTransport, BusNode
 from lightbus.transports.base import TransportRegistry
+from lightbus.transports.redis import StreamUse
 from lightbus.transports.transactional import DbApiConnection
 from lightbus.utilities.async import block
 
@@ -162,7 +163,10 @@ def transactional_bus_factory(dummy_bus: BusNode, new_redis_pool, loop):
     async def inner():
         transport = TransactionalEventTransport(
             child_transport=lightbus.RedisEventTransport(
-                redis_pool=pool, consumer_group_prefix="test_cg", consumer_name="test_consumer"
+                redis_pool=pool,
+                consumer_group_prefix="test_cg",
+                consumer_name="test_consumer",
+                stream_use=StreamUse.PER_EVENT,
             )
         )
         config = dummy_bus.bus_client.config
@@ -182,6 +186,7 @@ def transactional_bus(dummy_bus: BusNode, new_redis_pool, aiopg_connection, aiop
             redis_pool=new_redis_pool(maxsize=10000),
             consumer_group_prefix="test_cg",
             consumer_name="test_consumer",
+            stream_use=StreamUse.PER_EVENT,
         )
     )
     registry = dummy_bus.bus_client.transport_registry

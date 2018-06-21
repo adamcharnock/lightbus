@@ -134,6 +134,7 @@ async def test_consume_events_multiple_consumers_one_group(
             redis_pool=redis_pool,
             consumer_group_prefix="test_cg",
             consumer_name=f"test_consumer{consumer_number}",
+            stream_use=StreamUse.PER_EVENT,
         )
         consumer = event_transport.consume(
             listen_for=[("my.dummy", "my_event")],
@@ -340,6 +341,7 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
         consumer_group_prefix="test_group",
         consumer_name="good_consumer",
         acknowledgement_timeout=0.01,  # in ms, short for the sake of testing
+        stream_use=StreamUse.PER_EVENT,
     )
     reclaimer = event_transport._reclaim_lost_messages(
         stream_names=["my.dummy.my_event:stream"],
@@ -384,6 +386,7 @@ async def test_reclaim_lost_messages_ignores_non_timed_out_messages(
         consumer_name="good_consumer",
         # in ms, longer as we want to check that the messages is not reclaimed
         acknowledgement_timeout=0.9,
+        stream_use=StreamUse.PER_EVENT,
     )
     reclaimer = event_transport._reclaim_lost_messages(
         stream_names=["my.dummy.my_event:stream"],
@@ -427,6 +430,7 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
         consumer_group_prefix="",
         consumer_name="good_consumer",
         acknowledgement_timeout=0.01,  # in ms, short for the sake of testing
+        stream_use=StreamUse.PER_EVENT,
     )
     consumer = event_transport.consume(
         listen_for=[("my.dummy", "my_event")],
@@ -474,7 +478,10 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
     )
 
     event_transport = RedisEventTransport(
-        redis_pool=redis_pool, consumer_group_prefix="", consumer_name="good_consumer"
+        redis_pool=redis_pool,
+        consumer_group_prefix="",
+        consumer_name="good_consumer",
+        stream_use=StreamUse.PER_EVENT,
     )
     consumer = event_transport.consume(
         listen_for=[("my.dummy", "my_event")],

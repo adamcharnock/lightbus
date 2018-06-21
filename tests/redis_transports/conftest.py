@@ -6,6 +6,7 @@ from aioredis import create_redis_pool
 
 import lightbus
 from lightbus import BusNode
+from lightbus.transports.redis import StreamUse
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,8 @@ def redis_event_transport(new_redis_pool, server, loop):
         redis_pool=new_redis_pool(maxsize=10000),
         consumer_group_prefix="test_cg",
         consumer_name="test_consumer",
+        # This used to be the default, so we still test against it here
+        stream_use=StreamUse.PER_EVENT,
     )
 
 
