@@ -128,6 +128,13 @@ class RedisTransportMixin(object):
             del self._local.redis_pool
         self._closed = True
 
+    def __str__(self):
+        if hasattr(self._local, "redis_pool"):
+            conn = self._local.redis_pool.connection
+            return f"redis://{conn.address[0]}:{conn.address[1]}/{conn.db}"
+        else:
+            return self.connection_parameters.get("address", "Unknown URL")
+
 
 class RedisRpcTransport(RedisTransportMixin, RpcTransport):
     """ Redis RPC transport providing at-most-once delivery

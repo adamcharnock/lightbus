@@ -41,6 +41,7 @@ from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string, import_module_from_string
+from lightbus.utilities.logging import log_transport_information
 
 __all__ = ["BusClient", "BusNode", "create", "create_async"]
 
@@ -88,6 +89,15 @@ class BusClient(object):
             )
         )
 
+        # Log the transport information
+        rpc_transport = self.transport_registry.get_rpc_transport("default", default=None)
+        result_transport = self.transport_registry.get_result_transport("default", default=None)
+        event_transport = self.transport_registry.get_event_transport("default", default=None)
+        log_transport_information(
+            rpc_transport, result_transport, event_transport, self.schema.schema_transport, logger
+        )
+
+        # Log the plugins we have
         if plugins is None:
             logger.debug("Auto-loading any installed Lightbus plugins...")
             # Force auto-loading as many commands need to do config-less best-effort
@@ -150,42 +160,6 @@ class BusClient(object):
             return get_event_loop()
 
     def run_forever(self, *, consume_rpcs=True):
-        rpc_transport = self.transport_registry.get_rpc_transport("default", default=None)
-        result_transport = self.transport_registry.get_result_transport("default", default=None)
-        event_transport = self.transport_registry.get_event_transport("default", default=None)
-
-        logger.info(
-            LBullets(
-                "Lightbus getting ready to run. Default transports are",
-                items={
-                    "RPC transport": L(
-                        "{}.{}", rpc_transport.__module__, Bold(rpc_transport.__class__.__name__)
-                    ),
-                    "Result transport": L(
-                        "{}.{}",
-                        result_transport.__module__,
-                        Bold(result_transport.__class__.__name__),
-                    )
-                    if rpc_transport
-                    else None,
-                    "Event transport": L(
-                        "{}.{}",
-                        event_transport.__module__,
-                        Bold(event_transport.__class__.__name__),
-                    )
-                    if rpc_transport
-                    else None,
-                    "Schema transport": L(
-                        "{}.{}",
-                        self.schema.schema_transport.__module__,
-                        Bold(self.schema.schema_transport.__class__.__name__),
-                    )
-                    if rpc_transport
-                    else None,
-                },
-            )
-        )
-
         registry.add(LightbusStateApi())
         registry.add(LightbusMetricsApi())
 
