@@ -1,6 +1,5 @@
 import jsonschema
 import pytest
-from jsonschema import ValidationError
 
 import lightbus
 from lightbus import Schema, RpcMessage, ResultMessage, EventMessage, BusClient
@@ -12,6 +11,7 @@ from lightbus.exceptions import (
     InvalidEventListener,
     TransportNotFound,
     InvalidName,
+    ValidationError,
 )
 from lightbus.utilities.async import get_event_loop
 
@@ -188,7 +188,7 @@ def test_rpc_validate_incoming(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema()
 
     message = RpcMessage(api_name="api", procedure_name="proc", kwargs={"p": 1})
-    with pytest.raises(jsonschema.ValidationError):
+    with pytest.raises(ValidationError):
         client._validate(message, direction="outgoing", api_name="api", procedure_name="proc")
     jsonschema.validate.assert_called_with({"p": 1}, {"p": {}})
 
@@ -197,7 +197,7 @@ def test_result_validate(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema()
 
     message = ResultMessage(result="123", rpc_message_id="123")
-    with pytest.raises(jsonschema.ValidationError):
+    with pytest.raises(ValidationError):
         client._validate(message, direction="outgoing", api_name="api", procedure_name="proc")
     jsonschema.validate.assert_called_with("123", {})
 
@@ -206,7 +206,7 @@ def test_event_validate(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema()
 
     message = EventMessage(api_name="api", event_name="proc", kwargs={"p": 1})
-    with pytest.raises(jsonschema.ValidationError):
+    with pytest.raises(ValidationError):
         client._validate(message, direction="outgoing", api_name="api", procedure_name="proc")
     jsonschema.validate.assert_called_with({"p": 1}, {"p": {}})
 
@@ -251,7 +251,7 @@ def test_validate_incoming_enabled(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema(validate={"incoming": True})
 
     message = RpcMessage(api_name="api", procedure_name="proc", kwargs={"p": 1})
-    with pytest.raises(jsonschema.ValidationError):
+    with pytest.raises(ValidationError):
         client._validate(message, direction="incoming", api_name="api", procedure_name="proc")
 
 
@@ -266,7 +266,7 @@ def test_validate_outgoing_enabled(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema(validate={"outgoing": True})
 
     message = RpcMessage(api_name="api", procedure_name="proc", kwargs={"p": 1})
-    with pytest.raises(jsonschema.ValidationError):
+    with pytest.raises(ValidationError):
         client._validate(message, direction="outgoing", api_name="api", procedure_name="proc")
 
 
