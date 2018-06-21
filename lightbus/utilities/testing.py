@@ -7,7 +7,14 @@ from unittest.mock import patch
 
 from typing import List, Dict
 
-from lightbus import BusNode, RpcTransport, EventTransport, SchemaTransport, ResultTransport
+from lightbus import (
+    BusNode,
+    RpcTransport,
+    EventTransport,
+    SchemaTransport,
+    ResultTransport,
+    EventMessage,
+)
 from lightbus.transports.base import TransportRegistry
 
 _registry: Dict[str, List] = {}
@@ -46,7 +53,7 @@ class MockResult(object):
         self.event: TestEventTransport = event_transport
         self.schema: TestSchemaTransport = schema_transport
 
-    def assertEventFired(self, full_event_name, times=None):
+    def assertEventFired(self, full_event_name, *, times=None):
         fired_events = [em.canonical_name for em, options in self.event.events]
         assert (
             full_event_name in fired_events
@@ -57,6 +64,12 @@ class MockResult(object):
             assert (
                 total_times_fired == times
             ), f"Event fired the incorrect number of times. " f"Expected {times}, actual {total_times_fired}"
+
+    def getEventMessages(self, full_event_name=None):
+        if full_event_name is None:
+            return [m for m, _ in self.event.events]
+        else:
+            return [m for m, _ in self.event.events if m.canonical_name == full_event_name]
 
     def __repr__(self):
         return f"<MockResult: events: {len(self.event.events)}>"
