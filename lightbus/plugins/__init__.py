@@ -232,12 +232,6 @@ async def plugin_hook(name, **kwargs):
             except LightbusShutdownInProgress as e:
                 logger.info("Shutdown in progress: {}".format(e))
             except Exception as e:
-                logger.error(
-                    "Exception while executing plugin hook {}.{}.{}".format(
-                        plugin.__module__, plugin.__class__.__name__, name
-                    )
-                )
-                logger.exception(e)
-                traceback.print_exc()
+                raise
 
     return return_values
