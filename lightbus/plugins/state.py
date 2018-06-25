@@ -12,6 +12,7 @@ from lightbus.api import registry
 from lightbus.message import EventMessage
 from lightbus.plugins import LightbusPlugin, is_plugin_loaded
 from lightbus.plugins.metrics import MetricsPlugin
+from lightbus.utilities.async import cancel
 
 if False:
     from lightbus import BusClient
@@ -103,7 +104,9 @@ class StatePlugin(LightbusPlugin):
         )
         if self.ping_enabled:
             logger.info("Ping messages will be sent every {} seconds".format(self.ping_interval))
-            future = asyncio.ensure_future(self._send_ping(bus_client), loop=bus_client.loop)
+            self._ping_task = asyncio.ensure_future(
+                self._send_ping(bus_client), loop=bus_client.loop
+            )
         else:
             logger.warning(
                 "Ping events have been disabled. This will reduce log volume and bus traffic, but "
@@ -120,6 +123,7 @@ class StatePlugin(LightbusPlugin):
             ),
             options={},
         )
+        await cancel(self._ping_task)
 
     async def _send_ping(self, bus_client: "BusClient"):
         event_transport = bus_client.transport_registry.get_event_transport("internal.metrics")

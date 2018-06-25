@@ -4,7 +4,7 @@ import pytest
 from lightbus.api import registry, Api, Event
 from lightbus.bus import BusNode
 from lightbus.plugins.state import StatePlugin
-
+from lightbus.utilities.async import cancel
 
 pytestmark = pytest.mark.unit
 
@@ -77,11 +77,14 @@ async def test_ping(dummy_bus: BusNode, loop, get_dummy_events):
 @pytest.mark.run_loop
 async def test_after_server_stopped(dummy_bus: BusNode, loop, get_dummy_events):
     registry.add(TestApi())
-    await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
+    listener = await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
 
-    await StatePlugin(service_name="foo", process_name="bar").after_server_stopped(
-        bus_client=dummy_bus.bus_client
-    )
+    plugin = StatePlugin(service_name="foo", process_name="bar")
+    plugin._ping_task = asyncio.Future()
+    await plugin.after_server_stopped(bus_client=dummy_bus.bus_client)
+
+    # Give any pending coroutines coroutines a moment to be awaited
+    await asyncio.sleep(0.001)
 
     dummy_events = get_dummy_events()
     assert len(dummy_events) == 1
@@ -91,3 +94,5 @@ async def test_after_server_stopped(dummy_bus: BusNode, loop, get_dummy_events):
     assert event_message.event_name == "server_stopped"
     assert event_message.kwargs["service_name"] == "foo"
     assert event_message.kwargs["process_name"] == "bar"
+
+    await cancel(listener)
