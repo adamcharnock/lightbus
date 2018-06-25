@@ -240,8 +240,22 @@ async def test_multiple_event_transports(loop, server, redis_server_b):
         {
             "bus": {"schema": {"transport": {"redis": {"url": f"redis://localhost:{port_a}"}}}},
             "apis": {
-                "default": {"event_transport": {"redis": {"url": f"redis://localhost:{port_a}"}}},
-                "api_b": {"event_transport": {"redis": {"url": f"redis://localhost:{port_b}"}}},
+                "default": {
+                    "event_transport": {
+                        "redis": {
+                            "url": f"redis://localhost:{port_a}",
+                            "stream_use": StreamUse.PER_EVENT.value,
+                        }
+                    }
+                },
+                "api_b": {
+                    "event_transport": {
+                        "redis": {
+                            "url": f"redis://localhost:{port_b}",
+                            "stream_use": StreamUse.PER_EVENT.value,
+                        }
+                    }
+                },
             },
         }
     )
