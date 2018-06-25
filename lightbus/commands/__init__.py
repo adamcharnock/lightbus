@@ -4,7 +4,8 @@ import sys
 import os
 
 import lightbus
-import lightbus.bus
+import lightbus.client
+import lightbus.creation
 from lightbus.config import Config
 from lightbus.plugins import autoload_plugins, plugin_hook, remove_all_plugins
 from lightbus.utilities.logging import configure_logging
@@ -69,7 +70,7 @@ def parse_args(args=None):
 
 
 def load_config(args) -> Config:
-    return lightbus.bus.load_config(
+    return lightbus.creation.load_config(
         from_file=args.config,
         service_name=args.service_name or os.environ.get("LIGHTBUS_SERVICE_NAME"),
         process_name=args.process_name or os.environ.get("LIGHTBUS_PROCESS_NAME"),

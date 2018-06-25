@@ -2,7 +2,7 @@ import asyncio
 import pytest
 
 from lightbus.api import registry, Api, Event
-from lightbus.bus import BusPath
+from lightbus.path import BusPath
 from lightbus.plugins.state import StatePlugin
 from lightbus.utilities.async import cancel
 

@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from lightbus import BusPath
+from lightbus.path import BusPath
 from lightbus.transports.transactional import lightbus_set_database
 from lightbus.utilities.async import cancel
 

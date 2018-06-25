@@ -2,7 +2,7 @@ import asyncio
 import pytest
 
 from lightbus.api import registry, Api, Event
-from lightbus.bus import BusPath
+from lightbus.path import BusPath
 from lightbus.message import RpcMessage, EventMessage
 from lightbus.plugins import manually_set_plugins
 from lightbus.plugins.metrics import MetricsPlugin

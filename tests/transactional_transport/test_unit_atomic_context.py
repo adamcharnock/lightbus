@@ -2,7 +2,8 @@ import asyncio
 
 import pytest
 
-from lightbus import BusPath, TransactionalEventTransport, DebugEventTransport
+from lightbus import TransactionalEventTransport, DebugEventTransport
+from lightbus.path import BusPath
 from lightbus.exceptions import (
     NoApisSpecified,
     ApisMustUseTransactionalTransport,

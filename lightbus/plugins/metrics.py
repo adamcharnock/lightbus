@@ -23,7 +23,9 @@ class MetricsPlugin(LightbusPlugin):
 
     # Client-side RPC hooks
 
-    async def before_rpc_call(self, *, rpc_message: RpcMessage, client: "lightbus.bus.BusClient"):
+    async def before_rpc_call(
+        self, *, rpc_message: RpcMessage, client: "lightbus.client.BusClient"
+    ):
         await self.send_event(
             client,
             "rpc_call_sent",
@@ -38,7 +40,7 @@ class MetricsPlugin(LightbusPlugin):
         *,
         rpc_message: RpcMessage,
         result_message: ResultMessage,
-        client: "lightbus.bus.BusClient",
+        client: "lightbus.client.BusClient",
     ):
         await self.send_event(
             client,
@@ -51,7 +53,7 @@ class MetricsPlugin(LightbusPlugin):
     # Server-side RPC hooks
 
     async def before_rpc_execution(
-        self, *, rpc_message: RpcMessage, client: "lightbus.bus.BusClient"
+        self, *, rpc_message: RpcMessage, client: "lightbus.client.BusClient"
     ):
         await self.send_event(
             client,
@@ -66,7 +68,7 @@ class MetricsPlugin(LightbusPlugin):
         *,
         rpc_message: RpcMessage,
         result_message: ResultMessage,
-        client: "lightbus.bus.BusClient",
+        client: "lightbus.client.BusClient",
     ):
         await self.send_event(
             client,
@@ -80,7 +82,7 @@ class MetricsPlugin(LightbusPlugin):
     # Client-side event hooks
 
     async def after_event_sent(
-        self, *, event_message: EventMessage, client: "lightbus.bus.BusClient"
+        self, *, event_message: EventMessage, client: "lightbus.client.BusClient"
     ):
         await self.send_event(
             client,
@@ -94,7 +96,7 @@ class MetricsPlugin(LightbusPlugin):
     # Server-side event hooks
 
     async def before_event_execution(
-        self, *, event_message: EventMessage, client: "lightbus.bus.BusClient"
+        self, *, event_message: EventMessage, client: "lightbus.client.BusClient"
     ):
         await self.send_event(
             client,
@@ -106,7 +108,7 @@ class MetricsPlugin(LightbusPlugin):
         )
 
     async def after_event_execution(
-        self, *, event_message: EventMessage, client: "lightbus.bus.BusClient"
+        self, *, event_message: EventMessage, client: "lightbus.client.BusClient"
     ):
         await self.send_event(
             client,

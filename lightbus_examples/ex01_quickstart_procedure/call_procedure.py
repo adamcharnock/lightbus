@@ -2,7 +2,9 @@
 import lightbus
 
 # Create a bus object
-bus = lightbus.create()
+import lightbus.creation
+
+bus = lightbus.creation.create()
 
 # Call the check_password() procedure on our auth API
 valid = bus.auth.check_password(username="admin", password="secret")

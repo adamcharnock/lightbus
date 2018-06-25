@@ -1,6 +1,7 @@
 import lightbus
+import lightbus.creation
 
-bus = lightbus.create()
+bus = lightbus.creation.create()
 
 
 class AuthApi(lightbus.Api):

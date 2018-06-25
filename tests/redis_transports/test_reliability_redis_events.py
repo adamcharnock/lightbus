@@ -5,6 +5,7 @@ from asyncio.futures import CancelledError
 import pytest
 
 import lightbus
+import lightbus.path
 from lightbus.plugins import manually_set_plugins
 
 pytestmark = pytest.mark.reliability
@@ -13,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.mark.run_loop
-async def test_random_failures(bus: lightbus.BusPath, caplog, fire_dummy_events, dummy_api, mocker):
+async def test_random_failures(
+    bus: lightbus.path.BusPath, caplog, fire_dummy_events, dummy_api, mocker
+):
     # Use test_history() (below) to repeat any cases which fail
     caplog.set_level(logging.WARNING)
 

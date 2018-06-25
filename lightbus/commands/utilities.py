@@ -1,8 +1,9 @@
 import importlib.util
 import logging
 
+import lightbus.creation
 from lightbus import configure_logging
-import lightbus.bus
+import lightbus.client
 from lightbus.config import Config
 from lightbus.exceptions import NoBusFoundInBusModule
 
@@ -25,7 +26,7 @@ class BusImportMixin(object):
         )
 
     def import_bus(self, args):
-        bus_module = lightbus.bus.import_bus_py(args.bus_module_name)
+        bus_module = lightbus.creation.import_bus_py(args.bus_module_name)
         try:
             return bus_module, bus_module.bus
         except AttributeError:

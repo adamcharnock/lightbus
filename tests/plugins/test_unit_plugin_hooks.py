@@ -4,7 +4,8 @@
 import asyncio
 import pytest
 
-from lightbus import BusPath, BusClient
+from lightbus import BusClient
+from lightbus.path import BusPath
 from lightbus.message import RpcMessage, EventMessage
 from lightbus.plugins import manually_set_plugins, LightbusPlugin
 
@@ -18,7 +19,7 @@ def called_hooks(mocker):
     async def dummy_coroutine(*args, **kwargs):
         pass
 
-    m = mocker.patch("lightbus.bus.plugin_hook", side_effect=dummy_coroutine)
+    m = mocker.patch("lightbus.client.plugin_hook", side_effect=dummy_coroutine)
     return lambda: [kwargs.get("name") or args[0] for args, kwargs in m.call_args_list]
 
 

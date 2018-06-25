@@ -29,7 +29,7 @@ except ImportError:  # pragma: no cover
     aiopg = None
 
 if False:
-    from lightbus.bus import BusPath
+    from lightbus.path import BusPath
 
 
 class LightbusDbContext(object):

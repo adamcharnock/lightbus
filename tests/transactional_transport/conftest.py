@@ -9,7 +9,9 @@ from psycopg2.extensions import cursor
 import pytest
 
 import lightbus
-from lightbus import TransactionalEventTransport, BusPath
+import lightbus.path
+from lightbus import TransactionalEventTransport
+from lightbus.path import BusPath
 from lightbus.transports.base import TransportRegistry
 from lightbus.transports.redis import StreamUse
 from lightbus.transports.transactional import DbApiConnection
@@ -173,7 +175,7 @@ def transactional_bus_factory(dummy_bus: BusPath, new_redis_pool, loop):
         transport_registry = TransportRegistry().load_config(config)
         transport_registry.set_event_transport("default", transport)
         client = lightbus.BusClient(config=config, transport_registry=transport_registry, loop=loop)
-        bus = lightbus.BusPath(name="", parent=None, client=client)
+        bus = lightbus.path.BusPath(name="", parent=None, client=client)
         return bus
 
     return inner

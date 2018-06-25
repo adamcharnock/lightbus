@@ -1,7 +1,8 @@
 import pytest
 
 import lightbus
-from lightbus.bus import BusPath
+import lightbus.path
+from lightbus.path import BusPath
 from lightbus.exceptions import InvalidBusPathConfiguration, InvalidParameters
 
 pytestmark = pytest.mark.unit
@@ -33,7 +34,7 @@ async def test_fully_qualified_name():
 
 
 @pytest.mark.run_loop
-async def test_dir(dummy_bus: lightbus.BusPath, dummy_api):
+async def test_dir(dummy_bus: lightbus.path.BusPath, dummy_api):
     assert "my" in dir(dummy_bus)
     assert "dummy" in dir(dummy_bus.my)
     assert "my_event" in dir(dummy_bus.my.dummy)
@@ -45,12 +46,12 @@ async def test_dir(dummy_bus: lightbus.BusPath, dummy_api):
 
 
 @pytest.mark.run_loop
-async def test_positional_only_rpc(dummy_bus: lightbus.BusPath):
+async def test_positional_only_rpc(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidParameters):
         await dummy_bus.my.dummy.my_proc.call_async(123)
 
 
 @pytest.mark.run_loop
-async def test_positional_only_event(dummy_bus: lightbus.BusPath):
+async def test_positional_only_event(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidParameters):
         await dummy_bus.my.dummy.event.fire_async(123)

@@ -7,14 +7,8 @@ from unittest.mock import patch
 
 from typing import List, Dict
 
-from lightbus import (
-    BusPath,
-    RpcTransport,
-    EventTransport,
-    SchemaTransport,
-    ResultTransport,
-    EventMessage,
-)
+from lightbus import RpcTransport, EventTransport, SchemaTransport, ResultTransport, EventMessage
+from lightbus.path import BusPath
 from lightbus.transports.base import TransportRegistry
 
 _registry: Dict[str, List] = {}

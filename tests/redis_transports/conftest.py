@@ -5,7 +5,8 @@ import pytest
 from aioredis import create_redis_pool
 
 import lightbus
-from lightbus import BusPath
+import lightbus.creation
+from lightbus.path import BusPath
 from lightbus.transports.redis import StreamUse
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ def bus(
     loop, redis_rpc_transport, redis_result_transport, redis_event_transport, redis_schema_transport
 ):
     """Get a redis transport backed by a running redis server."""
-    return lightbus.create(
+    return lightbus.creation.create(
         rpc_transport=redis_rpc_transport,
         result_transport=redis_result_transport,
         event_transport=redis_event_transport,
@@ -77,7 +78,7 @@ def new_bus(loop, new_redis_pool, server):
         event_pool = await create_redis_pool(server.tcp_address, loop=loop, maxsize=1000)
         schema_pool = await create_redis_pool(server.tcp_address, loop=loop, maxsize=1000)
 
-        return await lightbus.create_async(
+        return await lightbus.creation.create_async(
             rpc_transport=lightbus.RedisRpcTransport(redis_pool=rpc_pool),
             result_transport=lightbus.RedisResultTransport(redis_pool=result_pool),
             event_transport=lightbus.RedisEventTransport(

@@ -28,8 +28,9 @@ import aioredis.sentinel
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import lightbus
+import lightbus.creation
 from lightbus.api import registry
-from lightbus.bus import BusPath
+from lightbus.path import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import remove_all_plugins
 
@@ -198,7 +199,7 @@ def redis_server_b(start_redis_server):
 
 @pytest.fixture
 def dummy_bus(loop):
-    return lightbus.create(
+    return lightbus.creation.create(
         rpc_transport=lightbus.DebugRpcTransport(),
         result_transport=lightbus.DebugResultTransport(),
         event_transport=lightbus.DebugEventTransport(),

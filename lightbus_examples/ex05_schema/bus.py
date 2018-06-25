@@ -1,4 +1,5 @@
-from lightbus import Api, Event, Parameter, create
+from lightbus import Api, Event, Parameter
+from lightbus.creation import create
 
 bus = create()
 

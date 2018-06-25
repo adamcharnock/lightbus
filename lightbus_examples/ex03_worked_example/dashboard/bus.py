@@ -6,8 +6,9 @@ writes the data to .exampledb.json.
 """
 import json
 import lightbus
+import lightbus.creation
 
-bus = lightbus.create()
+bus = lightbus.creation.create()
 page_views = {}
 
 

@@ -1,5 +1,6 @@
 # store/bus.py
-from lightbus import Api, Event, create
+from lightbus import Api, Event
+from lightbus.creation import create
 
 bus = create(flask=True)
 

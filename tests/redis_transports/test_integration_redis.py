@@ -6,7 +6,8 @@ import pytest
 from aioredis.util import decode
 
 import lightbus
-from lightbus import BusPath
+import lightbus.path
+from lightbus.path import BusPath
 from lightbus.api import registry
 from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
@@ -20,7 +21,7 @@ stream_use_test_data = [StreamUse.PER_EVENT, StreamUse.PER_API]
 
 
 @pytest.mark.run_loop
-async def test_bus_fixture(bus: lightbus.BusPath):
+async def test_bus_fixture(bus: lightbus.path.BusPath):
     """Just sanity check the fixture"""
     rpc_transport = bus.client.transport_registry.get_rpc_transport("default")
     result_transport = bus.client.transport_registry.get_result_transport("default")
@@ -48,7 +49,7 @@ async def test_bus_fixture(bus: lightbus.BusPath):
 
 
 @pytest.mark.run_loop
-async def test_rpc(bus: lightbus.BusPath, dummy_api):
+async def test_rpc(bus: lightbus.path.BusPath, dummy_api):
     """Full rpc call integration test"""
 
     async def co_call_rpc():
@@ -66,7 +67,7 @@ async def test_rpc(bus: lightbus.BusPath, dummy_api):
 
 
 @pytest.mark.run_loop
-async def test_rpc_timeout(bus: lightbus.BusPath, dummy_api):
+async def test_rpc_timeout(bus: lightbus.path.BusPath, dummy_api):
     """Full rpc call integration test"""
 
     async def co_call_rpc():
@@ -86,7 +87,7 @@ async def test_rpc_timeout(bus: lightbus.BusPath, dummy_api):
 
 
 @pytest.mark.run_loop
-async def test_rpc_error(bus: lightbus.BusPath, dummy_api):
+async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
     """Test what happens when the remote procedure throws an error"""
 
     async def co_call_rpc():
@@ -111,7 +112,7 @@ async def test_rpc_error(bus: lightbus.BusPath, dummy_api):
 @pytest.mark.parametrize(
     "stream_use", stream_use_test_data, ids=["stream_per_event", "stream_per_api"]
 )
-async def test_event(bus: lightbus.BusPath, dummy_api, stream_use):
+async def test_event(bus: lightbus.path.BusPath, dummy_api, stream_use):
     """Full event integration test"""
     bus.client.transport_registry.get_event_transport("default").stream_use = stream_use
     manually_set_plugins({})
@@ -135,7 +136,7 @@ async def test_event(bus: lightbus.BusPath, dummy_api, stream_use):
 
 
 @pytest.mark.run_loop
-async def test_ids(bus: lightbus.BusPath, dummy_api, mocker):
+async def test_ids(bus: lightbus.path.BusPath, dummy_api, mocker):
     """Ensure the id comes back correctly"""
 
     async def co_call_rpc():
@@ -283,7 +284,7 @@ async def test_multiple_event_transports(loop, server, redis_server_b):
 
 
 @pytest.mark.run_loop
-async def test_validation_rpc(loop, bus: lightbus.BusPath, dummy_api, mocker):
+async def test_validation_rpc(loop, bus: lightbus.path.BusPath, dummy_api, mocker):
     """Check validation happens when performing an RPC"""
     config = Config.load_dict({"apis": {"default": {"validate": True, "strict_validation": True}}})
     bus.client.config = config
@@ -317,7 +318,7 @@ async def test_validation_rpc(loop, bus: lightbus.BusPath, dummy_api, mocker):
 
 
 @pytest.mark.run_loop
-async def test_validation_event(loop, bus: lightbus.BusPath, dummy_api, mocker):
+async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, mocker):
     """Check validation happens when firing an event"""
     config = Config.load_dict({"apis": {"default": {"validate": True, "strict_validation": True}}})
     bus.client.config = config
@@ -396,7 +397,9 @@ async def test_listen_to_multiple_events_across_multiple_transports(loop, server
 
 
 @pytest.mark.run_loop
-async def test_event_exception_in_listener_realtime(bus: lightbus.BusPath, dummy_api, redis_client):
+async def test_event_exception_in_listener_realtime(
+    bus: lightbus.path.BusPath, dummy_api, redis_client
+):
     """Start a listener (which errors) and then add events to the stream.
     The listener will load them one-by-one."""
     manually_set_plugins({})
@@ -440,7 +443,7 @@ async def test_event_exception_in_listener_realtime(bus: lightbus.BusPath, dummy
 
 @pytest.mark.run_loop
 async def test_event_exception_in_listener_batch_fetch(
-    bus: lightbus.BusPath, dummy_api, redis_client
+    bus: lightbus.path.BusPath, dummy_api, redis_client
 ):
     """Add a number of events to a stream the startup a listener which errors.
     The listener will fetch them all at once."""

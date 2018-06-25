@@ -1,6 +1,7 @@
 import asyncio
 
-import lightbus.bus
+import lightbus.client
+import lightbus.creation
 from lightbus.transports.transactional import lightbus_set_database, DbApiConnection
 from django.db import connections
 
@@ -13,7 +14,7 @@ class TransactionTransportMiddleware(object):
     # event loop may not be thread safe at all.
     def __init__(self, get_response=None):
         self.get_response = get_response
-        bus_module = lightbus.bus.import_bus_py()
+        bus_module = lightbus.creation.import_bus_py()
         self.bus = bus_module.bus
         self.migrate()
 
