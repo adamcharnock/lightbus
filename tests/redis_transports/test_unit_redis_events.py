@@ -632,3 +632,64 @@ async def test_consume_events_per_api_stream(
     assert set(event_names) == {"my_event1", "my_event2", "my_event3"}
 
     await cancel(task1, task2, task3)
+
+
+@pytest.mark.run_loop
+async def test_reconnect_upon_send_event(
+    redis_event_transport: RedisEventTransport, redis_client, get_total_redis_connections
+):
+    assert await get_total_redis_connections() == 2
+    await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
+    assert await get_total_redis_connections() == 1
+
+    await redis_event_transport.send_event(
+        EventMessage(api_name="my.api", event_name="my_event", id="123", kwargs={"field": "value"}),
+        options={},
+    )
+    messages = await redis_client.xrange("my.api.my_event:stream")
+    assert len(messages) == 1
+    assert await get_total_redis_connections() == 2
+
+
+@pytest.mark.run_loop
+async def test_reconnect_while_listening(
+    loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
+):
+    redis_event_transport.consumption_restart_delay = 0.0001
+
+    async def co_enqeue():
+        while True:
+            await asyncio.sleep(0.1)
+            logging.info("test_reconnect_while_listening: Sending message")
+            await redis_client.xadd(
+                "my.dummy.my_event:stream",
+                fields={
+                    b"api_name": b"my.dummy",
+                    b"event_name": b"my_event",
+                    b"id": b"123",
+                    b"version": b"1",
+                    b":field": b'"value"',
+                },
+            )
+
+    total_messages = 0
+
+    async def co_consume():
+        nonlocal total_messages
+
+        consumer = redis_event_transport.consume([("my.dummy", "my_event")], {}, loop)
+        async for message_ in consumer:
+            total_messages += 1
+            await consumer.__anext__()
+
+    enque_task = asyncio.ensure_future(co_enqeue(), loop=loop)
+    consume_task = asyncio.ensure_future(co_consume(), loop=loop)
+
+    await asyncio.sleep(0.2)
+    assert total_messages > 0
+    total_messages = 0
+    await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
+    await asyncio.sleep(0.2)
+    assert total_messages >= 2
+
+    await cancel(enque_task, consume_task)

@@ -9,7 +9,7 @@ from typing import Sequence, Optional, Union, Generator, Dict, Mapping, List
 from enum import Enum
 
 import aioredis
-from aioredis import Redis, ReplyError, ConnectionForcedCloseError
+from aioredis import Redis, ReplyError, ConnectionForcedCloseError, ConnectionClosedError
 from aioredis.pool import ConnectionsPool
 from aioredis.util import decode
 
@@ -158,6 +158,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         connection_parameters: Mapping = frozendict(maxsize=100),
         batch_size=10,
         rpc_timeout=5,
+        consumption_restart_delay=5,
     ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self._latest_ids = {}
@@ -165,6 +166,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         self.deserializer = deserializer
         self.batch_size = batch_size
         self.rpc_timeout = rpc_timeout
+        self.consumption_restart_delay = consumption_restart_delay
 
     @classmethod
     def from_config(
@@ -175,7 +177,8 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         batch_size: int = 10,
         serializer: str = "lightbus.serializers.BlobMessageSerializer",
         deserializer: str = "lightbus.serializers.BlobMessageDeserializer",
-        rpc_timeout=5,
+        rpc_timeout: int = 5,
+        consumption_restart_delay: int = 5,
     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(RpcMessage)
@@ -187,6 +190,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             connection_parameters=connection_parameters,
             batch_size=batch_size,
             rpc_timeout=rpc_timeout,
+            consumption_restart_delay=consumption_restart_delay,
         )
 
     async def call_rpc(self, rpc_message: RpcMessage, options: dict):
@@ -385,6 +389,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         acknowledgement_timeout: float = 60,
         max_stream_length: Optional[int] = 100000,
         stream_use: StreamUse = StreamUse.PER_API,
+        consumption_restart_delay: int = 5,
     ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self.serializer = serializer
@@ -396,6 +401,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self.acknowledgement_timeout = acknowledgement_timeout
         self.max_stream_length = max_stream_length
         self.stream_use = stream_use
+        self.consumption_restart_delay = consumption_restart_delay
 
         self._task = None
         self._reload = False
@@ -415,6 +421,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         acknowledgement_timeout: float = 60,
         max_stream_length: Optional[int] = 100000,
         stream_use: StreamUse = StreamUse.PER_API,
+        consumption_restart_delay: int = 5,
     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(EventMessage)
@@ -436,6 +443,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             acknowledgement_timeout=acknowledgement_timeout,
             max_stream_length=max_stream_length,
             stream_use=stream_use,
+            consumption_restart_delay=consumption_restart_delay,
         )
 
     async def send_event(self, event_message: EventMessage, options: dict):
@@ -513,12 +521,21 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         queue = asyncio.Queue(maxsize=1)
 
         async def fetch_loop():
-            async for message, stream in self._fetch_new_messages(
-                streams, consumer_group, expected_events, forever
-            ):
-                await queue.put((message, stream))
-                # Wait for the queue to empty before getting trying to get another message
-                await queue.join()
+            last_connection_attempt = datetime.now()
+            while True:
+                try:
+                    async for message, stream in self._fetch_new_messages(
+                        streams, consumer_group, expected_events, forever
+                    ):
+                        await queue.put((message, stream))
+                        # Wait for the queue to empty before getting trying to get another message
+                        await queue.join()
+                except ConnectionClosedError:
+                    logger.warning(
+                        f"Redis connection lost while consuming events, reconnecting "
+                        f"in {self.consumption_restart_delay} seconds..."
+                    )
+                    await asyncio.sleep(self.consumption_restart_delay)
 
         async def reclaim_loop():
             await asyncio.sleep(self.acknowledgement_timeout)

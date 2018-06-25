@@ -90,3 +90,12 @@ def new_bus(loop, new_redis_pool, server):
         )
 
     return wrapped
+
+
+@pytest.fixture
+def get_total_redis_connections(redis_client):
+
+    async def _get_total_redis_connections():
+        return int((await redis_client.info())["clients"]["connected_clients"])
+
+    return _get_total_redis_connections
