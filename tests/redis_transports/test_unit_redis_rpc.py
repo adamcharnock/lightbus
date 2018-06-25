@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 
 import pytest
 
@@ -175,3 +176,68 @@ async def test_consume_rpcs_only_once(redis_client, dummy_api, redis_pool):
     assert message_count == 1
 
     assert not await redis_client.exists("rpc_expiry_key:123abc")
+
+
+@pytest.mark.run_loop
+async def test_reconnect_upon_call_rpc(redis_rpc_transport, redis_client):
+    """Does call_rpc() add a message to a stream"""
+    # Kill the rpc transport's connection
+    await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
+
+    # Now send a message and ensure it does so without complaint
+    rpc_message = RpcMessage(
+        id="123abc",
+        api_name="my.api",
+        procedure_name="my_proc",
+        kwargs={"field": "value"},
+        return_path="abc",
+    )
+    await redis_rpc_transport.call_rpc(rpc_message, options={})
+    assert set(await redis_client.keys("*")) == {b"my.api:rpc_queue", b"rpc_expiry_key:123abc"}
+
+    messages = await redis_client.lrange("my.api:rpc_queue", start=0, stop=100)
+    assert len(messages) == 1
+
+
+@pytest.mark.run_loop
+async def test_reconnect_upon_consume_rpcs(loop, redis_client, redis_rpc_transport, dummy_api):
+    redis_rpc_transport.consumption_restart_delay = 0.0001
+
+    async def co_enqeue():
+        while True:
+            await asyncio.sleep(0.01)
+            await redis_client.set("rpc_expiry_key:123abc", 1)
+            await redis_client.rpush(
+                "my.dummy:rpc_queue",
+                value=json.dumps(
+                    {
+                        "metadata": {
+                            "id": "123abc",
+                            "api_name": "my.api",
+                            "procedure_name": "my_proc",
+                            "return_path": "abc",
+                        },
+                        "kwargs": {"field": "value"},
+                    }
+                ),
+            )
+
+    total_messages = 0
+
+    async def co_consume():
+        nonlocal total_messages
+        while True:
+            messages = await redis_rpc_transport.consume_rpcs(apis=[dummy_api])
+            total_messages += len(messages)
+
+    enque_task = asyncio.ensure_future(co_enqeue(), loop=loop)
+    consume_task = asyncio.ensure_future(co_consume(), loop=loop)
+
+    await asyncio.sleep(0.2)
+    assert total_messages > 0
+    await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
+    total_messages = 0
+    await asyncio.sleep(0.2)
+    assert total_messages > 0
+
+    await cancel(enque_task, consume_task)

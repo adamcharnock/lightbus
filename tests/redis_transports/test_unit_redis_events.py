@@ -687,9 +687,9 @@ async def test_reconnect_while_listening(
 
     await asyncio.sleep(0.2)
     assert total_messages > 0
-    total_messages = 0
     await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
+    total_messages = 0
     await asyncio.sleep(0.2)
-    assert total_messages >= 2
+    assert total_messages > 0
 
     await cancel(enque_task, consume_task)

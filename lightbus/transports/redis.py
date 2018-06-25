@@ -222,6 +222,17 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         )
 
     async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
+        while True:
+            try:
+                return await self._consume_rpcs(apis)
+            except ConnectionClosedError:
+                logger.warning(
+                    f"Redis connection lost while consuming RPCs, reconnecting "
+                    f"in {self.consumption_restart_delay} seconds..."
+                )
+                await asyncio.sleep(self.consumption_restart_delay)
+
+    async def _consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         # Get the name of each stream
         queue_keys = ["{}:rpc_queue".format(api.meta.name) for api in apis]
 
@@ -521,7 +532,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         queue = asyncio.Queue(maxsize=1)
 
         async def fetch_loop():
-            last_connection_attempt = datetime.now()
             while True:
                 try:
                     async for message, stream in self._fetch_new_messages(
