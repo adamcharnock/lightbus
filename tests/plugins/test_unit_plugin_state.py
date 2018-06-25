@@ -19,12 +19,13 @@ class TestApi(Api):
 @pytest.mark.run_loop
 async def test_before_server_start(dummy_bus: BusNode, loop, get_dummy_events):
     registry.add(TestApi())
-    await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
+    listener = await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
     await asyncio.sleep(0.1)  # Give the bus a moment to kick up the listener
 
     state_plugin = StatePlugin(service_name="foo", process_name="bar")
     state_plugin.ping_enabled = False
     await state_plugin.before_server_start(bus_client=dummy_bus.bus_client)
+    await cancel(listener)
 
     dummy_events = get_dummy_events()
     assert len(dummy_events) == 1
@@ -56,7 +57,7 @@ async def test_ping(dummy_bus: BusNode, loop, get_dummy_events):
         state_plugin._send_ping(bus_client=dummy_bus.bus_client), loop=loop
     )
     await asyncio.sleep(0.15)
-    task.cancel()
+    await cancel(task)
 
     dummy_events = get_dummy_events()
     assert len(dummy_events) == 1
