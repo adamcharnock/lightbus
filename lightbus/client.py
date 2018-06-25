@@ -601,7 +601,7 @@ class BusClient(object):
                     f"into a warning. "
                 )
             else:
-                logging.warning(
+                logger.warning(
                     f"Validation is enabled for API {api_name}, but there is no schema present for this API. "
                     f"Validation is therefore not possible. You can force this to be an error by enabling "
                     f"the 'strict_validation' config option. You can silence this message by disabling validation "

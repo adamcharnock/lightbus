@@ -5,6 +5,7 @@ import pytest
 
 import lightbus.commands.run
 from lightbus import commands, BusClient
+from lightbus.commands import run_command_from_args
 from lightbus.config import Config
 from lightbus.config.structure import RootConfig
 
@@ -40,79 +41,71 @@ def redis_config_file(server):
         yield f.name
 
 
-def test_commands_run(mocker, server, redis_config_file):
+def test_commands_run_cli(mocker, server, redis_config_file, test_bus_module):
     m = mocker.patch.object(BusClient, "_actually_run_forever")
 
-    args = commands.parse_args(
-        args=[
-            "--config",
-            redis_config_file,
-            "run",
-            "--bus",
-            "lightbus_examples.ex01_quickstart_procedure.bus",
-        ]
-    )
+    args = ["--config", redis_config_file, "run", "--bus", test_bus_module]
 
-    lightbus.commands.run.Command().handle(args, config=Config(RootConfig()))
+    run_command_from_args(args)
 
     assert m.called
 
 
-def test_commands_shell(redis_config_file):
-    # Prevent the shell mainloop from kicking off
-    args = commands.parse_args(
-        args=[
-            "--config",
-            redis_config_file,
-            "shell",
-            "--bus",
-            "lightbus_examples.ex01_quickstart_procedure.bus",
-        ]
-    )
-    lightbus.commands.shell.Command().handle(args, config=Config(RootConfig()), fake_it=True)
+def test_commands_run_env(mocker, server, redis_config_file, set_env, test_bus_module):
+    m = mocker.patch.object(BusClient, "_actually_run_forever")
+
+    args = commands.parse_args(args=["run"])
+    with set_env(LIGHTBUS_CONFIG=redis_config_file, LIGHTBUS_MODULE=test_bus_module):
+        lightbus.commands.run.Command().handle(args, config=Config(RootConfig()))
+
+    assert m.called
 
 
-def test_commands_dump_schema(redis_config_file):
+def test_commands_shell(redis_config_file, test_bus_module):
     # Prevent the shell mainloop from kicking off
-    args = commands.parse_args(
-        args=[
-            "--config",
-            redis_config_file,
-            "dumpschema",
-            "--bus",
-            "lightbus_examples.ex01_quickstart_procedure.bus",
-            "--schema",
-            "/tmp/test_commands_dump_schema.json",
-        ]
-    )
+    args = ["--config", redis_config_file, "shell", "--bus", test_bus_module]
+    run_command_from_args(args, fake_it=True)
+
+
+def test_commands_dump_schema(redis_config_file, test_bus_module):
+    args = [
+        "--config",
+        redis_config_file,
+        "dumpschema",
+        "--bus",
+        test_bus_module,
+        "--schema",
+        "/tmp/test_commands_dump_schema.json",
+    ]
     try:
         os.remove("/tmp/test_commands_dump_schema.json")
     except FileNotFoundError:
         pass
-    lightbus.commands.dump_schema.Command().handle(args, config=Config(RootConfig()))
+
+    run_command_from_args(args)
+
     with open("/tmp/test_commands_dump_schema.json", "r") as f:
-        assert len(f.read()) > 100
+        assert len(f.read()) > 0
     os.remove("/tmp/test_commands_dump_schema.json")
 
 
-def test_commands_dump_config_schema(redis_config_file, dummy_api):
-    # Prevent the shell mainloop from kicking off
-    args = commands.parse_args(
-        args=[
-            "--config",
-            redis_config_file,
-            "dumpschema",
-            "--bus",
-            "lightbus_examples.ex01_quickstart_procedure.bus",
-            "--schema",
-            "/tmp/test_commands_dump_config_schema.json",
-        ]
-    )
+def test_commands_dump_config_schema(redis_config_file, dummy_api, test_bus_module):
+    args = [
+        "--config",
+        redis_config_file,
+        "dumpconfigschema",
+        "--bus",
+        test_bus_module,
+        "--schema",
+        "/tmp/test_commands_dump_config_schema.json",
+    ]
     try:
         os.remove("/tmp/test_commands_dump_config_schema.json")
     except FileNotFoundError:
         pass
-    lightbus.commands.dump_schema.Command().handle(args, config=Config(RootConfig()))
+
+    run_command_from_args(args)
+
     with open("/tmp/test_commands_dump_config_schema.json", "r") as f:
         assert len(f.read()) > 100
     os.remove("/tmp/test_commands_dump_config_schema.json")

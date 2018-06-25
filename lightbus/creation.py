@@ -80,6 +80,14 @@ async def create_async(
 
     from lightbus.config import Config
 
+    # If were are running via the Lightbus CLI then we may have
+    # some command line arguments we need to apply.
+    from lightbus.commands import COMMAND_PARSED_ARGS
+
+    config_file = COMMAND_PARSED_ARGS.get("config_file", None) or config_file
+    service_name = COMMAND_PARSED_ARGS.get("service_name", None) or service_name
+    process_name = COMMAND_PARSED_ARGS.get("process_name", None) or process_name
+
     if config is None:
         config = load_config(
             from_file=config_file, service_name=service_name, process_name=process_name

@@ -17,13 +17,28 @@ import lightbus.commands.dump_config_schema
 
 logger = logging.getLogger(__name__)
 
+COMMAND_PARSED_ARGS = {}
+
 
 def lightbus_entry_point():  # pragma: no cover
     sys.path.insert(0, "")
     configure_logging()
-    args = parse_args()
-    config = load_config(args)
-    args.func(args, config)
+    run_command_from_args()
+
+
+def run_command_from_args(args=None, **extra):
+    parsed_args = parse_args(args)
+
+    # Store the args we received away for later. The
+    # bus creation process will use them as overrides.
+    # This is a bit of hack to allow command line overrides
+    # while having no control over bus instantiation (because
+    # the application developer does that in bus.py)
+    COMMAND_PARSED_ARGS.clear()
+    COMMAND_PARSED_ARGS.update(dict(parsed_args._get_kwargs()))
+
+    config = load_config(parsed_args)
+    parsed_args.func(parsed_args, config, **extra)
 
 
 def parse_args(args=None):
@@ -41,7 +56,9 @@ def parse_args(args=None):
         help="A unique name of this process within the service. Can also be set using the "
         "LIGHTBUS_PROCESS_NAME environment. Will default to a random string.",
     )
-    parser.add_argument("--config", help="Config file to load, JSON or YAML", metavar="FILE")
+    parser.add_argument(
+        "--config", dest="config_file", help="Config file to load, JSON or YAML", metavar="FILE"
+    )
     parser.add_argument(
         "--log-level",
         help="Set the log level. Overrides any value set in config. "
@@ -71,7 +88,7 @@ def parse_args(args=None):
 
 def load_config(args) -> Config:
     return lightbus.creation.load_config(
-        from_file=args.config,
+        from_file=args.config_file,
         service_name=args.service_name or os.environ.get("LIGHTBUS_SERVICE_NAME"),
         process_name=args.process_name or os.environ.get("LIGHTBUS_PROCESS_NAME"),
     )

@@ -39,7 +39,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         parser_run.set_defaults(func=self.handle)
 
     def handle(self, args, config):
-        self.setup_logging(args.log_level, config)
+        self.setup_logging(override=getattr(args, "log_level", None), config=config)
 
         bus_module, bus = self.import_bus(args)
 

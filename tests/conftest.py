@@ -7,6 +7,7 @@ will is still required to organise the setup code below.
 """
 import asyncio
 from pathlib import Path
+from random import randint
 
 import pytest
 import socket
@@ -30,6 +31,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 import lightbus
 import lightbus.creation
 from lightbus.api import registry
+from lightbus.commands import COMMAND_PARSED_ARGS
 from lightbus.path import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import remove_all_plugins
@@ -635,6 +637,9 @@ def pytest_runtest_setup(item):
     # Clear out the API registry
     registry._apis = dict()
 
+    # Clear out any stash command line args
+    COMMAND_PARSED_ARGS.clear()
+
     if "run_loop" in item.keywords and "loop" not in item.fixturenames:
         # inject an event loop fixture for all async tests
         item.fixturenames.append("loop")
@@ -788,3 +793,32 @@ def tmp_directory():
         f.cleanup()
     except IOError:
         pass
+
+
+@pytest.fixture
+def set_env():
+
+    @contextlib.contextmanager
+    def _set_env(**environ):
+        old_environ = dict(os.environ)
+        os.environ.update(environ)
+        try:
+            yield
+        finally:
+            os.environ.clear()
+            os.environ.update(old_environ)
+
+    return _set_env
+
+
+@pytest.yield_fixture
+def test_bus_module():
+    project_name = f"test_project_{randint(1000000, 9999999)}"
+    with TemporaryDirectory() as d:
+        d = Path(d)
+        os.mkdir(str(d / project_name))
+        with (d / project_name / "bus.py").open("w") as bus_py:
+            bus_py.write("import lightbus\n" "bus = lightbus.create()")
+        sys.path.insert(0, str(d))
+        yield f"{project_name}.bus"
+        sys.path.remove(str(d))

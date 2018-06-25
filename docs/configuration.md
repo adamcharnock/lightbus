@@ -42,10 +42,18 @@ bus = lightbus.create(
     # Relevent to event consumption
     service_name='my_service',
 
-    # Will be replaced 4 random characters. Default.
+    # Will be replaced 4 random characters. Default
     process_name='{random4}',
 )
 ```
+
+The above configuration options can also be set using the following
+environment variables:
+
+* `LIGHTBUS_CONFIG`
+* `LIGHTBUS_SERVICE_NAME`
+* `LIGHTBUS_PROCESS_NAME`
+
 
 ### Service name
 
