@@ -657,6 +657,22 @@ class BusClient(object):
 
 
 class BusPath(object):
+    """Represents a path on the bus
+
+    This class provides a higher-level wrapper around the `BusClient` class.
+    This wrapper allows for a more ideomatic use of the bus. For example:
+
+        bus.auth.get_user(username='admin')
+
+    Compare this to the lower level equivalent using the `BusClient`:
+
+        bus.client.call_rpc_remote(
+            api_name='auth',
+            name='get_user',
+            kwargs={'username': 'admin'},
+        )
+
+    """
 
     def __init__(self, name: str, *, parent: Optional["BusPath"], client: BusClient):
         if not parent and name:
