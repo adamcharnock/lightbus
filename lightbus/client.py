@@ -20,6 +20,7 @@ from lightbus.exceptions import (
     LightbusServerError,
     NoApisToListenOn,
     InvalidName,
+    LightbusShutdownInProgress,
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
@@ -29,7 +30,13 @@ from lightbus.schema import Schema
 from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport
 from lightbus.transports.base import TransportRegistry
-from lightbus.utilities.async import handle_aio_exceptions, block, get_event_loop, cancel
+from lightbus.utilities.async import (
+    handle_aio_exceptions,
+    block,
+    get_event_loop,
+    cancel,
+    check_for_exception,
+)
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
@@ -493,18 +500,29 @@ class BusClient(object):
                     else:
                         parameters = event_message.kwargs
 
-                    # Call the listener
-                    co = listener(
-                        # Pass the event message as a positional argument,
-                        # thereby allowing listeners to have flexibility in the argument names.
-                        # (And therefore allowing listeners to use the `event` parameter themselves)
-                        event_message,
-                        **parameters,
-                    )
+                    try:
+                        # Call the listener
+                        co = listener(
+                            # Pass the event message as a positional argument,
+                            # thereby allowing listeners to have flexibility in the argument names.
+                            # (And therefore allowing listeners to use the `event` parameter themselves)
+                            event_message,
+                            **parameters,
+                        )
 
-                    # Await it if necessary
-                    if inspect.isawaitable(co):
-                        await co
+                        # Await it if necessary
+                        if inspect.isawaitable(co):
+                            await co
+
+                    except asyncio.CancelledError:
+                        raise
+                    except LightbusShutdownInProgress as e:
+                        logger.info("Shutdown in progress: {}".format(e))
+                    except Exception as e:
+                        if stop_on_error:
+                            raise
+                        else:
+                            logger.exception(e)
 
                     # Await the consumer again, which is our way of allowing it to
                     # acknowledge the message. This then allows us to fire the
@@ -519,6 +537,13 @@ class BusClient(object):
             api_names=[api_name for api_name, _ in events]
         )
 
+        stop_on_error = False
+        for _event_transport, _api_names in event_transports:
+            values = [self.config.api(_api_name).stop_on_error for _api_name in _api_names]
+            # Stop on error if any of the APIs being listened on are
+            # configured to do so
+            stop_on_error = stop_on_error or any(values)
+
         tasks = []
         for _event_transport, _api_names in event_transports:
             # Create a listener task for each event transport,
@@ -526,12 +551,12 @@ class BusClient(object):
             _events = [
                 (api_name, event_name) for api_name, event_name in events if api_name in _api_names
             ]
-            tasks.append(
-                # TODO: This will swallow and print exceptions. We should probably do something more serious.
-                #       Perhaps create a watcher background task to see if any listeners die, and get the
-                #       result if they do (i.e. propagate the error up).
-                handle_aio_exceptions(listen_for_event_task(_event_transport, _events))
+
+            task = asyncio.ensure_future(
+                listen_for_event_task(_event_transport, _events), loop=self.loop
             )
+            task.add_done_callback(check_for_exception)
+            tasks.append(task)
 
         listener_task = asyncio.gather(*tasks)
         listener_task.is_listener = True  # Used by close()

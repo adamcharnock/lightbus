@@ -4,6 +4,7 @@ import logging
 from typing import Coroutine
 
 import aioredis
+from aioredis import ConnectionForcedCloseError
 
 from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 
@@ -74,3 +75,17 @@ async def cancel(*tasks):
     # Now raise the first exception we saw, if any
     if ex:
         raise ex
+
+
+def check_for_exception(fut):
+    """Check for exceptions in returned future
+
+    To be used as a callback, eg:
+
+    task.add_done_callback(check_for_exception)
+    """
+    try:
+        if fut.exception():
+            fut.result()
+    except (asyncio.CancelledError, ConnectionForcedCloseError):
+        pass

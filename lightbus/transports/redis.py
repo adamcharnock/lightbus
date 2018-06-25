@@ -21,7 +21,7 @@ from lightbus.schema.encoder import json_encode
 from lightbus.serializers.blob import BlobMessageSerializer, BlobMessageDeserializer
 from lightbus.serializers.by_field import ByFieldMessageSerializer, ByFieldMessageDeserializer
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport, SchemaTransport
-from lightbus.utilities.async import cancel
+from lightbus.utilities.async import cancel, check_for_exception
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
@@ -559,14 +559,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         # Make sure we surface any exceptions that occur in either task
         fetch_task = asyncio.ensure_future(fetch_loop(), loop=loop)
         reclaim_task = asyncio.ensure_future(reclaim_loop(), loop=loop)
-
-        def check_for_exception(fut):
-            # Perhaps pull out into utility function
-            try:
-                if fut.exception():
-                    fut.result()
-            except (asyncio.CancelledError, ConnectionForcedCloseError):
-                pass
 
         fetch_task.add_done_callback(check_for_exception)
         reclaim_task.add_done_callback(check_for_exception)

@@ -2,6 +2,7 @@ import logging
 from asyncio import AbstractEventLoop
 from itertools import chain
 from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, TypeVar, Type, Set
+import inspect
 
 from lightbus.api import Api
 from lightbus.exceptions import NothingToListenFor, TransportNotFound
