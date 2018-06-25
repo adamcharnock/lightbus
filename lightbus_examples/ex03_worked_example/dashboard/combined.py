@@ -31,7 +31,7 @@ async def start_listener(app):
 async def cleanup(app):
     # We're using aiohttp to manage the event loop, so
     # we need to close up the lightbus client manually on shutdown.
-    await app.bus.bus_client.close_async()
+    await app.bus.client.close_async()
 
 
 def main():
