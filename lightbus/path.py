@@ -9,6 +9,8 @@ from lightbus.exceptions import (
 )
 from lightbus.utilities.async import block
 
+__all__ = ["BusPath"]
+
 
 class BusPath(object):
     """Represents a path on the bus

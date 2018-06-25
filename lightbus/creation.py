@@ -1,3 +1,6 @@
+"""Utility functions relating to bus creation"""
+
+
 import asyncio
 import os
 from typing import Union, Optional, Mapping
@@ -14,6 +17,8 @@ from lightbus.utilities.importing import import_module_from_string
 
 if False:
     from lightbus.transports import *
+
+__all__ = ["create", "create_async", "load_config", "import_bus_py"]
 
 
 async def create_async(
@@ -33,6 +38,41 @@ async def create_async(
     flask: bool = False,
     **kwargs,
 ) -> BusPath:
+    """
+    Create a new bus instance which can be used to access the bus.
+
+    Typically this will be used as follows:
+
+        import lightbus
+
+        bus = await lightbus.create_async()
+
+    This will be a `BusPath` instance. If you wish to access the lower
+    level `BusClient` you can do so via `bus.client`.
+
+    See Also:
+
+        `create()` - The synchronous wrapper for this function
+
+    Args:
+        config (dict, Config): The config object or dictionary to load
+        config_file (str): The path to a config file to load (should end in .json or .yaml)
+        service_name (str): The name of this service - will be used when creating event consumer groups
+        process_name (str): The unique name of this process - used when retrieving unprocessed events following a crash
+        rpc_transport (RpcTransport): The RPC transport instance to use, defaults to Redis
+        result_transport (ResultTransport): The result transport instance to use, defaults to Redis
+        event_transport (EventTransport): The event transport instance to use, defaults to Redis
+        schema_transport (SchemaTransport): The schema transport instance to use, defaults to Redis
+        client_class (BusClient): The class from which the bus client will be instantiated
+        node_class (BusPath): The class from which the bus path will be instantiated
+        plugins (dict): A dictionary of plugins to load, where keys are the plugin name defined in the plugin's entrypoint
+        loop (asyncio.AbstractEventLoop): The event loop to use
+        flask (bool): Are we using flask? If so we will make sure we don't start lightbus in the reloader process
+        **kwargs (): Any additional instantiation arguments to be passed to `client_class`.
+
+    Returns:
+
+    """
 
     if flask and os.environ.get("WERKZEUG_RUN_MAIN", "").lower() != "true":
         # Flask has a reloader process that shouldn't start a lightbus client
@@ -70,6 +110,19 @@ async def create_async(
 
 
 def create(*args, **kwargs):
+    """
+    Create a new bus instance which can be used to access the bus.
+
+    Typically this will be used as follows:
+
+        import lightbus
+
+        bus = lightbus.create()
+
+    See Also: This function is a wrapper around `create_async()`, see `create_async()`
+    for a list of arguments
+
+    """
     loop = kwargs.get("loop") or get_event_loop()
     return block(create_async(*args, **kwargs), loop=loop, timeout=5)
 
