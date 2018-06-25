@@ -99,7 +99,7 @@ class BusMocker(ContextDecorator):
         new_registry = TransportRegistry()
         new_registry.set_schema_transport(schema)
 
-        self.old_transport_registry = self.bus.bus_client.transport_registry
+        self.old_transport_registry = self.bus.client.transport_registry
 
         for api_name, entry in self.old_transport_registry._registry.items():
             new_registry.set_rpc_transport(api_name, rpc)
@@ -112,11 +112,11 @@ class BusMocker(ContextDecorator):
             else:
                 new_registry.set_event_transport(api_name, event)
 
-        self.bus.bus_client.transport_registry = new_registry
+        self.bus.client.transport_registry = new_registry
         return MockResult(rpc, result, event, schema)
 
     def __exit__(self, exc_type, exc, exc_tb):
-        self.bus.bus_client.transport_registry = self.old_transport_registry
+        self.bus.client.transport_registry = self.old_transport_registry
 
 
 bus_mocker = BusMocker

@@ -15,7 +15,7 @@ pytestmark = pytest.mark.unit
 
 @pytest.fixture()
 def atomic_context(dummy_bus: BusNode, aiopg_connection):
-    registry = dummy_bus.bus_client.transport_registry
+    registry = dummy_bus.client.transport_registry
     current_event_transport = registry.get_event_transport("default")
     registry.set_event_transport(
         "default", TransactionalEventTransport(child_transport=current_event_transport)
@@ -34,7 +34,7 @@ def test_init_bad_transport(dummy_bus: BusNode, aiopg_connection):
 
 
 def test_init_multiple_transports(dummy_bus: BusNode, aiopg_connection):
-    registry = dummy_bus.bus_client.transport_registry
+    registry = dummy_bus.client.transport_registry
     registry.set_event_transport("another_api", TransactionalEventTransport(DebugEventTransport()))
 
     with pytest.raises(ApisMustUseSameTransport):

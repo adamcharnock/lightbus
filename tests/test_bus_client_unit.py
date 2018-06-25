@@ -21,64 +21,62 @@ pytestmark = pytest.mark.unit
 @pytest.mark.run_loop
 async def test_fire_event_api_doesnt_exist(dummy_bus: lightbus.BusNode):
     with pytest.raises(UnknownApi):
-        await dummy_bus.bus_client.fire_event("non_existent_api", "event")
+        await dummy_bus.client.fire_event("non_existent_api", "event")
 
 
 @pytest.mark.run_loop
 async def test_fire_event_event_doesnt_exist(dummy_bus: lightbus.BusNode, dummy_api):
     with pytest.raises(EventNotFound):
-        await dummy_bus.bus_client.fire_event("my.dummy", "bad_event")
+        await dummy_bus.client.fire_event("my.dummy", "bad_event")
 
 
 @pytest.mark.run_loop
 async def test_fire_event_bad_event_arguments(dummy_bus: lightbus.BusNode, dummy_api):
     with pytest.raises(InvalidEventArguments):
-        await dummy_bus.bus_client.fire_event("my.dummy", "my_event", kwargs={"bad_arg": "value"})
+        await dummy_bus.client.fire_event("my.dummy", "my_event", kwargs={"bad_arg": "value"})
 
 
 @pytest.mark.run_loop
 async def test_listen_for_event_non_callable(dummy_bus: lightbus.BusNode):
     with pytest.raises(InvalidEventListener):
-        await dummy_bus.bus_client.listen_for_event("my.dummy", "my_event", listener=123)
+        await dummy_bus.client.listen_for_event("my.dummy", "my_event", listener=123)
 
 
 @pytest.mark.run_loop
 async def test_listen_for_event_no_args(dummy_bus: lightbus.BusNode):
     with pytest.raises(InvalidEventListener):
-        await dummy_bus.bus_client.listen_for_event("my.dummy", "my_event", listener=lambda: None)
+        await dummy_bus.client.listen_for_event("my.dummy", "my_event", listener=lambda: None)
 
 
 @pytest.mark.run_loop
 async def test_listen_for_event_no_positional_args(dummy_bus: lightbus.BusNode):
     with pytest.raises(InvalidEventListener):
-        await dummy_bus.bus_client.listen_for_event(
-            "my.dummy", "my_event", listener=lambda **kw: None
-        )
+        await dummy_bus.client.listen_for_event("my.dummy", "my_event", listener=lambda **kw: None)
 
 
 @pytest.mark.run_loop
 async def test_listen_for_event_one_positional_arg(dummy_bus: lightbus.BusNode):
-    await dummy_bus.bus_client.listen_for_event(
+    await dummy_bus.client.listen_for_event(
         "my.dummy", "my_event", listener=lambda event_message: None
     )
 
 
 @pytest.mark.run_loop
 async def test_listen_for_event_two_positional_args(dummy_bus: lightbus.BusNode):
-    await dummy_bus.bus_client.listen_for_event(
+    await dummy_bus.client.listen_for_event(
         "my.dummy", "my_event", listener=lambda event_message, other: None
     )
 
 
 @pytest.mark.run_loop
 async def test_listen_for_event_variable_positional_args(dummy_bus: lightbus.BusNode):
-    await dummy_bus.bus_client.listen_for_event("my.dummy", "my_event", listener=lambda *a: None)
+    await dummy_bus.client.listen_for_event("my.dummy", "my_event", listener=lambda *a: None)
 
 
 @pytest.mark.run_loop
 async def test_listen_for_event_starts_with_underscore(dummy_bus: lightbus.BusNode):
     with pytest.raises(InvalidName):
-        await dummy_bus.bus_client.listen_for_event(
+        await dummy_bus.client.listen_for_event(
             "my.dummy", "_my_event", listener=lambda *a, **kw: None
         )
 
@@ -86,45 +84,43 @@ async def test_listen_for_event_starts_with_underscore(dummy_bus: lightbus.BusNo
 @pytest.mark.run_loop
 async def test_fire_event_starts_with_underscore(dummy_bus: lightbus.BusNode, dummy_api):
     with pytest.raises(InvalidName):
-        await dummy_bus.bus_client.fire_event("my.dummy", "_my_event")
+        await dummy_bus.client.fire_event("my.dummy", "_my_event")
 
 
 @pytest.mark.run_loop
 async def test_call_rpc_remote_starts_with_underscore(dummy_bus: lightbus.BusNode):
     with pytest.raises(InvalidName):
-        await dummy_bus.bus_client.call_rpc_remote("my.dummy", "_my_event")
+        await dummy_bus.client.call_rpc_remote("my.dummy", "_my_event")
 
 
 @pytest.mark.run_loop
 async def test_call_rpc_local_starts_with_underscore(dummy_bus: lightbus.BusNode, dummy_api):
     with pytest.raises(InvalidName):
-        await dummy_bus.bus_client.call_rpc_local("my.dummy", "_my_event")
+        await dummy_bus.client.call_rpc_local("my.dummy", "_my_event")
 
 
 @pytest.mark.run_loop
 async def test_listen_for_event_empty_name(dummy_bus: lightbus.BusNode):
     with pytest.raises(InvalidName):
-        await dummy_bus.bus_client.listen_for_event(
-            "my.dummy", "_my_event", listener=lambda *a: None
-        )
+        await dummy_bus.client.listen_for_event("my.dummy", "_my_event", listener=lambda *a: None)
 
 
 @pytest.mark.run_loop
 async def test_fire_event_empty_name(dummy_bus: lightbus.BusNode, dummy_api):
     with pytest.raises(InvalidName):
-        await dummy_bus.bus_client.fire_event("my.dummy", "_my_event")
+        await dummy_bus.client.fire_event("my.dummy", "_my_event")
 
 
 @pytest.mark.run_loop
 async def test_call_rpc_remote_empty_name(dummy_bus: lightbus.BusNode):
     with pytest.raises(InvalidName):
-        await dummy_bus.bus_client.call_rpc_remote("my.dummy", "_my_event")
+        await dummy_bus.client.call_rpc_remote("my.dummy", "_my_event")
 
 
 @pytest.mark.run_loop
 async def test_call_rpc_local_empty_name(dummy_bus: lightbus.BusNode, dummy_api):
     with pytest.raises(InvalidName):
-        await dummy_bus.bus_client.call_rpc_local("my.dummy", "_my_event")
+        await dummy_bus.client.call_rpc_local("my.dummy", "_my_event")
 
 
 @pytest.mark.run_loop
@@ -291,13 +287,13 @@ def test_setup_transports_opened(loop, mocker):
 
 def test_run_forever(dummy_bus: lightbus.BusNode, mocker, dummy_api):
     """A simple test to ensure run_forever executes without errors"""
-    m = mocker.patch.object(dummy_bus.bus_client, "_actually_run_forever")
-    dummy_bus.bus_client.run_forever()
+    m = mocker.patch.object(dummy_bus.client, "_actually_run_forever")
+    dummy_bus.client.run_forever()
     assert m.called
 
 
 def test_register_listener_context_manager(dummy_bus: lightbus.BusNode):
-    client = dummy_bus.bus_client
+    client = dummy_bus.client
     assert len(client._listeners) == 0
     with client._register_listener([("api_name", "event_name")]):
         assert client._listeners[("api_name", "event_name")] == 1

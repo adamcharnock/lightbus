@@ -24,7 +24,7 @@ async def test_before_server_start(dummy_bus: BusNode, loop, get_dummy_events):
 
     state_plugin = StatePlugin(service_name="foo", process_name="bar")
     state_plugin.ping_enabled = False
-    await state_plugin.before_server_start(bus_client=dummy_bus.bus_client)
+    await state_plugin.before_server_start(bus_client=dummy_bus.client)
     await cancel(listener)
 
     dummy_events = get_dummy_events()
@@ -53,9 +53,7 @@ async def test_ping(dummy_bus: BusNode, loop, get_dummy_events):
     # Let the state plugin send a ping then cancel it
     state_plugin = StatePlugin(service_name="foo", process_name="bar")
     state_plugin.ping_interval = 0.1
-    task = asyncio.ensure_future(
-        state_plugin._send_ping(bus_client=dummy_bus.bus_client), loop=loop
-    )
+    task = asyncio.ensure_future(state_plugin._send_ping(bus_client=dummy_bus.client), loop=loop)
     await asyncio.sleep(0.15)
     await cancel(task)
 
@@ -82,7 +80,7 @@ async def test_after_server_stopped(dummy_bus: BusNode, loop, get_dummy_events):
 
     plugin = StatePlugin(service_name="foo", process_name="bar")
     plugin._ping_task = asyncio.Future()
-    await plugin.after_server_stopped(bus_client=dummy_bus.bus_client)
+    await plugin.after_server_stopped(bus_client=dummy_bus.client)
 
     # Give any pending coroutines coroutines a moment to be awaited
     await asyncio.sleep(0.001)

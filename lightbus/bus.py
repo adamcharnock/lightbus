@@ -170,11 +170,11 @@ class BusClient(object):
                 )
             )
 
-        block(plugin_hook("before_server_start", bus_client=self), self.loop, timeout=5)
+        block(plugin_hook("before_server_start", client=self), self.loop, timeout=5)
 
         self._run_forever(consume_rpcs)
 
-        self.loop.run_until_complete(plugin_hook("after_server_stopped", bus_client=self))
+        self.loop.run_until_complete(plugin_hook("after_server_stopped", client=self))
 
         # Close the bus (which will in turn close the transports)
         self.close()
@@ -249,7 +249,7 @@ class BusClient(object):
         for rpc_message in rpc_messages:
             self._validate(rpc_message, "incoming")
 
-            await plugin_hook("before_rpc_execution", rpc_message=rpc_message, bus_client=self)
+            await plugin_hook("before_rpc_execution", rpc_message=rpc_message, client=self)
             try:
                 result = await self.call_rpc_local(
                     api_name=rpc_message.api_name,
@@ -266,7 +266,7 @@ class BusClient(object):
                     "after_rpc_execution",
                     rpc_message=rpc_message,
                     result_message=result_message,
-                    bus_client=self,
+                    client=self,
                 )
 
                 self._validate(
@@ -305,7 +305,7 @@ class BusClient(object):
             rpc_transport.call_rpc(rpc_message, options=options),
         )
 
-        await plugin_hook("before_rpc_call", rpc_message=rpc_message, bus_client=self)
+        await plugin_hook("before_rpc_call", rpc_message=rpc_message, client=self)
 
         try:
             result_message, _ = await asyncio.wait_for(future, timeout=timeout)
@@ -328,10 +328,7 @@ class BusClient(object):
             ) from None
 
         await plugin_hook(
-            "after_rpc_call",
-            rpc_message=rpc_message,
-            result_message=result_message,
-            bus_client=self,
+            "after_rpc_call", rpc_message=rpc_message, result_message=result_message, client=self
         )
 
         if not result_message.error:
@@ -440,10 +437,10 @@ class BusClient(object):
         self._validate(event_message, "outgoing")
 
         event_transport = self.transport_registry.get_event_transport(api_name)
-        await plugin_hook("before_event_sent", event_message=event_message, bus_client=self)
+        await plugin_hook("before_event_sent", event_message=event_message, client=self)
         logger.info(L("📤  Sending event {}.{}".format(Bold(api_name), Bold(name))))
         await event_transport.send_event(event_message, options=options)
-        await plugin_hook("after_event_sent", event_message=event_message, bus_client=self)
+        await plugin_hook("after_event_sent", event_message=event_message, client=self)
 
     async def listen_for_event(
         self, api_name, name, listener, options: dict = None
@@ -486,7 +483,7 @@ class BusClient(object):
                     self._validate(event_message, "incoming")
 
                     await plugin_hook(
-                        "before_event_execution", event_message=event_message, bus_client=self
+                        "before_event_execution", event_message=event_message, client=self
                     )
 
                     if self.config.api(event_message.api_name).cast_values:
@@ -514,7 +511,7 @@ class BusClient(object):
                     # `after_event_execution` plugin hook immediately afterwards
                     await consumer.__anext__()
                     await plugin_hook(
-                        "after_event_execution", event_message=event_message, bus_client=self
+                        "after_event_execution", event_message=event_message, client=self
                     )
 
         # Get the events transports for the selection of APIs that we are listening on
@@ -661,15 +658,15 @@ class BusClient(object):
 
 class BusNode(object):
 
-    def __init__(self, name: str, *, parent: Optional["BusNode"], bus_client: BusClient):
+    def __init__(self, name: str, *, parent: Optional["BusNode"], client: BusClient):
         if not parent and name:
             raise InvalidBusNodeConfiguration("Root client node may not have a name")
         self.name = name
         self.parent = parent
-        self.bus_client = bus_client
+        self.client = client
 
     def __getattr__(self, item) -> "BusNode":
-        return self.__class__(name=item, parent=self, bus_client=self.bus_client)
+        return self.__class__(name=item, parent=self, client=self.client)
 
     def __str__(self):
         return self.fully_qualified_name
@@ -707,10 +704,10 @@ class BusNode(object):
     def call(self, *, bus_options=None, **kwargs):
         # Use a larger value of `rpc_timeout` because call_rpc_remote() should
         # handle timeout
-        rpc_timeout = self.bus_client.config.api(self.api_name).rpc_timeout * 1.5
+        rpc_timeout = self.client.config.api(self.api_name).rpc_timeout * 1.5
         return block(
             self.call_async(**kwargs, bus_options=bus_options),
-            loop=self.bus_client.loop,
+            loop=self.client.loop,
             timeout=rpc_timeout,
         )
 
@@ -721,22 +718,22 @@ class BusNode(object):
                 f"arguments. Lightbus requires you use keyword arguments. For example, "
                 f"instead of func(1), use func(foo=1)."
             )
-        return await self.bus_client.call_rpc_remote(
+        return await self.client.call_rpc_remote(
             api_name=self.api_name, name=self.name, kwargs=kwargs, options=bus_options
         )
 
     # Events
 
     async def listen_async(self, listener, *, bus_options: dict = None):
-        return await self.bus_client.listen_for_event(
+        return await self.client.listen_for_event(
             api_name=self.api_name, name=self.name, listener=listener, options=bus_options
         )
 
     def listen(self, listener, *, bus_options: dict = None):
         return block(
             self.listen_async(listener, bus_options=bus_options),
-            self.bus_client.loop,
-            timeout=self.bus_client.config.api(self.api_name).event_listener_setup_timeout,
+            self.client.loop,
+            timeout=self.client.config.api(self.api_name).event_listener_setup_timeout,
         )
 
     async def listen_multiple_async(
@@ -749,14 +746,14 @@ class BusNode(object):
             )
 
         events = [(node.api_name, node.name) for node in events]
-        return await self.bus_client.listen_for_events(
+        return await self.client.listen_for_events(
             events=events, listener=listener, options=bus_options
         )
 
     def listen_multiple(self, events: List["BusNode"], listener, *, bus_options: dict = None):
         return block(
             self.listen_multiple_async(events, listener, bus_options=bus_options),
-            self.bus_client.loop,
+            self.client.loop,
             timeout=5,
         )
 
@@ -767,15 +764,15 @@ class BusNode(object):
                 f"arguments. Lightbus requires you use keyword arguments. For example, "
                 f"instead of func(1), use func(foo=1)."
             )
-        return await self.bus_client.fire_event(
+        return await self.client.fire_event(
             api_name=self.api_name, name=self.name, kwargs=kwargs, options=bus_options
         )
 
     def fire(self, *, bus_options: dict = None, **kwargs):
         return block(
             self.fire_async(**kwargs, bus_options=bus_options),
-            loop=self.bus_client.loop,
-            timeout=self.bus_client.config.api(self.api_name).event_fire_timeout,
+            loop=self.client.loop,
+            timeout=self.client.config.api(self.api_name).event_fire_timeout,
         )
 
     # Utilities
@@ -788,7 +785,7 @@ class BusNode(object):
             parent = parent.parent
 
     def run_forever(self, consume_rpcs=True):
-        self.bus_client.run_forever(consume_rpcs=consume_rpcs)
+        self.client.run_forever(consume_rpcs=consume_rpcs)
 
     @property
     def api_name(self):
@@ -808,7 +805,7 @@ class BusNode(object):
     def schema(self):
         """Get the bus schema"""
         if self.parent is None:
-            return self.bus_client.schema
+            return self.client.schema
         else:
             # TODO: Implement getting schema of child nodes if there is demand
             raise AttributeError(
@@ -819,9 +816,7 @@ class BusNode(object):
     def parameter_schema(self):
         """Get the parameter JSON schema for the given event or RPC"""
         # TODO: Test
-        return self.bus_client.schema.get_event_or_rpc_schema(self.api_name, self.name)[
-            "parameters"
-        ]
+        return self.client.schema.get_event_or_rpc_schema(self.api_name, self.name)["parameters"]
 
     @property
     def response_schema(self):
@@ -831,16 +826,16 @@ class BusNode(object):
         SchemaNotFound error.
         """
         # TODO: Test
-        rpc_schema = self.bus_client.schema.get_rpc_schema(self.api_name, self.name)["response"]
+        rpc_schema = self.client.schema.get_rpc_schema(self.api_name, self.name)["response"]
         return rpc_schema["response"]
 
     def validate_parameters(self, parameters: dict):
         # TODO: Test
-        self.bus_client.schema.validate_parameters(self.api_name, self.name, parameters)
+        self.client.schema.validate_parameters(self.api_name, self.name, parameters)
 
     def validate_response(self, response):
         # TODO: Test
-        self.bus_client.schema.validate_parameters(self.api_name, self.name, response)
+        self.client.schema.validate_parameters(self.api_name, self.name, response)
 
 
 async def create_async(
@@ -890,12 +885,10 @@ async def create_async(
     if schema_transport:
         transport_registry.set_schema_transport(schema_transport)
 
-    bus_client = client_class(
-        transport_registry=transport_registry, config=config, loop=loop, **kwargs
-    )
-    await bus_client.setup_async(plugins=plugins)
+    client = client_class(transport_registry=transport_registry, config=config, loop=loop, **kwargs)
+    await client.setup_async(plugins=plugins)
 
-    return node_class(name="", parent=None, bus_client=bus_client)
+    return node_class(name="", parent=None, client=client)
 
 
 def create(*args, **kwargs):

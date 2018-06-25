@@ -169,11 +169,11 @@ def transactional_bus_factory(dummy_bus: BusNode, new_redis_pool, loop):
                 stream_use=StreamUse.PER_EVENT,
             )
         )
-        config = dummy_bus.bus_client.config
+        config = dummy_bus.client.config
         transport_registry = TransportRegistry().load_config(config)
         transport_registry.set_event_transport("default", transport)
         client = lightbus.BusClient(config=config, transport_registry=transport_registry, loop=loop)
-        bus = lightbus.BusNode(name="", parent=None, bus_client=client)
+        bus = lightbus.BusNode(name="", parent=None, client=client)
         return bus
 
     return inner
@@ -189,7 +189,7 @@ def transactional_bus(dummy_bus: BusNode, new_redis_pool, aiopg_connection, aiop
             stream_use=StreamUse.PER_EVENT,
         )
     )
-    registry = dummy_bus.bus_client.transport_registry
+    registry = dummy_bus.client.transport_registry
     registry.set_event_transport("default", transport)
 
     database = DbApiConnection(aiopg_connection, aiopg_cursor)

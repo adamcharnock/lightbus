@@ -218,7 +218,7 @@ def dummy_listener(dummy_bus: BusNode, loop):
         def pass_listener(*args, **kwargs):
             pass
 
-        task = await dummy_bus.bus_client.listen_for_event(api_name, event_name, pass_listener)
+        task = await dummy_bus.client.listen_for_event(api_name, event_name, pass_listener)
         tasks.append(task)
 
     try:
@@ -236,7 +236,7 @@ def dummy_listener(dummy_bus: BusNode, loop):
 @pytest.fixture
 def get_dummy_events(mocker, dummy_bus: BusNode):
     """Get events sent on the dummy bus"""
-    event_transport = dummy_bus.bus_client.transport_registry.get_event_transport("default")
+    event_transport = dummy_bus.client.transport_registry.get_event_transport("default")
     mocker.spy(event_transport, "send_event")
 
     def get_events():

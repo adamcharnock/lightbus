@@ -48,7 +48,7 @@ class LightbusDbContext(object):
 
         # Get the transport, and check it is sane
         transports = list(
-            {bus.bus_client.transport_registry.get_event_transport(api_name) for api_name in apis}
+            {bus.client.transport_registry.get_event_transport(api_name) for api_name in apis}
         )
         if len(transports) > 1:
             # This check is not strictly required, but let's enforce it

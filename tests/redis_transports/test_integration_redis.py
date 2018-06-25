@@ -22,9 +22,9 @@ stream_use_test_data = [StreamUse.PER_EVENT, StreamUse.PER_API]
 @pytest.mark.run_loop
 async def test_bus_fixture(bus: lightbus.BusNode):
     """Just sanity check the fixture"""
-    rpc_transport = bus.bus_client.transport_registry.get_rpc_transport("default")
-    result_transport = bus.bus_client.transport_registry.get_result_transport("default")
-    event_transport = bus.bus_client.transport_registry.get_event_transport("default")
+    rpc_transport = bus.client.transport_registry.get_rpc_transport("default")
+    result_transport = bus.client.transport_registry.get_result_transport("default")
+    event_transport = bus.client.transport_registry.get_event_transport("default")
 
     connection_manager_rpc = await rpc_transport.connection_manager()
     connection_manager_result = await result_transport.connection_manager()
@@ -56,7 +56,7 @@ async def test_rpc(bus: lightbus.BusNode, dummy_api):
         return await bus.my.dummy.my_proc.call_async(field="Hello! 😎")
 
     async def co_consume_rpcs():
-        return await bus.bus_client.consume_rpcs(apis=[dummy_api])
+        return await bus.client.consume_rpcs(apis=[dummy_api])
 
     (call_task,), (consume_task,) = await asyncio.wait(
         [co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED
@@ -74,7 +74,7 @@ async def test_rpc_timeout(bus: lightbus.BusNode, dummy_api):
         return await bus.my.dummy.sudden_death.call_async(n=0)
 
     async def co_consume_rpcs():
-        return await bus.bus_client.consume_rpcs(apis=[dummy_api])
+        return await bus.client.consume_rpcs(apis=[dummy_api])
 
     (call_task,), (consume_task,) = await asyncio.wait(
         [co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED
@@ -94,7 +94,7 @@ async def test_rpc_error(bus: lightbus.BusNode, dummy_api):
         return await bus.my.dummy.general_error.call_async()
 
     async def co_consume_rpcs():
-        return await bus.bus_client.consume_rpcs(apis=[dummy_api])
+        return await bus.client.consume_rpcs(apis=[dummy_api])
 
     (call_task,), (consume_task,) = await asyncio.wait(
         [co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED
@@ -113,7 +113,7 @@ async def test_rpc_error(bus: lightbus.BusNode, dummy_api):
 )
 async def test_event(bus: lightbus.BusNode, dummy_api, stream_use):
     """Full event integration test"""
-    bus.bus_client.transport_registry.get_event_transport("default").stream_use = stream_use
+    bus.client.transport_registry.get_event_transport("default").stream_use = stream_use
     manually_set_plugins({})
     received_messages = []
 
@@ -143,14 +143,14 @@ async def test_ids(bus: lightbus.BusNode, dummy_api, mocker):
         return await bus.my.dummy.my_proc.call_async(field="foo")
 
     async def co_consume_rpcs():
-        return await bus.bus_client.consume_rpcs(apis=[dummy_api])
+        return await bus.client.consume_rpcs(apis=[dummy_api])
 
-    mocker.spy(bus.bus_client, "send_result")
+    mocker.spy(bus.client, "send_result")
 
     (call_task,), (consume_task,) = await asyncio.wait(
         [co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED
     )
-    _, kw = bus.bus_client.send_result.call_args
+    _, kw = bus.client.send_result.call_args
     rpc_message = kw["rpc_message"]
     result_message = kw["result_message"]
     consume_task.cancel()
@@ -212,7 +212,7 @@ async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpc
         }
     )
 
-    bus = BusNode(name="", parent=None, bus_client=lightbus.BusClient(config=config, loop=loop))
+    bus = BusNode(name="", parent=None, client=lightbus.BusClient(config=config, loop=loop))
     asyncio.ensure_future(consume_rpcs(bus))
     await asyncio.sleep(0.1)
 
@@ -246,16 +246,16 @@ async def test_multiple_event_transports(loop, server, redis_server_b):
         }
     )
 
-    bus = BusNode(name="", parent=None, bus_client=lightbus.BusClient(config=config, loop=loop))
+    bus = BusNode(name="", parent=None, client=lightbus.BusClient(config=config, loop=loop))
     await asyncio.sleep(0.1)
 
     await bus.api_a.event_a.fire_async()
     await bus.api_b.event_b.fire_async()
 
-    connection_manager_a = bus.bus_client.transport_registry.get_event_transport(
+    connection_manager_a = bus.client.transport_registry.get_event_transport(
         "api_a"
     ).connection_manager
-    connection_manager_b = bus.bus_client.transport_registry.get_event_transport(
+    connection_manager_b = bus.client.transport_registry.get_event_transport(
         "api_b"
     ).connection_manager
 
@@ -272,15 +272,15 @@ async def test_multiple_event_transports(loop, server, redis_server_b):
 async def test_validation_rpc(loop, bus: lightbus.BusNode, dummy_api, mocker):
     """Check validation happens when performing an RPC"""
     config = Config.load_dict({"apis": {"default": {"validate": True, "strict_validation": True}}})
-    bus.bus_client.config = config
+    bus.client.config = config
     mocker.patch("jsonschema.validate", autospec=True)
 
     async def co_consume_rpcs():
-        return await bus.bus_client.consume_rpcs(apis=[dummy_api])
+        return await bus.client.consume_rpcs(apis=[dummy_api])
 
-    await bus.bus_client.schema.add_api(dummy_api)
-    await bus.bus_client.schema.save_to_bus()
-    await bus.bus_client.schema.load_from_bus()
+    await bus.client.schema.add_api(dummy_api)
+    await bus.client.schema.save_to_bus()
+    await bus.client.schema.load_from_bus()
 
     consume_task = asyncio.ensure_future(co_consume_rpcs(), loop=loop)
 
@@ -306,17 +306,17 @@ async def test_validation_rpc(loop, bus: lightbus.BusNode, dummy_api, mocker):
 async def test_validation_event(loop, bus: lightbus.BusNode, dummy_api, mocker):
     """Check validation happens when firing an event"""
     config = Config.load_dict({"apis": {"default": {"validate": True, "strict_validation": True}}})
-    bus.bus_client.config = config
+    bus.client.config = config
     mocker.patch("jsonschema.validate", autospec=True)
 
     async def co_listener(*a, **kw):
         pass
 
-    await bus.bus_client.schema.add_api(dummy_api)
-    await bus.bus_client.schema.save_to_bus()
-    await bus.bus_client.schema.load_from_bus()
+    await bus.client.schema.add_api(dummy_api)
+    await bus.client.schema.save_to_bus()
+    await bus.client.schema.load_from_bus()
 
-    listener_task = await bus.bus_client.listen_for_event("my.dummy", "my_event", co_listener)
+    listener_task = await bus.client.listen_for_event("my.dummy", "my_event", co_listener)
 
     await asyncio.sleep(0.1)
     await bus.my.dummy.my_event.fire_async(field="Hello")
@@ -362,7 +362,7 @@ async def test_listen_to_multiple_events_across_multiple_transports(loop, server
         }
     )
 
-    bus = BusNode(name="", parent=None, bus_client=lightbus.BusClient(config=config, loop=loop))
+    bus = BusNode(name="", parent=None, client=lightbus.BusClient(config=config, loop=loop))
     await asyncio.sleep(0.1)
 
     calls = 0

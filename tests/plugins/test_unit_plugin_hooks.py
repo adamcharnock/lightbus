@@ -64,11 +64,11 @@ async def test_rpc_execution(
         else:
             raise StopIt()
 
-    rpc_transport = dummy_bus.bus_client.transport_registry.get_rpc_transport("default")
+    rpc_transport = dummy_bus.client.transport_registry.get_rpc_transport("default")
     m = mocker.patch.object(rpc_transport, "consume_rpcs", side_effect=dummy_transport_consume_rpcs)
 
     try:
-        await dummy_bus.bus_client.consume_rpcs()
+        await dummy_bus.client.consume_rpcs()
     except StopIt:  # Gross. Need to escape the infinite loop in bus_client.consume_rpcs() somehow
         pass
 
@@ -85,15 +85,13 @@ def test_event_sent(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dum
 async def test_event_execution(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dummy_api):
     add_base_plugin()
 
-    task = await dummy_bus.bus_client.listen_for_event(
-        "my.dummy", "my_event", lambda *a, **kw: None
-    )
+    task = await dummy_bus.client.listen_for_event("my.dummy", "my_event", lambda *a, **kw: None)
     await asyncio.sleep(0.1)
 
     # Send the event message using a lower-level API to avoid triggering the
     # before_event_sent & after_event_sent plugin hooks. We don't care about those here
     event_message = EventMessage(api_name="my.dummy", event_name="my_event", kwargs={"field": 1})
-    event_transport = dummy_bus.bus_client.transport_registry.get_event_transport("default")
+    event_transport = dummy_bus.client.transport_registry.get_event_transport("default")
     await event_transport.send_event(event_message, options={})
     await asyncio.sleep(0.1)
 
