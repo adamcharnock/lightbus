@@ -8,7 +8,7 @@ from unittest.mock import patch
 from typing import List, Dict
 
 from lightbus import (
-    BusNode,
+    BusPath,
     RpcTransport,
     EventTransport,
     SchemaTransport,
@@ -77,7 +77,7 @@ class MockResult(object):
 
 class BusMocker(ContextDecorator):
 
-    def __init__(self, bus: BusNode):
+    def __init__(self, bus: BusPath):
         self.bus = bus
 
     # Overriding ContextDecorator to pass the mock result to the function

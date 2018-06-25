@@ -9,7 +9,7 @@ from psycopg2.extensions import cursor
 import pytest
 
 import lightbus
-from lightbus import TransactionalEventTransport, BusNode
+from lightbus import TransactionalEventTransport, BusPath
 from lightbus.transports.base import TransportRegistry
 from lightbus.transports.redis import StreamUse
 from lightbus.transports.transactional import DbApiConnection
@@ -157,7 +157,7 @@ def messages_in_redis(redis_client):
 
 
 @pytest.fixture()
-def transactional_bus_factory(dummy_bus: BusNode, new_redis_pool, loop):
+def transactional_bus_factory(dummy_bus: BusPath, new_redis_pool, loop):
     pool = new_redis_pool(maxsize=10000)
 
     async def inner():
@@ -173,14 +173,14 @@ def transactional_bus_factory(dummy_bus: BusNode, new_redis_pool, loop):
         transport_registry = TransportRegistry().load_config(config)
         transport_registry.set_event_transport("default", transport)
         client = lightbus.BusClient(config=config, transport_registry=transport_registry, loop=loop)
-        bus = lightbus.BusNode(name="", parent=None, client=client)
+        bus = lightbus.BusPath(name="", parent=None, client=client)
         return bus
 
     return inner
 
 
 @pytest.fixture()
-def transactional_bus(dummy_bus: BusNode, new_redis_pool, aiopg_connection, aiopg_cursor, loop):
+def transactional_bus(dummy_bus: BusPath, new_redis_pool, aiopg_connection, aiopg_cursor, loop):
     transport = TransactionalEventTransport(
         child_transport=lightbus.RedisEventTransport(
             redis_pool=new_redis_pool(maxsize=10000),

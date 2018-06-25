@@ -4,7 +4,7 @@
 import asyncio
 import pytest
 
-from lightbus import BusNode, BusClient
+from lightbus import BusPath, BusClient
 from lightbus.message import RpcMessage, EventMessage
 from lightbus.plugins import manually_set_plugins, LightbusPlugin
 
@@ -33,14 +33,14 @@ def add_base_plugin():
     return do_add_base_plugin
 
 
-def test_server_start_stop(mocker, called_hooks, dummy_bus: BusNode, add_base_plugin, dummy_api):
+def test_server_start_stop(mocker, called_hooks, dummy_bus: BusPath, add_base_plugin, dummy_api):
     add_base_plugin()
     mocker.patch.object(BusClient, "_run_forever")
     dummy_bus.run_forever()
     assert called_hooks() == ["before_server_start", "after_server_stopped"]
 
 
-def test_rpc_calls(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dummy_api):
+def test_rpc_calls(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
     dummy_bus.my.dummy.my_proc()
     assert called_hooks() == ["before_rpc_call", "after_rpc_call"]
@@ -48,7 +48,7 @@ def test_rpc_calls(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dumm
 
 @pytest.mark.run_loop
 async def test_rpc_execution(
-    called_hooks, dummy_bus: BusNode, loop, mocker, add_base_plugin, dummy_api
+    called_hooks, dummy_bus: BusPath, loop, mocker, add_base_plugin, dummy_api
 ):
 
     class StopIt(Exception):
@@ -75,14 +75,14 @@ async def test_rpc_execution(
     assert called_hooks() == ["before_rpc_execution", "after_rpc_execution"]
 
 
-def test_event_sent(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dummy_api):
+def test_event_sent(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
     dummy_bus.my.dummy.my_event.fire(field="foo")
     assert called_hooks() == ["before_event_sent", "after_event_sent"]
 
 
 @pytest.mark.run_loop
-async def test_event_execution(called_hooks, dummy_bus: BusNode, loop, add_base_plugin, dummy_api):
+async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
 
     task = await dummy_bus.client.listen_for_event("my.dummy", "my_event", lambda *a, **kw: None)

@@ -13,7 +13,7 @@ from lightbus.api import registry, Api
 from lightbus.config import Config
 from lightbus.exceptions import (
     InvalidEventArguments,
-    InvalidBusNodeConfiguration,
+    InvalidBusPathConfiguration,
     UnknownApi,
     EventNotFound,
     InvalidEventListener,
@@ -43,7 +43,7 @@ from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string, import_module_from_string
 from lightbus.utilities.logging import log_transport_information
 
-__all__ = ["BusClient", "BusNode", "create", "create_async"]
+__all__ = ["BusClient", "BusPath", "create", "create_async"]
 
 
 logger = logging.getLogger(__name__)
@@ -656,23 +656,23 @@ class BusClient(object):
             )
 
 
-class BusNode(object):
+class BusPath(object):
 
-    def __init__(self, name: str, *, parent: Optional["BusNode"], client: BusClient):
+    def __init__(self, name: str, *, parent: Optional["BusPath"], client: BusClient):
         if not parent and name:
-            raise InvalidBusNodeConfiguration("Root client node may not have a name")
+            raise InvalidBusPathConfiguration("Root client node may not have a name")
         self.name = name
         self.parent = parent
         self.client = client
 
-    def __getattr__(self, item) -> "BusNode":
+    def __getattr__(self, item) -> "BusPath":
         return self.__class__(name=item, parent=self, client=self.client)
 
     def __str__(self):
         return self.fully_qualified_name
 
     def __repr__(self):
-        return "<BusNode {}>".format(self.fully_qualified_name)
+        return "<BusPath {}>".format(self.fully_qualified_name)
 
     def __dir__(self):
         path = [node.name for node in self.ancestors(include_self=True)]
@@ -737,7 +737,7 @@ class BusNode(object):
         )
 
     async def listen_multiple_async(
-        self, events: List["BusNode"], listener, *, bus_options: dict = None
+        self, events: List["BusPath"], listener, *, bus_options: dict = None
     ):
         if self.parent:
             raise OnlyAvailableOnRootNode(
@@ -750,7 +750,7 @@ class BusNode(object):
             events=events, listener=listener, options=bus_options
         )
 
-    def listen_multiple(self, events: List["BusNode"], listener, *, bus_options: dict = None):
+    def listen_multiple(self, events: List["BusPath"], listener, *, bus_options: dict = None):
         return block(
             self.listen_multiple_async(events, listener, bus_options=bus_options),
             self.client.loop,
@@ -849,12 +849,12 @@ async def create_async(
     event_transport: Optional["EventTransport"] = None,
     schema_transport: Optional["SchemaTransport"] = None,
     client_class=BusClient,
-    node_class=BusNode,
+    node_class=BusPath,
     plugins=None,
     loop: asyncio.AbstractEventLoop = None,
     flask: bool = False,
     **kwargs,
-) -> BusNode:
+) -> BusPath:
 
     if flask and os.environ.get("WERKZEUG_RUN_MAIN", "").lower() != "true":
         # Flask has a reloader process that shouldn't start a lightbus client

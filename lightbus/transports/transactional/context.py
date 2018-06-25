@@ -29,14 +29,14 @@ except ImportError:  # pragma: no cover
     aiopg = None
 
 if False:
-    from lightbus.bus import BusNode
+    from lightbus.bus import BusPath
 
 
 class LightbusDbContext(object):
 
     def __init__(
         self,
-        bus: "BusNode",
+        bus: "BusPath",
         connection,
         apis: List[str] = ("default",),
         manage_transaction: Optional[bool] = True,

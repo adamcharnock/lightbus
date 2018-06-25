@@ -29,7 +29,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import lightbus
 from lightbus.api import registry
-from lightbus.bus import BusNode
+from lightbus.bus import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import remove_all_plugins
 
@@ -209,7 +209,7 @@ def dummy_bus(loop):
 
 
 @pytest.yield_fixture
-def dummy_listener(dummy_bus: BusNode, loop):
+def dummy_listener(dummy_bus: BusPath, loop):
     """Start the dummy bus consuming events"""
     tasks = []
 
@@ -234,7 +234,7 @@ def dummy_listener(dummy_bus: BusNode, loop):
 
 
 @pytest.fixture
-def get_dummy_events(mocker, dummy_bus: BusNode):
+def get_dummy_events(mocker, dummy_bus: BusPath):
     """Get events sent on the dummy bus"""
     event_transport = dummy_bus.client.transport_registry.get_event_transport("default")
     mocker.spy(event_transport, "send_event")
@@ -256,7 +256,7 @@ def get_dummy_events(mocker, dummy_bus: BusNode):
 def call_rpc_fixture(bus):
     results = []
 
-    async def call_rpc(rpc: BusNode, total, initial_delay=0.1, kwargs=None):
+    async def call_rpc(rpc: BusPath, total, initial_delay=0.1, kwargs=None):
         await asyncio.sleep(initial_delay)
         for n in range(0, total):
             results.append(await rpc.call_async(kwargs=dict(n=n)))

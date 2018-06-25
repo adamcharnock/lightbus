@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from lightbus import BusNode, TransactionalEventTransport, DebugEventTransport
+from lightbus import BusPath, TransactionalEventTransport, DebugEventTransport
 from lightbus.exceptions import (
     NoApisSpecified,
     ApisMustUseTransactionalTransport,
@@ -14,7 +14,7 @@ pytestmark = pytest.mark.unit
 
 
 @pytest.fixture()
-def atomic_context(dummy_bus: BusNode, aiopg_connection):
+def atomic_context(dummy_bus: BusPath, aiopg_connection):
     registry = dummy_bus.client.transport_registry
     current_event_transport = registry.get_event_transport("default")
     registry.set_event_transport(
@@ -23,17 +23,17 @@ def atomic_context(dummy_bus: BusNode, aiopg_connection):
     return lightbus_set_database(dummy_bus, aiopg_connection, apis=["some_api", "some_api2"])
 
 
-def test_init_no_apis(dummy_bus: BusNode, aiopg_connection):
+def test_init_no_apis(dummy_bus: BusPath, aiopg_connection):
     with pytest.raises(NoApisSpecified):
         lightbus_set_database(dummy_bus, aiopg_connection, apis=[])
 
 
-def test_init_bad_transport(dummy_bus: BusNode, aiopg_connection):
+def test_init_bad_transport(dummy_bus: BusPath, aiopg_connection):
     with pytest.raises(ApisMustUseTransactionalTransport):
         lightbus_set_database(dummy_bus, aiopg_connection, apis=["some_api"])
 
 
-def test_init_multiple_transports(dummy_bus: BusNode, aiopg_connection):
+def test_init_multiple_transports(dummy_bus: BusPath, aiopg_connection):
     registry = dummy_bus.client.transport_registry
     registry.set_event_transport("another_api", TransactionalEventTransport(DebugEventTransport()))
 

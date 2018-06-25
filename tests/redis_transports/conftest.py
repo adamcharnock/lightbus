@@ -5,7 +5,7 @@ import pytest
 from aioredis import create_redis_pool
 
 import lightbus
-from lightbus import BusNode
+from lightbus import BusPath
 from lightbus.transports.redis import StreamUse
 
 logger = logging.getLogger(__name__)

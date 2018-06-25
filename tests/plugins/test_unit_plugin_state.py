@@ -2,7 +2,7 @@ import asyncio
 import pytest
 
 from lightbus.api import registry, Api, Event
-from lightbus.bus import BusNode
+from lightbus.bus import BusPath
 from lightbus.plugins.state import StatePlugin
 from lightbus.utilities.async import cancel
 
@@ -17,7 +17,7 @@ class TestApi(Api):
 
 
 @pytest.mark.run_loop
-async def test_before_server_start(dummy_bus: BusNode, loop, get_dummy_events):
+async def test_before_server_start(dummy_bus: BusPath, loop, get_dummy_events):
     registry.add(TestApi())
     listener = await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
     await asyncio.sleep(0.1)  # Give the bus a moment to kick up the listener
@@ -44,7 +44,7 @@ async def test_before_server_start(dummy_bus: BusNode, loop, get_dummy_events):
 
 
 @pytest.mark.run_loop
-async def test_ping(dummy_bus: BusNode, loop, get_dummy_events):
+async def test_ping(dummy_bus: BusPath, loop, get_dummy_events):
     # We check the pings message contains a list of registries, so register one
     registry.add(TestApi())
     # Likewise for event listeners
@@ -74,7 +74,7 @@ async def test_ping(dummy_bus: BusNode, loop, get_dummy_events):
 
 
 @pytest.mark.run_loop
-async def test_after_server_stopped(dummy_bus: BusNode, loop, get_dummy_events):
+async def test_after_server_stopped(dummy_bus: BusPath, loop, get_dummy_events):
     registry.add(TestApi())
     listener = await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
 

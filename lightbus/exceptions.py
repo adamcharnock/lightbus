@@ -6,7 +6,7 @@ class InvalidMessage(LightbusException):
     pass
 
 
-class InvalidBusNodeConfiguration(LightbusException):
+class InvalidBusPathConfiguration(LightbusException):
     pass
 
 

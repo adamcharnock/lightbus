@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from lightbus import BusNode
+from lightbus import BusPath
 from lightbus.transports.transactional import lightbus_set_database
 from lightbus.utilities.async import cancel
 
@@ -54,7 +54,7 @@ async def test_fire_events_exception(
 
 
 @pytest.mark.run_loop
-async def test_consume_events(transactional_bus: BusNode, aiopg_connection_factory, dummy_api):
+async def test_consume_events(transactional_bus: BusPath, aiopg_connection_factory, dummy_api):
     events = []
 
     def listener(event_message, *, field):

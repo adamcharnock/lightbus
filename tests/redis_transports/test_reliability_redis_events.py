@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.mark.run_loop
-async def test_random_failures(bus: lightbus.BusNode, caplog, fire_dummy_events, dummy_api, mocker):
+async def test_random_failures(bus: lightbus.BusPath, caplog, fire_dummy_events, dummy_api, mocker):
     # Use test_history() (below) to repeat any cases which fail
     caplog.set_level(logging.WARNING)
 

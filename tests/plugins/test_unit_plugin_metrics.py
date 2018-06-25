@@ -2,7 +2,7 @@ import asyncio
 import pytest
 
 from lightbus.api import registry, Api, Event
-from lightbus.bus import BusNode
+from lightbus.bus import BusPath
 from lightbus.message import RpcMessage, EventMessage
 from lightbus.plugins import manually_set_plugins
 from lightbus.plugins.metrics import MetricsPlugin
@@ -22,7 +22,7 @@ class TestApi(Api):
 
 
 @pytest.mark.run_loop
-async def test_remote_rpc_call(dummy_bus: BusNode, get_dummy_events):
+async def test_remote_rpc_call(dummy_bus: BusPath, get_dummy_events):
     # Setup the bus and do the call
     manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
     registry.add(TestApi())
@@ -61,7 +61,7 @@ async def test_remote_rpc_call(dummy_bus: BusNode, get_dummy_events):
 
 
 @pytest.mark.run_loop
-async def test_local_rpc_call(loop, dummy_bus: BusNode, consume_rpcs, get_dummy_events, mocker):
+async def test_local_rpc_call(loop, dummy_bus: BusPath, consume_rpcs, get_dummy_events, mocker):
     rpc_transport = dummy_bus.client.transport_registry.get_rpc_transport("default")
     mocker.patch.object(
         rpc_transport,
@@ -112,7 +112,7 @@ async def test_local_rpc_call(loop, dummy_bus: BusNode, consume_rpcs, get_dummy_
 
 
 @pytest.mark.run_loop
-async def test_send_event(dummy_bus: BusNode, get_dummy_events):
+async def test_send_event(dummy_bus: BusPath, get_dummy_events):
     manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
     registry.add(TestApi())
     await dummy_bus.example.test.my_event.fire_async(f=123)
@@ -136,7 +136,7 @@ async def test_send_event(dummy_bus: BusNode, get_dummy_events):
 
 
 @pytest.mark.run_loop
-async def test_execute_events(dummy_bus: BusNode, dummy_listener, get_dummy_events, mocker):
+async def test_execute_events(dummy_bus: BusPath, dummy_listener, get_dummy_events, mocker):
     event_transport = dummy_bus.client.transport_registry.get_event_transport("default")
     mocker.patch.object(
         event_transport,
