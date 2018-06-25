@@ -820,5 +820,11 @@ def test_bus_module():
         with (d / project_name / "bus.py").open("w") as bus_py:
             bus_py.write("import lightbus\n" "bus = lightbus.create()")
         sys.path.insert(0, str(d))
-        yield f"{project_name}.bus"
+        module_name = f"{project_name}.bus"
+        yield module_name
+
+        if module_name in sys.modules:
+            module = sys.modules[module_name]
+            module.bus.client.close()
+
         sys.path.remove(str(d))

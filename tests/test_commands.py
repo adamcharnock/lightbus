@@ -8,6 +8,7 @@ from lightbus import commands, BusClient
 from lightbus.commands import run_command_from_args
 from lightbus.config import Config
 from lightbus.config.structure import RootConfig
+from lightbus.utilities.async import block, get_event_loop
 
 pytestmark = pytest.mark.unit
 
@@ -33,12 +34,13 @@ bus:
 
 
 @pytest.yield_fixture()
-def redis_config_file(server):
+def redis_config_file(loop, server, redis_client):
     config = REDIS_BUS_CONFIG.format(host=server.tcp_address.host, port=server.tcp_address.port)
     with NamedTemporaryFile() as f:
         f.write(config.encode("utf8"))
         f.flush()
         yield f.name
+        block(redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL"), loop=loop, timeout=1)
 
 
 def test_commands_run_cli(mocker, server, redis_config_file, test_bus_module):
