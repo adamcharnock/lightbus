@@ -49,7 +49,7 @@ async def test_plugin_hook(mocker):
 
     m = mocker.patch.object(plugin, "before_server_start", return_value=dummy_coroutine())
 
-    await plugin_hook("before_server_start", bus_client=None, loop=None)
+    await plugin_hook("before_server_start", client=None, loop=None)
     assert m.called
 
 
