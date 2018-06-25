@@ -50,6 +50,13 @@ logger = logging.getLogger(__name__)
 
 
 class BusClient(object):
+    """Provides a the lower level interface for accessing the bus
+
+    Which less expressive than the interface provided by `BusPath`,
+    the `BusClient` allows for slightly more control in some situations.
+
+    All functionality in `BusPath` is provided by `BusClient`.
+    """
 
     def __init__(
         self,
