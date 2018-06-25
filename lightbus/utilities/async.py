@@ -11,18 +11,6 @@ from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 logger = logging.getLogger(__name__)
 
 
-async def handle_aio_exceptions(fn):
-    try:
-        await fn
-    except asyncio.CancelledError:
-        raise
-    except LightbusShutdownInProgress as e:
-        logger.info("Shutdown in progress: {}".format(e))
-    except Exception as e:
-        logger.exception(e)
-        traceback.print_exc()
-
-
 def block(coroutine: Coroutine, loop: asyncio.AbstractEventLoop, *, timeout):
     if loop.is_running():
         coroutine.close()

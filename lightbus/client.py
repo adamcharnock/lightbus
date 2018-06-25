@@ -30,13 +30,7 @@ from lightbus.schema import Schema
 from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport
 from lightbus.transports.base import TransportRegistry
-from lightbus.utilities.async import (
-    handle_aio_exceptions,
-    block,
-    get_event_loop,
-    cancel,
-    check_for_exception,
-)
+from lightbus.utilities.async import block, get_event_loop, cancel, check_for_exception
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
