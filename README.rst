@@ -19,8 +19,8 @@ architecture.
 Running tests
 -------------
 
-Lightbus must currently test against Redis unstable (in order to test the Redis
-backends). Once streams make it into Redis stable this process will become easier.
+Lightbus must test against Redis 5, which is current in the RC stages (in order to test the Redis
+backends). Testing will become easier once Redis 5 sees an official release.
 
 Docker
 ~~~~~~
@@ -36,7 +36,9 @@ Manually
 
 You can run tests outside of docker as follows::
 
-    py.test --redis-server=/path/to/unstable/build/of/redis-server
+    py.test --redis-server=/path/to/redis-server
+
+For this you will need to manually compile Redis 5.
 
 `See lightbus.org`_
 -------------------
