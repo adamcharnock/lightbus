@@ -69,7 +69,7 @@ async def test_rpc_execution(
 
     try:
         await dummy_bus.client.consume_rpcs()
-    except StopIt:  # Gross. Need to escape the infinite loop in bus_client.consume_rpcs() somehow
+    except StopIt:  # Gross. Need to escape the infinite loop in client.consume_rpcs() somehow
         pass
 
     assert called_hooks() == ["before_rpc_execution", "after_rpc_execution"]

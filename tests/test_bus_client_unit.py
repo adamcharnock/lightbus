@@ -129,9 +129,9 @@ async def test_no_transport(loop):
     config = Config.load_dict(
         {"apis": {"default": {"event_transport": {"redis": {}}}}}, set_defaults=False
     )
-    bus_client = lightbus.BusClient(config=config)
+    client = lightbus.BusClient(config=config)
     with pytest.raises(TransportNotFound):
-        await bus_client.call_rpc_remote("my_api", "test", kwargs={}, options={})
+        await client.call_rpc_remote("my_api", "test", kwargs={}, options={})
 
 
 @pytest.mark.run_loop
@@ -146,9 +146,9 @@ async def test_no_transport_type(loop):
         },
         set_defaults=False,
     )
-    bus_client = lightbus.BusClient(config=config)
+    client = lightbus.BusClient(config=config)
     with pytest.raises(TransportNotFound):
-        await bus_client.call_rpc_remote("my_api", "test", kwargs={}, options={})
+        await client.call_rpc_remote("my_api", "test", kwargs={}, options={})
 
 
 # Validation
@@ -173,9 +173,9 @@ def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
         mocker.patch(
             "jsonschema.validate", autospec=True, side_effect=ValidationError("test error")
         ),
-        dummy_bus.bus_client.schema = schema
-        dummy_bus.bus_client.config = config
-        return dummy_bus.bus_client
+        dummy_bus.client.schema = schema
+        dummy_bus.client.config = config
+        return dummy_bus.client
 
     return create_bus_client_with_unhappy_schema
 
