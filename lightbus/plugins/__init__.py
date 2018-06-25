@@ -73,15 +73,13 @@ class LightbusPlugin(object, metaclass=PluginMetaclass):
         """
         pass
 
-    async def before_server_start(self, *, bus_client: "lightbus.bus.BusClient"):
+    async def before_server_start(self, *, client: "lightbus.bus.BusClient"):
         pass
 
-    async def after_server_stopped(self, *, bus_client: "lightbus.bus.BusClient"):
+    async def after_server_stopped(self, *, client: "lightbus.bus.BusClient"):
         pass
 
-    async def before_rpc_call(
-        self, *, rpc_message: RpcMessage, bus_client: "lightbus.bus.BusClient"
-    ):
+    async def before_rpc_call(self, *, rpc_message: RpcMessage, client: "lightbus.bus.BusClient"):
         pass
 
     async def after_rpc_call(
@@ -89,12 +87,12 @@ class LightbusPlugin(object, metaclass=PluginMetaclass):
         *,
         rpc_message: RpcMessage,
         result_message: ResultMessage,
-        bus_client: "lightbus.bus.BusClient",
+        client: "lightbus.bus.BusClient",
     ):
         pass
 
     async def before_rpc_execution(
-        self, *, rpc_message: RpcMessage, bus_client: "lightbus.bus.BusClient"
+        self, *, rpc_message: RpcMessage, client: "lightbus.bus.BusClient"
     ):
         pass
 
@@ -103,27 +101,27 @@ class LightbusPlugin(object, metaclass=PluginMetaclass):
         *,
         rpc_message: RpcMessage,
         result_message: ResultMessage,
-        bus_client: "lightbus.bus.BusClient",
+        client: "lightbus.bus.BusClient",
     ):
         pass
 
     async def before_event_sent(
-        self, *, event_message: EventMessage, bus_client: "lightbus.bus.BusClient"
+        self, *, event_message: EventMessage, client: "lightbus.bus.BusClient"
     ):
         pass
 
     async def after_event_sent(
-        self, *, event_message: EventMessage, bus_client: "lightbus.bus.BusClient"
+        self, *, event_message: EventMessage, client: "lightbus.bus.BusClient"
     ):
         pass
 
     async def before_event_execution(
-        self, *, event_message: EventMessage, bus_client: "lightbus.bus.BusClient"
+        self, *, event_message: EventMessage, client: "lightbus.bus.BusClient"
     ):
         pass
 
     async def after_event_execution(
-        self, *, event_message: EventMessage, bus_client: "lightbus.bus.BusClient"
+        self, *, event_message: EventMessage, client: "lightbus.bus.BusClient"
     ):
         pass
 

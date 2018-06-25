@@ -23,11 +23,9 @@ class MetricsPlugin(LightbusPlugin):
 
     # Client-side RPC hooks
 
-    async def before_rpc_call(
-        self, *, rpc_message: RpcMessage, bus_client: "lightbus.bus.BusClient"
-    ):
+    async def before_rpc_call(self, *, rpc_message: RpcMessage, client: "lightbus.bus.BusClient"):
         await self.send_event(
-            bus_client,
+            client,
             "rpc_call_sent",
             id=rpc_message.id,
             api_name=rpc_message.api_name,
@@ -40,10 +38,10 @@ class MetricsPlugin(LightbusPlugin):
         *,
         rpc_message: RpcMessage,
         result_message: ResultMessage,
-        bus_client: "lightbus.bus.BusClient",
+        client: "lightbus.bus.BusClient",
     ):
         await self.send_event(
-            bus_client,
+            client,
             "rpc_response_received",
             id=rpc_message.id,
             api_name=rpc_message.api_name,
@@ -53,10 +51,10 @@ class MetricsPlugin(LightbusPlugin):
     # Server-side RPC hooks
 
     async def before_rpc_execution(
-        self, *, rpc_message: RpcMessage, bus_client: "lightbus.bus.BusClient"
+        self, *, rpc_message: RpcMessage, client: "lightbus.bus.BusClient"
     ):
         await self.send_event(
-            bus_client,
+            client,
             "rpc_call_received",
             id=rpc_message.id,
             api_name=rpc_message.api_name,
@@ -68,10 +66,10 @@ class MetricsPlugin(LightbusPlugin):
         *,
         rpc_message: RpcMessage,
         result_message: ResultMessage,
-        bus_client: "lightbus.bus.BusClient",
+        client: "lightbus.bus.BusClient",
     ):
         await self.send_event(
-            bus_client,
+            client,
             "rpc_response_sent",
             id=rpc_message.id,
             api_name=rpc_message.api_name,
@@ -82,10 +80,10 @@ class MetricsPlugin(LightbusPlugin):
     # Client-side event hooks
 
     async def after_event_sent(
-        self, *, event_message: EventMessage, bus_client: "lightbus.bus.BusClient"
+        self, *, event_message: EventMessage, client: "lightbus.bus.BusClient"
     ):
         await self.send_event(
-            bus_client,
+            client,
             "event_fired",
             event_id="event_id",
             api_name=event_message.api_name,
@@ -96,10 +94,10 @@ class MetricsPlugin(LightbusPlugin):
     # Server-side event hooks
 
     async def before_event_execution(
-        self, *, event_message: EventMessage, bus_client: "lightbus.bus.BusClient"
+        self, *, event_message: EventMessage, client: "lightbus.bus.BusClient"
     ):
         await self.send_event(
-            bus_client,
+            client,
             "event_received",
             event_id="event_id",
             api_name=event_message.api_name,
@@ -108,10 +106,10 @@ class MetricsPlugin(LightbusPlugin):
         )
 
     async def after_event_execution(
-        self, *, event_message: EventMessage, bus_client: "lightbus.bus.BusClient"
+        self, *, event_message: EventMessage, client: "lightbus.bus.BusClient"
     ):
         await self.send_event(
-            bus_client,
+            client,
             "event_processed",
             event_id="event_id",
             api_name=event_message.api_name,
@@ -119,7 +117,7 @@ class MetricsPlugin(LightbusPlugin):
             kwargs=event_message.kwargs,
         )
 
-    def send_event(self, bus_client, event_name_, **kwargs) -> Coroutine:
+    def send_event(self, client, event_name_, **kwargs) -> Coroutine:
         """Send an event to the bus
 
         Note that we bypass using BusClient directly, otherwise we would trigger this
@@ -128,7 +126,7 @@ class MetricsPlugin(LightbusPlugin):
         kwargs.setdefault("timestamp", datetime.utcnow().timestamp())
         kwargs.setdefault("service_name", self.service_name)
         kwargs.setdefault("process_name", self.process_name)
-        event_transport = bus_client.transport_registry.get_event_transport("internal.metrics")
+        event_transport = client.transport_registry.get_event_transport("internal.metrics")
         return event_transport.send_event(
             EventMessage(api_name="internal.metrics", event_name=event_name_, kwargs=kwargs),
             options={},

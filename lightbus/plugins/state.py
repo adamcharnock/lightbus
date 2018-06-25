@@ -92,29 +92,27 @@ class StatePlugin(LightbusPlugin):
             self.ping_enabled = not args.no_ping
             self.ping_interval = args.ping_interval or self.ping_interval
 
-    async def before_server_start(self, *, bus_client: "BusClient"):
-        event_transport = bus_client.transport_registry.get_event_transport("internal.metrics")
+    async def before_server_start(self, *, client: "BusClient"):
+        event_transport = client.transport_registry.get_event_transport("internal.metrics")
         await event_transport.send_event(
             EventMessage(
                 api_name="internal.state",
                 event_name="server_started",
-                kwargs=self.get_state_kwargs(bus_client),
+                kwargs=self.get_state_kwargs(client),
             ),
             options={},
         )
         if self.ping_enabled:
             logger.info("Ping messages will be sent every {} seconds".format(self.ping_interval))
-            self._ping_task = asyncio.ensure_future(
-                self._send_ping(bus_client), loop=bus_client.loop
-            )
+            self._ping_task = asyncio.ensure_future(self._send_ping(client), loop=client.loop)
         else:
             logger.warning(
                 "Ping events have been disabled. This will reduce log volume and bus traffic, but "
                 "may result in this Lightbus server not appearing in the Lightbus admin interface."
             )
 
-    async def after_server_stopped(self, *, bus_client: "BusClient"):
-        event_transport = bus_client.transport_registry.get_event_transport("internal.metrics")
+    async def after_server_stopped(self, *, client: "BusClient"):
+        event_transport = client.transport_registry.get_event_transport("internal.metrics")
         await event_transport.send_event(
             EventMessage(
                 api_name="internal.state",
@@ -125,20 +123,20 @@ class StatePlugin(LightbusPlugin):
         )
         await cancel(self._ping_task)
 
-    async def _send_ping(self, bus_client: "BusClient"):
-        event_transport = bus_client.transport_registry.get_event_transport("internal.metrics")
+    async def _send_ping(self, client: "BusClient"):
+        event_transport = client.transport_registry.get_event_transport("internal.metrics")
         while True:
             await asyncio.sleep(self.ping_interval)
             await event_transport.send_event(
                 EventMessage(
                     api_name="internal.state",
                     event_name="server_ping",
-                    kwargs=self.get_state_kwargs(bus_client),
+                    kwargs=self.get_state_kwargs(client),
                 ),
                 options={},
             )
 
-    def get_state_kwargs(self, bus_client: "BusClient"):
+    def get_state_kwargs(self, client: "BusClient"):
         """Get the kwargs for a server_started or ping message"""
         max_memory_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         return dict(
@@ -148,7 +146,7 @@ class StatePlugin(LightbusPlugin):
             api_names=[api.meta.name for api in registry.public()],
             listening_for=[
                 "{}.{}".format(api_name, event_name)
-                for api_name, event_name in bus_client._listeners.keys()
+                for api_name, event_name in client._listeners.keys()
             ],
             timestamp=datetime.utcnow().timestamp(),
             ping_enabled=self.ping_enabled,
