@@ -5,6 +5,7 @@ import logging
 import signal
 import time
 from asyncio.futures import CancelledError
+from collections import defaultdict
 from inspect import isawaitable
 from typing import List, Tuple
 
@@ -30,7 +31,13 @@ from lightbus.schema import Schema
 from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport
 from lightbus.transports.base import TransportRegistry
-from lightbus.utilities.async import block, get_event_loop, cancel, check_for_exception
+from lightbus.utilities.async import (
+    block,
+    get_event_loop,
+    cancel,
+    check_for_exception,
+    await_if_necessary,
+)
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
@@ -68,6 +75,7 @@ class BusClient(object):
         )
         self._loop = loop
         self._listeners = {}
+        self._hook_callbacks = defaultdict(list)
 
     async def setup_async(self, plugins: dict = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
@@ -366,8 +374,7 @@ class BusClient(object):
             if self.config.api(api_name).cast_values:
                 kwargs = cast_to_signature(kwargs, method)
             result = method(**kwargs)
-            if isawaitable(result):
-                result = await result
+            result = await await_if_necessary(result)
         except (CancelledError, SuddenDeathException):
             raise
         except Exception as e:
@@ -668,4 +675,65 @@ class BusClient(object):
             )
 
     async def _plugin_hook(self, name, **kwargs):
+        # Hooks that need to run before plugins
+        for callback in self._hook_callbacks[(name, True)]:
+            await await_if_necessary(callback(client=self, **kwargs))
+
         await plugin_hook(name, client=self, **kwargs)
+
+        # Hooks that need to run after plugins
+        for callback in self._hook_callbacks[(name, False)]:
+            await await_if_necessary(callback(client=self, **kwargs))
+
+    def _register_hook_callback(self, name, fn, before_plugins=False):
+        self._hook_callbacks[(name, bool(before_plugins))].append(fn)
+
+    def _make_hook_decorator(self, name, before_plugins=False, callback=None):
+        assert not callback or callable(callback), "The provided callback is not callable"
+        if callback:
+            self._register_hook_callback(name, callback, before_plugins)
+        else:
+
+            def hook_decorator(fn):
+                self._register_hook_callback(name, fn, before_plugins)
+                return fn
+
+            return hook_decorator
+
+    def on_start(self, callback=None, *, before_plugins=False):
+        """Alias for before_server_start"""
+        return self.before_server_start(callback, before_plugins=before_plugins)
+
+    def on_stop(self, callback=None, *, before_plugins=False):
+        """Alias for after_server_stopped"""
+        return self.before_server_start(callback, before_plugins=before_plugins)
+
+    def before_server_start(self, callback=None, *, before_plugins=False):
+        return self._make_hook_decorator("before_server_start", before_plugins, callback)
+
+    def after_server_stopped(self, callback=None, *, before_plugins=False):
+        return self._make_hook_decorator("after_server_stopped", before_plugins, callback)
+
+    def before_rpc_call(self, callback=None, *, before_plugins=False):
+        return self._make_hook_decorator("before_rpc_call", before_plugins, callback)
+
+    def after_rpc_call(self, callback=None, *, before_plugins=False):
+        return self._make_hook_decorator("after_rpc_call", before_plugins, callback)
+
+    def before_rpc_execution(self, callback=None, *, before_plugins=False):
+        return self._make_hook_decorator("before_rpc_execution", before_plugins, callback)
+
+    def after_rpc_execution(self, callback=None, *, before_plugins=False):
+        return self._make_hook_decorator("after_rpc_execution", before_plugins, callback)
+
+    def before_event_sent(self, callback=None, *, before_plugins=False):
+        return self._make_hook_decorator("before_event_sent", before_plugins, callback)
+
+    def after_event_sent(self, callback=None, *, before_plugins=False):
+        return self._make_hook_decorator("after_event_sent", before_plugins, callback)
+
+    def before_event_execution(self, callback=None, *, before_plugins=False):
+        return self._make_hook_decorator("before_event_execution", before_plugins, callback)
+
+    def after_event_execution(self, callback=None, *, before_plugins=False):
+        return self._make_hook_decorator("after_event_execution", before_plugins, callback)

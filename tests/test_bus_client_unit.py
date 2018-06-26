@@ -303,3 +303,53 @@ def test_register_listener_context_manager(dummy_bus: lightbus.path.BusPath):
             assert client._listeners[("api_name", "event_name")] == 2
         assert client._listeners[("api_name", "event_name")] == 1
     assert len(client._listeners) == 0
+
+
+DECORATOR_HOOK_PAIRS = [
+    ("on_start", "before_server_start"),
+    ("on_stop", "before_server_start"),
+    ("before_server_start", "before_server_start"),
+    ("after_server_stopped", "after_server_stopped"),
+    ("before_rpc_call", "before_rpc_call"),
+    ("after_rpc_call", "after_rpc_call"),
+    ("before_rpc_execution", "before_rpc_execution"),
+    ("after_rpc_execution", "after_rpc_execution"),
+    ("before_event_sent", "before_event_sent"),
+    ("after_event_sent", "after_event_sent"),
+    ("before_event_execution", "before_event_execution"),
+    ("after_event_execution", "after_event_execution"),
+]
+
+
+@pytest.mark.parametrize("decorator,hook", DECORATOR_HOOK_PAIRS)
+@pytest.mark.parametrize("before_plugins", [True, False], ids=["before-plugins", "after-plugins"])
+@pytest.mark.run_loop
+async def test_hook_decorator(dummy_bus: lightbus.path.BusPath, decorator, hook, before_plugins):
+    count = 0
+    decorator = getattr(dummy_bus.client, decorator)
+
+    @decorator(before_plugins=before_plugins)
+    def callback(*args, **kwargs):
+        nonlocal count
+        count += 1
+
+    await dummy_bus.client._plugin_hook(hook)
+
+    assert count == 1
+
+
+@pytest.mark.parametrize("decorator,hook", DECORATOR_HOOK_PAIRS)
+@pytest.mark.parametrize("before_plugins", [True, False], ids=["before-plugins", "after-plugins"])
+@pytest.mark.run_loop
+async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hook, before_plugins):
+    count = 0
+    decorator = getattr(dummy_bus.client, decorator)
+
+    def callback(*args, **kwargs):
+        nonlocal count
+        count += 1
+
+    decorator(callback, before_plugins=before_plugins)
+    await dummy_bus.client._plugin_hook(hook)
+
+    assert count == 1

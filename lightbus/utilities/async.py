@@ -1,6 +1,7 @@
 import asyncio
 import traceback
 import logging
+from inspect import isawaitable
 from typing import Coroutine
 
 import aioredis
@@ -77,3 +78,10 @@ def check_for_exception(fut):
             fut.result()
     except (asyncio.CancelledError, ConnectionForcedCloseError):
         pass
+
+
+async def await_if_necessary(value):
+    if isawaitable(value):
+        return await value
+    else:
+        return value
