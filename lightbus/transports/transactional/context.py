@@ -9,6 +9,7 @@ from lightbus.exceptions import (
     ApisMustUseTransactionalTransport,
 )
 from lightbus.transports.transactional.transport import TransactionalEventTransport
+from lightbus.utilities.async import block, get_event_loop
 
 try:
     import django
@@ -41,10 +42,12 @@ class LightbusDbContext(object):
         apis: List[str] = ("default",),
         manage_transaction: Optional[bool] = True,
         cursor=None,
+        loop=None,
     ):
         self.manage_transaction = manage_transaction
         self.connection = connection
         self.custom_cursor = cursor
+        self.loop = loop
 
         # Get the transport, and check it is sane
         transports = list(
@@ -82,6 +85,14 @@ class LightbusDbContext(object):
             if isawaitable(cursor):
                 cursor = await cursor
             return cursor
+
+    def __enter__(self):
+        loop = self.loop or get_event_loop()
+        block(self.__aenter__(), loop, timeout=5)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        loop = self.loop or get_event_loop()
+        block(self.__aexit__(exc_type, exc_val, exc_tb), loop, timeout=5)
 
     async def __aenter__(self):
         self.cursor = await self._get_cursor()
