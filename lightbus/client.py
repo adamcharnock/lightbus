@@ -479,8 +479,10 @@ class BusClient(object):
                     # TODO: an exception if it is not supported.
                     logger.info(
                         L(
-                            "📩  Received event {}.{}".format(
-                                Bold(event_message.api_name), Bold(event_message.event_name)
+                            "📩  Received event {}.{} with ID {}".format(
+                                Bold(event_message.api_name),
+                                Bold(event_message.event_name),
+                                event_message.id,
                             )
                         )
                     )
