@@ -1,5 +1,6 @@
 import importlib
 import logging
+import sys
 from typing import Sequence, Tuple, Callable
 
 import pkg_resources
@@ -8,7 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 def import_module_from_string(name):
-    return importlib.import_module(name)
+    if name in sys.modules:
+        return sys.modules[name]
+    else:
+        return importlib.import_module(name)
 
 
 def import_from_string(name):
