@@ -3,6 +3,7 @@
 
 import asyncio
 import os
+import sys
 from typing import Union, Optional, Mapping
 
 from lightbus import BusClient
@@ -73,10 +74,11 @@ async def create_async(
     Returns:
 
     """
-
-    if flask and os.environ.get("WERKZEUG_RUN_MAIN", "").lower() != "true":
-        # Flask has a reloader process that shouldn't start a lightbus client
-        return
+    if flask:
+        in_flask_server = sys.argv[0].endswith("flask") and "run" in sys.argv
+        if in_flask_server and os.environ.get("WERKZEUG_RUN_MAIN", "").lower() != "true":
+            # Flask has a reloader process that shouldn't start a lightbus client
+            return
 
     from lightbus.config import Config
 
