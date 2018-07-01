@@ -83,6 +83,7 @@ def check_for_exception(fut, die=True):
             logger.exception(e)
 
         if die:
+            fut._loop.lightbus_exit_code = 1
             fut._loop.stop()
 
 

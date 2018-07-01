@@ -10,6 +10,7 @@ from typing import List, Tuple
 
 from lightbus.api import registry, Api
 from lightbus.config import Config
+from lightbus.config.structure import OnError
 from lightbus.exceptions import (
     InvalidEventArguments,
     UnknownApi,
@@ -75,6 +76,7 @@ class BusClient(object):
         self._loop = loop
         self._listeners = {}
         self._hook_callbacks = defaultdict(list)
+        self._exit_code = 0
 
     async def setup_async(self, plugins: dict = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
@@ -187,6 +189,10 @@ class BusClient(object):
         # Close the bus (which will in turn close the transports)
         self.close()
 
+        # See if we've set the exit code on the event loop
+        if hasattr(self.loop, "lightbus_exit_code"):
+            raise SystemExit(self.loop.lightbus_exit_code)
+
     def _run_forever(self, consume_rpcs):
         # Setup RPC consumption
         consume_rpc_task = None
@@ -201,9 +207,9 @@ class BusClient(object):
 
         try:
             self._actually_run_forever()
-            logger.error("Interrupt received. Shutting down...")
+            logger.warning("Interrupt received. Shutting down...")
         except KeyboardInterrupt:
-            logger.error("Keyboard interrupt. Shutting down...")
+            logger.warning("Keyboard interrupt. Shutting down...")
 
         # The loop has stopped, so we're shutting down
 
@@ -513,6 +519,14 @@ class BusClient(object):
 
                     except LightbusShutdownInProgress as e:
                         logger.info("Shutdown in progress: {}".format(e))
+                    except Exception as e:
+                        if on_error == OnError.IGNORE:
+                            # We're ignore errors, so log it and move on
+                            logger.exception(e)
+                        else:
+                            # We're not ignoring errors, so raise it and
+                            # let the error handler callback deal with it
+                            raise
 
                     # Await the consumer again, which is our way of allowing it to
                     # acknowledge the message. This then allows us to fire the
@@ -525,12 +539,18 @@ class BusClient(object):
             api_names=[api_name for api_name, _ in events]
         )
 
-        shutdown_on_error = False
-        for _event_transport, _api_names in event_transports:
-            values = [self.config.api(_api_name).shutdown_on_error for _api_name in _api_names]
-            # Stop on error if any of the APIs being listened on are
-            # configured to do so
-            shutdown_on_error = shutdown_on_error or any(values)
+        on_error_values = []
+        for *_, _api_names in event_transports:
+            on_error_values.extend(
+                [self.config.api(_api_name).on_error for _api_name in _api_names]
+            )
+
+        if OnError.SHUTDOWN in on_error_values:
+            on_error = OnError.SHUTDOWN
+        elif OnError.STOP_LISTENER in on_error_values:
+            on_error = OnError.STOP_LISTENER
+        else:
+            on_error = OnError.IGNORE
 
         tasks = []
         for _event_transport, _api_names in event_transports:
@@ -546,7 +566,7 @@ class BusClient(object):
             tasks.append(task)
 
         listener_task = asyncio.gather(*tasks)
-        listener_task.add_done_callback(make_exception_checker(die=shutdown_on_error))
+        listener_task.add_done_callback(make_exception_checker(die=(on_error == OnError.SHUTDOWN)))
         listener_task.is_listener = True  # Used by close()
         return listener_task
 

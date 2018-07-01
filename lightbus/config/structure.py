@@ -80,6 +80,12 @@ class LogLevelEnum(Enum):
     CRITICAL = "critical"
 
 
+class OnError(Enum):
+    IGNORE = "ignore"
+    STOP_LISTENER = "stop_listener"
+    SHUTDOWN = "shutdown"
+
+
 class ApiValidationConfig(NamedTuple):
     outgoing: bool = True
     incoming: bool = True
@@ -96,9 +102,7 @@ class ApiConfig(object):
     strict_validation: bool = False
     #: Cast values before calling event listeners and RPCs
     cast_values: bool = True
-    #: Should lightbus exit if an error is encountered when listening for events on this API?
-    #: If False, an error will be logged and processing will continue
-    shutdown_on_error: bool = True
+    on_error: OnError = OnError.SHUTDOWN
 
     def __init__(self, **kw):
         for k, v in kw.items():
