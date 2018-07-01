@@ -6,7 +6,6 @@ import signal
 import time
 from asyncio.futures import CancelledError
 from collections import defaultdict
-from inspect import isawaitable
 from typing import List, Tuple
 
 from lightbus.api import registry, Api
@@ -35,8 +34,8 @@ from lightbus.utilities.async import (
     block,
     get_event_loop,
     cancel,
-    check_for_exception,
     await_if_necessary,
+    make_exception_checker,
 )
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
@@ -512,15 +511,8 @@ class BusClient(object):
                         if inspect.isawaitable(co):
                             await co
 
-                    except asyncio.CancelledError:
-                        raise
                     except LightbusShutdownInProgress as e:
                         logger.info("Shutdown in progress: {}".format(e))
-                    except Exception as e:
-                        if stop_on_error:
-                            raise
-                        else:
-                            logger.exception(e)
 
                     # Await the consumer again, which is our way of allowing it to
                     # acknowledge the message. This then allows us to fire the
@@ -533,12 +525,12 @@ class BusClient(object):
             api_names=[api_name for api_name, _ in events]
         )
 
-        stop_on_error = False
+        shutdown_on_error = False
         for _event_transport, _api_names in event_transports:
-            values = [self.config.api(_api_name).stop_on_error for _api_name in _api_names]
+            values = [self.config.api(_api_name).shutdown_on_error for _api_name in _api_names]
             # Stop on error if any of the APIs being listened on are
             # configured to do so
-            stop_on_error = stop_on_error or any(values)
+            shutdown_on_error = shutdown_on_error or any(values)
 
         tasks = []
         for _event_transport, _api_names in event_transports:
@@ -551,10 +543,10 @@ class BusClient(object):
             task = asyncio.ensure_future(
                 listen_for_event_task(_event_transport, _events), loop=self.loop
             )
-            task.add_done_callback(check_for_exception)
             tasks.append(task)
 
         listener_task = asyncio.gather(*tasks)
+        listener_task.add_done_callback(make_exception_checker(die=shutdown_on_error))
         listener_task.is_listener = True  # Used by close()
         return listener_task
 

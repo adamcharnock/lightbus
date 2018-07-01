@@ -1,6 +1,7 @@
 import asyncio
 import traceback
 import logging
+from functools import partial
 from inspect import isawaitable
 from typing import Coroutine
 
@@ -66,18 +67,29 @@ async def cancel(*tasks):
         raise ex
 
 
-def check_for_exception(fut):
+def check_for_exception(fut, die=True):
     """Check for exceptions in returned future
 
     To be used as a callback, eg:
 
     task.add_done_callback(check_for_exception)
     """
-    try:
-        if fut.exception():
+    if fut.exception():
+        try:
             fut.result()
-    except (asyncio.CancelledError, ConnectionForcedCloseError):
-        pass
+        except (asyncio.CancelledError, ConnectionForcedCloseError):
+            pass
+        except Exception as e:
+            logger.exception(e)
+
+        if die:
+            fut._loop.stop()
+
+
+def make_exception_checker(die=True):
+    """Creates a callback handler (i.e. check_for_exception())
+    which will be called with the given arguments"""
+    return partial(check_for_exception, die=True)
 
 
 async def await_if_necessary(value):

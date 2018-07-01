@@ -96,9 +96,9 @@ class ApiConfig(object):
     strict_validation: bool = False
     #: Cast values before calling event listeners and RPCs
     cast_values: bool = True
-    #: Should lightbus exit if an error is encountered when listening of events on this API?
+    #: Should lightbus exit if an error is encountered when listening for events on this API?
     #: If False, an error will be logged and processing will continue
-    stop_on_error: bool = True
+    shutdown_on_error: bool = True
 
     def __init__(self, **kw):
         for k, v in kw.items():
