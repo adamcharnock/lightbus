@@ -1,7 +1,9 @@
-from lightbus import Api
+import lightbus
+
+bus = lightbus.create()
 
 
-class FirstApi(Api):
+class FirstApi(lightbus.Api):
 
     class Meta:
         name = "first"

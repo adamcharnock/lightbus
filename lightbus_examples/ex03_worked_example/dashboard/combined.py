@@ -1,8 +1,6 @@
 import lightbus
 from aiohttp import web
 
-import lightbus.creation
-
 page_views = {}
 
 
@@ -41,7 +39,7 @@ def main():
     lightbus.configure_logging()
 
     # Create our lightbus client and our web application
-    bus = lightbus.creation.create()
+    bus = lightbus.create()
     app = web.Application()
 
     app.router.add_route("GET", "/", home_view)

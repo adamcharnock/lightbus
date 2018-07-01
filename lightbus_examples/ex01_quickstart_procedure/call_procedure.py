@@ -1,10 +1,8 @@
 # call_procedure.py
 import lightbus
 
-# Create a bus object
-import lightbus.creation
-
-bus = lightbus.creation.create()
+# Import the bus from our bus.py file
+from lightbus_examples.ex02_quickstart_event.bus import bus
 
 # Call the check_password() procedure on our auth API
 valid = bus.auth.check_password(username="admin", password="secret")

@@ -1,12 +1,11 @@
 # bus.py
-from lightbus import Api, Event
-from lightbus.creation import create
+import lightbus
 
-bus = create()
+bus = lightbus.create()
 
 
-class AuthApi(Api):
-    user_registered = Event(parameters=("username", "email"))
+class AuthApi(lightbus.Api):
+    user_registered = lightbus.Event(parameters=("username", "email"))
 
     class Meta:
         name = "auth"

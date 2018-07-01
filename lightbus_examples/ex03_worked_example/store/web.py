@@ -7,7 +7,7 @@ Image resizing and page view tracking performed using lightbus.
 import lightbus
 from flask import Flask
 
-from .bus import bus
+from lightbus_examples.ex03_worked_example.store.bus import bus
 
 app = Flask(__name__)
 

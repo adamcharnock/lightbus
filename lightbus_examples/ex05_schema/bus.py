@@ -1,15 +1,14 @@
-from lightbus import Api, Event, Parameter
-from lightbus.creation import create
+import lightbus
 
-bus = create()
+bus = lightbus.create()
 
 
-class AuthApi(Api):
-    user_registered = Event(
+class AuthApi(lightbus.Api):
+    user_registered = lightbus.Event(
         parameters=(
-            Parameter("username", str),
-            Parameter("email", str),
-            Parameter("is_admin", bool, default=False),
+            lightbus.Parameter("username", str),
+            lightbus.Parameter("email", str),
+            lightbus.Parameter("is_admin", bool, default=False),
         )
     )
 

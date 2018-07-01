@@ -1,12 +1,11 @@
 # store/bus.py
-from lightbus import Api, Event
-from lightbus.creation import create
+import lightbus
 
-bus = create(flask=True)
+bus = lightbus.create(flask=True)
 
 
-class StoreApi(Api):
-    page_view = Event(parameters=("url",))
+class StoreApi(lightbus.Api):
+    page_view = lightbus.Event(parameters=("url",))
 
     class Meta:
         name = "store"
