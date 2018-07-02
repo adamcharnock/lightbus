@@ -77,14 +77,16 @@ def check_for_exception(fut, die=True):
     try:
         if fut.exception():
             fut.result()
-    except (asyncio.CancelledError, ConnectionForcedCloseError):
+    except (asyncio.CancelledError, ConnectionForcedCloseError, LightbusShutdownInProgress):
         return
     except Exception as e:
         logger.exception(e)
 
         if die:
-            fut._loop.lightbus_exit_code = 1
-            fut._loop.stop()
+            loop = fut._loop
+            block(cancel(*asyncio.Task.all_tasks()), loop=loop, timeout=5)
+            loop.lightbus_exit_code = 1
+            loop.stop()
 
 
 def make_exception_checker(die=True):
