@@ -82,9 +82,9 @@ def check_for_exception(fut, die=True):
     except Exception as e:
         logger.exception(e)
 
-    if die:
-        fut._loop.lightbus_exit_code = 1
-        fut._loop.stop()
+        if die:
+            fut._loop.lightbus_exit_code = 1
+            fut._loop.stop()
 
 
 def make_exception_checker(die=True):
