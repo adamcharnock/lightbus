@@ -9,6 +9,7 @@ import lightbus.creation
 import lightbus.path
 from lightbus import Schema, RpcMessage, ResultMessage, EventMessage, BusClient
 from lightbus.config import Config
+from lightbus.config.structure import OnError
 from lightbus.exceptions import (
     UnknownApi,
     EventNotFound,
@@ -361,7 +362,8 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
 
 
 @pytest.mark.run_loop
-async def test_shutdown_upon_exception_in_listener(dummy_bus: lightbus.path.BusPath, loop, caplog):
+async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, loop, caplog):
+    dummy_bus.client.config.api("default").on_error = OnError.SHUTDOWN
 
     class SomeException(Exception):
         pass
@@ -383,6 +385,64 @@ async def test_shutdown_upon_exception_in_listener(dummy_bus: lightbus.path.BusP
     # (This would have happened normally when the event loop was stopped,
     # but we prevented that my mocking stop() above)
     await dummy_bus.client.close_async()
+
+    log_levels = {r.levelname for r in caplog.records}
+    # Ensure the error was logged
+    assert "ERROR" in log_levels
+
+
+@pytest.mark.run_loop
+async def test_exception_in_listener_stop_listener(dummy_bus: lightbus.path.BusPath, loop, caplog):
+    dummy_bus.client.config.api("default").on_error = OnError.STOP_LISTENER
+
+    class SomeException(Exception):
+        pass
+
+    def listener(*args, **kwargs):
+        raise SomeException()
+
+    task = await dummy_bus.client.listen_for_events(
+        events=[("my_company.auth", "user_registered")], listener=listener
+    )
+
+    # Don't let the event loop be stopped as it is needed to run the tests!
+    # (although stop() shouldn't actually be called here)
+    with mock.patch.object(loop, "stop") as m:
+        # Dummy event transport fires events every 0.1 seconds
+        await asyncio.sleep(0.15)
+        assert not m.called
+
+    # Listener task has stopped
+    assert task.done()
+
+    log_levels = {r.levelname for r in caplog.records}
+    # Ensure the error was logged
+    assert "ERROR" in log_levels
+
+
+@pytest.mark.run_loop
+async def test_exception_in_listener_ignore(dummy_bus: lightbus.path.BusPath, loop, caplog):
+    dummy_bus.client.config.api("default").on_error = OnError.IGNORE
+
+    class SomeException(Exception):
+        pass
+
+    def listener(*args, **kwargs):
+        raise SomeException()
+
+    task = await dummy_bus.client.listen_for_events(
+        events=[("my_company.auth", "user_registered")], listener=listener
+    )
+
+    # Don't let the event loop be stopped as it is needed to run the tests!
+    # (although stop() shouldn't actually be called here)
+    with mock.patch.object(loop, "stop") as m:
+        # Dummy event transport fires events every 0.1 seconds
+        await asyncio.sleep(0.15)
+        assert not m.called
+
+    # Listener task is still running
+    assert not task.done()
 
     log_levels = {r.levelname for r in caplog.records}
     # Ensure the error was logged

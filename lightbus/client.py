@@ -540,7 +540,7 @@ class BusClient(object):
                                 f"continue as normal because the on 'on_error' option is set "
                                 f"to '{OnError.IGNORE.value}'."
                             )
-                        if on_error == OnError.STOP_LISTENER:
+                        elif on_error == OnError.STOP_LISTENER:
                             logger.exception(e)
                             logger.error(
                                 f"An event listener raised an exception while processing an event. Lightbus will "
