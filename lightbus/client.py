@@ -563,6 +563,7 @@ class BusClient(object):
             task = asyncio.ensure_future(
                 listen_for_event_task(_event_transport, _events), loop=self.loop
             )
+            task.is_listener = True  # Used by close()
             tasks.append(task)
 
         listener_task = asyncio.gather(*tasks)
