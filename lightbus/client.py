@@ -156,19 +156,18 @@ class BusClient(object):
             if getattr(task, "is_listener", False)
         ]
 
-        listener_tasks_with_errors = [t for t in listener_tasks if t.done() and t.exception()]
-        for task in listener_tasks_with_errors:
+        for task in listener_tasks:
             try:
                 await cancel(task)
             except Exception as e:
                 logger.exception(e)
+                # The log message assumes that we are closing because of this error
+                # (is this a safe assumption?)
                 logger.error(
-                    "An event listener raised an exception while processing an event. "
-                    "Lightbus will now shutdown because the on_error option is set to 'shutdown'"
+                    f"An event listener raised an exception while processing an event. "
+                    f"Lightbus will now shutdown because the on_error option is set to"
+                    f" '{OnError.SHUTDOWN.value}'"
                 )
-            listener_tasks.remove(task)
-
-        await cancel(*listener_tasks)
 
         for transport in self.transport_registry.get_all_transports():
             await transport.close()
@@ -537,9 +536,18 @@ class BusClient(object):
                             # We're ignore errors, so log it and move on
                             logger.exception(e)
                             logger.error(
-                                "An event listener raised an exception while processing an event. Lightbus will "
-                                "continue as normal because the on 'on_error' option is set to 'ignore'."
+                                f"An event listener raised an exception while processing an event. Lightbus will "
+                                f"continue as normal because the on 'on_error' option is set "
+                                f"to '{OnError.IGNORE.value}'."
                             )
+                        if on_error == OnError.STOP_LISTENER:
+                            logger.exception(e)
+                            logger.error(
+                                f"An event listener raised an exception while processing an event. Lightbus will "
+                                f"stop the listener but keep on running. This is because the 'on_error' option "
+                                f"is set to '{OnError.STOP_LISTENER.value}'."
+                            )
+                            return
                         else:
                             # We're not ignoring errors, so raise it and
                             # let the error handler callback deal with it
@@ -584,6 +592,7 @@ class BusClient(object):
             tasks.append(task)
 
         listener_task = asyncio.gather(*tasks)
+
         listener_task.add_done_callback(make_exception_checker(die=(on_error == OnError.SHUTDOWN)))
         listener_task.is_listener = True  # Used by close()
         return listener_task
