@@ -155,6 +155,19 @@ class BusClient(object):
             for task in asyncio.Task.all_tasks(loop=self.loop)
             if getattr(task, "is_listener", False)
         ]
+
+        listener_tasks_with_errors = [t for t in listener_tasks if t.done() and t.exception()]
+        for task in listener_tasks_with_errors:
+            try:
+                await cancel(task)
+            except Exception as e:
+                logger.exception(e)
+                logger.error(
+                    "An event listener raised an exception while processing an event. "
+                    "Lightbus will now shutdown because the on_error option is set to 'shutdown'"
+                )
+            listener_tasks.remove(task)
+
         await cancel(*listener_tasks)
 
         for transport in self.transport_registry.get_all_transports():
@@ -523,6 +536,10 @@ class BusClient(object):
                         if on_error == OnError.IGNORE:
                             # We're ignore errors, so log it and move on
                             logger.exception(e)
+                            logger.error(
+                                "An event listener raised an exception while processing an event. Lightbus will "
+                                "continue as normal because the on 'on_error' option is set to 'ignore'."
+                            )
                         else:
                             # We're not ignoring errors, so raise it and
                             # let the error handler callback deal with it

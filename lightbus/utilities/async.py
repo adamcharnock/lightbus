@@ -67,7 +67,7 @@ async def cancel(*tasks):
         raise ex
 
 
-def check_for_exception(fut, die=True):
+def check_for_exception(fut: asyncio.Future, die=True):
     """Check for exceptions in returned future
 
     To be used as a callback, eg:
@@ -80,11 +80,8 @@ def check_for_exception(fut, die=True):
     except (asyncio.CancelledError, ConnectionForcedCloseError, LightbusShutdownInProgress):
         return
     except Exception as e:
-        logger.exception(e)
-
         if die:
             loop = fut._loop
-            block(cancel(*asyncio.Task.all_tasks()), loop=loop, timeout=5)
             loop.lightbus_exit_code = 1
             loop.stop()
 
