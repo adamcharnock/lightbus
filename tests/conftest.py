@@ -199,9 +199,9 @@ def redis_server_b(start_redis_server):
 # Lightbus fixtures
 
 
-@pytest.fixture
+@pytest.yield_fixture
 def dummy_bus(loop):
-    return lightbus.creation.create(
+    dummy_bus = lightbus.creation.create(
         rpc_transport=lightbus.DebugRpcTransport(),
         result_transport=lightbus.DebugResultTransport(),
         event_transport=lightbus.DebugEventTransport(),
@@ -209,6 +209,8 @@ def dummy_bus(loop):
         loop=loop,
         plugins={},
     )
+    yield dummy_bus
+    dummy_bus.client.close()
 
 
 @pytest.yield_fixture
