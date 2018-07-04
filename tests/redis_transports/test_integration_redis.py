@@ -7,6 +7,7 @@ from aioredis.util import decode
 
 import lightbus
 import lightbus.path
+from lightbus.config.structure import OnError
 from lightbus.path import BusPath
 from lightbus.api import registry
 from lightbus.config import Config
@@ -405,6 +406,9 @@ async def test_event_exception_in_listener_realtime(
     manually_set_plugins({})
     received_messages = []
 
+    # Don't shutdown on error
+    bus.client.config.api("default").on_error = OnError.IGNORE
+
     async def listener(event_message, **kwargs):
         nonlocal received_messages
         received_messages.append(event_message)
@@ -449,6 +453,9 @@ async def test_event_exception_in_listener_batch_fetch(
     The listener will fetch them all at once."""
     manually_set_plugins({})
     received_messages = []
+
+    # Don't shutdown on error
+    bus.client.config.api("default").on_error = OnError.IGNORE
 
     async def listener(event_message, **kwargs):
         nonlocal received_messages
