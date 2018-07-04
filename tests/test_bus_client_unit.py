@@ -1,3 +1,5 @@
+import asyncio
+
 import jsonschema
 import pytest
 
@@ -15,7 +17,7 @@ from lightbus.exceptions import (
     InvalidName,
     ValidationError,
 )
-from lightbus.utilities.async import get_event_loop
+from lightbus.utilities.async import get_event_loop, cancel
 
 pytestmark = pytest.mark.unit
 
@@ -162,7 +164,9 @@ def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
 
     # Note we default to strict_validation for most tests
     def create_bus_client_with_unhappy_schema(validate=True, strict_validation=True):
-        schema = Schema(schema_transport=None)
+        # Use the base transport as a dummy, it only needs to have a
+        # close() method on it in order to keep the client.close() method happy
+        schema = Schema(schema_transport=lightbus.Transport())
         config = Config.load_dict(
             {"apis": {"default": {"validate": validate, "strict_validation": strict_validation}}}
         )
