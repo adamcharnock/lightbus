@@ -89,7 +89,7 @@ def check_for_exception(fut: asyncio.Future, die=True):
 def make_exception_checker(die=True):
     """Creates a callback handler (i.e. check_for_exception())
     which will be called with the given arguments"""
-    return partial(check_for_exception, die=True)
+    return partial(check_for_exception, die=die)
 
 
 async def await_if_necessary(value):
