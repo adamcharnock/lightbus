@@ -1,6 +1,7 @@
 import asyncio
 
 import jsonschema
+from unittest import mock
 import pytest
 
 import lightbus
@@ -357,3 +358,32 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
     await dummy_bus.client._plugin_hook(hook)
 
     assert count == 1
+
+
+@pytest.mark.run_loop
+async def test_shutdown_upon_exception_in_listener(dummy_bus: lightbus.path.BusPath, loop, caplog):
+
+    class SomeException(Exception):
+        pass
+
+    def listener(*args, **kwargs):
+        raise SomeException()
+
+    task = await dummy_bus.client.listen_for_events(
+        events=[("my_company.auth", "user_registered")], listener=listener
+    )
+
+    # Don't let the event loop be stopped as it is needed to run the tests!
+    with mock.patch.object(loop, "stop") as m:
+        # Dummy event transport fires events every 0.1 seconds
+        await asyncio.sleep(0.15)
+        assert m.called
+
+    # Close the bus to force tasks to be cleaned up
+    # (This would have happened normally when the event loop was stopped,
+    # but we prevented that my mocking stop() above)
+    await dummy_bus.client.close_async()
+
+    log_levels = {r.levelname for r in caplog.records}
+    # Ensure the error was logged
+    assert "ERROR" in log_levels
