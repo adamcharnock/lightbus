@@ -119,7 +119,7 @@ async def create_async(
     return node_class(name="", parent=None, client=client)
 
 
-def create(*args, **kwargs):
+def create(*args, **kwargs) -> BusPath:
     """
     Create a new bus instance which can be used to access the bus.
 
