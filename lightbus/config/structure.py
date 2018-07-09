@@ -94,7 +94,7 @@ class ApiValidationConfig(NamedTuple):
 class ApiConfig(object):
     rpc_timeout: int = 5
     event_listener_setup_timeout: int = 1
-    event_fire_timeout: int = 1
+    event_fire_timeout: int = 5
     validate: Optional[Union[ApiValidationConfig, bool]] = ApiValidationConfig()
     event_transport: EventTransportSelector = None
     rpc_transport: RpcTransportSelector = None
