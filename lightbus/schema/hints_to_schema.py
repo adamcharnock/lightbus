@@ -10,6 +10,7 @@ from enum import Enum
 from uuid import UUID
 
 import lightbus
+from lightbus.utilities.deforming import deform_to_bus
 
 NoneType = type(None)
 empty = inspect.Signature.empty
@@ -269,7 +270,7 @@ def make_custom_object_schema(type_, property_names=None):
         if default is empty:
             required.append(property_name)
         else:
-            properties[property_name]["default"] = default
+            properties[property_name]["default"] = deform_to_bus(default)
 
     schema = {
         "type": "object",

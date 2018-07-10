@@ -152,6 +152,27 @@ def test_named_tuple():
     assert set(schema["properties"]["user"]["required"]) == {"password", "username"}
 
 
+def test_named_tuple_enum_with_default():
+
+    class MyEnum(Enum):
+        foo: int = 1
+        bar: int = 2
+
+    class User(NamedTuple):
+        field: MyEnum = MyEnum.bar
+
+    def func(user: User):
+        pass
+
+    schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
+
+    assert schema["properties"]["user"]["type"] == "object"
+    assert schema["properties"]["user"]["properties"] == {
+        "field": {"type": "number", "enum": [1, 2], "default": 2}
+    }
+    assert "required" not in schema["properties"]["user"]
+
+
 def test_named_tuple_using_function():
 
     User = namedtuple("User", ("username", "password"))

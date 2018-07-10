@@ -1,5 +1,6 @@
 import asyncio
 import json
+from enum import Enum
 from pathlib import Path
 from typing import NamedTuple
 

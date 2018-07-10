@@ -5,7 +5,6 @@ from decimal import Decimal
 from enum import Enum
 from uuid import UUID
 
-from lightbus.config.structure import LogLevelEnum
 from lightbus.exceptions import DeformError
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.type_checks import is_namedtuple, is_dataclass, isinstance_safe
