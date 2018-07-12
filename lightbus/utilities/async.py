@@ -80,6 +80,9 @@ def check_for_exception(fut: asyncio.Future, die=True):
     except (asyncio.CancelledError, ConnectionForcedCloseError, LightbusShutdownInProgress):
         return
     except Exception as e:
+        # Must log the exception here, otherwise exceptions that occur during
+        # listener setup will never be logged
+        logger.exception(e)
         if die:
             loop = fut._loop
             loop.lightbus_exit_code = 1
