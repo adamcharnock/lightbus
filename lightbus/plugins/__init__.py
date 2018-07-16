@@ -127,6 +127,9 @@ class LightbusPlugin(object, metaclass=PluginMetaclass):
     ):
         pass
 
+    async def exception(self, *, e: Exception):
+        pass
+
 
 def autoload_plugins(config: "Config", force=False):
     global _plugins, _hooks_names

@@ -39,6 +39,13 @@ class Command(LogLevelMixin, BusImportMixin, object):
         parser_run.set_defaults(func=self.handle)
 
     def handle(self, args, config):
+        try:
+            self._handle(args, config)
+        except Exception as e:
+            block(plugin_hook("exception", e=e), asyncio.get_event_loop(), timeout=5)
+            raise
+
+    def _handle(self, args, config):
         self.setup_logging(override=getattr(args, "log_level", None), config=config)
 
         bus_module, bus = self.import_bus(args)
