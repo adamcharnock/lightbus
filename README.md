@@ -1,7 +1,6 @@
 # What is Lightbus?
 
 [![Build Status](https://travis-ci.org/adamcharnock/lightbus.svg?branch=master)](https://travis-ci.org/adamcharnock/lightbus)
-
 [![Coverage Status](https://coveralls.io/repos/github/adamcharnock/lightbus/badge.svg?branch=master)](https://coveralls.io/github/adamcharnock/lightbus?branch=master)
 
 Lightbus allows your backend processes to communicate, run background tasks,
