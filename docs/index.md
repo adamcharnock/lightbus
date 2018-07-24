@@ -61,8 +61,8 @@ bus.auth.user_registered.listen(
 )
 ```
 
-To get started checkout the [installation](installation.md),
-[concepts](concepts.md),
-and [quickstart](quick-start.md) guides.
+To get started checkout the [installation](tutorial/installation.md),
+[concepts](explanation/concepts.md),
+and [quickstart](tutorial/quick-start.md) guides.
 
 [issue-1]: https://github.com/adamcharnock/lightbus/issues/1

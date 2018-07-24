@@ -28,24 +28,36 @@ theme:
   favicon: ""
   logo:
     icon: "\uE915"
+  feature:
+    tabs: true
 
 pages:
-  - Introduction: index.md
-  - Installation: installation.md
-  - Concepts: concepts.md
-  - Quick start: quick-start.md
-  - Worked example: worked-example.md
-  - Typing: typing.md
-  - APIs: apis.md
-  - Remote prcedure calls: rpcs.md
-  - Events: events.md
-  - Configuration: configuration.md
-  - Schema: schema.md
-  - Transports: transports.md
-  - Command line use: command-line-use.md
-  - Debugging: debugging.md
-  - Plugins: plugins.md
-  - Contributing: contributing.md
+  - Home: index.md
+  - Tutorials:
+    - Overview: tutorial/index.md
+    - Installation: tutorial/installation.md
+    - Quick start: tutorial/quick-start.md
+    - Worked example: tutorial/worked-example.md
+  - Howto*:
+    - Overview: howto/index.md
+    - Use Lightbus for realtime metrics: howto/metrics.md
+    - Use Lightbus for event sourcing: howto/event-sourcing.md
+  - Explanation:
+    - Overview: explanation/index.md
+    - Concepts: explanation/concepts.md
+    - Contributing*: contributing.md
+  - Reference:
+    - Overview: reference/index.md
+    - Typing*: reference/typing.md
+    - APIs: reference/apis.md
+    - Remote prcedure calls: reference/rpcs.md
+    - Events: reference/events.md
+    - Configuration: reference/configuration.md
+    - Schema: reference/schema.md
+    - Transports*: reference/transports.md
+    - Command line use*: reference/command-line-use.md
+    - Debugging*: reference/debugging.md
+    - Plugins*: reference/plugins.md
 
 # Extensions
 markdown_extensions:

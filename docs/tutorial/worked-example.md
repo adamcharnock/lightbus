@@ -21,8 +21,8 @@ A passing familiarity with [Flask] may be useful, but is not required. [Honcho]
 will assist us in running the various processes required for our services.
 
 We will assume you
-have already read and completed the [installation](installation.md),
-[quick start](quick-start.md), and [concepts](concepts.md) sections.
+have already read and completed the [installation](/tutorial/installation.md),
+[quick start](/tutorial/quick-start.md), and [concepts](/explanation/concepts.md) sections.
 
 ## Image resizing service
 
@@ -416,9 +416,9 @@ $ honcho start -f Procfile_combined
 [Flask]: http://flask.pocoo.org/
 [ex03_worked_example]: https://github.com/adamcharnock/lightbus/tree/master/lightbus_examples/ex03_worked_example
 [Procfile]: https://github.com/adamcharnock/lightbus/blob/mater/lightbus_examples/ex03_worked_example/Procfile
-[web-log]: static/images/worked-example-flask-log.png
-[honcho-startup]: static/images/worked-example-honcho-startup.png
-[honcho-page-view]: static/images/worked-example-honcho-page-view.png
+[web-log]: /static/images/worked-example-flask-log.png
+[honcho-startup]: /static/images/worked-example-honcho-startup.png
+[honcho-page-view]: /static/images/worked-example-honcho-page-view.png
 [127.0.0.1:5001]: http://127.0.0.1:5001
 [127.0.0.1:5000]: http://127.0.0.1:5000
 [aiohttp]: https://aiohttp.readthedocs.io/

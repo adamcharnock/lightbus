@@ -1,17 +1,17 @@
 !!! note
-    We recommend read the [concepts](concepts.md) section before continuing
+    We recommend read the [concepts](/explanation/concepts.md) section before continuing
     as this will give you a useful overview before delving into the details
     below.
 
 ## Requirements
 
 Before continuing, ensure you have completed the following steps detailed in
-the [installation section](installation.md):
+the [installation section](/tutorial/installation.md):
 
 * Installed Python 3.6 or above
 * Installed Lightbus
 * Running a Redis server (built from the Redis unstable branch)
-* Read the [concepts section](concepts.md)
+* Read the [concepts section](/explanation/concepts.md)
 
 ## Anatomy lesson
 
@@ -112,7 +112,7 @@ which contains the class definition within its codebase. Lightbus only
 allows the authoritative service to fire events for an API. Any service can
 listen for any event.
 
-We will talk more about this in [concepts](concepts.md). For now let's look
+We will talk more about this in [concepts](/explanation/concepts.md). For now let's look
 at some code. Below we modify our `AuthApi` in `bus.py` to add a `user_registered`
 event. We also use the `before_server_start()` hook to setup a listener for
 that event:
@@ -182,4 +182,4 @@ good starting point. Reading through the remainder of this documentation should 
 a wider awareness of the features available and underlying concepts.
 
 
-[lightbus-run]: static/images/quickstart-lightbus-run.png
+[lightbus-run]: /static/images/quickstart-lightbus-run.png
