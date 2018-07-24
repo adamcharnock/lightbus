@@ -97,12 +97,12 @@ async def test_consume_events_multiple_consumers(
 ):
     messages = []
 
-    async def co_consume():
+    async def co_consume(name):
         async for message_ in redis_event_transport.consume([("my.dummy", "my_event")], {}, loop):
-            messages.append(message_)
+            messages.append((name, message_))
 
-    task1 = asyncio.ensure_future(co_consume())
-    task2 = asyncio.ensure_future(co_consume())
+    task1 = asyncio.ensure_future(co_consume("task1"))
+    task2 = asyncio.ensure_future(co_consume("task2"))
 
     await asyncio.sleep(0.1)
     await redis_client.xadd(
