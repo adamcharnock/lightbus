@@ -14,6 +14,8 @@ services:
 - docker
 
 before_install:
+# Note that the tests need access to the redis-server binary,
+# not just network access
 - docker build -t lightbus-test -f tests/Dockerfile .
 - pip install coverage coveralls
 - mkdir .coverage
