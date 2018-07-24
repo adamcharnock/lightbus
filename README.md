@@ -1,8 +1,8 @@
 # What is Lightbus?
 
-![image](https://travis-ci.org/adamcharnock/lightbus.svg?branch=master%0A%20:target:%20https://travis-ci.org/adamcharnock/lightbus)
+[![Build Status](https://travis-ci.org/adamcharnock/lightbus.svg?branch=master)](https://travis-ci.org/adamcharnock/lightbus)
 
-![image](https://coveralls.io/repos/github/adamcharnock/lightbus/badge.svg?branch=master%0A%20:target:%20https://coveralls.io/github/adamcharnock/lightbus?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/adamcharnock/lightbus/badge.svg?branch=master)](https://coveralls.io/github/adamcharnock/lightbus?branch=master)
 
 Lightbus allows your backend processes to communicate, run background tasks,
 and expose internal APIs.
