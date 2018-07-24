@@ -115,7 +115,7 @@ async def test_consume_events_multiple_consumers(
             b":field": b'"value"',
         },
     )
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.1)
 
     # Two messages, to dummy values which indicate events have been acked
     assert len(messages) == 4
