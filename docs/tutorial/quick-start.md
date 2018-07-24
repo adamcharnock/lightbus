@@ -10,30 +10,10 @@ the [installation section](/tutorial/installation.md):
 
 * Installed Python 3.6 or above
 * Installed Lightbus
-* Running a Redis server (built from the Redis unstable branch)
-* Read the [concepts section](/explanation/concepts.md)
+* Running Redis
 
-## Anatomy lesson
-
-When using Lightbus you will still run your various services
-as normal. For web-based software this will likely include one or more
-processes to handle web traffic (e.g. Django, Flask).
-You may or may not also have some other processes running for other purposes.
-
-In addition to this, Lightbus will have its own process started via
-`lightbus run`.
-
-While the roles of these processes are not strictly defined, in most
-circumstances their use should break down as follows:
-
-* **Lightbus processes** – Respond to remote procedure calls, listen for
-  and handle events.
-* **Other processes (web etc)** – Perform remote procedure calls, fire events
-
-The starting point for the lightbus process is a `bus.py` file. You
-should create this in your project root. You can also configure
-where Lightbus looks for this module using the `--bus` option or
-by setting the `LIGHTBUS_MODULE` environment variable.
+Optionally, you can read some additional *explanation* in the
+[anatomy lesson] and [concepts] sections.
 
 ## Define your API
 
@@ -175,11 +155,13 @@ Here we call `bus.auth.user_registered.fire()` to fire the `user_registered` eve
 the `auth` API. This will place the event onto the bus to be consumed any
 listening services.
 
-## Further reading
+## Next
 
-This quickstart has covered the basics of Lightbus, and has hopefully given you a
-good starting point. Reading through the remainder of this documentation should give you
-a wider awareness of the features available and underlying concepts.
+This was a simple example to get you started. The [worked example] considers
+a more realistic scenario involving multiple services.
 
 
 [lightbus-run]: /static/images/quickstart-lightbus-run.png
+[anatomy lesson]: /explanation/anatomy-lesson.md
+[concepts]: /explanation/concepts.md
+[worked example]: worked-example.md

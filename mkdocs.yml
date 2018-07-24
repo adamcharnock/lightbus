@@ -35,13 +35,13 @@ pages:
   - Home: index.md
   - Tutorials:
     - Overview: tutorial/index.md
-    - Installation: tutorial/installation.md
-    - Quick start: tutorial/quick-start.md
-    - Worked example: tutorial/worked-example.md
-  - Howto*:
+    - 1. Installation: tutorial/installation.md
+    - 2. Quick start: tutorial/quick-start.md
+    - 3. Worked example: tutorial/worked-example.md
+  - How to:
     - Overview: howto/index.md
-    - Use Lightbus for realtime metrics: howto/metrics.md
-    - Use Lightbus for event sourcing: howto/event-sourcing.md
+    - Use Lightbus for realtime metrics*: howto/metrics.md
+    - Use Lightbus for event sourcing*: howto/event-sourcing.md
   - Explanation:
     - Overview: explanation/index.md
     - Concepts: explanation/concepts.md
