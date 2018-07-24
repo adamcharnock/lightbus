@@ -128,6 +128,10 @@ class LightbusPlugin(object, metaclass=PluginMetaclass):
         pass
 
     async def exception(self, *, e: Exception):
+        """Called during the handling of Exception e
+
+        This hook will only be called when running lightbus via `lightbus run`.
+        """
         pass
 
 
