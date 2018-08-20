@@ -24,3 +24,15 @@ services:
       PG_URL: "postgres://travis_db:5432/postgres"
     depends_on:
       - travis_db
+
+  local_tests:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile
+    volumes:
+      - ..:/lightbus
+    command: pytest
+    environment:
+      PG_URL: "postgres://db:5432/postgres"
+    depends_on:
+      - db
