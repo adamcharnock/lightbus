@@ -92,17 +92,22 @@ async def test_consume_events(
 
 
 @pytest.mark.asyncio
-async def test_consume_events_multiple_consumers(
-    loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
-):
+async def test_consume_events_multiple_consumers(loop, redis_pool, redis_client, dummy_api):
     messages = []
 
-    async def co_consume(name):
-        async for message_ in redis_event_transport.consume([("my.dummy", "my_event")], {}):
-            messages.append((name, message_))
+    async def co_consume(group_number):
+        event_transport = RedisEventTransport(
+            redis_pool=redis_pool,
+            consumer_group_prefix=f"test_cg{group_number}",
+            consumer_name=f"test_consumer",
+            stream_use=StreamUse.PER_EVENT,
+        )
 
-    task1 = asyncio.ensure_future(co_consume("task1"))
-    task2 = asyncio.ensure_future(co_consume("task2"))
+        async for message_ in event_transport.consume([("my.dummy", "my_event")], {}):
+            messages.append(message_)
+
+    task1 = asyncio.ensure_future(co_consume(1))
+    task2 = asyncio.ensure_future(co_consume(2))
 
     await asyncio.sleep(0.1)
     await redis_client.xadd(
@@ -116,11 +121,10 @@ async def test_consume_events_multiple_consumers(
         },
     )
     await asyncio.sleep(0.1)
+    await cancel(task1, task2)
 
     # Two messages, to dummy values which indicate events have been acked
     assert len(messages) == 4
-
-    await cancel(task1, task2)
 
 
 @pytest.mark.asyncio
