@@ -1,3 +1,9 @@
+<style>
+.md-content { margin-left: 0 !important; }
+.md-sidebar { display: none; }
+.md-content img { max-width: 800px; }
+</style>
+
 # What is Lightbus?
 
 Lightbus allows your backend processes to communicate, run background tasks,
