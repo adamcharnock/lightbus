@@ -1,5 +1,8 @@
 # What is Lightbus?
 
+[![Build Status](https://travis-ci.org/adamcharnock/lightbus.svg?branch=master)](https://travis-ci.org/adamcharnock/lightbus)
+[![Coverage Status](https://coveralls.io/repos/github/adamcharnock/lightbus/badge.svg?branch=master)](https://coveralls.io/github/adamcharnock/lightbus?branch=master)
+
 Lightbus allows your backend processes to communicate, run background tasks,
 and expose internal APIs.
 
@@ -10,10 +13,6 @@ Lightbus requires Python 3.6 or above.
 
 **Lightbus is under active development and is still pre-release.**
 You can [track progress in GitHub][issue-1].
-
-## Example service structure
-
-![A simple Lightbus deployment][simple-processes]
 
 ## Designed for ease of use
 
@@ -65,9 +64,6 @@ bus.auth.user_registered.listen(
 )
 ```
 
-To get started checkout the [installation](tutorial/installation.md),
-[concepts](explanation/concepts.md),
-and [quickstart](tutorial/quick-start.md) guides.
+To get started checkout the documentation at https://lightbus.org.
 
 [issue-1]: https://github.com/adamcharnock/lightbus/issues/1
-[simple-processes]: /static/images/simple-processes.png

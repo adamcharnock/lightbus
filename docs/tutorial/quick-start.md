@@ -1,41 +1,21 @@
 !!! note
-    We recommend read the [concepts](concepts.md) section before continuing
+    We recommend read the [concepts](/explanation/concepts.md) section before continuing
     as this will give you a useful overview before delving into the details
     below.
 
-## Requirements
+## 2.1 Requirements
 
 Before continuing, ensure you have completed the following steps detailed in
-the [installation section](installation.md):
+the [installation section](/tutorial/installation.md):
 
 * Installed Python 3.6 or above
 * Installed Lightbus
-* Running a Redis server (built from the Redis unstable branch)
-* Read the [concepts section](concepts.md)
+* Running Redis
 
-## Anatomy lesson
+Optionally, you can read some additional *explanation* in the
+[anatomy lesson] and [concepts] sections.
 
-When using Lightbus you will still run your various services
-as normal. For web-based software this will likely include one or more
-processes to handle web traffic (e.g. Django, Flask).
-You may or may not also have some other processes running for other purposes.
-
-In addition to this, Lightbus will have its own process started via
-`lightbus run`.
-
-While the roles of these processes are not strictly defined, in most
-circumstances their use should break down as follows:
-
-* **Lightbus processes** – Respond to remote procedure calls, listen for
-  and handle events.
-* **Other processes (web etc)** – Perform remote procedure calls, fire events
-
-The starting point for the lightbus process is a `bus.py` file. You
-should create this in your project root. You can also configure
-where Lightbus looks for this module using the `--bus` option or
-by setting the `LIGHTBUS_MODULE` environment variable.
-
-## Define your API
+## 2.2 Define your API
 
 First we will define the API the lightbus will serve.
 Create the following in a `bus.py` file:
@@ -71,12 +51,11 @@ APIs in its registry, including your new `auth` API:
 
 Leave Lightbus running and open a new terminal window for the next stage.
 
-## Remote procedure calls
+## 2.3 Remote procedure calls
 
 With Lightbus running, open a new terminal window and create a file named
-`call_procedure.py` in the same directory as your `bus.py`. The
-`call_procedure.py` file name is arbitrary, it simply allows us to
-experiment with accessing the bus.
+`call_procedure.py` in the same directory as your `bus.py`. This is
+just a regular Python script which will use to call the bus.
 
 ```python3
 # call_procedure.py
@@ -99,10 +78,18 @@ else:
     print('Oops, bad username or password')
 ```
 
-## Events
+Running this script should show you the following:
 
-Events allow services to broadcast a message to any other services that
-care to listen. Events are fired by the service which 'owns' the API and
+    $ python3 ./call_procedure.py
+    Password valid!
+
+Looking at the other terminal window you have open you should see that
+Lightbus has also reported that it is handled a remote procedure call.
+
+## 2.4 Events
+
+Events allow services to broadcast a message to any other services which
+cares to listen. Events are fired by the service which 'owns' the API and
 received by any Lightbus service, which can include the owning service itself
 (as we do below).
 
@@ -112,7 +99,7 @@ which contains the class definition within its codebase. Lightbus only
 allows the authoritative service to fire events for an API. Any service can
 listen for any event.
 
-We will talk more about this in [concepts](concepts.md). For now let's look
+We will talk more about this in [concepts](/explanation/concepts.md). For now let's look
 at some code. Below we modify our `AuthApi` in `bus.py` to add a `user_registered`
 event. We also use the `before_server_start()` hook to setup a listener for
 that event:
@@ -175,11 +162,13 @@ Here we call `bus.auth.user_registered.fire()` to fire the `user_registered` eve
 the `auth` API. This will place the event onto the bus to be consumed any
 listening services.
 
-## Further reading
+## 2.5 Next
 
-This quickstart has covered the basics of Lightbus, and has hopefully given you a
-good starting point. Reading through the remainder of this documentation should give you
-a wider awareness of the features available and underlying concepts.
+This was a simple example to get you started. The [worked example] considers
+a more realistic scenario involving multiple services.
 
 
-[lightbus-run]: static/images/quickstart-lightbus-run.png
+[lightbus-run]: /static/images/quickstart-lightbus-run.png
+[anatomy lesson]: /explanation/anatomy-lesson.md
+[concepts]: /explanation/concepts.md
+[worked example]: worked-example.md

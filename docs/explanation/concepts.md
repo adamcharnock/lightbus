@@ -134,7 +134,7 @@ This is useful when:
    with their implementation
 2. You wish the authoritative service to perform a known task in the background
 
-The [quickstart](quick-start.md#events) provides an example of the latter case.
+The [quickstart](/tutorial/quick-start.md#events) provides an example of the latter case.
 
 **Events provide at-least-once semantics.**
 
@@ -152,4 +152,4 @@ Lightbus ships with a Redis-backed implementation of each of these transports.
 
 Lightbus can be configured to use custom transports either globally, or on a per-API level.
 
-[simple-processes]: static/images/simple-processes.png
+[simple-processes]: /static/images/simple-processes.png

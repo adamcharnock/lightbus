@@ -1,13 +1,13 @@
 In the following worked example we will create three services:
 
-1. An image resizing service
-2. An online store
-3. A stats dashboard
+* An image resizing service
+* An online store
+* A stats dashboard
 
 This will involve a combination of web interfaces (using [Flask]), and Lightbus APIs.
 The goal is to show how Lightbus can allow multiple services to interact.
 
-## Getting started
+## 1. Getting started
 
 The code created here can be found in Lightbus example [ex03_worked_example], although
 the code will be repeated below. There is a directory for each service we will
@@ -21,16 +21,19 @@ A passing familiarity with [Flask] may be useful, but is not required. [Honcho]
 will assist us in running the various processes required for our services.
 
 We will assume you
-have already read and completed the [installation](installation.md),
-[quick start](quick-start.md), and [concepts](concepts.md) sections.
+have already read and completed the [installation](/tutorial/installation.md) and
+[quick start](/tutorial/quick-start.md) tutorials
 
-## Image resizing service
+## 2. Image resizing service
 
 The image resizing service will be a simple Lightbus API, the purpose of which
 is to allow our store to resize images prior to display:
 
 ```python3
-# image/bus.py
+"""Image resizing service (image/bus.py)
+
+An API with a single RPC method to resize images and return a URL
+"""
 from lightbus import Api, Event
 
 class ImageApi(Api):
@@ -45,13 +48,14 @@ class ImageApi(Api):
 
 There is no web interface for this service, so this is all we need.
 
-## Store service
+## 3. Store service
 
 Our store will have both a Lightbus API and a web interface. We'll start
 with the API first:
 
 ```python3
-# store/bus.py
+""" An internal Lightbus API for our online shop (store/bus.py)
+"""
 from lightbus import Api, Event, configure_logging
 configure_logging()
 
@@ -68,6 +72,8 @@ event whenever a page is viewed.
 Our store web interface uses Flask and is a little longer:
 
 ```python3
+""" The web server for our online shop (store/web.py)
+"""
 import lightbus
 from flask import Flask
 
@@ -119,7 +125,7 @@ def pet(pet_num):
     return html
 ```
 
-## Interlude: give it a go
+## 4. Interlude: give it a go
 
 We're not quite done yet, but you can now startup the necessary processes and
 see the store. You will need to run each of these in a separate terminal window:
@@ -150,19 +156,20 @@ Here you can see:
 
 Next we will create the dashboard which will make use of the `store.page_view` event.
 
-## Dashboard service
+## 5. Dashboard service
 
 The dashboard service will provide internal reporting in the form
 of page view statistics for the online store.
 
 There dashboard will need to both receive events and provide a web
 interface. It will therefore need both a lightbus process and a
-web process (we will later look at how to combine these).
+web process.
 
 Fist we will start with the `bus.py` file:
 
 ```python3
-# dashboard/bus.py
+""" Lightbus event listeners for our shop dashboard (dashboard/bus.py)
+""""
 import json
 
 page_views = {}
@@ -192,7 +199,8 @@ Redis, Mongo etc). For simplicity we just store JSON to a file.
 Now we'll define our dashboard's web interface:
 
 ```python3
-# dashboard/web.py
+""" Web interface for our shop dashboard (dashboard/web.py)
+"""
 import json
 from flask import Flask
 
@@ -217,7 +225,7 @@ def home():
 This reads the JSON data that was written by the event listener in `dashboard/bus.py` above,
 then render it to HTML.
 
-## Run it!
+## 6. Run it!
 
 You should now have the following python files:
 
@@ -299,7 +307,7 @@ created.
 The dashboard should show a simple list of URLs plus the total number of page views for each.
 Go back to the store and view a few pages. Now refresh the dashboard and note the new data.
 
-## Wrapping up
+## 7. Wrapping up
 
 While the services we have have created here are very crude, hopefully they have helped
 show how Lightbus can be used as a effective communications infrastructure.
@@ -307,118 +315,15 @@ show how Lightbus can be used as a effective communications infrastructure.
 Next we will the detail the ins-and-outs of each area of Lightbus – APIs, RPCs, events, configuration,
 schemas, and so on.
 
-## Extra: Combining dashboard processes
 
-As an extra bonus, below we show how to combine both dashboard processes into one.
-This is a bit more advanced and requires some knowledge of Python's asyncio features.
-*You can use Lightbus perfectly well without adding this complexity.*
-
-Behind the scenes Lightbus is powered by Python's asyncio library. Therefore,
-if we also use an asyncio-based web server we can combine the Lightbus and web
-processes. In this case we'll use [aiohttp] as our web server, rather than
-Flask which we used earlier.
-
-
-```python3
-# dashboard/combined.py
-import lightbus
-from aiohttp import web
-
-# Note we no longer need to store page view data on disk.
-# We simply hold it in memory using a dictionary.
-page_views = {}
-
-
-def home_view(request):
-    """Render the simple dashboard UI"""
-    html = '<h1>Dashboard</h1>\n'
-    html += '<p>Total store views</p>\n'
-
-    html += '<ul>'
-    # Read the page views from our `page_views` global variable
-    for url, total_views in page_views.items():
-        html += f'<li>URL <code>{url}</code>: {total_views} views</li>'
-    html += '</ul>'
-
-    return web.Response(body=html, content_type='text/html')
-
-
-def handle_page_view(event_message, url):
-    """Handle an incoming page view"""
-    page_views.setdefault(url, 0)
-    # Store the incoming view in our `page_views` global variable
-    page_views[url] += 1
-
-
-async def start_listener(app):
-    # Create the asyncio task which will listen for the page_view event
-    listener_task = await app.bus.store.page_view.listen_async(handle_page_view)
-
-    # Store the task against `app` in case we need it later (hint: we don't)
-    app['page_view_listener'] = listener_task
-
-
-async def cleanup(app):
-    # We're using aiohttp to manage the event loop, so
-    # we need to close up the lightbus client manually on shutdown.
-    # This will cancel any listeners and close down the redis connections.
-    # If don't do this you'll see errors on shutdown.
-    await app.bus.bus_client.close_async()
-
-
-def main():
-    # Make sure Lightbus formats its logs correctly
-    lightbus.configure_logging()
-
-    # Create our lightbus client and our web application
-    bus = lightbus.create()
-    app = web.Application()
-
-    app.router.add_route('GET', '/', home_view)
-    app.on_startup.append(start_listener)
-    app.on_cleanup.append(cleanup)
-
-    # Store the bus on `app` as we'll need it
-    # in start_listener() and cleanup()
-    app.bus = bus
-
-    web.run_app(app, host='127.0.0.1', port=5000)
-
-
-if __name__ == '__main__':
-    main()
-
-```
-
-New create a new Procfile called `Procfile_combined`. This will use your new combined
-dashboard process along with the existing image resizer and store services:
-
-```bash hl_lines="5"
-# Procfile_combined
-
-image_resizer_bus: lightbus run --bus=image.bus
-store_web: FLASK_DEBUG=1 FLASK_APP=store/web.py flask run --port=5001
-dashboard_combined: python dashboard/combined.py
-```
-
-Note that the `dashboard_web` and `dashboard_lightbus` have gone and `dashboard_combined`
-has been added.
-
-You can now start up your new collection of services using:
-
-```bash
-$ ls
-Procfile    Procfile_combined    dashboard/    image/    store/
-
-$ honcho start -f Procfile_combined
-```
 
 [Flask]: http://flask.pocoo.org/
+[Honcho]: https://github.com/nickstenning/honcho
 [ex03_worked_example]: https://github.com/adamcharnock/lightbus/tree/master/lightbus_examples/ex03_worked_example
 [Procfile]: https://github.com/adamcharnock/lightbus/blob/mater/lightbus_examples/ex03_worked_example/Procfile
-[web-log]: static/images/worked-example-flask-log.png
-[honcho-startup]: static/images/worked-example-honcho-startup.png
-[honcho-page-view]: static/images/worked-example-honcho-page-view.png
+[web-log]: /static/images/worked-example-flask-log.png
+[honcho-startup]: /static/images/worked-example-honcho-startup.png
+[honcho-page-view]: /static/images/worked-example-honcho-page-view.png
 [127.0.0.1:5001]: http://127.0.0.1:5001
 [127.0.0.1:5000]: http://127.0.0.1:5000
-[aiohttp]: https://aiohttp.readthedocs.io/
+
