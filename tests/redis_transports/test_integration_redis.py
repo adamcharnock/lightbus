@@ -214,7 +214,7 @@ async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpc
         }
     )
 
-    bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config, loop=loop))
+    bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config))
     asyncio.ensure_future(consume_rpcs(bus))
     await asyncio.sleep(0.1)
 
@@ -262,7 +262,7 @@ async def test_multiple_event_transports(loop, server, redis_server_b):
         }
     )
 
-    bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config, loop=loop))
+    bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config))
     await asyncio.sleep(0.1)
 
     await bus.api_a.event_a.fire_async()
@@ -378,7 +378,7 @@ async def test_listen_to_multiple_events_across_multiple_transports(loop, server
         }
     )
 
-    bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config, loop=loop))
+    bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config))
     await asyncio.sleep(0.1)
 
     calls = 0

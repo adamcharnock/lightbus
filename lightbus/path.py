@@ -77,11 +77,7 @@ class BusPath(object):
         # Use a larger value of `rpc_timeout` because call_rpc_remote() should
         # handle timeout
         rpc_timeout = self.client.config.api(self.api_name).rpc_timeout * 1.5
-        return block(
-            self.call_async(**kwargs, bus_options=bus_options),
-            loop=self.client.loop,
-            timeout=rpc_timeout,
-        )
+        return block(self.call_async(**kwargs, bus_options=bus_options), timeout=rpc_timeout)
 
     async def call_async(self, *args, bus_options=None, **kwargs):
         if args:
@@ -104,7 +100,6 @@ class BusPath(object):
     def listen(self, listener, *, bus_options: dict = None):
         return block(
             self.listen_async(listener, bus_options=bus_options),
-            self.client.loop,
             timeout=self.client.config.api(self.api_name).event_listener_setup_timeout,
         )
 
@@ -124,9 +119,7 @@ class BusPath(object):
 
     def listen_multiple(self, events: List["BusPath"], listener, *, bus_options: dict = None):
         return block(
-            self.listen_multiple_async(events, listener, bus_options=bus_options),
-            self.client.loop,
-            timeout=5,
+            self.listen_multiple_async(events, listener, bus_options=bus_options), timeout=5
         )
 
     async def fire_async(self, *args, bus_options: dict = None, **kwargs):
@@ -143,7 +136,6 @@ class BusPath(object):
     def fire(self, *, bus_options: dict = None, **kwargs):
         return block(
             self.fire_async(**kwargs, bus_options=bus_options),
-            loop=self.client.loop,
             timeout=self.client.config.api(self.api_name).event_fire_timeout,
         )
 

@@ -68,12 +68,7 @@ class DebugEventTransport(EventTransport):
         )
 
     async def fetch(
-        self,
-        listen_for: List[Tuple[str, str]],
-        context: dict,
-        loop,
-        consumer_group: str = None,
-        **kwargs,
+        self, listen_for: List[Tuple[str, str]], context: dict, consumer_group: str = None, **kwargs
     ) -> Generator[EventMessage, None, None]:
         """Consume RPC events for the given API"""
 

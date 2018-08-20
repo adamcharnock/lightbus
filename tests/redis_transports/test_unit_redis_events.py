@@ -80,7 +80,7 @@ async def test_consume_events(
         )
 
     async def co_consume():
-        async for message_ in redis_event_transport.consume([("my.dummy", "my_event")], {}, loop):
+        async for message_ in redis_event_transport.consume([("my.dummy", "my_event")], {}):
             return message_
 
     enqueue_result, message = await asyncio.gather(co_enqeue(), co_consume())
@@ -98,7 +98,7 @@ async def test_consume_events_multiple_consumers(
     messages = []
 
     async def co_consume(name):
-        async for message_ in redis_event_transport.consume([("my.dummy", "my_event")], {}, loop):
+        async for message_ in redis_event_transport.consume([("my.dummy", "my_event")], {}):
             messages.append((name, message_))
 
     task1 = asyncio.ensure_future(co_consume("task1"))
@@ -137,16 +137,13 @@ async def test_consume_events_multiple_consumers_one_group(
             stream_use=StreamUse.PER_EVENT,
         )
         consumer = event_transport.consume(
-            listen_for=[("my.dummy", "my_event")],
-            context={},
-            loop=loop,
-            consumer_group="single_group",
+            listen_for=[("my.dummy", "my_event")], context={}, consumer_group="single_group"
         )
         async for message_ in consumer:
             messages.append(message_)
 
-    task1 = asyncio.ensure_future(co_consume(1), loop=loop)
-    task2 = asyncio.ensure_future(co_consume(2), loop=loop)
+    task1 = asyncio.ensure_future(co_consume(1))
+    task2 = asyncio.ensure_future(co_consume(2))
     await asyncio.sleep(0.1)
 
     await redis_client.xadd(
@@ -205,7 +202,7 @@ async def test_consume_events_since_id(
     )
 
     consumer = redis_event_transport.consume(
-        [("my.dummy", "my_event")], {}, since="1515000001500-0", forever=False, loop=loop
+        [("my.dummy", "my_event")], {}, since="1515000001500-0", forever=False
     )
 
     yields = []
@@ -268,7 +265,7 @@ async def test_consume_events_since_datetime(
     # 1515000001500-0 -> 2018-01-03T17:20:01.500Z
     since_datetime = datetime(2018, 1, 3, 17, 20, 1, 500)
     consumer = redis_event_transport.consume(
-        [("my.dummy", "my_event")], {}, since=since_datetime, forever=False, loop=loop
+        [("my.dummy", "my_event")], {}, since=since_datetime, forever=False
     )
 
     yields = []
@@ -433,11 +430,7 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
         stream_use=StreamUse.PER_EVENT,
     )
     consumer = event_transport.consume(
-        listen_for=[("my.dummy", "my_event")],
-        since="0",
-        loop=loop,
-        context={},
-        consumer_group="test_group",
+        listen_for=[("my.dummy", "my_event")], since="0", context={}, consumer_group="test_group"
     )
 
     messages = []
@@ -447,7 +440,7 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
             if isinstance(message, EventMessage):
                 messages.append(message)
 
-    task = asyncio.ensure_future(consume(), loop=loop)
+    task = asyncio.ensure_future(consume())
     await asyncio.sleep(0.1)
     assert len(messages) == 1
     await cancel(task)
@@ -484,11 +477,7 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
         stream_use=StreamUse.PER_EVENT,
     )
     consumer = event_transport.consume(
-        listen_for=[("my.dummy", "my_event")],
-        since="0",
-        loop=loop,
-        context={},
-        consumer_group="test_group",
+        listen_for=[("my.dummy", "my_event")], since="0", context={}, consumer_group="test_group"
     )
 
     messages = []
@@ -498,7 +487,7 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
             if isinstance(message, EventMessage):
                 messages.append(message)
 
-    task = asyncio.ensure_future(consume(), loop=loop)
+    task = asyncio.ensure_future(consume())
     await asyncio.sleep(0.1)
     assert len(messages) == 1
     assert messages[0].api_name == "my.dummy"
@@ -523,11 +512,7 @@ async def test_consume_events_create_consumer_group_first(
     This should create a noop message which gets ignored by the event transport
     """
     consumer = redis_event_transport.consume(
-        listen_for=[("my.dummy", "my_event")],
-        since="0",
-        loop=loop,
-        context={},
-        consumer_group="test_group",
+        listen_for=[("my.dummy", "my_event")], since="0", context={}, consumer_group="test_group"
     )
     messages = []
 
@@ -535,7 +520,7 @@ async def test_consume_events_create_consumer_group_first(
         async for message in consumer:
             messages.append(message)
 
-    task = asyncio.ensure_future(consume(), loop=loop)
+    task = asyncio.ensure_future(consume())
     await asyncio.sleep(0.1)
     assert len(messages) == 0
     await cancel(task)
@@ -586,7 +571,7 @@ async def test_consume_events_per_api_stream(
     event_names = []
 
     async def co_consume(event_name):
-        consumer = redis_event_transport.consume([("my.dummy", event_name)], {}, loop)
+        consumer = redis_event_transport.consume([("my.dummy", event_name)], {})
         async for message_ in consumer:
             event_names.append(message_.event_name)
             await consumer.__anext__()
@@ -677,13 +662,13 @@ async def test_reconnect_while_listening(
     async def co_consume():
         nonlocal total_messages
 
-        consumer = redis_event_transport.consume([("my.dummy", "my_event")], {}, loop)
+        consumer = redis_event_transport.consume([("my.dummy", "my_event")], {})
         async for message_ in consumer:
             total_messages += 1
             await consumer.__anext__()
 
-    enque_task = asyncio.ensure_future(co_enqeue(), loop=loop)
-    consume_task = asyncio.ensure_future(co_consume(), loop=loop)
+    enque_task = asyncio.ensure_future(co_enqeue())
+    consume_task = asyncio.ensure_future(co_consume())
 
     await asyncio.sleep(0.2)
     assert total_messages > 0

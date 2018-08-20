@@ -163,7 +163,7 @@ async def test_monitor_store(loop, schema, redis_client):
         class Meta:
             name = "my.test_api"
 
-    monitor_task = asyncio.ensure_future(schema.monitor(interval=0.1), loop=loop)
+    monitor_task = asyncio.ensure_future(schema.monitor(interval=0.1))
 
     assert await redis_client.smembers("schemas") == []
     await schema.add_api(TestApi())
@@ -174,7 +174,7 @@ async def test_monitor_store(loop, schema, redis_client):
 @pytest.mark.run_loop
 async def test_monitor_load(loop, schema, redis_client):
     """Check the monitor will load new data from redis"""
-    monitor_task = asyncio.ensure_future(schema.monitor(interval=0.1), loop=loop)
+    monitor_task = asyncio.ensure_future(schema.monitor(interval=0.1))
 
     assert await redis_client.smembers("schemas") == []
     await redis_client.sadd("schemas", "my.test_api")

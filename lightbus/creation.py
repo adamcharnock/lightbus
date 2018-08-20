@@ -13,7 +13,7 @@ from lightbus.client import logger
 from lightbus.config import Config
 from lightbus.exceptions import FailedToImportBusModule
 from lightbus.transports.base import TransportRegistry
-from lightbus.utilities.async import get_event_loop, block
+from lightbus.utilities.async import block
 from lightbus.utilities.importing import import_module_from_string
 
 if False:
@@ -35,7 +35,6 @@ async def create_async(
     client_class=BusClient,
     node_class=BusPath,
     plugins=None,
-    loop: asyncio.AbstractEventLoop = None,
     flask: bool = False,
     **kwargs,
 ) -> BusPath:
@@ -67,7 +66,6 @@ async def create_async(
         client_class (BusClient): The class from which the bus client will be instantiated
         node_class (BusPath): The class from which the bus path will be instantiated
         plugins (dict): A dictionary of plugins to load, where keys are the plugin name defined in the plugin's entrypoint
-        loop (asyncio.AbstractEventLoop): The event loop to use
         flask (bool): Are we using flask? If so we will make sure we don't start lightbus in the reloader process
         **kwargs (): Any additional instantiation arguments to be passed to `client_class`.
 
@@ -113,7 +111,7 @@ async def create_async(
     if schema_transport:
         transport_registry.set_schema_transport(schema_transport)
 
-    client = client_class(transport_registry=transport_registry, config=config, loop=loop, **kwargs)
+    client = client_class(transport_registry=transport_registry, config=config, **kwargs)
     await client.setup_async(plugins=plugins)
 
     return node_class(name="", parent=None, client=client)
@@ -133,8 +131,7 @@ def create(*args, **kwargs) -> BusPath:
     for a list of arguments
 
     """
-    loop = kwargs.get("loop") or get_event_loop()
-    return block(create_async(*args, **kwargs), loop=loop, timeout=5)
+    return block(create_async(*args, **kwargs), timeout=5)
 
 
 def load_config(

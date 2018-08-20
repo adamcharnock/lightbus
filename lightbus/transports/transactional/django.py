@@ -30,7 +30,7 @@ class TransactionTransportMiddleware(object):
     def migrate(self):
         # TODO: This needs to be a core lightbus feature somehow
         with connections["default"].cursor() as cursor:
-            block(DbApiConnection(connections["default"], cursor).migrate(), self.loop, timeout=5)
+            block(DbApiConnection(connections["default"], cursor).migrate(), timeout=5)
 
     def __call__(self, request):
         connection = connections["default"]
@@ -42,13 +42,13 @@ class TransactionTransportMiddleware(object):
             start_transaction = None
 
         lightbus_transaction_context = lightbus_set_database(self.bus, connection)
-        block(lightbus_transaction_context.__aenter__(), self.loop, timeout=5)
+        block(lightbus_transaction_context.__aenter__(), timeout=5)
 
         response = self.get_response(request)
 
         if 500 <= response.status_code < 600:
-            block(lightbus_transaction_context.__aexit__(True, True, True), self.loop, timeout=5)
+            block(lightbus_transaction_context.__aexit__(True, True, True), timeout=5)
         else:
-            block(lightbus_transaction_context.__aexit__(None, None, None), self.loop, timeout=5)
+            block(lightbus_transaction_context.__aexit__(None, None, None), timeout=5)
 
         return response

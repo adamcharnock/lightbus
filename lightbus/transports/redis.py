@@ -498,7 +498,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self,
         listen_for,
         context: dict,
-        loop: asyncio.AbstractEventLoop,
         consumer_group: str = None,
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,
@@ -557,8 +556,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 await queue.join()
 
         # Make sure we surface any exceptions that occur in either task
-        fetch_task = asyncio.ensure_future(fetch_loop(), loop=loop)
-        reclaim_task = asyncio.ensure_future(reclaim_loop(), loop=loop)
+        fetch_task = asyncio.ensure_future(fetch_loop())
+        reclaim_task = asyncio.ensure_future(reclaim_loop())
 
         fetch_task.add_done_callback(check_for_exception)
         reclaim_task.add_done_callback(check_for_exception)

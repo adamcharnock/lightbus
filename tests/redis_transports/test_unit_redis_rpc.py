@@ -230,8 +230,8 @@ async def test_reconnect_upon_consume_rpcs(loop, redis_client, redis_rpc_transpo
             messages = await redis_rpc_transport.consume_rpcs(apis=[dummy_api])
             total_messages += len(messages)
 
-    enque_task = asyncio.ensure_future(co_enqeue(), loop=loop)
-    consume_task = asyncio.ensure_future(co_consume(), loop=loop)
+    enque_task = asyncio.ensure_future(co_enqeue())
+    consume_task = asyncio.ensure_future(co_consume())
 
     await asyncio.sleep(0.2)
     assert total_messages > 0

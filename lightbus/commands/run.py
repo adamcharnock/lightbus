@@ -42,7 +42,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         try:
             self._handle(args, config)
         except Exception as e:
-            block(plugin_hook("exception", e=e), asyncio.get_event_loop(), timeout=5)
+            block(plugin_hook("exception", e=e), timeout=5)
             raise
 
     def _handle(self, args, config):
@@ -64,9 +64,9 @@ class Command(LogLevelMixin, BusImportMixin, object):
             logger.debug("Calling {}.before_server_start() callback".format(bus_module.__name__))
             co = before_server_start(bus)
             if iscoroutine(co):
-                block(co, asyncio.get_event_loop(), timeout=10)
+                block(co, timeout=10)
 
-        block(plugin_hook("receive_args", args=args), asyncio.get_event_loop(), timeout=5)
+        block(plugin_hook("receive_args", args=args), timeout=5)
 
         if args.events_only:
             bus.run_forever(consume_rpcs=False)

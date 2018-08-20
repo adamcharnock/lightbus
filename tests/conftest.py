@@ -206,7 +206,6 @@ def dummy_bus(loop):
         result_transport=lightbus.DebugResultTransport(),
         event_transport=lightbus.DebugEventTransport(),
         schema_transport=lightbus.DebugSchemaTransport(),
-        loop=loop,
         plugins={},
     )
     yield dummy_bus

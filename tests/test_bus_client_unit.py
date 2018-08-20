@@ -285,10 +285,7 @@ def test_setup_transports_opened(loop, mocker):
     m = mocker.patch.object(rpc_transport, "open", autospec=True, return_value=dummy_coroutine())
 
     lightbus.creation.create(
-        rpc_transport=rpc_transport,
-        schema_transport=lightbus.DebugSchemaTransport(),
-        loop=loop,
-        plugins={},
+        rpc_transport=rpc_transport, schema_transport=lightbus.DebugSchemaTransport(), plugins={}
     )
     assert m.call_count == 1
 

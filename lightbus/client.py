@@ -59,12 +59,7 @@ class BusClient(object):
     All functionality in `BusPath` is provided by `BusClient`.
     """
 
-    def __init__(
-        self,
-        config: "Config",
-        transport_registry: TransportRegistry = None,
-        loop: asyncio.AbstractEventLoop = None,
-    ):
+    def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
 
         self.config = config
         self.transport_registry = transport_registry or TransportRegistry().load_config(config)
@@ -73,7 +68,6 @@ class BusClient(object):
             max_age_seconds=self.config.bus().schema.ttl,
             human_readable=self.config.bus().schema.human_readable,
         )
-        self._loop = loop
         self._listeners = {}
         self._hook_callbacks = defaultdict(list)
         self._exit_code = 0
@@ -144,16 +138,14 @@ class BusClient(object):
             await transport.open()
 
     def setup(self, plugins: dict = None):
-        block(self.setup_async(plugins), loop=self.loop, timeout=5)
+        block(self.setup_async(plugins), timeout=5)
 
     def close(self):
-        block(self.close_async(), loop=self.loop, timeout=5)
+        block(self.close_async(), timeout=5)
 
     async def close_async(self):
         listener_tasks = [
-            task
-            for task in asyncio.Task.all_tasks(loop=self.loop)
-            if getattr(task, "is_listener", False)
+            task for task in asyncio.Task.all_tasks() if getattr(task, "is_listener", False)
         ]
 
         for task in listener_tasks:
@@ -176,10 +168,7 @@ class BusClient(object):
 
     @property
     def loop(self):
-        if self._loop:
-            return self._loop
-        else:
-            return get_event_loop()
+        return get_event_loop()
 
     def run_forever(self, *, consume_rpcs=True):
         registry.add(LightbusStateApi())
@@ -192,7 +181,7 @@ class BusClient(object):
                 )
             )
 
-        block(self._plugin_hook("before_server_start"), self.loop, timeout=5)
+        block(self._plugin_hook("before_server_start"), timeout=5)
 
         self._run_forever(consume_rpcs)
 
@@ -209,10 +198,10 @@ class BusClient(object):
         # Setup RPC consumption
         consume_rpc_task = None
         if consume_rpcs and registry.all():
-            consume_rpc_task = asyncio.ensure_future(self.consume_rpcs(), loop=self.loop)
+            consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
 
         # Setup schema monitoring
-        monitor_task = asyncio.ensure_future(self.schema.monitor(), loop=self.loop)
+        monitor_task = asyncio.ensure_future(self.schema.monitor())
 
         self.loop.add_signal_handler(signal.SIGINT, self.loop.stop)
         self.loop.add_signal_handler(signal.SIGTERM, self.loop.stop)
@@ -230,7 +219,7 @@ class BusClient(object):
         self.loop.remove_signal_handler(signal.SIGTERM)
 
         # Cancel the tasks we created above
-        block(cancel(consume_rpc_task, monitor_task), loop=self.loop, timeout=1)
+        block(cancel(consume_rpc_task, monitor_task), timeout=1)
 
     def _actually_run_forever(self):  # pragma: no cover
         """Simply start the loop running forever
@@ -487,7 +476,7 @@ class BusClient(object):
             # event_transport.consume() returns an asynchronous generator
             # which will provide us with messages
             consumer = event_transport.consume(
-                listen_for=events, context=listener_context, loop=self.loop, **options
+                listen_for=events, context=listener_context, **options
             )
             with self._register_listener(events):
                 async for event_message in consumer:
@@ -584,9 +573,7 @@ class BusClient(object):
                 (api_name, event_name) for api_name, event_name in events if api_name in _api_names
             ]
 
-            task = asyncio.ensure_future(
-                listen_for_event_task(_event_transport, _events), loop=self.loop
-            )
+            task = asyncio.ensure_future(listen_for_event_task(_event_transport, _events))
             task.is_listener = True  # Used by close()
             tasks.append(task)
 

@@ -53,7 +53,6 @@ def bus(
         result_transport=redis_result_transport,
         event_transport=redis_event_transport,
         schema_transport=redis_schema_transport,
-        loop=loop,
     )
 
 
@@ -87,7 +86,6 @@ def new_bus(loop, new_redis_pool, server):
                 consumer_name="test_consumer",
             ),
             schema_transport=lightbus.RedisSchemaTransport(redis_pool=schema_pool),
-            loop=loop,
         )
 
     return wrapped

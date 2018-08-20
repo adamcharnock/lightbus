@@ -78,7 +78,7 @@ def parse_args(args=None):
     autoload_plugins(config=Config.load_dict({}))
 
     loop = get_event_loop()
-    block(plugin_hook("before_parse_args", parser=parser, subparsers=subparsers), loop, timeout=5)
+    block(plugin_hook("before_parse_args", parser=parser, subparsers=subparsers), timeout=5)
     args = parser.parse_args(sys.argv[1:] if args is None else args)
     # Note that we don't have an after_parse_args plugin hook. Instead we use the receive_args
     # hook which is called once we have instantiated our plugins

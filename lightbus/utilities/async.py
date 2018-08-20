@@ -13,7 +13,8 @@ from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 logger = logging.getLogger(__name__)
 
 
-def block(coroutine: Coroutine, loop: asyncio.AbstractEventLoop, *, timeout):
+def block(coroutine: Coroutine, loop=None, *, timeout):
+    loop = loop or get_event_loop()
     if loop.is_running():
         coroutine.close()
         raise CannotBlockHere(
