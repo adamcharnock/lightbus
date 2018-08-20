@@ -497,7 +497,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
     async def fetch(
         self,
         listen_for,
-        context: dict,
         consumer_group: str = None,
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,

@@ -150,7 +150,7 @@ class TransactionalEventTransport(EventTransport):
         await self.database.send_event(event_message, options)
 
     async def fetch(
-        self, listen_for: List[Tuple[str, str]], context: dict, consumer_group: str = None, **kwargs
+        self, listen_for: List[Tuple[str, str]], consumer_group: str = None, **kwargs
     ) -> Generator[EventMessage, None, None]:
         if not self.database:
             raise DatabaseNotSet(
@@ -170,7 +170,7 @@ class TransactionalEventTransport(EventTransport):
         database = self.database
 
         consumer = self.child_transport.consume(
-            listen_for=listen_for, context=context, consumer_group=consumer_group, **kwargs
+            listen_for=listen_for, consumer_group=consumer_group, **kwargs
         )
 
         # Wrap the child transport in order to de-duplicate incoming messages

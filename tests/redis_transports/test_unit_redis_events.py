@@ -141,7 +141,7 @@ async def test_consume_events_multiple_consumers_one_group(
             stream_use=StreamUse.PER_EVENT,
         )
         consumer = event_transport.consume(
-            listen_for=[("my.dummy", "my_event")], context={}, consumer_group="single_group"
+            listen_for=[("my.dummy", "my_event")], consumer_group="single_group"
         )
         async for message_ in consumer:
             messages.append(message_)
@@ -434,7 +434,7 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
         stream_use=StreamUse.PER_EVENT,
     )
     consumer = event_transport.consume(
-        listen_for=[("my.dummy", "my_event")], since="0", context={}, consumer_group="test_group"
+        listen_for=[("my.dummy", "my_event")], since="0", consumer_group="test_group"
     )
 
     messages = []
@@ -481,7 +481,7 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
         stream_use=StreamUse.PER_EVENT,
     )
     consumer = event_transport.consume(
-        listen_for=[("my.dummy", "my_event")], since="0", context={}, consumer_group="test_group"
+        listen_for=[("my.dummy", "my_event")], since="0", consumer_group="test_group"
     )
 
     messages = []
@@ -516,7 +516,7 @@ async def test_consume_events_create_consumer_group_first(
     This should create a noop message which gets ignored by the event transport
     """
     consumer = redis_event_transport.consume(
-        listen_for=[("my.dummy", "my_event")], since="0", context={}, consumer_group="test_group"
+        listen_for=[("my.dummy", "my_event")], since="0", consumer_group="test_group"
     )
     messages = []
 

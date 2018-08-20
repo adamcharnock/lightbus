@@ -470,14 +470,11 @@ class BusClient(object):
         options = options or {}
         # Set a random default name for this new consumer we are creating
         options.setdefault("consumer_group", "default")
-        listener_context = {}
 
         async def listen_for_event_task(event_transport, events):
             # event_transport.consume() returns an asynchronous generator
             # which will provide us with messages
-            consumer = event_transport.consume(
-                listen_for=events, context=listener_context, **options
-            )
+            consumer = event_transport.consume(listen_for=events, **options)
             with self._register_listener(events):
                 async for event_message in consumer:
                     # TODO: Check events match those requested

@@ -152,7 +152,7 @@ async def test_fetch_ok(transaction_transport_with_consumer, aiopg_cursor, loop)
     transport = await transaction_transport_with_consumer(
         event_messages=[message1, message2, message3]
     )
-    consumer = transport.consume(listen_for="api.event", context={})
+    consumer = transport.consume(listen_for="api.event")
     produced_events = await consumer_to_messages(consumer)
     assert produced_events == [message1, message2, message3]
 
@@ -168,7 +168,7 @@ async def test_fetch_duplicate(transaction_transport_with_consumer, aiopg_cursor
     message2 = EventMessage(api_name="api", event_name="event", id="1")
 
     transport = await transaction_transport_with_consumer(event_messages=[message1, message2])
-    consumer = transport.consume(listen_for="api.event", context={})
+    consumer = transport.consume(listen_for="api.event")
     produced_events = await consumer_to_messages(consumer)
     assert produced_events == [message1]  # The second message should be ignored
 
