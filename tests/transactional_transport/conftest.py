@@ -78,13 +78,13 @@ async def aiopg_connection(pg_kwargs):
 
 
 @pytest.yield_fixture()
-def aiopg_connection_factory(pg_kwargs, loop):
+def aiopg_connection_factory(pg_kwargs):
     import aiopg
 
     connections = []
 
     async def factory():
-        connection = await aiopg.connect(loop=loop, **pg_kwargs)
+        connection = await aiopg.connect(**pg_kwargs)
         connections.append(connection)
         return connection
 
@@ -95,7 +95,7 @@ def aiopg_connection_factory(pg_kwargs, loop):
 
 
 @pytest.yield_fixture()
-def psycopg2_connection(pg_kwargs, loop):
+def psycopg2_connection(pg_kwargs):
     import psycopg2
 
     connection = psycopg2.connect(**pg_kwargs)
@@ -104,7 +104,7 @@ def psycopg2_connection(pg_kwargs, loop):
 
 
 @pytest.fixture()
-async def aiopg_cursor(aiopg_connection, loop, cursor_factory):
+async def aiopg_cursor(aiopg_connection, cursor_factory):
     cursor = await aiopg_connection.cursor(cursor_factory=cursor_factory)
     await cursor.execute("BEGIN -- aiopg_cursor")
     await cursor.execute("DROP TABLE IF EXISTS lightbus_processed_events")
@@ -114,14 +114,14 @@ async def aiopg_cursor(aiopg_connection, loop, cursor_factory):
 
 
 @pytest.fixture()
-def dbapi_database(aiopg_connection, aiopg_cursor, loop):
+def dbapi_database(aiopg_connection, aiopg_cursor):
     return DbApiConnection(aiopg_connection, aiopg_cursor)
 
 
 def verification_connection() -> Awaitable["aiopg.Connection"]:
     import aiopg
 
-    return aiopg.connect(**pg_kwargs(pg_url()), loop=asyncio.get_event_loop())
+    return aiopg.connect(**pg_kwargs(pg_url()))
 
 
 @pytest.fixture()
@@ -158,7 +158,7 @@ def messages_in_redis(redis_client):
 
 
 @pytest.fixture()
-def transactional_bus_factory(dummy_bus: BusPath, new_redis_pool, loop):
+def transactional_bus_factory(dummy_bus: BusPath, new_redis_pool):
     pool = new_redis_pool(maxsize=10000)
 
     async def inner():
@@ -181,7 +181,7 @@ def transactional_bus_factory(dummy_bus: BusPath, new_redis_pool, loop):
 
 
 @pytest.fixture()
-def transactional_bus(dummy_bus: BusPath, new_redis_pool, aiopg_connection, aiopg_cursor, loop):
+def transactional_bus(dummy_bus: BusPath, new_redis_pool, aiopg_connection, aiopg_cursor):
     transport = TransactionalEventTransport(
         child_transport=lightbus.RedisEventTransport(
             redis_pool=new_redis_pool(maxsize=10000),
@@ -200,7 +200,7 @@ def transactional_bus(dummy_bus: BusPath, new_redis_pool, aiopg_connection, aiop
 
 
 @pytest.yield_fixture()
-async def test_table(aiopg_cursor, loop):
+async def test_table(aiopg_cursor):
     await aiopg_cursor.execute("BEGIN -- test_table (setup)")
     await aiopg_cursor.execute("DROP TABLE IF EXISTS test_table")
     await aiopg_cursor.execute("CREATE TABLE test_table (pk VARCHAR(100))")
