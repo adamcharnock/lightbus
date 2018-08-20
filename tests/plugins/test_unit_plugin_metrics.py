@@ -6,7 +6,7 @@ from lightbus.path import BusPath
 from lightbus.message import RpcMessage, EventMessage
 from lightbus.plugins import manually_set_plugins
 from lightbus.plugins.metrics import MetricsPlugin
-
+from lightbus.utilities.async import cancel
 
 pytestmark = pytest.mark.unit
 
@@ -77,10 +77,12 @@ async def test_local_rpc_call(loop, dummy_bus: BusPath, consume_rpcs, get_dummy_
     manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
     registry.add(TestApi())
 
-    asyncio.ensure_future(consume_rpcs(dummy_bus), loop=loop)
+    task = asyncio.ensure_future(consume_rpcs(dummy_bus), loop=loop)
 
     # The dummy transport will fire an every every 0.1 seconds
     await asyncio.sleep(0.15)
+
+    await cancel(task)
 
     event_messages = get_dummy_events()
     assert len(event_messages) == 2, event_messages

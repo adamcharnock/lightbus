@@ -7,6 +7,7 @@ import pytest
 import lightbus
 import lightbus.path
 from lightbus.plugins import manually_set_plugins
+from lightbus.utilities.async import cancel
 
 pytestmark = pytest.mark.reliability
 
@@ -41,20 +42,13 @@ async def test_random_failures(
         for _ in range(0, 5):
             listen_task = asyncio.ensure_future(bus.my.dummy.my_event.listen_async(listener))
             await asyncio.sleep(0.2)
-            listen_task.cancel()
-            await listen_task
+            await cancel(listen_task)
 
         if len(event_ok_ids) == 100:
             logging.warning("TEST: Events finished")
             break
 
-    # Cleanup the tasks
-    fire_task.cancel()
-    try:
-        await fire_task
-        fire_task.result()
-    except CancelledError:
-        pass
+    await cancel(fire_task)
 
     duplicate_calls = sum([n - 1 for n in event_ok_ids.values()])
 

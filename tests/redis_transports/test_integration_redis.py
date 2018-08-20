@@ -215,8 +215,9 @@ async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpc
     )
 
     bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config))
-    asyncio.ensure_future(consume_rpcs(bus))
+    task = asyncio.ensure_future(consume_rpcs(bus))
     await asyncio.sleep(0.1)
+    await cancel(task)
 
     await bus.api_a.rpc_a.call_async()
     await bus.api_b.rpc_b.call_async()

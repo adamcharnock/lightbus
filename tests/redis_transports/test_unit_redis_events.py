@@ -215,8 +215,9 @@ async def test_consume_events_since_id(
         async for m in consumer:
             yields.append(m)
 
-    asyncio.ensure_future(co())
+    task = asyncio.ensure_future(co())
     await asyncio.sleep(0.1)
+    await cancel(task)
 
     messages_ids = [m.native_id for m in yields if isinstance(m, EventMessage)]
 
@@ -278,8 +279,9 @@ async def test_consume_events_since_datetime(
         async for m in consumer:
             yields.append(m)
 
-    asyncio.ensure_future(co())
+    task = asyncio.ensure_future(co())
     await asyncio.sleep(0.1)
+    await cancel(task)
 
     assert len(yields) == 4
     assert yields[0].kwargs["field"] == "2"
@@ -446,8 +448,9 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
 
     task = asyncio.ensure_future(consume())
     await asyncio.sleep(0.1)
-    assert len(messages) == 1
     await cancel(task)
+
+    assert len(messages) == 1
 
 
 @pytest.mark.asyncio
@@ -493,6 +496,8 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
 
     task = asyncio.ensure_future(consume())
     await asyncio.sleep(0.1)
+    await cancel(task)
+
     assert len(messages) == 1
     assert messages[0].api_name == "my.dummy"
     assert messages[0].event_name == "my_event"
@@ -503,8 +508,6 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
     # Now check that redis believes the message has been consumed
     total_pending, *_ = await redis_client.xpending("my.dummy.my_event:stream", "test_group")
     assert total_pending == 0
-
-    await cancel(task)
 
 
 @pytest.mark.asyncio
@@ -526,8 +529,8 @@ async def test_consume_events_create_consumer_group_first(
 
     task = asyncio.ensure_future(consume())
     await asyncio.sleep(0.1)
-    assert len(messages) == 0
     await cancel(task)
+    assert len(messages) == 0
 
 
 @pytest.mark.asyncio
@@ -616,11 +619,10 @@ async def test_consume_events_per_api_stream(
         },
     )
     await asyncio.sleep(0.1)
+    await cancel(task1, task2, task3)
 
     assert len(event_names) == 3
     assert set(event_names) == {"my_event1", "my_event2", "my_event3"}
-
-    await cancel(task1, task2, task3)
 
 
 @pytest.mark.asyncio

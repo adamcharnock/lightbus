@@ -12,6 +12,7 @@ from lightbus import Event, Api, Parameter, Schema
 from lightbus.exceptions import InvalidApiForSchemaCreation, SchemaNotFound, ValidationError
 from lightbus.schema.schema import api_to_schema
 from lightbus.transports.redis import RedisSchemaTransport
+from lightbus.utilities.async import cancel
 
 pytestmark = pytest.mark.unit
 
@@ -170,6 +171,8 @@ async def test_monitor_store(loop, schema, redis_client):
     await asyncio.sleep(0.2)
     assert await redis_client.smembers("schemas") == [b"my.test_api"]
 
+    await cancel(monitor_task)
+
 
 @pytest.mark.asyncio
 async def test_monitor_load(loop, schema, redis_client):
@@ -182,6 +185,8 @@ async def test_monitor_load(loop, schema, redis_client):
     await asyncio.sleep(0.2)
     assert await redis_client.smembers("schemas") == [b"my.test_api"]
     assert json.loads(await redis_client.get("schemas:my.test_api")) == {"foo": "bar"}
+
+    await cancel(monitor_task)
 
 
 def test_save_local_file_empty(tmp_file, schema):
