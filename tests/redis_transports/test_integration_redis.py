@@ -387,12 +387,16 @@ async def test_listen_to_multiple_events_across_multiple_transports(loop, server
         nonlocal calls
         calls += 1
 
-    await bus.listen_multiple_async([bus.api_a.event_a, bus.api_b.event_b], listener=listener)
+    await bus.client.listen_for_events(
+        events=[("api_a", "event_a"), ("api_b", "event_b")], listener=listener
+    )
 
     await asyncio.sleep(0.1)
     await bus.api_a.event_a.fire_async()
     await bus.api_b.event_b.fire_async()
     await asyncio.sleep(0.1)
+
+    await bus.client.close_async()
 
     assert calls == 2
 

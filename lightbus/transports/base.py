@@ -117,7 +117,14 @@ class EventTransport(Transport):
                     print(event_message)
 
         """
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"Event transport {self.__class__.__name__} does not support listening for events"
+        )
+
+    def history(self, listen_for: List[Tuple[str, str]]):
+        raise NotImplementedError(
+            f"Event transport {self.__class__.__name__} does not support fetching past events"
+        )
 
     def _sanity_check_listen_for(self, listen_for):
         """Utility method to sanity check the `listen_for` parameter.

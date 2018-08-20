@@ -103,25 +103,6 @@ class BusPath(object):
             timeout=self.client.config.api(self.api_name).event_listener_setup_timeout,
         )
 
-    async def listen_multiple_async(
-        self, events: List["BusPath"], listener, *, bus_options: dict = None
-    ):
-        if self.parent:
-            raise OnlyAvailableOnRootNode(
-                "Both listen_multiple() and listen_multiple_async() are only available on the "
-                "bus root. For example, call bus.listen_multiple(), not bus.my_api.my_event.listen_multiple()"
-            )
-
-        events = [(node.api_name, node.name) for node in events]
-        return await self.client.listen_for_events(
-            events=events, listener=listener, options=bus_options
-        )
-
-    def listen_multiple(self, events: List["BusPath"], listener, *, bus_options: dict = None):
-        return block(
-            self.listen_multiple_async(events, listener, bus_options=bus_options), timeout=5
-        )
-
     async def fire_async(self, *args, bus_options: dict = None, **kwargs):
         if args:
             raise InvalidParameters(
