@@ -217,10 +217,13 @@ async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpc
     bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config))
     task = asyncio.ensure_future(consume_rpcs(bus))
     await asyncio.sleep(0.1)
-    await cancel(task)
 
     await bus.api_a.rpc_a.call_async()
     await bus.api_b.rpc_b.call_async()
+    await asyncio.sleep(0.1)
+
+    await cancel(task)
+    await bus.client.close_async()
 
 
 @pytest.mark.asyncio
@@ -283,6 +286,8 @@ async def test_multiple_event_transports(loop, server, redis_server_b):
     with await connection_manager_b() as redis:
         assert await redis.xrange("api_a.event_a:stream") == []
         assert await redis.xrange("api_b.event_b:stream")
+
+    await bus.client.close_async()
 
 
 @pytest.mark.asyncio
