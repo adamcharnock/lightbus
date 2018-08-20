@@ -11,6 +11,10 @@ Lightbus requires Python 3.6 or above.
 **Lightbus is under active development and is still pre-release.**
 You can [track progress in GitHub][issue-1].
 
+## Example service structure
+
+![A simple Lightbus deployment][simple-processes]
+
 ## Designed for ease of use
 
 Lightbus is designed with developers in mind. The syntax aims to
@@ -66,3 +70,4 @@ To get started checkout the [installation](tutorial/installation.md),
 and [quickstart](tutorial/quick-start.md) guides.
 
 [issue-1]: https://github.com/adamcharnock/lightbus/issues/1
+[simple-processes]: /static/images/simple-processes.png

@@ -3,7 +3,7 @@
     as this will give you a useful overview before delving into the details
     below.
 
-## Requirements
+## 2.1 Requirements
 
 Before continuing, ensure you have completed the following steps detailed in
 the [installation section](/tutorial/installation.md):
@@ -15,7 +15,7 @@ the [installation section](/tutorial/installation.md):
 Optionally, you can read some additional *explanation* in the
 [anatomy lesson] and [concepts] sections.
 
-## Define your API
+## 2.2 Define your API
 
 First we will define the API the lightbus will serve.
 Create the following in a `bus.py` file:
@@ -51,12 +51,11 @@ APIs in its registry, including your new `auth` API:
 
 Leave Lightbus running and open a new terminal window for the next stage.
 
-## Remote procedure calls
+## 2.3 Remote procedure calls
 
 With Lightbus running, open a new terminal window and create a file named
-`call_procedure.py` in the same directory as your `bus.py`. The
-`call_procedure.py` file name is arbitrary, it simply allows us to
-experiment with accessing the bus.
+`call_procedure.py` in the same directory as your `bus.py`. This is
+just a regular Python script which will use to call the bus.
 
 ```python3
 # call_procedure.py
@@ -79,10 +78,18 @@ else:
     print('Oops, bad username or password')
 ```
 
-## Events
+Running this script should show you the following:
 
-Events allow services to broadcast a message to any other services that
-care to listen. Events are fired by the service which 'owns' the API and
+    $ python3 ./call_procedure.py
+    Password valid!
+
+Looking at the other terminal window you have open you should see that
+Lightbus has also reported that it is handled a remote procedure call.
+
+## 2.4 Events
+
+Events allow services to broadcast a message to any other services which
+cares to listen. Events are fired by the service which 'owns' the API and
 received by any Lightbus service, which can include the owning service itself
 (as we do below).
 
@@ -155,7 +162,7 @@ Here we call `bus.auth.user_registered.fire()` to fire the `user_registered` eve
 the `auth` API. This will place the event onto the bus to be consumed any
 listening services.
 
-## Next
+## 2.5 Next
 
 This was a simple example to get you started. The [worked example] considers
 a more realistic scenario involving multiple services.

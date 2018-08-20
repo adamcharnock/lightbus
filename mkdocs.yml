@@ -40,10 +40,12 @@ pages:
     - 3. Worked example: tutorial/worked-example.md
   - How to:
     - Overview: howto/index.md
+    - Combine processes: howto/combine-processes.md
     - Use Lightbus for realtime metrics*: howto/metrics.md
     - Use Lightbus for event sourcing*: howto/event-sourcing.md
   - Explanation:
     - Overview: explanation/index.md
+    - Anatomy lesson: explanation/anatomy-lesson.md
     - Concepts: explanation/concepts.md
     - Contributing*: contributing.md
   - Reference:
