@@ -1,12 +1,8 @@
 import asyncio
-import traceback
 import logging
 from functools import partial
 from inspect import isawaitable
 from typing import Coroutine
-
-import aioredis
-from aioredis import ConnectionForcedCloseError
 
 from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 
@@ -54,7 +50,7 @@ async def cancel(*tasks):
         try:
             await task
             task.result()
-        except (asyncio.CancelledError, aioredis.ConnectionForcedCloseError):
+        except asyncio.CancelledError:
             pass
 
         except Exception as e:
@@ -78,7 +74,7 @@ def check_for_exception(fut: asyncio.Future, die=True):
     try:
         if fut.exception():
             fut.result()
-    except (asyncio.CancelledError, ConnectionForcedCloseError, LightbusShutdownInProgress):
+    except (asyncio.CancelledError, LightbusShutdownInProgress):
         return
     except Exception as e:
         # Must log the exception here, otherwise exceptions that occur during
