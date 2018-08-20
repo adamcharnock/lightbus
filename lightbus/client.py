@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import functools
 import inspect
 import logging
 import signal
@@ -53,8 +54,8 @@ logger = logging.getLogger(__name__)
 class BusClient(object):
     """Provides a the lower level interface for accessing the bus
 
-    Which less expressive than the interface provided by `BusPath`,
-    the `BusClient` allows for slightly more control in some situations.
+    The low-level `BusClient` is less expressive than the interface provided by `BusPath`,
+    but does allow for more control in some situations.
 
     All functionality in `BusPath` is provided by `BusClient`.
     """
@@ -467,118 +468,10 @@ class BusClient(object):
         for api_name, name in events:
             self._validate_name(api_name, "event", name)
 
-        options = options or {}
-        # Set a random default name for this new consumer we are creating
-        options.setdefault("consumer_group", "default")
-
-        async def listen_for_event_task(event_transport, events):
-            # event_transport.consume() returns an asynchronous generator
-            # which will provide us with messages
-            consumer = event_transport.consume(listen_for=events, **options)
-            with self._register_listener(events):
-                async for event_message in consumer:
-                    # TODO: Check events match those requested
-                    # TODO: Support event name of '*', but transports should raise
-                    # TODO: an exception if it is not supported.
-                    logger.info(
-                        L(
-                            "📩  Received event {}.{} with ID {}".format(
-                                Bold(event_message.api_name),
-                                Bold(event_message.event_name),
-                                event_message.id,
-                            )
-                        )
-                    )
-
-                    self._validate(event_message, "incoming")
-
-                    await self._plugin_hook("before_event_execution", event_message=event_message)
-
-                    if self.config.api(event_message.api_name).cast_values:
-                        parameters = cast_to_signature(
-                            parameters=event_message.kwargs, callable=listener
-                        )
-                    else:
-                        parameters = event_message.kwargs
-
-                    try:
-                        # Call the listener
-                        co = listener(
-                            # Pass the event message as a positional argument,
-                            # thereby allowing listeners to have flexibility in the argument names.
-                            # (And therefore allowing listeners to use the `event` parameter themselves)
-                            event_message,
-                            **parameters,
-                        )
-
-                        # Await it if necessary
-                        if inspect.isawaitable(co):
-                            await co
-
-                    except LightbusShutdownInProgress as e:
-                        logger.info("Shutdown in progress: {}".format(e))
-                    except Exception as e:
-                        if on_error == OnError.IGNORE:
-                            # We're ignore errors, so log it and move on
-                            logger.error(
-                                f"An event listener raised an exception while processing an event. Lightbus will "
-                                f"continue as normal because the on 'on_error' option is set "
-                                f"to '{OnError.IGNORE.value}'."
-                            )
-                        elif on_error == OnError.STOP_LISTENER:
-                            logger.error(
-                                f"An event listener raised an exception while processing an event. Lightbus will "
-                                f"stop the listener but keep on running. This is because the 'on_error' option "
-                                f"is set to '{OnError.STOP_LISTENER.value}'."
-                            )
-                            # Stop the listener by returning
-                            return
-                        else:
-                            # We're not ignoring errors, so raise it and
-                            # let the error handler callback deal with it
-                            raise
-
-                    # Await the consumer again, which is our way of allowing it to
-                    # acknowledge the message. This then allows us to fire the
-                    # `after_event_execution` plugin hook immediately afterwards
-                    await consumer.__anext__()
-                    await self._plugin_hook("after_event_execution", event_message=event_message)
-
-        # Get the events transports for the selection of APIs that we are listening on
-        event_transports = self.transport_registry.get_event_transports(
-            api_names=[api_name for api_name, _ in events]
+        event_listener = _EventListener(
+            events=events, listener_callable=listener, options=options, bus_client=self
         )
-
-        on_error_values = []
-        for *_, _api_names in event_transports:
-            on_error_values.extend(
-                [self.config.api(_api_name).on_error for _api_name in _api_names]
-            )
-
-        if OnError.SHUTDOWN in on_error_values:
-            on_error = OnError.SHUTDOWN
-        elif OnError.STOP_LISTENER in on_error_values:
-            on_error = OnError.STOP_LISTENER
-        else:
-            on_error = OnError.IGNORE
-
-        tasks = []
-        for _event_transport, _api_names in event_transports:
-            # Create a listener task for each event transport,
-            # passing each a list of events for which it should listen
-            _events = [
-                (api_name, event_name) for api_name, event_name in events if api_name in _api_names
-            ]
-
-            task = asyncio.ensure_future(listen_for_event_task(_event_transport, _events))
-            task.is_listener = True  # Used by close()
-            tasks.append(task)
-
-        listener_task = asyncio.gather(*tasks)
-
-        listener_task.add_done_callback(make_exception_checker(die=(on_error == OnError.SHUTDOWN)))
-        listener_task.is_listener = True  # Used by close()
-        return listener_task
+        return event_listener.make_task()
 
     # Results
 
@@ -761,3 +654,196 @@ class BusClient(object):
 
     def after_event_execution(self, callback=None, *, before_plugins=False):
         return self._make_hook_decorator("after_event_execution", before_plugins, callback)
+
+
+class _EventListener(object):
+    """ Logic for setting up listener tasks for 1 or more events
+
+    This class will take a list of events and a callable. Background
+    tasks will be setup to listen for the specified events
+    (see make_task()) and the provided callable will be called when the
+    event is detected.
+
+    This logic is smart enough to detect when the APIs of the events use
+    the same/different transports. See get_event_transports().
+
+    Note that this class is tightly coupled to BusClient. It has been
+    extracted for readability. For this reason is a private class,
+    the API of which should not be relied upon externally.
+    """
+
+    def __init__(
+        self,
+        *,
+        events: List[Tuple[str, str]],
+        listener_callable,
+        options: dict = None,
+        bus_client: "BusClient",
+    ):
+        self.events = events
+        self.listener_callable = listener_callable
+        self.options = options or {}
+        self.bus_client = bus_client
+
+        self.options.setdefault("consumer_group", "default")
+
+        self.event_transports = self.get_event_transports()
+
+    def get_event_transports(self):
+        """ Get events grouped by transport
+
+        It is possible that the specified events will be handled
+        by different transports. Therefore group the events
+        by transport so we can setup the listeners with the
+        appropriate transport for each event.
+        """
+        return self.bus_client.transport_registry.get_event_transports(
+            api_names=[api_name for api_name, _ in self.events]
+        )
+
+    @property
+    @functools.lru_cache()
+    def on_error(self) -> "OnError":
+        """What should happen when the listener callable throws an error?
+
+        Will use the most severe form of error handling for all
+        transports in use by this listener
+        """
+        on_error_values = []
+        for *_, _api_names in self.event_transports:
+            on_error_values.extend(
+                [self.bus_client.config.api(_api_name).on_error for _api_name in _api_names]
+            )
+
+        if OnError.SHUTDOWN in on_error_values:
+            return OnError.SHUTDOWN
+        elif OnError.STOP_LISTENER in on_error_values:
+            return OnError.STOP_LISTENER
+        else:
+            return OnError.IGNORE
+
+    @property
+    def die_on_error(self) -> bool:
+        """Should the entire process die if an error occurs in a listener?"""
+        return self.on_error == OnError.SHUTDOWN
+
+    def make_task(self) -> asyncio.Task:
+        """ Create a task responsible for running the listener(s)
+
+        This will create a task for each transport (see get_event_transports()).
+        These tasks will be gathered together into a parent task, which is then
+        returned.
+
+        Any unhandled exceptions will be dealt with according to `on_error`.
+
+        See listener() for the coroutine which handles the listening.
+        """
+        tasks = []
+        for _event_transport, _api_names in self.event_transports:
+            # Create a listener task for each event transport,
+            # passing each a list of events for which it should listen
+            events = [
+                (api_name, event_name)
+                for api_name, event_name in self.events
+                if api_name in _api_names
+            ]
+
+            task = asyncio.ensure_future(self.listener(_event_transport, events))
+            task.is_listener = True  # Used by close()
+            tasks.append(task)
+
+        listener_task = asyncio.gather(*tasks)
+
+        exception_checker = make_exception_checker(die=self.die_on_error)
+        listener_task.add_done_callback(exception_checker)
+
+        # Setting is_listener lets Client.close() know that it should mop up this
+        # task automatically on shutdown
+        listener_task.is_listener = True
+
+        return listener_task
+
+    async def listener(self, event_transport, events):
+        """ Receive events from the transport and invoke the listener callable
+
+        This is the core glue which combines the event transports' consume()
+        method and the listener callable. The bulk of this is logging,
+        validation, plugin hooks, and error handling.
+        """
+        # event_transport.consume() returns an asynchronous generator
+        # which will provide us with messages
+        consumer = event_transport.consume(listen_for=events, **self.options)
+
+        with self.bus_client._register_listener(events):
+            async for event_message in consumer:
+                # TODO: Check events match those requested
+                # TODO: Support event name of '*', but transports should raise
+                # TODO: an exception if it is not supported.
+                logger.info(
+                    L(
+                        "📩  Received event {}.{} with ID {}".format(
+                            Bold(event_message.api_name),
+                            Bold(event_message.event_name),
+                            event_message.id,
+                        )
+                    )
+                )
+
+                self.bus_client._validate(event_message, "incoming")
+
+                await self.bus_client._plugin_hook(
+                    "before_event_execution", event_message=event_message
+                )
+
+                if self.bus_client.config.api(event_message.api_name).cast_values:
+                    parameters = cast_to_signature(
+                        parameters=event_message.kwargs, callable=self.listener_callable
+                    )
+                else:
+                    parameters = event_message.kwargs
+
+                try:
+                    # Call the listener
+                    co = self.listener_callable(
+                        # Pass the event message as a positional argument,
+                        # thereby allowing listeners to have flexibility in the argument names.
+                        # (And therefore allowing listeners to use the `event` parameter themselves)
+                        event_message,
+                        **parameters,
+                    )
+
+                    # Support awaitable event listeners
+                    if inspect.isawaitable(co):
+                        await co
+
+                except LightbusShutdownInProgress as e:
+                    logger.info("Shutdown in progress: {}".format(e))
+                except Exception as e:
+                    if self.on_error == OnError.IGNORE:
+                        # We're ignore errors, so log it and move on
+                        logger.error(
+                            f"An event listener raised an exception while processing an event. Lightbus will "
+                            f"continue as normal because the on 'on_error' option is set "
+                            f"to '{OnError.IGNORE.value}'."
+                        )
+                    elif self.on_error == OnError.STOP_LISTENER:
+                        logger.error(
+                            f"An event listener raised an exception while processing an event. Lightbus will "
+                            f"stop the listener but keep on running. This is because the 'on_error' option "
+                            f"is set to '{OnError.STOP_LISTENER.value}'."
+                        )
+                        # Stop the listener by returning
+                        return
+                    else:
+                        # We're not ignoring errors, so raise it and
+                        # let the error handler callback deal with it
+                        raise
+
+                # Await the consumer again, which is our way of allowing it to
+                # acknowledge the message. This then allows us to fire the
+                # `after_event_execution` plugin hook immediately afterwards
+                await consumer.__anext__()
+
+                await self.bus_client._plugin_hook(
+                    "after_event_execution", event_message=event_message
+                )
