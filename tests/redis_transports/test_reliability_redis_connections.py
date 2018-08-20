@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import pytest
@@ -10,21 +11,23 @@ pytestmark = pytest.mark.reliability
 
 @pytest.mark.asyncio
 async def test_redis_connections_closed(redis_client, loop, dummy_api, new_bus, caplog):
-    # Check we have no connections at the start
+    # Ensure we have no connections at the start
+    await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
+
     info = await redis_client.info()
-    starting_clients = int(info["clients"]["connected_clients"])
+    assert int(info["clients"]["connected_clients"]) == 1  # This connection
 
     # Open and close the bus
     bus = await new_bus()
 
     info = await redis_client.info()
-    assert int(info["clients"]["connected_clients"]) > starting_clients
+    assert int(info["clients"]["connected_clients"]) > 1
 
     await bus.client.close_async()
 
     # Now check we still have no connections
     info = await redis_client.info()
-    assert int(info["clients"]["connected_clients"]) == starting_clients
+    assert int(info["clients"]["connected_clients"]) == 1  # This connection
 
 
 @pytest.mark.asyncio
