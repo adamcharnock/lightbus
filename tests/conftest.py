@@ -40,7 +40,7 @@ TCPAddress = namedtuple("TCPAddress", "host port")
 
 RedisServer = namedtuple("RedisServer", "name tcp_address unixsocket version")
 
-SentinelServer = namedtuple("SentinelServer", "name tcp_address unixsocket version masters")
+logger = logging.getLogger(__file__)
 
 # Public fixtures
 
@@ -50,6 +50,7 @@ def loop():
     """Creates new event loop."""
     loop = asyncio.new_event_loop()
     loop.set_debug(enabled=True)
+
     asyncio.set_event_loop(None)
 
     try:
@@ -440,133 +441,6 @@ def start_redis_server(_proc, request, unused_port, redis_server_bin):
     return maker
 
 
-@pytest.fixture(scope="session")
-def start_sentinel(_proc, request, unused_port, redis_server_bin):
-    """Starts Redis Sentinel instances."""
-    version = _read_server_version(redis_server_bin)
-    verbose = request.config.getoption("-v") > 3
-
-    sentinels = {}
-
-    def timeout(t):
-        end = time.time() + t
-        while time.time() <= end:
-            yield True
-        raise RuntimeError("Redis startup timeout expired")
-
-    def maker(name, *masters, quorum=1, noslaves=False):
-        key = (name,) + masters
-        if key in sentinels:
-            return sentinels[key]
-        port = unused_port()
-        tcp_address = TCPAddress("localhost", port)
-        data_dir = tempfile.gettempdir()
-        config = os.path.join(data_dir, "aioredis-sentinel.{}.conf".format(port))
-        stdout_file = os.path.join(data_dir, "aioredis-sentinel.{}.stdout".format(port))
-        tmp_files = [config, stdout_file]
-        if sys.platform == "win32":
-            unixsocket = None
-        else:
-            unixsocket = os.path.join(data_dir, "aioredis-sentinel.{}.sock".format(port))
-            tmp_files.append(unixsocket)
-
-        with config_writer(config) as write:
-            write("daemonize no")
-            write('save ""')
-            write("port", port)
-            if unixsocket:
-                write("unixsocket", unixsocket)
-            write("loglevel debug")
-            for master in masters:
-                write("sentinel monitor", master.name, "127.0.0.1", master.tcp_address.port, quorum)
-                write("sentinel down-after-milliseconds", master.name, "3000")
-                write("sentinel failover-timeout", master.name, "3000")
-
-        f = open(stdout_file, "w")
-        atexit.register(f.close)
-        proc = _proc(
-            redis_server_bin,
-            config,
-            "--sentinel",
-            stdout=f,
-            stderr=subprocess.STDOUT,
-            _clear_tmp_files=tmp_files,
-        )
-        # XXX: wait sentinel see all masters and slaves;
-        all_masters = {m.name for m in masters}
-        if noslaves:
-            all_slaves = {}
-        else:
-            all_slaves = {m.name for m in masters}
-        with open(stdout_file, "rt") as f:
-            for _ in timeout(30):
-                assert proc.poll() is None, ("Process terminated", proc.returncode)
-                log = f.readline()
-                if log and verbose:
-                    print(name, ":", log, end="")
-                for m in masters:
-                    if "# +monitor master {}".format(m.name) in log:
-                        all_masters.discard(m.name)
-                    if "* +slave slave" in log and "@ {}".format(m.name) in log:
-                        all_slaves.discard(m.name)
-                if not all_masters and not all_slaves:
-                    break
-            else:
-                raise RuntimeError("Could not start Sentinel")
-
-        masters = {m.name: m for m in masters}
-        info = SentinelServer(name, tcp_address, unixsocket, version, masters)
-        sentinels.setdefault(key, info)
-        return info
-
-    return maker
-
-
-@pytest.fixture(scope="session")
-def ssl_proxy(_proc, request, unused_port):
-    by_port = {}
-
-    cafile = os.path.abspath(request.config.getoption("--ssl-cafile"))
-    certfile = os.path.abspath(request.config.getoption("--ssl-cert"))
-    dhfile = os.path.abspath(request.config.getoption("--ssl-dhparam"))
-    assert os.path.exists(cafile), "Missing SSL CA file, run `make certificate` to generate new one"
-    assert os.path.exists(
-        certfile
-    ), "Missing SSL CERT file, run `make certificate` to generate new one"
-    assert os.path.exists(
-        dhfile
-    ), "Missing SSL DH params, run `make certificate` to generate new one"
-
-    if hasattr(ssl, "create_default_context"):
-        ssl_ctx = ssl.create_default_context(cafile=cafile)
-    else:
-        ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        ssl_ctx.load_verify_locations(cafile=cafile)
-    if hasattr(ssl_ctx, "check_hostname"):
-        # available since python 3.4
-        ssl_ctx.check_hostname = False
-    ssl_ctx.verify_mode = ssl.CERT_NONE
-    ssl_ctx.load_dh_params(dhfile)
-
-    def sockat(unsecure_port):
-        if unsecure_port in by_port:
-            return by_port[unsecure_port]
-
-        secure_port = unused_port()
-        _proc(
-            "/usr/bin/socat",
-            "openssl-listen:{port},"
-            "dhparam={param},"
-            "cert={cert},verify=0,fork".format(port=secure_port, param=dhfile, cert=certfile),
-            "tcp-connect:localhost:{}".format(unsecure_port),
-        )
-        time.sleep(1)  # XXX
-        by_port[unsecure_port] = secure_port, ssl_ctx
-        return secure_port, ssl_ctx
-
-    return sockat
-
-
 @pytest.yield_fixture(scope="session")
 def _proc():
     processes = []
@@ -646,19 +520,6 @@ def pytest_runtest_setup(item):
         item.fixturenames.append("loop")
 
 
-def pytest_collection_modifyitems(session, config, items):
-    for item in items:
-        if "redis_version" in item.keywords:
-            marker = item.keywords["redis_version"]
-            try:
-                version = REDIS_VERSIONS[item.callspec.getparam("redis_server_bin")]
-            except (KeyError, ValueError, AttributeError):
-                # TODO: throw noisy warning
-                continue
-            if version < marker.kwargs["version"]:
-                item.add_marker(pytest.mark.skip(reason=marker.kwargs["reason"]))
-
-
 def pytest_configure(config):
     global TEST_TIMEOUT
     TEST_TIMEOUT = config.getoption("--test-timeout")
@@ -666,105 +527,6 @@ def pytest_configure(config):
     REDIS_SERVERS[:] = bins or ["/usr/bin/redis-server"]
     REDIS_VERSIONS.update({srv: _read_server_version(srv) for srv in REDIS_SERVERS})
     assert REDIS_VERSIONS, ("Expected to detect redis versions", REDIS_SERVERS)
-
-
-def logs(logger, level=None):
-    """Catches logs for given logger and level.
-
-    See unittest.TestCase.assertLogs for details.
-    """
-    return _AssertLogsContext(logger, level)
-
-
-_LoggingWatcher = namedtuple("_LoggingWatcher", ["records", "output"])
-
-
-class _CapturingHandler(logging.Handler):
-    """
-    A logging handler capturing all (raw and formatted) logging output.
-    """
-
-    def __init__(self):
-        logging.Handler.__init__(self)
-        self.watcher = _LoggingWatcher([], [])
-
-    def flush(self):
-        pass
-
-    def emit(self, record):
-        self.watcher.records.append(record)
-        msg = self.format(record)
-        self.watcher.output.append(msg)
-
-
-class _AssertLogsContext:
-    """Standard unittest's _AssertLogsContext context manager
-    adopted to raise pytest failure.
-    """
-    LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"
-
-    def __init__(self, logger_name, level):
-        self.logger_name = logger_name
-        if level:
-            self.level = level
-        else:
-            self.level = logging.INFO
-        self.msg = None
-
-    def __enter__(self):
-        if isinstance(self.logger_name, logging.Logger):
-            logger = self.logger = self.logger_name
-        else:
-            logger = self.logger = logging.getLogger(self.logger_name)
-        formatter = logging.Formatter(self.LOGGING_FORMAT)
-        handler = _CapturingHandler()
-        handler.setFormatter(formatter)
-        self.watcher = handler.watcher
-        self.old_handlers = logger.handlers[:]
-        self.old_level = logger.level
-        self.old_propagate = logger.propagate
-        logger.handlers = [handler]
-        logger.setLevel(self.level)
-        logger.propagate = False
-        return handler.watcher
-
-    def __exit__(self, exc_type, exc_value, tb):
-        self.logger.handlers = self.old_handlers
-        self.logger.propagate = self.old_propagate
-        self.logger.setLevel(self.old_level)
-        if exc_type is not None:
-            # let unexpected exceptions pass through
-            return False
-        if len(self.watcher.records) == 0:
-            pytest.fail(
-                "no logs of level {} or higher triggered on {}".format(
-                    logging.getLevelName(self.level), self.logger.name
-                )
-            )
-
-
-def redis_version(*version, reason):
-    assert 1 < len(version) <= 3, version
-    assert all(isinstance(v, int) for v in version), version
-    return pytest.mark.redis_version(version=version, reason=reason)
-
-
-def assert_almost_equal(first, second, places=None, msg=None, delta=None):
-    assert not (
-        places is None and delta is None
-    ), "Both places and delta are not set, please set one"
-    if delta is not None:
-        assert abs(first - second) <= delta
-    else:
-        assert round(abs(first - second), places) == 0
-
-
-def pytest_namespace():
-    return {
-        "assert_almost_equal": assert_almost_equal,
-        "redis_version": redis_version,
-        "logs": logs,
-    }
 
 
 @pytest.fixture
