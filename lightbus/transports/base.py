@@ -117,27 +117,18 @@ class EventTransport(Transport):
                     print(event_message)
 
         """
+        raise NotImplementedError()
+
+    def _sanity_check_listen_for(self, listen_for):
+        """Utility method to sanity check the `listen_for` parameter.
+
+        Call at the start of your consume() implementation.
+        """
         if not listen_for:
             raise NothingToListenFor(
                 "EventTransport.consume() was called without providing anything "
                 'to listen for in the "listen_for" argument.'
             )
-        return self.fetch(listen_for, consumer_group, **kwargs)
-
-    async def fetch(
-        self, listen_for: List[Tuple[str, str]], consumer_group: str = None, **kwargs
-    ) -> Generator[EventMessage, None, None]:
-        """Consume RPC messages for the given events
-
-        Events the bus is not listening for may be returned, they
-        will simply be ignored.
-
-        Note that this method will be additionally yielded to after each event has been processed.
-        In practice this means any implementation should alternately yield 1) a message,
-        then 2) any arbitrary value (`True`, by convention). This allows for implementations
-        to acknowledge messages with the underlying queue once the message has been processed.
-        """
-        raise NotImplementedError()
 
 
 class SchemaTransport(Transport):

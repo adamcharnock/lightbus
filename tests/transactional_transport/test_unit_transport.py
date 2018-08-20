@@ -53,7 +53,7 @@ def transaction_transport_with_consumer(aiopg_connection, aiopg_cursor):
     # Create a transaction transport which will produce some pre-defined events
     async def make_it(event_messages):
 
-        async def dummy_fetcher(*args, **kwargs):
+        async def dummy_consume_method(*args, **kwargs):
             for event_message in event_messages:
                 yield event_message
                 yield True
@@ -65,7 +65,7 @@ def transaction_transport_with_consumer(aiopg_connection, aiopg_cursor):
         await transport.database.migrate()
         # Commit the migrations
         await aiopg_cursor.execute("COMMIT -- transaction_transport_with_consumer")
-        transport.child_transport.fetch = dummy_fetcher
+        transport.child_transport.consume = dummy_consume_method
         return transport
 
     return make_it

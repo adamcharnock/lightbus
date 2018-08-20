@@ -5,7 +5,7 @@ from copy import copy
 from functools import wraps
 from unittest.mock import patch
 
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 from lightbus import RpcTransport, EventTransport, SchemaTransport, ResultTransport, EventMessage
 from lightbus.path import BusPath
@@ -148,7 +148,7 @@ class TestEventTransport(EventTransport):
     async def send_event(self, event_message, options):
         self.events.append((event_message, options))
 
-    async def fetch(self, listen_for, context, loop, consumer_group, **kwargs):
+    def consume(self, listen_for: List[Tuple[str, str]], consumer_group: str = None, **kwargs):
         """Consume RPC events for the given API"""
         raise NotImplementedError("Not yet supported by mocks")
 

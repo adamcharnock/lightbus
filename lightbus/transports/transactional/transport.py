@@ -149,9 +149,11 @@ class TransactionalEventTransport(EventTransport):
             )
         await self.database.send_event(event_message, options)
 
-    async def fetch(
+    async def consume(
         self, listen_for: List[Tuple[str, str]], consumer_group: str = None, **kwargs
     ) -> Generator[EventMessage, None, None]:
+        self._sanity_check_listen_for(listen_for)
+
         if not self.database:
             raise DatabaseNotSet(
                 f"You are trying to consume events on APIs { {a for a, e in listen_for} }. "

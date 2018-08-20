@@ -494,13 +494,14 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             )
         )
 
-    async def fetch(
+    async def consume(
         self,
         listen_for,
         consumer_group: str = None,
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,
     ) -> Generator[EventMessage, None, None]:
+        self._sanity_check_listen_for(listen_for)
 
         if self.consumer_group_prefix:
             consumer_group = f"{self.consumer_group_prefix}-{consumer_group}"
@@ -529,7 +530,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         # fetch messages loop and the reclaim messages loop.
         queue = asyncio.Queue(maxsize=1)
 
-        async def fetch_loop():
+        async def consume_loop():
             while True:
                 try:
                     async for message, stream in self._fetch_new_messages(
@@ -555,7 +556,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 await queue.join()
 
         # Make sure we surface any exceptions that occur in either task
-        fetch_task = asyncio.ensure_future(fetch_loop())
+        fetch_task = asyncio.ensure_future(consume_loop())
         reclaim_task = asyncio.ensure_future(reclaim_loop())
 
         fetch_task.add_done_callback(check_for_exception)
