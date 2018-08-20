@@ -7,7 +7,7 @@ from lightbus.transports.redis import RedisSchemaTransport
 pytestmark = pytest.mark.unit
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_store(redis_schema_transport: RedisSchemaTransport, redis_client):
     await redis_schema_transport.store("my.api", {"key": "value"}, ttl_seconds=60)
     assert set(await redis_client.keys("*")) == {b"schemas", b"schema:my.api"}
@@ -22,14 +22,14 @@ async def test_store(redis_schema_transport: RedisSchemaTransport, redis_client)
     assert 59 <= ttl <= 60
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_store_no_ttl(redis_schema_transport: RedisSchemaTransport, redis_client):
     await redis_schema_transport.store("my.api", {"key": "value"}, ttl_seconds=None)
     ttl = await redis_client.ttl("schema:my.api")
     assert ttl == -1
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_load(redis_schema_transport: RedisSchemaTransport, redis_client):
     await redis_client.sadd("schemas", "my.api", "old.api")
     await redis_client.set("schema:my.api", json.dumps({"key": "value"}))
@@ -39,7 +39,7 @@ async def test_load(redis_schema_transport: RedisSchemaTransport, redis_client):
     assert schemas == {"my.api": {"key": "value"}}
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_load(redis_schema_transport: RedisSchemaTransport, redis_client):
     await redis_client.sadd("schemas", "my.api", "old.api")
     await redis_client.set("schema:my.api", json.dumps({"key": "value"}))
@@ -49,13 +49,13 @@ async def test_load(redis_schema_transport: RedisSchemaTransport, redis_client):
     assert schemas == {"my.api": {"key": "value"}}
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_load_no_apis(redis_schema_transport: RedisSchemaTransport, redis_client):
     schemas = await redis_schema_transport.load()
     assert schemas == {}
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_from_config(redis_client):
     await redis_client.select(5)
     host, port = redis_client.address

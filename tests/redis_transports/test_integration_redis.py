@@ -21,7 +21,7 @@ pytestmark = pytest.mark.integration
 stream_use_test_data = [StreamUse.PER_EVENT, StreamUse.PER_API]
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_bus_fixture(bus: lightbus.path.BusPath):
     """Just sanity check the fixture"""
     rpc_transport = bus.client.transport_registry.get_rpc_transport("default")
@@ -49,7 +49,7 @@ async def test_bus_fixture(bus: lightbus.path.BusPath):
         assert int(info["clients"]["connected_clients"]) == 4
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_rpc(bus: lightbus.path.BusPath, dummy_api):
     """Full rpc call integration test"""
 
@@ -67,7 +67,7 @@ async def test_rpc(bus: lightbus.path.BusPath, dummy_api):
     assert call_task.result() == "value: Hello! 😎"
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_rpc_timeout(bus: lightbus.path.BusPath, dummy_api):
     """Full rpc call integration test"""
 
@@ -87,7 +87,7 @@ async def test_rpc_timeout(bus: lightbus.path.BusPath, dummy_api):
         call_task.result()
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
     """Test what happens when the remote procedure throws an error"""
 
@@ -109,7 +109,7 @@ async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
         await call_task.result()
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "stream_use", stream_use_test_data, ids=["stream_per_event", "stream_per_api"]
 )
@@ -136,7 +136,7 @@ async def test_event(bus: lightbus.path.BusPath, dummy_api, stream_use):
     assert received_messages[0].native_id
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_ids(bus: lightbus.path.BusPath, dummy_api, mocker):
     """Ensure the id comes back correctly"""
 
@@ -182,7 +182,7 @@ class ApiB(lightbus.Api):
         return "b"
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpcs):
     """Configure a bus with two redis transports and ensure they write to the correct redis servers"""
     registry.add(ApiA())
@@ -222,7 +222,7 @@ async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpc
     await bus.api_b.rpc_b.call_async()
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_multiple_event_transports(loop, server, redis_server_b):
     """Configure a bus with two redis transports and ensure they write to the correct redis servers"""
     registry.add(ApiA())
@@ -284,7 +284,7 @@ async def test_multiple_event_transports(loop, server, redis_server_b):
         assert await redis.xrange("api_b.event_b:stream")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_validation_rpc(loop, bus: lightbus.path.BusPath, dummy_api, mocker):
     """Check validation happens when performing an RPC"""
     config = Config.load_dict({"apis": {"default": {"validate": True, "strict_validation": True}}})
@@ -318,7 +318,7 @@ async def test_validation_rpc(loop, bus: lightbus.path.BusPath, dummy_api, mocke
     )
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, mocker):
     """Check validation happens when firing an event"""
     config = Config.load_dict({"apis": {"default": {"validate": True, "strict_validation": True}}})
@@ -353,7 +353,7 @@ async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, moc
     )
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_listen_to_multiple_events_across_multiple_transports(loop, server, redis_server_b):
     registry.add(ApiA())
     registry.add(ApiB())
@@ -397,7 +397,7 @@ async def test_listen_to_multiple_events_across_multiple_transports(loop, server
     assert calls == 2
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_event_exception_in_listener_realtime(
     bus: lightbus.path.BusPath, dummy_api, redis_client
 ):
@@ -445,7 +445,7 @@ async def test_event_exception_in_listener_realtime(
     assert pending_message_ids == message_ids[:2]
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_event_exception_in_listener_batch_fetch(
     bus: lightbus.path.BusPath, dummy_api, redis_client
 ):

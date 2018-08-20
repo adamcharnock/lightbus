@@ -16,7 +16,7 @@ class TestApi(Api):
         name = "example.test"
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_before_server_start(dummy_bus: BusPath, loop, get_dummy_events):
     registry.add(TestApi())
     listener = await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
@@ -43,7 +43,7 @@ async def test_before_server_start(dummy_bus: BusPath, loop, get_dummy_events):
     assert event_message.kwargs["process_name"] == "bar"
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_ping(dummy_bus: BusPath, loop, get_dummy_events):
     # We check the pings message contains a list of registries, so register one
     registry.add(TestApi())
@@ -73,7 +73,7 @@ async def test_ping(dummy_bus: BusPath, loop, get_dummy_events):
     assert event_message.kwargs["process_name"] == "bar"
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_after_server_stopped(dummy_bus: BusPath, loop, get_dummy_events):
     registry.add(TestApi())
     listener = await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)

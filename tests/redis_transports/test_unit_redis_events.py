@@ -18,7 +18,7 @@ from lightbus.utilities.async import cancel
 pytestmark = pytest.mark.unit
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_connection_manager(redis_event_transport):
     """Does get_redis() provide a working redis connection"""
     connection_manager = await redis_event_transport.connection_manager()
@@ -26,7 +26,7 @@ async def test_connection_manager(redis_event_transport):
         assert await redis.info()
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_send_event(redis_event_transport: RedisEventTransport, redis_client):
     await redis_event_transport.send_event(
         EventMessage(api_name="my.api", event_name="my_event", id="123", kwargs={"field": "value"}),
@@ -43,7 +43,7 @@ async def test_send_event(redis_event_transport: RedisEventTransport, redis_clie
     }
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_send_event_per_api_stream(redis_event_transport: RedisEventTransport, redis_client):
     redis_event_transport.stream_use = StreamUse.PER_API
     await redis_event_transport.send_event(
@@ -61,7 +61,7 @@ async def test_send_event_per_api_stream(redis_event_transport: RedisEventTransp
     }
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_consume_events(
     loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
 ):
@@ -91,7 +91,7 @@ async def test_consume_events(
     assert type(message.native_id) == str
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_consume_events_multiple_consumers(
     loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
 ):
@@ -123,7 +123,7 @@ async def test_consume_events_multiple_consumers(
     await cancel(task1, task2)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_consume_events_multiple_consumers_one_group(
     loop, redis_pool, redis_client, dummy_api
 ):
@@ -163,7 +163,7 @@ async def test_consume_events_multiple_consumers_one_group(
     assert len(messages) == 2
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_consume_events_since_id(
     loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
 ):
@@ -224,7 +224,7 @@ async def test_consume_events_since_id(
     assert yields[3] is True
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_consume_events_since_datetime(
     loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
 ):
@@ -284,7 +284,7 @@ async def test_consume_events_since_datetime(
     assert yields[3] is True
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_from_config(redis_client):
     await redis_client.select(5)
     host, port = redis_client.address
@@ -308,7 +308,7 @@ async def test_from_config(redis_client):
     assert isinstance(transport.deserializer, BlobMessageDeserializer)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
     """Test that messages which another consumer has timed out on can be reclaimed"""
 
@@ -351,7 +351,7 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
     assert type(reclaimed_messages[0].native_id) == str
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_reclaim_lost_messages_ignores_non_timed_out_messages(
     loop, redis_client, redis_pool, dummy_api
 ):
@@ -394,7 +394,7 @@ async def test_reclaim_lost_messages_ignores_non_timed_out_messages(
     assert len(reclaimed_messages) == 0
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dummy_api):
     """Test that messages which another consumer has timed out on can be reclaimed
 
@@ -446,7 +446,7 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
     await cancel(task)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_api):
     """Test that unacked messages belonging to this consumer get reclaimed on startup
     """
@@ -503,7 +503,7 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
     await cancel(task)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_consume_events_create_consumer_group_first(
     loop, redis_client, redis_event_transport, dummy_api
 ):
@@ -526,7 +526,7 @@ async def test_consume_events_create_consumer_group_first(
     await cancel(task)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_max_len_truncating(redis_event_transport: RedisEventTransport, redis_client, caplog):
     """Make sure the event stream gets truncated
 
@@ -544,7 +544,7 @@ async def test_max_len_truncating(redis_event_transport: RedisEventTransport, re
     assert len(messages) < 150
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_max_len_set_to_none(
     redis_event_transport: RedisEventTransport, redis_client, caplog
 ):
@@ -562,7 +562,7 @@ async def test_max_len_set_to_none(
     assert len(messages) == 200
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_consume_events_per_api_stream(
     loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
 ):
@@ -619,7 +619,7 @@ async def test_consume_events_per_api_stream(
     await cancel(task1, task2, task3)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_reconnect_upon_send_event(
     redis_event_transport: RedisEventTransport, redis_client, get_total_redis_connections
 ):
@@ -636,7 +636,7 @@ async def test_reconnect_upon_send_event(
     assert await get_total_redis_connections() == 2
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_reconnect_while_listening(
     loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
 ):

@@ -37,7 +37,7 @@ def test_autoload_plugins():
     ]
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_plugin_hook(mocker):
     """Ensure calling plugin_hook() calls the method on the plugin"""
     assert get_plugins() is None

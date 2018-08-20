@@ -47,7 +47,7 @@ def test_rpc_calls(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dumm
     assert called_hooks() == ["before_rpc_call", "after_rpc_call"]
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_rpc_execution(
     called_hooks, dummy_bus: BusPath, loop, mocker, add_base_plugin, dummy_api
 ):
@@ -82,7 +82,7 @@ def test_event_sent(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dum
     assert called_hooks() == ["before_event_sent", "after_event_sent"]
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
 

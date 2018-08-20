@@ -85,7 +85,7 @@ def test_from_config():
     assert transport.child_transport.connection_parameters["address"] == "redis://foo/1"
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_set_connection_ok(aiopg_connection, aiopg_cursor):
     transport = TransactionalEventTransport(DebugEventTransport())
     await transport.set_connection(aiopg_connection, aiopg_cursor)
@@ -94,7 +94,7 @@ async def test_set_connection_ok(aiopg_connection, aiopg_cursor):
     assert await active_transactions() == 0
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_set_connection_already_set(aiopg_connection, aiopg_cursor):
     transport = TransactionalEventTransport(DebugEventTransport())
     await transport.set_connection(aiopg_connection, aiopg_cursor)
@@ -102,14 +102,14 @@ async def test_set_connection_already_set(aiopg_connection, aiopg_cursor):
         await transport.set_connection(aiopg_connection, aiopg_cursor)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_commit_and_finish_no_database():
     transport = TransactionalEventTransport(DebugEventTransport())
     with pytest.raises(DatabaseNotSet):
         await transport.commit_and_finish()
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_commit_and_finish_ok(transaction_transport):
     await transaction_transport.database.start_transaction()
     await transaction_transport.commit_and_finish()
@@ -120,7 +120,7 @@ async def test_commit_and_finish_ok(transaction_transport):
     assert transaction_transport.database is None
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_rollback_and_finish_ok(transaction_transport):
     await transaction_transport.database.start_transaction()
     await transaction_transport.rollback_and_finish()
@@ -131,7 +131,7 @@ async def test_rollback_and_finish_ok(transaction_transport):
     assert transaction_transport.database is None
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_send_event(mocker, transaction_transport):
     f = asyncio.Future()
     f.set_result(None)
@@ -144,7 +144,7 @@ async def test_send_event(mocker, transaction_transport):
     assert args == (message, {"a": 1})
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_fetch_ok(transaction_transport_with_consumer, aiopg_cursor, loop):
     message1 = EventMessage(api_name="api", event_name="event", id="1")
     message2 = EventMessage(api_name="api", event_name="event", id="2")
@@ -162,7 +162,7 @@ async def test_fetch_ok(transaction_transport_with_consumer, aiopg_cursor, loop)
     assert total_processed_events == 3
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_fetch_duplicate(transaction_transport_with_consumer, aiopg_cursor, loop):
     # Same IDs = duplicate messages
     message1 = EventMessage(api_name="api", event_name="event", id="1")
@@ -178,7 +178,7 @@ async def test_fetch_duplicate(transaction_transport_with_consumer, aiopg_cursor
     assert total_processed_events == 1
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_publish_pending(transaction_transport, mocker):
     f = asyncio.Future()
     f.set_result(None)

@@ -24,62 +24,62 @@ from lightbus.utilities.async import get_event_loop, cancel
 pytestmark = pytest.mark.unit
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_fire_event_api_doesnt_exist(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(UnknownApi):
         await dummy_bus.client.fire_event("non_existent_api", "event")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_fire_event_event_doesnt_exist(dummy_bus: lightbus.path.BusPath, dummy_api):
     with pytest.raises(EventNotFound):
         await dummy_bus.client.fire_event("my.dummy", "bad_event")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_fire_event_bad_event_arguments(dummy_bus: lightbus.path.BusPath, dummy_api):
     with pytest.raises(InvalidEventArguments):
         await dummy_bus.client.fire_event("my.dummy", "my_event", kwargs={"bad_arg": "value"})
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_listen_for_event_non_callable(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidEventListener):
         await dummy_bus.client.listen_for_event("my.dummy", "my_event", listener=123)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_listen_for_event_no_args(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidEventListener):
         await dummy_bus.client.listen_for_event("my.dummy", "my_event", listener=lambda: None)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_listen_for_event_no_positional_args(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidEventListener):
         await dummy_bus.client.listen_for_event("my.dummy", "my_event", listener=lambda **kw: None)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_listen_for_event_one_positional_arg(dummy_bus: lightbus.path.BusPath):
     await dummy_bus.client.listen_for_event(
         "my.dummy", "my_event", listener=lambda event_message: None
     )
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_listen_for_event_two_positional_args(dummy_bus: lightbus.path.BusPath):
     await dummy_bus.client.listen_for_event(
         "my.dummy", "my_event", listener=lambda event_message, other: None
     )
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_listen_for_event_variable_positional_args(dummy_bus: lightbus.path.BusPath):
     await dummy_bus.client.listen_for_event("my.dummy", "my_event", listener=lambda *a: None)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_listen_for_event_starts_with_underscore(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidName):
         await dummy_bus.client.listen_for_event(
@@ -87,49 +87,49 @@ async def test_listen_for_event_starts_with_underscore(dummy_bus: lightbus.path.
         )
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_fire_event_starts_with_underscore(dummy_bus: lightbus.path.BusPath, dummy_api):
     with pytest.raises(InvalidName):
         await dummy_bus.client.fire_event("my.dummy", "_my_event")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_call_rpc_remote_starts_with_underscore(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidName):
         await dummy_bus.client.call_rpc_remote("my.dummy", "_my_event")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_call_rpc_local_starts_with_underscore(dummy_bus: lightbus.path.BusPath, dummy_api):
     with pytest.raises(InvalidName):
         await dummy_bus.client.call_rpc_local("my.dummy", "_my_event")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_listen_for_event_empty_name(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidName):
         await dummy_bus.client.listen_for_event("my.dummy", "_my_event", listener=lambda *a: None)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_fire_event_empty_name(dummy_bus: lightbus.path.BusPath, dummy_api):
     with pytest.raises(InvalidName):
         await dummy_bus.client.fire_event("my.dummy", "_my_event")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_call_rpc_remote_empty_name(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidName):
         await dummy_bus.client.call_rpc_remote("my.dummy", "_my_event")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_call_rpc_local_empty_name(dummy_bus: lightbus.path.BusPath, dummy_api):
     with pytest.raises(InvalidName):
         await dummy_bus.client.call_rpc_local("my.dummy", "_my_event")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_no_transport(loop):
     # No transports configured for any relevant api
     config = Config.load_dict(
@@ -140,7 +140,7 @@ async def test_no_transport(loop):
         await client.call_rpc_remote("my_api", "test", kwargs={}, options={})
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_no_transport_type(loop):
     # Transports configured, but the wrong type of transport
     config = Config.load_dict(
@@ -326,7 +326,7 @@ DECORATOR_HOOK_PAIRS = [
 
 @pytest.mark.parametrize("decorator,hook", DECORATOR_HOOK_PAIRS)
 @pytest.mark.parametrize("before_plugins", [True, False], ids=["before-plugins", "after-plugins"])
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_hook_decorator(dummy_bus: lightbus.path.BusPath, decorator, hook, before_plugins):
     count = 0
     decorator = getattr(dummy_bus.client, decorator)
@@ -343,7 +343,7 @@ async def test_hook_decorator(dummy_bus: lightbus.path.BusPath, decorator, hook,
 
 @pytest.mark.parametrize("decorator,hook", DECORATOR_HOOK_PAIRS)
 @pytest.mark.parametrize("before_plugins", [True, False], ids=["before-plugins", "after-plugins"])
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hook, before_plugins):
     count = 0
     decorator = getattr(dummy_bus.client, decorator)
@@ -358,7 +358,7 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
     assert count == 1
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, loop, caplog):
     dummy_bus.client.config.api("default").on_error = OnError.SHUTDOWN
 
@@ -388,7 +388,7 @@ async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, 
     assert "ERROR" in log_levels
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_exception_in_listener_stop_listener(dummy_bus: lightbus.path.BusPath, loop, caplog):
     dummy_bus.client.config.api("default").on_error = OnError.STOP_LISTENER
 
@@ -417,7 +417,7 @@ async def test_exception_in_listener_stop_listener(dummy_bus: lightbus.path.BusP
     assert "ERROR" in log_levels
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_exception_in_listener_ignore(dummy_bus: lightbus.path.BusPath, loop, caplog):
     dummy_bus.client.config.api("default").on_error = OnError.IGNORE
 

@@ -9,7 +9,7 @@ from lightbus.transports.transactional import lightbus_set_database
 pytestmark = pytest.mark.reliability
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_multiple_connections(
     transactional_bus,  # Ensure migrations get run
     transactional_bus_factory,

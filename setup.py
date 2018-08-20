@@ -34,6 +34,7 @@ setup(
             "pytest-repeat==0.4.1",
             "async-timeout==1.4.0",
             "pytest-catchlog==1.2.2",
+            "pytest-asyncio==0.9.0",
             "coveralls==1.2.0",
             # Note for future: Should not be installed when testing against py >= 3.7
             "dataclasses==0.6",

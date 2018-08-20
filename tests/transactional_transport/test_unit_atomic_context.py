@@ -42,7 +42,7 @@ def test_init_multiple_transports(dummy_bus: BusPath, aiopg_connection):
         lightbus_set_database(dummy_bus, aiopg_connection, apis=["some_api", "another_api"])
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_aenter(atomic_context, aiopg_connection):
     await atomic_context.__aenter__()
     assert atomic_context.cursor
@@ -50,7 +50,7 @@ async def test_aenter(atomic_context, aiopg_connection):
     assert atomic_context.transport.cursor
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_aexit_success(atomic_context, mocker):
     f = asyncio.Future()
     f.set_result(None)
@@ -69,7 +69,7 @@ async def test_aexit_success(atomic_context, mocker):
     assert not cursor.closed
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_aexit_exception(atomic_context, mocker):
     f = asyncio.Future()
     f.set_result(None)

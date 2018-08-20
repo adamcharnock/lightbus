@@ -13,7 +13,7 @@ pytestmark = pytest.mark.reliability
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_random_failures(
     bus: lightbus.path.BusPath, caplog, fire_dummy_events, dummy_api, mocker
 ):

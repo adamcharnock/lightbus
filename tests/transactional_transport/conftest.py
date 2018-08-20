@@ -15,7 +15,6 @@ from lightbus.path import BusPath
 from lightbus.transports.base import TransportRegistry
 from lightbus.transports.redis import StreamUse
 from lightbus.transports.transactional import DbApiConnection
-from lightbus.utilities.async import block
 
 if False:
     import aiopg
@@ -70,10 +69,10 @@ def pg_kwargs(pg_url):
 
 
 @pytest.yield_fixture()
-def aiopg_connection(pg_kwargs, loop):
+async def aiopg_connection(pg_kwargs):
     import aiopg
 
-    connection = block(aiopg.connect(**pg_kwargs), timeout=2)
+    connection = await aiopg.connect(**pg_kwargs)
     yield connection
     connection.close()
 
@@ -105,12 +104,12 @@ def psycopg2_connection(pg_kwargs, loop):
 
 
 @pytest.fixture()
-def aiopg_cursor(aiopg_connection, loop, cursor_factory):
-    cursor = block(aiopg_connection.cursor(cursor_factory=cursor_factory), timeout=1)
-    block(cursor.execute("BEGIN -- aiopg_cursor"), timeout=1)
-    block(cursor.execute("DROP TABLE IF EXISTS lightbus_processed_events"), timeout=1)
-    block(cursor.execute("DROP TABLE IF EXISTS lightbus_event_outbox"), timeout=1)
-    block(cursor.execute("COMMIT -- aiopg_cursor"), timeout=1)
+async def aiopg_cursor(aiopg_connection, loop, cursor_factory):
+    cursor = await aiopg_connection.cursor(cursor_factory=cursor_factory)
+    await cursor.execute("BEGIN -- aiopg_cursor")
+    await cursor.execute("DROP TABLE IF EXISTS lightbus_processed_events")
+    await cursor.execute("DROP TABLE IF EXISTS lightbus_event_outbox")
+    await cursor.execute("COMMIT -- aiopg_cursor")
     return cursor
 
 
@@ -201,11 +200,11 @@ def transactional_bus(dummy_bus: BusPath, new_redis_pool, aiopg_connection, aiop
 
 
 @pytest.yield_fixture()
-def test_table(aiopg_cursor, loop):
-    block(aiopg_cursor.execute("BEGIN -- test_table (setup)"), timeout=1)
-    block(aiopg_cursor.execute("DROP TABLE IF EXISTS test_table"), timeout=1)
-    block(aiopg_cursor.execute("CREATE TABLE test_table (pk VARCHAR(100))"), timeout=1)
-    block(aiopg_cursor.execute("COMMIT -- test_table (setup)"), timeout=1)
+async def test_table(aiopg_cursor, loop):
+    await aiopg_cursor.execute("BEGIN -- test_table (setup)")
+    await aiopg_cursor.execute("DROP TABLE IF EXISTS test_table")
+    await aiopg_cursor.execute("CREATE TABLE test_table (pk VARCHAR(100))")
+    await aiopg_cursor.execute("COMMIT -- test_table (setup)")
 
     class TestTable(object):
 
@@ -215,6 +214,6 @@ def test_table(aiopg_cursor, loop):
 
     yield TestTable()
 
-    block(aiopg_cursor.execute("BEGIN -- test_table (tear down)"), timeout=1)
-    block(aiopg_cursor.execute("DROP TABLE test_table"), timeout=1)
-    block(aiopg_cursor.execute("COMMIT -- test_table (tear down)"), timeout=1)
+    await aiopg_cursor.execute("BEGIN -- test_table (tear down)")
+    await aiopg_cursor.execute("DROP TABLE test_table")
+    await aiopg_cursor.execute("COMMIT -- test_table (tear down)")

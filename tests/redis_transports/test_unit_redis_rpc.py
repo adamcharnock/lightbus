@@ -12,7 +12,7 @@ from lightbus.utilities.async import cancel
 pytestmark = pytest.mark.unit
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_connection_manager(redis_rpc_transport):
     """Does get_redis() provide a working redis connection"""
     connection_manager = await redis_rpc_transport.connection_manager()
@@ -20,7 +20,7 @@ async def test_connection_manager(redis_rpc_transport):
         assert await redis.info()
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_call_rpc(redis_rpc_transport, redis_client):
     """Does call_rpc() add a message to a stream"""
     rpc_message = RpcMessage(
@@ -49,7 +49,7 @@ async def test_call_rpc(redis_rpc_transport, redis_client):
     assert await redis_client.ttl("rpc_expiry_key:123abc") == redis_rpc_transport.rpc_timeout
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_consume_rpcs_no_expiry_key(redis_client, redis_rpc_transport, dummy_api):
     """Does call_rpc() add a message to a stream, but where the expiry key is missing
 
@@ -81,7 +81,7 @@ async def test_consume_rpcs_no_expiry_key(redis_client, redis_rpc_transport, dum
     assert not messages
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_consume_rpcs(redis_client, redis_rpc_transport, dummy_api):
 
     async def co_enqeue():
@@ -114,7 +114,7 @@ async def test_consume_rpcs(redis_client, redis_rpc_transport, dummy_api):
     assert message.return_path == "abc"
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_from_config(redis_client):
     await redis_client.select(5)
     host, port = redis_client.address
@@ -138,7 +138,7 @@ async def test_from_config(redis_client):
     assert isinstance(transport.deserializer, BlobMessageDeserializer)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_consume_rpcs_only_once(redis_client, dummy_api, redis_pool):
     """Ensure that an RPC call gets consumed only once even with multiple listeners"""
     message_count = 0
@@ -178,7 +178,7 @@ async def test_consume_rpcs_only_once(redis_client, dummy_api, redis_pool):
     assert not await redis_client.exists("rpc_expiry_key:123abc")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_reconnect_upon_call_rpc(redis_rpc_transport, redis_client):
     """Does call_rpc() add a message to a stream"""
     # Kill the rpc transport's connection
@@ -199,7 +199,7 @@ async def test_reconnect_upon_call_rpc(redis_rpc_transport, redis_client):
     assert len(messages) == 1
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_reconnect_upon_consume_rpcs(loop, redis_client, redis_rpc_transport, dummy_api):
     redis_rpc_transport.consumption_restart_delay = 0.0001
 

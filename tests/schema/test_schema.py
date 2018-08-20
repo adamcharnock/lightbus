@@ -130,7 +130,7 @@ def test_api_to_schema_class_not_instance():
 # Schema class
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_add_api(loop, schema, redis_client):
 
     class TestApi(Api):
@@ -144,7 +144,7 @@ async def test_add_api(loop, schema, redis_client):
     assert await redis_client.smembers("schemas") == [b"my.test_api"]
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_store(loop, schema, redis_client):
     schema.local_schemas["my.test_api"] = {"foo": "bar"}
     await schema.save_to_bus()
@@ -153,7 +153,7 @@ async def test_store(loop, schema, redis_client):
     assert json.loads(await redis_client.get("schema:my.test_api")) == {"foo": "bar"}
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_monitor_store(loop, schema, redis_client):
     """Check the monitor will persist local changes"""
 
@@ -171,7 +171,7 @@ async def test_monitor_store(loop, schema, redis_client):
     assert await redis_client.smembers("schemas") == [b"my.test_api"]
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_monitor_load(loop, schema, redis_client):
     """Check the monitor will load new data from redis"""
     monitor_task = asyncio.ensure_future(schema.monitor(interval=0.1))
@@ -190,7 +190,7 @@ def test_save_local_file_empty(tmp_file, schema):
     assert tmp_file.read() == "{}"
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_save_local_file(tmp_file, schema):
 
     class TestApi(Api):
@@ -207,7 +207,7 @@ async def test_save_local_file(tmp_file, schema):
     assert "my.test_api" in json.loads(written_schema)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_save_local_file_remote_api(tmp_file, schema):
     # Ensure remote APIs are loaded and included in the save
     await schema.schema_transport.store("my.test_api", {"a": 1}, ttl_seconds=60)
@@ -223,7 +223,7 @@ def test_save_local_directory_empty(tmp_directory, schema):
     assert not os.listdir(tmp_directory)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_save_local_directory(tmp_directory, schema):
 
     class TestApi(Api):
@@ -266,91 +266,91 @@ def test_load_local_directory(tmp_directory, schema):
     assert schema.remote_schemas == {}
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_get_event_schema_found(schema, TestApi):
     await schema.add_api(TestApi())
     assert schema.get_event_schema("my.test_api", "my_event")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_get_event_schema_not_found(schema, TestApi):
     await schema.add_api(TestApi())
     with pytest.raises(SchemaNotFound):
         schema.get_event_schema("my.test_api", "foo")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_get_rpc_schema_found(schema, TestApi):
     await schema.add_api(TestApi())
     assert schema.get_rpc_schema("my.test_api", "my_proc")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_get_rpc_schema_not_found(schema, TestApi):
     await schema.add_api(TestApi())
     with pytest.raises(SchemaNotFound):
         schema.get_rpc_schema("my.test_api", "foo")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_get_event_or_rpc_schema_event_found(schema, TestApi):
     await schema.add_api(TestApi())
     assert schema.get_event_or_rpc_schema("my.test_api", "my_event")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_get_event_or_rpc_schema_event_not_found(schema, TestApi):
     await schema.add_api(TestApi())
     with pytest.raises(SchemaNotFound):
         schema.get_event_or_rpc_schema("my.test_api", "foo")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_get_event_or_rpc_schema_rpc_found(schema, TestApi):
     await schema.add_api(TestApi())
     assert schema.get_event_or_rpc_schema("my.test_api", "my_proc")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_get_event_or_rpc_schema_rpc_not_found(schema, TestApi):
     await schema.add_api(TestApi())
     with pytest.raises(SchemaNotFound):
         schema.get_event_or_rpc_schema("my.test_api", "foo")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_validate_parameters_rpc_valid(schema, TestApi):
     await schema.add_api(TestApi())
     schema.validate_parameters("my.test_api", "my_proc", {"field": True})
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_validate_parameters_rpc_invalid(schema, TestApi):
     await schema.add_api(TestApi())
     with pytest.raises(ValidationError):
         schema.validate_parameters("my.test_api", "my_proc", {"field": 123})
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_validate_parameters_event_valid(schema, TestApi):
     await schema.add_api(TestApi())
     schema.validate_parameters("my.test_api", "my_event", {"field": True})
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_validate_parameters_event_invalid(schema, TestApi):
     await schema.add_api(TestApi())
     with pytest.raises(ValidationError):
         schema.validate_parameters("my.test_api", "my_event", {"field": 123})
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_validate_response_valid(schema, TestApi):
     await schema.add_api(TestApi())
     schema.validate_response("my.test_api", "my_proc", "string")
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_validate_response_invalid(schema, TestApi):
     await schema.add_api(TestApi())
     with pytest.raises(ValidationError):
@@ -360,7 +360,7 @@ async def test_validate_response_invalid(schema, TestApi):
 # Test validation error message types
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_parameter_validation_error_parameter_mismatch(schema, TestApi):
     # Test omitted parameter / unexpected parameter message
     await schema.add_api(TestApi())
@@ -372,7 +372,7 @@ async def test_parameter_validation_error_parameter_mismatch(schema, TestApi):
     assert "omitted a required" in str(ex_info.value)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_parameter_validation_error_bad_value(schema, TestApi):
     # Test incorrect value message
     await schema.add_api(TestApi())
@@ -384,7 +384,7 @@ async def test_parameter_validation_error_bad_value(schema, TestApi):
     assert "invalid value for the" in str(ex_info.value)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_parameter_validation_error_bad_structure(schema):
     # A complex structure with an internal validation error
     class Address(NamedTuple):
@@ -410,7 +410,7 @@ async def test_parameter_validation_error_bad_structure(schema):
     assert "internal structure" in str(ex_info.value)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_parameter_validation_error_response_type(schema, TestApi):
     # Response should be string, but we use a bool to cause an error
     await schema.add_api(TestApi())
@@ -421,7 +421,7 @@ async def test_parameter_validation_error_response_type(schema, TestApi):
     assert "incorrect type" in str(ex_info.value)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_parameter_validation_error_structure(schema, TestApi):
     # A complex structure with an internal validation error
     class Address(NamedTuple):
@@ -446,7 +446,7 @@ async def test_parameter_validation_error_structure(schema, TestApi):
     assert "internal structure" in str(ex_info.value)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_api_names(tmp_file, schema):
 
     class TestApi1(Api):
@@ -464,7 +464,7 @@ async def test_api_names(tmp_file, schema):
     assert set(schema.api_names) == {"my.test_api1", "my.test_api2"}
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_events(tmp_file, schema):
 
     class TestApi1(Api):
@@ -489,7 +489,7 @@ async def test_events(tmp_file, schema):
     }
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_rpcs(tmp_file, schema):
 
     class TestApi1(Api):

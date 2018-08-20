@@ -16,7 +16,7 @@ from lightbus.transports.redis import RedisResultTransport
 pytestmark = pytest.mark.unit
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_connection_manager(redis_result_transport):
     """Does get_redis() provide a working redis connection"""
     connection_manager = await redis_result_transport.connection_manager()
@@ -24,7 +24,7 @@ async def test_connection_manager(redis_result_transport):
         assert await redis.info()
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_get_return_path(redis_result_transport: RedisResultTransport):
     return_path = redis_result_transport.get_return_path(
         RpcMessage(
@@ -39,7 +39,7 @@ async def test_get_return_path(redis_result_transport: RedisResultTransport):
     assert UUID(bytes=result_uuid)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_send_result(redis_result_transport: RedisResultTransport, redis_client):
     await redis_result_transport.send_result(
         rpc_message=RpcMessage(
@@ -63,7 +63,7 @@ async def test_send_result(redis_result_transport: RedisResultTransport, redis_c
     }
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_receive_result(redis_result_transport: RedisResultTransport, redis_client):
 
     redis_client.lpush(
@@ -93,7 +93,7 @@ async def test_receive_result(redis_result_transport: RedisResultTransport, redi
     assert result_message.error == False
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_from_config(redis_client):
     await redis_client.select(5)
     host, port = redis_client.address

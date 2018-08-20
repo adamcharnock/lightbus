@@ -8,7 +8,7 @@ import lightbus
 pytestmark = pytest.mark.reliability
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_redis_connections_closed(redis_client, loop, dummy_api, new_bus, caplog):
     bus = await new_bus()
     await bus.client.close_async()
@@ -17,7 +17,7 @@ async def test_redis_connections_closed(redis_client, loop, dummy_api, new_bus, 
     assert int(info["clients"]["connected_clients"]) == 1  # the current connection
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_create_and_destroy_redis_buses(redis_client, loop, dummy_api, new_bus, caplog):
     caplog.set_level(logging.WARNING)
 
@@ -48,7 +48,7 @@ async def test_create_and_destroy_redis_buses(redis_client, loop, dummy_api, new
     ],
     ids=["rpc", "result", "event", "schema"],
 )
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_create_and_destroy_redis_transports(
     transport_class, kwargs, redis_client, loop, server, caplog
 ):

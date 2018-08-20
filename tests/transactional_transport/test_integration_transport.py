@@ -9,7 +9,7 @@ from lightbus.utilities.async import cancel
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_fire_events_all_ok(
     transactional_bus,
     aiopg_connection,
@@ -28,7 +28,7 @@ async def test_fire_events_all_ok(
     assert len(await messages_in_redis("my.dummy", "my_event")) == 1  # Message in redis
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_fire_events_exception(
     transactional_bus,
     aiopg_connection,
@@ -53,7 +53,7 @@ async def test_fire_events_exception(
     assert len(await messages_in_redis("my.dummy", "my_event")) == 0  # Nothing in redis
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_consume_events(transactional_bus: BusPath, aiopg_connection_factory, dummy_api):
     events = []
 

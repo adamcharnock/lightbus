@@ -21,7 +21,7 @@ class TestApi(Api):
         name = "example.test"
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_remote_rpc_call(dummy_bus: BusPath, get_dummy_events):
     # Setup the bus and do the call
     manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
@@ -60,7 +60,7 @@ async def test_remote_rpc_call(dummy_bus: BusPath, get_dummy_events):
     }
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_local_rpc_call(loop, dummy_bus: BusPath, consume_rpcs, get_dummy_events, mocker):
     rpc_transport = dummy_bus.client.transport_registry.get_rpc_transport("default")
     mocker.patch.object(
@@ -111,7 +111,7 @@ async def test_local_rpc_call(loop, dummy_bus: BusPath, consume_rpcs, get_dummy_
     }
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_send_event(dummy_bus: BusPath, get_dummy_events):
     manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
     registry.add(TestApi())
@@ -135,7 +135,7 @@ async def test_send_event(dummy_bus: BusPath, get_dummy_events):
     }
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_execute_events(dummy_bus: BusPath, dummy_listener, get_dummy_events, mocker):
     event_transport = dummy_bus.client.transport_registry.get_event_transport("default")
     mocker.patch.object(

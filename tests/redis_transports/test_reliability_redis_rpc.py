@@ -13,7 +13,7 @@ from lightbus.exceptions import LightbusTimeout
 pytestmark = pytest.mark.reliability
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_timeouts(bus: lightbus.path.BusPath, caplog, dummy_api, loop):
     caplog.set_level(logging.WARNING)
     loop.slow_callback_duration = 0.01

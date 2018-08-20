@@ -8,13 +8,13 @@ from lightbus.exceptions import InvalidBusPathConfiguration, InvalidParameters
 pytestmark = pytest.mark.unit
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_init_root_with_name():
     with pytest.raises(InvalidBusPathConfiguration):
         BusPath(name="root", parent=None, client=None)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_ancestors():
     root_node = BusPath(name="", parent=None, client=None)
     child_node1 = BusPath(name="my_api", parent=root_node, client=None)
@@ -22,7 +22,7 @@ async def test_ancestors():
     assert list(child_node2.ancestors(include_self=True)) == [child_node2, child_node1, root_node]
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_fully_qualified_name():
     root_node = BusPath(name="", parent=None, client=None)
     child_node1 = BusPath(name="my_api", parent=root_node, client=None)
@@ -33,7 +33,7 @@ async def test_fully_qualified_name():
     assert str(child_node2) == "my_api.auth"
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_dir(dummy_bus: lightbus.path.BusPath, dummy_api):
     assert "my" in dir(dummy_bus)
     assert "dummy" in dir(dummy_bus.my)
@@ -45,13 +45,13 @@ async def test_dir(dummy_bus: lightbus.path.BusPath, dummy_api):
     dir(dummy_bus.foo.bar)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_positional_only_rpc(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidParameters):
         await dummy_bus.my.dummy.my_proc.call_async(123)
 
 
-@pytest.mark.run_loop
+@pytest.mark.asyncio
 async def test_positional_only_event(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidParameters):
         await dummy_bus.my.dummy.event.fire_async(123)
