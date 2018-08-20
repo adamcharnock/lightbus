@@ -1,5 +1,5 @@
 
-## 1. Preface: Installing Python 3.6 (or above)
+## 1.1. Preface: Installing Python 3.6 (or above)
 
 Lightbus requires Python 3.6 or newer as it relies upon Python's new
 [asyncio] and [type hinting] features. This is readily available
@@ -42,7 +42,7 @@ If you require more granular control of your python versions you may find [pyenv
 Lightbus is not currently tested for deployment on Windows, so your millage may vary.
 The Hitchhiker's Guide to Python covers [installing Python 3 on Windows][god-help-you].
 
-## 2. Installing Lightbus
+## 1.2. Installing Lightbus
 
 ### Installing using pip (recommended)
 
@@ -57,7 +57,7 @@ if you need the latest (albeit unstable) changes, or if you wish to modify the L
 
     $ pip install https://github.com/adamcharnock/lightbus.git#egg=lightbus
 
-## 3. Installing Redis
+## 1.3. Installing Redis
 
 Lightbus relies on [Redis] as its primary transport. Specifically, Lightbus relies on the new Redis 'streams'
 feature in order to provide robust message handling. This will be available in Redis 5.0, due around mid-2018.
@@ -78,7 +78,7 @@ $ make
 $ ./src/redis-server
 ```
 
-## 4. Check it works
+## 1.4. Check it works
 
 You should now have:
 

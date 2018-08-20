@@ -7,7 +7,7 @@ In the following worked example we will create three services:
 This will involve a combination of web interfaces (using [Flask]), and Lightbus APIs.
 The goal is to show how Lightbus can allow multiple services to interact.
 
-## 1. Getting started
+## 3.1. Getting started
 
 The code created here can be found in Lightbus example [ex03_worked_example], although
 the code will be repeated below. There is a directory for each service we will
@@ -24,7 +24,7 @@ We will assume you
 have already read and completed the [installation](/tutorial/installation.md) and
 [quick start](/tutorial/quick-start.md) tutorials
 
-## 2. Image resizing service
+## 3.2. Image resizing service
 
 The image resizing service will be a simple Lightbus API, the purpose of which
 is to allow our store to resize images prior to display:
@@ -48,7 +48,7 @@ class ImageApi(Api):
 
 There is no web interface for this service, so this is all we need.
 
-## 3. Store service
+## 3.3. Store service
 
 Our store will have both a Lightbus API and a web interface. We'll start
 with the API first:
@@ -125,7 +125,7 @@ def pet(pet_num):
     return html
 ```
 
-## 4. Interlude: give it a go
+## 3.4. Interlude: give it a go
 
 We're not quite done yet, but you can now startup the necessary processes and
 see the store. You will need to run each of these in a separate terminal window:
@@ -156,7 +156,7 @@ Here you can see:
 
 Next we will create the dashboard which will make use of the `store.page_view` event.
 
-## 5. Dashboard service
+## 3.5. Dashboard service
 
 The dashboard service will provide internal reporting in the form
 of page view statistics for the online store.
@@ -225,7 +225,7 @@ def home():
 This reads the JSON data that was written by the event listener in `dashboard/bus.py` above,
 then render it to HTML.
 
-## 6. Run it!
+## 3.6. Run it!
 
 You should now have the following python files:
 
@@ -307,7 +307,7 @@ created.
 The dashboard should show a simple list of URLs plus the total number of page views for each.
 Go back to the store and view a few pages. Now refresh the dashboard and note the new data.
 
-## 7. Wrapping up
+## 3.7. Wrapping up
 
 While the services we have have created here are very crude, hopefully they have helped
 show how Lightbus can be used as a effective communications infrastructure.
