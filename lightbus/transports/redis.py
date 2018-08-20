@@ -9,7 +9,7 @@ from typing import Sequence, Optional, Union, Generator, Dict, Mapping, List
 from enum import Enum
 
 import aioredis
-from aioredis import Redis, ReplyError, ConnectionForcedCloseError, ConnectionClosedError
+from aioredis import Redis, ReplyError, ConnectionClosedError
 from aioredis.pool import ConnectionsPool
 from aioredis.util import decode
 
