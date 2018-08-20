@@ -19,7 +19,6 @@ from lightbus.exceptions import (
     InvalidName,
     ValidationError,
 )
-from lightbus.utilities.async import get_event_loop, cancel
 
 pytestmark = pytest.mark.unit
 
@@ -130,7 +129,7 @@ async def test_call_rpc_local_empty_name(dummy_bus: lightbus.path.BusPath, dummy
 
 
 @pytest.mark.asyncio
-async def test_no_transport(loop):
+async def test_no_transport():
     # No transports configured for any relevant api
     config = Config.load_dict(
         {"apis": {"default": {"event_transport": {"redis": {}}}}}, set_defaults=False
@@ -141,7 +140,7 @@ async def test_no_transport(loop):
 
 
 @pytest.mark.asyncio
-async def test_no_transport_type(loop):
+async def test_no_transport_type():
     # Transports configured, but the wrong type of transport
     config = Config.load_dict(
         {
@@ -274,7 +273,7 @@ def test_validate_outgoing_enabled(create_bus_client_with_unhappy_schema):
         client._validate(message, direction="outgoing", api_name="api", procedure_name="proc")
 
 
-def test_setup_transports_opened(loop, mocker):
+def test_setup_transports_opened(mocker):
     rpc_transport = lightbus.DebugRpcTransport()
 
     # TODO: There has to be a cleaner way of patching a coroutine.

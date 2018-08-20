@@ -10,7 +10,6 @@ from lightbus import (
 )
 from lightbus.config import Config
 from lightbus.transports.transactional.transport import ConnectionAlreadySet, DatabaseNotSet
-from lightbus.utilities.async import block
 from tests.transactional_transport.conftest import verification_connection
 
 pytestmark = pytest.mark.unit
@@ -33,10 +32,10 @@ async def active_transactions():
 
 
 @pytest.fixture()
-def transaction_transport(aiopg_connection, aiopg_cursor, loop):
+async def transaction_transport(aiopg_connection, aiopg_cursor, loop):
     transport = TransactionalEventTransport(DebugEventTransport())
-    block(transport.set_connection(aiopg_connection, aiopg_cursor), timeout=1)
-    block(transport.database.migrate(), timeout=1)
+    await transport.set_connection(aiopg_connection, aiopg_cursor)
+    await transport.database.migrate()
     return transport
 
 
