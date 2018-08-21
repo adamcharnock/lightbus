@@ -1,4 +1,5 @@
 import json as jsonlib
+import os
 from pathlib import Path
 from typing import TypeVar, Dict, NamedTuple
 
@@ -120,6 +121,14 @@ def config_as_json_schema() -> dict:
 
 
 def set_default_config(config: dict) -> dict:
+    env_service_name = os.environ.get("LIGHTBUS_SERVICE_NAME")
+    if env_service_name:
+        config.setdefault("service_name", env_service_name)
+
+    env_process_name = os.environ.get("LIGHTBUS_PROCESS_NAME")
+    if env_process_name:
+        config.setdefault("process_name", env_process_name)
+
     config.setdefault("apis", {})
     config.setdefault("bus", {})
     config["apis"].setdefault("default", {})

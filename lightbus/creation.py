@@ -138,8 +138,6 @@ def load_config(
     from_file: str = None, service_name: str = None, process_name: str = None
 ) -> Config:
     from_file = from_file or os.environ.get("LIGHTBUS_CONFIG")
-    service_name = service_name or os.environ.get("LIGHTBUS_SERVICE_NAME")
-    process_name = process_name or os.environ.get("LIGHTBUS_PROCESS_NAME")
 
     if from_file:
         logger.info(f"Loading config from {from_file}")
