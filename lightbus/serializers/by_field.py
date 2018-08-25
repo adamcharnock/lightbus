@@ -39,7 +39,7 @@ class ByFieldMessageSerializer(MessageSerializer):
 
 class ByFieldMessageDeserializer(MessageDeserializer):
 
-    def __call__(self, serialized: dict, *, native_id=None):
+    def __call__(self, serialized: dict, *, native_id=None, **extra):
         """Takes a dictionary of serialised fields and returns a Message object
 
         See the module-level docs (above) for further details
@@ -64,10 +64,6 @@ class ByFieldMessageDeserializer(MessageDeserializer):
 
         sanity_check_metadata(self.message_class, metadata)
 
-        extra = {}
-        if native_id is not None:
-            if isinstance(native_id, bytes):
-                native_id = native_id.decode("utf8")
-            extra["native_id"] = native_id
-
-        return self.message_class.from_dict(metadata=metadata, kwargs=kwargs, **extra)
+        return self.message_class.from_dict(
+            metadata=metadata, kwargs=kwargs, native_id=native_id, **extra
+        )
