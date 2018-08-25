@@ -158,8 +158,8 @@ def messages_in_redis(redis_client):
 
 
 @pytest.fixture()
-def transactional_bus_factory(dummy_bus: BusPath, new_redis_pool):
-    pool = new_redis_pool(maxsize=10000)
+async def transactional_bus_factory(dummy_bus: BusPath, new_redis_pool):
+    pool = await new_redis_pool(maxsize=10000)
 
     async def inner():
         transport = TransactionalEventTransport(
@@ -184,7 +184,7 @@ def transactional_bus_factory(dummy_bus: BusPath, new_redis_pool):
 async def transactional_bus(dummy_bus: BusPath, new_redis_pool, aiopg_connection, aiopg_cursor):
     transport = TransactionalEventTransport(
         child_transport=lightbus.RedisEventTransport(
-            redis_pool=new_redis_pool(maxsize=10000),
+            redis_pool=await new_redis_pool(maxsize=10000),
             consumer_group_prefix="test_cg",
             consumer_name="test_consumer",
             stream_use=StreamUse.PER_EVENT,

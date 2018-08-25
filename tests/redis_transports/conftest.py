@@ -13,34 +13,36 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def redis_rpc_transport(new_redis_pool, server, loop):
+async def redis_rpc_transport(new_redis_pool, server, loop):
     """Get a redis transport backed by a running redis server."""
-    return lightbus.RedisRpcTransport(redis_pool=new_redis_pool(maxsize=10000))
+    return lightbus.RedisRpcTransport(redis_pool=await new_redis_pool(maxsize=10000))
 
 
 @pytest.fixture
-def redis_result_transport(new_redis_pool, server, loop):
+async def redis_result_transport(new_redis_pool, server, loop):
     """Get a redis transport backed by a running redis server."""
-    return lightbus.RedisResultTransport(redis_pool=new_redis_pool(maxsize=10000))
+    return lightbus.RedisResultTransport(redis_pool=await new_redis_pool(maxsize=10000))
 
 
-@pytest.fixture
-def redis_event_transport(new_redis_pool, server, loop):
+@pytest.yield_fixture
+async def redis_event_transport(new_redis_pool, server, loop):
     """Get a redis transport backed by a running redis server."""
-    return lightbus.RedisEventTransport(
-        redis_pool=new_redis_pool(maxsize=10000),
+    transport = lightbus.RedisEventTransport(
+        redis_pool=await new_redis_pool(maxsize=10000),
         consumer_group_prefix="test_cg",
         consumer_name="test_consumer",
         # This used to be the default, so we still test against it here
         stream_use=StreamUse.PER_EVENT,
     )
+    yield transport
+    await transport.close()
 
 
 @pytest.fixture
-def redis_schema_transport(new_redis_pool, server, loop):
+async def redis_schema_transport(new_redis_pool, server, loop):
     """Get a redis transport backed by a running redis server."""
     logger.debug("Loop: {}".format(id(loop)))
-    return lightbus.RedisSchemaTransport(redis_pool=new_redis_pool(maxsize=10000))
+    return lightbus.RedisSchemaTransport(redis_pool=await new_redis_pool(maxsize=10000))
 
 
 @pytest.yield_fixture
@@ -71,7 +73,7 @@ def fire_dummy_events_fixture(bus):
 
 
 @pytest.fixture
-def new_bus(loop, new_redis_pool, server):
+def new_bus(loop, server):
 
     async def wrapped():
         rpc_pool = await create_redis_pool(server.tcp_address, loop=loop, maxsize=1000)
