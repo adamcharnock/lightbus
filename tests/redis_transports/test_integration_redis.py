@@ -113,7 +113,7 @@ async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
 @pytest.mark.parametrize(
     "stream_use", stream_use_test_data, ids=["stream_per_event", "stream_per_api"]
 )
-async def test_event(bus: lightbus.path.BusPath, dummy_api, stream_use):
+async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
     """Full event integration test"""
     bus.client.transport_registry.get_event_transport("default").stream_use = stream_use
     manually_set_plugins({})

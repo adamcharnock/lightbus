@@ -184,13 +184,11 @@ class TransactionalEventTransport(EventTransport):
                     f"Duplicate event {message.canonical_name} detected with ID {message.id}. "
                     f"Skipping."
                 )
-                await consumer.__anext__()
                 continue
             else:
                 await database.store_processed_event(message)
 
             yield message
-            yield await consumer.__anext__()
 
             try:
                 await database.commit_transaction()

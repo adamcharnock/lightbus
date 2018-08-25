@@ -121,6 +121,10 @@ class EventTransport(Transport):
             f"Event transport {self.__class__.__name__} does not support listening for events"
         )
 
+    async def acknowledge(self, *event_messages):
+        """Acknowledge that one or more events were successfully processed"""
+        pass
+
     def history(self, listen_for: List[Tuple[str, str]]):
         raise NotImplementedError(
             f"Event transport {self.__class__.__name__} does not support fetching past events"

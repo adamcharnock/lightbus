@@ -78,7 +78,6 @@ class DebugEventTransport(EventTransport):
         while True:
             await asyncio.sleep(0.1)
             yield self._get_fake_message()
-            yield True
 
     def _get_fake_message(self):
         return EventMessage(

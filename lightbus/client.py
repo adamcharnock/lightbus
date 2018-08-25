@@ -31,7 +31,7 @@ from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
 from lightbus.schema import Schema
 from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport
-from lightbus.transports.base import TransportRegistry
+from lightbus.transports.base import TransportRegistry, EventTransport
 from lightbus.utilities.async import (
     block,
     get_event_loop,
@@ -763,7 +763,7 @@ class _EventListener(object):
 
         return listener_task
 
-    async def listener(self, event_transport, events):
+    async def listener(self, event_transport: EventTransport, events: List[Tuple[str, str]]):
         """ Receive events from the transport and invoke the listener callable
 
         This is the core glue which combines the event transports' consume()
@@ -839,10 +839,8 @@ class _EventListener(object):
                         # let the error handler callback deal with it
                         raise
 
-                # Await the consumer again, which is our way of allowing it to
-                # acknowledge the message. This then allows us to fire the
-                # `after_event_execution` plugin hook immediately afterwards
-                await consumer.__anext__()
+                # Acknowledge the successfully processed message
+                await event_transport.acknowledge(event_message)
 
                 await self.bus_client._plugin_hook(
                     "after_event_execution", event_message=event_message

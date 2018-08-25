@@ -47,10 +47,11 @@ class StreamUse(Enum):
 
 class RedisEventMessage(EventMessage):
 
-    def __init__(self, *, stream: str, native_id: str, **kwargs):
+    def __init__(self, *, stream: str, native_id: str, consumer_group: str, **kwargs):
         super(RedisEventMessage, self).__init__(**kwargs)
         self.stream = stream
         self.native_id = native_id
+        self.consumer_group = consumer_group
 
 
 class RedisTransportMixin(object):
@@ -571,11 +572,11 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 await queue.join()
 
         # Run the two above coroutines in their own tasks
-        fetch_task = asyncio.ensure_future(consume_loop())
+        consume_task = asyncio.ensure_future(consume_loop())
         reclaim_task = asyncio.ensure_future(reclaim_loop())
 
         # Make sure we surface any exceptions that occur in either task
-        fetch_task.add_done_callback(check_for_exception)
+        consume_task.add_done_callback(check_for_exception)
         reclaim_task.add_done_callback(check_for_exception)
 
         try:
@@ -583,13 +584,11 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 try:
                     message = await queue.get()
                     yield message
-                    await self._ack(message, consumer_group)
                     queue.task_done()
-                    yield True
                 except GeneratorExit:
                     return
         finally:
-            await cancel(fetch_task, reclaim_task)
+            await cancel(consume_task, reclaim_task)
 
     async def _fetch_new_messages(self, streams, consumer_group, expected_events, forever):
         """Coroutine to consume new messages
@@ -626,7 +625,11 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             for stream, message_id, fields in pending_messages:
                 message_id = decode(message_id, "utf8")
                 event_message = self._fields_to_message(
-                    fields, expected_events, stream=stream, native_id=message_id
+                    fields,
+                    expected_events,
+                    stream=stream,
+                    native_id=message_id,
+                    consumer_group=consumer_group,
                 )
                 if not event_message:
                     # noop message, or message an event we don't care about
@@ -665,7 +668,11 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 for stream, message_id, fields in stream_messages:
                     message_id = decode(message_id, "utf8")
                     event_message = self._fields_to_message(
-                        fields, expected_events, stream=stream, native_id=message_id
+                        fields,
+                        expected_events,
+                        stream=stream,
+                        native_id=message_id,
+                        consumer_group=consumer_group,
                     )
                     if not event_message:
                         # noop message, or message an event we don't care about
@@ -725,7 +732,11 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     for claimed_message_id, fields in result:
                         claimed_message_id = decode(claimed_message_id, "utf8")
                         event_message = self._fields_to_message(
-                            fields, expected_events, stream=stream, native_id=claimed_message_id
+                            fields,
+                            expected_events,
+                            stream=stream,
+                            native_id=claimed_message_id,
+                            consumer_group=consumer_group,
                         )
                         if not event_message:
                             # noop message, or message an event we don't care about
@@ -746,12 +757,14 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         )
                         yield event_message, stream
 
-    async def _ack(self, event_message: RedisEventMessage, consumer_group: str):
+    async def acknowledge(self, event_message: RedisEventMessage):
         logger.debug(
             f"Acknowledging successful processing of message {event_message.id}/{event_message.native_id}"
         )
         with await self.connection_manager() as redis:
-            await redis.xack(event_message.stream, consumer_group, event_message.native_id)
+            await redis.xack(
+                event_message.stream, event_message.consumer_group, event_message.native_id
+            )
 
     async def _create_consumer_groups(self, streams, redis, consumer_group):
         for stream, since in streams.items():
@@ -767,11 +780,18 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     raise
 
     def _fields_to_message(
-        self, fields: dict, expected_event_names: Container[str], stream: str, native_id: str
+        self,
+        fields: dict,
+        expected_event_names: Container[str],
+        stream: str,
+        native_id: str,
+        consumer_group: str,
     ) -> Optional[RedisEventMessage]:
         if tuple(fields.items()) == ((b"", b""),):
             return None
-        message = self.deserializer(fields, stream=stream, native_id=native_id)
+        message = self.deserializer(
+            fields, stream=stream, native_id=native_id, consumer_group=consumer_group
+        )
 
         want_message = ("*" in expected_event_names) or (message.event_name in expected_event_names)
         if self.stream_use == StreamUse.PER_API and not want_message:

@@ -43,8 +43,6 @@ async def consumer_to_messages(consumer):
     messages = []
     async for message in consumer:
         messages.append(message)
-        dummy_value = await consumer.__anext__()
-        assert not isinstance(dummy_value, EventMessage)
     return messages
 
 
@@ -56,7 +54,7 @@ def transaction_transport_with_consumer(aiopg_connection, aiopg_cursor):
         async def dummy_consume_method(*args, **kwargs):
             for event_message in event_messages:
                 yield event_message
-                yield True
+                await transport.acknowledge(event_message)
 
         transport = TransactionalEventTransport(DebugEventTransport())
         # start_transaction=False, as we start a transaction below (using BEGIN)
