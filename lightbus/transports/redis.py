@@ -515,6 +515,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             consumer_group = f"{self.consumer_group_prefix}-{consumer_group}"
 
         if not isinstance(since, (list, tuple)):
+            # Since has been specified as a single value. Normalise it into
+            # the value-per-listener format.
             since = [since] * len(listen_for)
         since = map(normalise_since_value, since)
 
@@ -539,6 +541,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         queue = asyncio.Queue(maxsize=1)
 
         async def consume_loop():
+            # Regular event consuming. See _fetch_new_messages()
+
             while True:
                 try:
                     async for message, stream in self._fetch_new_messages(
@@ -555,6 +559,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     await asyncio.sleep(self.consumption_restart_delay)
 
         async def reclaim_loop():
+            # Reclaim messages which other consumers have failed to
+            # processes in reasonable time. See _reclaim_lost_messages()
+
             await asyncio.sleep(self.acknowledgement_timeout)
             async for message, stream in self._reclaim_lost_messages(
                 stream_names, consumer_group, expected_events
@@ -563,10 +570,11 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 # Wait for the queue to empty before getting trying to get another message
                 await queue.join()
 
-        # Make sure we surface any exceptions that occur in either task
+        # Run the two above coroutines in their own tasks
         fetch_task = asyncio.ensure_future(consume_loop())
         reclaim_task = asyncio.ensure_future(reclaim_loop())
 
+        # Make sure we surface any exceptions that occur in either task
         fetch_task.add_done_callback(check_for_exception)
         reclaim_task.add_done_callback(check_for_exception)
 
