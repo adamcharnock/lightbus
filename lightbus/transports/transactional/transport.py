@@ -189,7 +189,7 @@ class TransactionalEventTransport(EventTransport):
                 else:
                     await database.store_processed_event(message)
 
-                yield message
+                yield [message]
 
                 try:
                     await database.commit_transaction()

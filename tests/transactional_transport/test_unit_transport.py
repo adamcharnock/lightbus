@@ -41,8 +41,8 @@ async def transaction_transport(aiopg_connection, aiopg_cursor, loop):
 
 async def consumer_to_messages(consumer):
     messages = []
-    async for message in consumer:
-        messages.append(message)
+    async for messages_ in consumer:
+        messages.extend(messages_)
     return messages
 
 
