@@ -43,17 +43,19 @@ def redis_schema_transport(new_redis_pool, server, loop):
     return lightbus.RedisSchemaTransport(redis_pool=new_redis_pool(maxsize=10000))
 
 
-@pytest.fixture
+@pytest.yield_fixture
 def bus(
     loop, redis_rpc_transport, redis_result_transport, redis_event_transport, redis_schema_transport
 ):
     """Get a redis transport backed by a running redis server."""
-    return lightbus.creation.create(
+    bus = lightbus.creation.create(
         rpc_transport=redis_rpc_transport,
         result_transport=redis_result_transport,
         event_transport=redis_event_transport,
         schema_transport=redis_schema_transport,
     )
+    yield bus
+    bus.client.close()
 
 
 @pytest.fixture(name="fire_dummy_events")
