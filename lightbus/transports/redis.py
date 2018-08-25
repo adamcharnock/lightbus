@@ -576,6 +576,23 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             await cancel(fetch_task, reclaim_task)
 
     async def _fetch_new_messages(self, streams, consumer_group, expected_events, forever):
+        """Coroutine to consume new messages
+
+        The consumption has two stages:
+
+          1. Fetch and yield any messages this consumer is responsible for processing but has yet
+             to successfully process. This can happen in cases where a message was
+             previously consumed but not acknowledged (i.e. due to an error).
+             This is a one-off startup stage.
+          2. Wait for new messages to arrive. Yield these messages when they arrive, then
+             resume waiting for messages
+
+        See Also:
+
+            _reclaim_lost_messages() - Another coroutine which reclaims messages which timed out
+                                       while being processed by other consumers in this group
+
+        """
         with await self.connection_manager() as redis:
             # Firstly create the consumer group if we need to
             await self._create_consumer_groups(streams, redis, consumer_group)
@@ -657,7 +674,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
     async def _reclaim_lost_messages(
         self, stream_names: List[str], consumer_group: str, expected_events: set
     ):
-        """Reclaim messages that other consumers in the group failed to acknowledge"""
+        """Reclaim messages that other consumers in the group failed to acknowledge within a timeout
+
+        The timeout period is specified by the `acknowledgement_timeout` option.
+        """
         with await self.connection_manager() as redis:
             for stream in stream_names:
                 old_messages = await redis.xpending(
