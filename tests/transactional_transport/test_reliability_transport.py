@@ -44,6 +44,8 @@ async def test_multiple_connections(
                             "INSERT INTO test_table VALUES (%s)", [f"{number}-{x}"]
                         )
 
+                await bus.close()
+
     await asyncio.gather(*[start_firing(n) for n in range(0, 5)])
 
     assert await test_table.total_rows() == 250

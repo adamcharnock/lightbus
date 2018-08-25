@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Sequence, Tuple, Any, Generator, List, Dict
+from typing import Sequence, Tuple, Any, Generator, List, Dict, AsyncGenerator
 
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport, SchemaTransport
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
@@ -69,7 +69,7 @@ class DebugEventTransport(EventTransport):
 
     async def consume(
         self, listen_for: List[Tuple[str, str]], consumer_group: str = None, **kwargs
-    ) -> Generator[EventMessage, None, None]:
+    ) -> AsyncGenerator[EventMessage, None]:
         """Consume RPC events for the given API"""
         self._sanity_check_listen_for(listen_for)
 
@@ -77,7 +77,7 @@ class DebugEventTransport(EventTransport):
 
         while True:
             await asyncio.sleep(0.1)
-            yield self._get_fake_message()
+            yield [self._get_fake_message()]
 
     def _get_fake_message(self):
         return EventMessage(

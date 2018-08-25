@@ -53,7 +53,7 @@ def transaction_transport_with_consumer(aiopg_connection, aiopg_cursor):
 
         async def dummy_consume_method(*args, **kwargs):
             for event_message in event_messages:
-                yield event_message
+                yield [event_message]
                 await transport.acknowledge(event_message)
 
         transport = TransactionalEventTransport(DebugEventTransport())

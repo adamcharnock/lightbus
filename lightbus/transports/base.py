@@ -1,6 +1,17 @@
 import logging
 from itertools import chain
-from typing import Sequence, Tuple, List, Generator, Dict, NamedTuple, TypeVar, Type, Set
+from typing import (
+    Sequence,
+    Tuple,
+    List,
+    Generator,
+    Dict,
+    NamedTuple,
+    TypeVar,
+    Type,
+    Set,
+    AsyncGenerator,
+)
 import inspect
 
 from lightbus.api import Api
@@ -102,7 +113,9 @@ class EventTransport(Transport):
         """Publish an event"""
         raise NotImplementedError()
 
-    def consume(self, listen_for: List[Tuple[str, str]], consumer_group: str = None, **kwargs):
+    async def consume(
+        self, listen_for: List[Tuple[str, str]], consumer_group: str = None, **kwargs
+    ) -> AsyncGenerator[List[EventMessage], None]:
         """Consume messages for the given APIs
 
         Examples:
@@ -125,7 +138,7 @@ class EventTransport(Transport):
         """Acknowledge that one or more events were successfully processed"""
         pass
 
-    def history(self, listen_for: List[Tuple[str, str]]):
+    async def history(self, listen_for: List[Tuple[str, str]]):
         raise NotImplementedError(
             f"Event transport {self.__class__.__name__} does not support fetching past events"
         )

@@ -120,9 +120,9 @@ async def redis_client(create_redis_client, server, loop):
 def new_redis_pool(_closable, create_redis_pool, server, loop):
     """Useful when you need multiple redis connections."""
 
-    def make_new(**kwargs):
-        redis = loop.run_until_complete(create_redis_pool(server.tcp_address, loop=loop, **kwargs))
-        loop.run_until_complete(redis.flushall())
+    async def make_new(**kwargs):
+        redis = await create_redis_pool(server.tcp_address, loop=loop, **kwargs)
+        await redis.flushall()
         return redis
 
     return make_new

@@ -1,7 +1,7 @@
 import logging
 import threading
 from asyncio import AbstractEventLoop
-from typing import List, Tuple, Generator, Type
+from typing import List, Tuple, Generator, Type, AsyncGenerator
 
 from lightbus.exceptions import DuplicateMessage, LightbusException
 from lightbus.transports.base import get_transport, EventTransport, EventMessage
@@ -151,7 +151,7 @@ class TransactionalEventTransport(EventTransport):
 
     async def consume(
         self, listen_for: List[Tuple[str, str]], consumer_group: str = None, **kwargs
-    ) -> Generator[EventMessage, None, None]:
+    ) -> AsyncGenerator[EventMessage, None]:
         self._sanity_check_listen_for(listen_for)
 
         if not self.database:
@@ -176,31 +176,32 @@ class TransactionalEventTransport(EventTransport):
         )
 
         # Wrap the child transport in order to de-duplicate incoming messages
-        async for message in consumer:
-            await database.start_transaction()
+        async for messages in consumer:
+            for message in messages:
+                await database.start_transaction()
 
-            if await database.is_event_duplicate(message):
-                logger.info(
-                    f"Duplicate event {message.canonical_name} detected with ID {message.id}. "
-                    f"Skipping."
-                )
-                continue
-            else:
-                await database.store_processed_event(message)
+                if await database.is_event_duplicate(message):
+                    logger.info(
+                        f"Duplicate event {message.canonical_name} detected with ID {message.id}. "
+                        f"Skipping."
+                    )
+                    continue
+                else:
+                    await database.store_processed_event(message)
 
-            yield message
+                yield message
 
-            try:
-                await database.commit_transaction()
-            except DuplicateMessage:
-                # TODO: Can this even happen with the appropriate transaction isolation level?
-                logger.info(
-                    f"Duplicate event {message.canonical_name} discovered upon commit, "
-                    f"will rollback transaction. "
-                    f"Duplicates were probably being processed simultaneously, otherwise "
-                    f"this would have been caught earlier. Event ID: {message.id}"
-                )
-                await database.rollback_transaction()
+                try:
+                    await database.commit_transaction()
+                except DuplicateMessage:
+                    # TODO: Can this even happen with the appropriate transaction isolation level?
+                    logger.info(
+                        f"Duplicate event {message.canonical_name} discovered upon commit, "
+                        f"will rollback transaction. "
+                        f"Duplicates were probably being processed simultaneously, otherwise "
+                        f"this would have been caught earlier. Event ID: {message.id}"
+                    )
+                    await database.rollback_transaction()
 
     async def publish_pending(self, message_id=None):
         async for message, options in self.database.consume_pending_events(message_id):

@@ -775,73 +775,74 @@ class _EventListener(object):
         consumer = event_transport.consume(listen_for=events, **self.options)
 
         with self.bus_client._register_listener(events):
-            async for event_message in consumer:
-                # TODO: Check events match those requested
-                # TODO: Support event name of '*', but transports should raise
-                # TODO: an exception if it is not supported.
-                logger.info(
-                    L(
-                        "📩  Received event {}.{} with ID {}".format(
-                            Bold(event_message.api_name),
-                            Bold(event_message.event_name),
-                            event_message.id,
+            async for event_messages in consumer:
+                for event_message in event_messages:
+                    # TODO: Check events match those requested
+                    # TODO: Support event name of '*', but transports should raise
+                    # TODO: an exception if it is not supported.
+                    logger.info(
+                        L(
+                            "📩  Received event {}.{} with ID {}".format(
+                                Bold(event_message.api_name),
+                                Bold(event_message.event_name),
+                                event_message.id,
+                            )
                         )
                     )
-                )
 
-                self.bus_client._validate(event_message, "incoming")
+                    self.bus_client._validate(event_message, "incoming")
 
-                await self.bus_client._plugin_hook(
-                    "before_event_execution", event_message=event_message
-                )
-
-                if self.bus_client.config.api(event_message.api_name).cast_values:
-                    parameters = cast_to_signature(
-                        parameters=event_message.kwargs, callable=self.listener_callable
-                    )
-                else:
-                    parameters = event_message.kwargs
-
-                try:
-                    # Call the listener
-                    co = self.listener_callable(
-                        # Pass the event message as a positional argument,
-                        # thereby allowing listeners to have flexibility in the argument names.
-                        # (And therefore allowing listeners to use the `event` parameter themselves)
-                        event_message,
-                        **parameters,
+                    await self.bus_client._plugin_hook(
+                        "before_event_execution", event_message=event_message
                     )
 
-                    # Support awaitable event listeners
-                    if inspect.isawaitable(co):
-                        await co
-
-                except LightbusShutdownInProgress as e:
-                    logger.info("Shutdown in progress: {}".format(e))
-                except Exception as e:
-                    if self.on_error == OnError.IGNORE:
-                        # We're ignore errors, so log it and move on
-                        logger.error(
-                            f"An event listener raised an exception while processing an event. Lightbus will "
-                            f"continue as normal because the on 'on_error' option is set "
-                            f"to '{OnError.IGNORE.value}'."
+                    if self.bus_client.config.api(event_message.api_name).cast_values:
+                        parameters = cast_to_signature(
+                            parameters=event_message.kwargs, callable=self.listener_callable
                         )
-                    elif self.on_error == OnError.STOP_LISTENER:
-                        logger.error(
-                            f"An event listener raised an exception while processing an event. Lightbus will "
-                            f"stop the listener but keep on running. This is because the 'on_error' option "
-                            f"is set to '{OnError.STOP_LISTENER.value}'."
-                        )
-                        # Stop the listener by returning
-                        return
                     else:
-                        # We're not ignoring errors, so raise it and
-                        # let the error handler callback deal with it
-                        raise
+                        parameters = event_message.kwargs
 
-                # Acknowledge the successfully processed message
-                await event_transport.acknowledge(event_message)
+                    try:
+                        # Call the listener
+                        co = self.listener_callable(
+                            # Pass the event message as a positional argument,
+                            # thereby allowing listeners to have flexibility in the argument names.
+                            # (And therefore allowing listeners to use the `event` parameter themselves)
+                            event_message,
+                            **parameters,
+                        )
 
-                await self.bus_client._plugin_hook(
-                    "after_event_execution", event_message=event_message
-                )
+                        # Support awaitable event listeners
+                        if inspect.isawaitable(co):
+                            await co
+
+                    except LightbusShutdownInProgress as e:
+                        logger.info("Shutdown in progress: {}".format(e))
+                    except Exception as e:
+                        if self.on_error == OnError.IGNORE:
+                            # We're ignore errors, so log it and move on
+                            logger.error(
+                                f"An event listener raised an exception while processing an event. Lightbus will "
+                                f"continue as normal because the on 'on_error' option is set "
+                                f"to '{OnError.IGNORE.value}'."
+                            )
+                        elif self.on_error == OnError.STOP_LISTENER:
+                            logger.error(
+                                f"An event listener raised an exception while processing an event. Lightbus will "
+                                f"stop the listener but keep on running. This is because the 'on_error' option "
+                                f"is set to '{OnError.STOP_LISTENER.value}'."
+                            )
+                            # Stop the listener by returning
+                            return
+                        else:
+                            # We're not ignoring errors, so raise it and
+                            # let the error handler callback deal with it
+                            raise
+
+                    # Acknowledge the successfully processed message
+                    await event_transport.acknowledge(event_message)
+
+                    await self.bus_client._plugin_hook(
+                        "after_event_execution", event_message=event_message
+                    )

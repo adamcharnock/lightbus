@@ -180,8 +180,8 @@ def transactional_bus_factory(dummy_bus: BusPath, new_redis_pool):
     return inner
 
 
-@pytest.fixture()
-def transactional_bus(dummy_bus: BusPath, new_redis_pool, aiopg_connection, aiopg_cursor):
+@pytest.yield_fixture()
+async def transactional_bus(dummy_bus: BusPath, new_redis_pool, aiopg_connection, aiopg_cursor):
     transport = TransactionalEventTransport(
         child_transport=lightbus.RedisEventTransport(
             redis_pool=new_redis_pool(maxsize=10000),
@@ -196,7 +196,8 @@ def transactional_bus(dummy_bus: BusPath, new_redis_pool, aiopg_connection, aiop
     database = DbApiConnection(aiopg_connection, aiopg_cursor)
     # Don't migrate here, that should be handled by the auto-migration
 
-    return dummy_bus
+    yield dummy_bus
+    await dummy_bus.client.close_async()
 
 
 @pytest.yield_fixture()

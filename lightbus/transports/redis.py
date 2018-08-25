@@ -5,7 +5,17 @@ import threading
 import time
 from collections import OrderedDict
 from datetime import datetime
-from typing import Sequence, Optional, Union, Generator, Dict, Mapping, List, Container
+from typing import (
+    Sequence,
+    Optional,
+    Union,
+    Generator,
+    Dict,
+    Mapping,
+    List,
+    Container,
+    AsyncGenerator,
+)
 from enum import Enum
 
 import aioredis
@@ -509,7 +519,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         consumer_group: str = None,
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,
-    ) -> Generator[RedisEventMessage, None, None]:
+    ) -> AsyncGenerator[List[RedisEventMessage], None]:
         self._sanity_check_listen_for(listen_for)
 
         if self.consumer_group_prefix:
@@ -546,10 +556,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
             while True:
                 try:
-                    async for message, stream in self._fetch_new_messages(
+                    async for messages in self._fetch_new_messages(
                         streams, consumer_group, expected_events, forever
                     ):
-                        await queue.put(message)
+                        await queue.put(messages)
                         # Wait for the queue to empty before getting trying to get another message
                         await queue.join()
                 except ConnectionClosedError:
@@ -564,10 +574,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             # processes in reasonable time. See _reclaim_lost_messages()
 
             await asyncio.sleep(self.acknowledgement_timeout)
-            async for message, stream in self._reclaim_lost_messages(
+            async for messages in self._reclaim_lost_messages(
                 stream_names, consumer_group, expected_events
             ):
-                await queue.put(message)
+                await queue.put(messages)
                 # Wait for the queue to empty before getting trying to get another message
                 await queue.join()
 
@@ -582,15 +592,17 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         try:
             while True:
                 try:
-                    message = await queue.get()
-                    yield message
+                    messages = await queue.get()
+                    yield messages
                     queue.task_done()
                 except GeneratorExit:
                     return
         finally:
             await cancel(consume_task, reclaim_task)
 
-    async def _fetch_new_messages(self, streams, consumer_group, expected_events, forever):
+    async def _fetch_new_messages(
+        self, streams, consumer_group, expected_events, forever
+    ) -> AsyncGenerator[List[EventMessage], None]:
         """Coroutine to consume new messages
 
         The consumption has two stages:
@@ -622,6 +634,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 latest_ids=["0"] * len(streams),
                 timeout=None,  # Don't block, return immediately
             )
+
+            event_messages = []
             for stream, message_id, fields in pending_messages:
                 message_id = decode(message_id, "utf8")
                 event_message = self._fields_to_message(
@@ -646,7 +660,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         ),
                     )
                 )
-                yield event_message, stream
+                event_messages.append(event_message)
+
+            if event_messages:
+                yield event_messages
 
             # We've now cleaned up any old messages that were hanging around.
             # Now we get on to the main loop which blocks and waits for new messages
@@ -665,6 +682,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 )
 
                 # Handle the messages we have received
+                event_messages = []
                 for stream, message_id, fields in stream_messages:
                     message_id = decode(message_id, "utf8")
                     event_message = self._fields_to_message(
@@ -689,14 +707,18 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                             ),
                         )
                     )
-                    yield event_message, stream
+                    # NOTE: YIELD ALL MESSAGES, NOT JUST ONE
+                    event_messages.append(event_message)
+
+                if event_messages:
+                    yield event_messages
 
                 if not forever:
                     return
 
     async def _reclaim_lost_messages(
         self, stream_names: List[str], consumer_group: str, expected_events: set
-    ):
+    ) -> AsyncGenerator[List[EventMessage], None]:
         """Reclaim messages that other consumers in the group failed to acknowledge within a timeout
 
         The timeout period is specified by the `acknowledgement_timeout` option.
@@ -707,6 +729,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     stream, consumer_group, "-", "+", count=self.reclaim_batch_size
                 )
                 timeout = self.acknowledgement_timeout * 1000
+                event_messages = []
                 for (
                     message_id,
                     consumer_name,
@@ -755,16 +778,22 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                                 ),
                             )
                         )
-                        yield event_message, stream
+                        event_messages.append(event_message)
 
-    async def acknowledge(self, event_message: RedisEventMessage):
-        logger.debug(
-            f"Acknowledging successful processing of message {event_message.id}/{event_message.native_id}"
-        )
+                    if event_messages:
+                        yield event_messages
+
+    async def acknowledge(self, *event_messages: RedisEventMessage):
         with await self.connection_manager() as redis:
-            await redis.xack(
-                event_message.stream, event_message.consumer_group, event_message.native_id
-            )
+            p = redis.pipeline()
+            for event_message in event_messages:
+                logger.debug(
+                    f"Batch acknowledging successful processing of {len(event_messages)} "
+                    f"messages. Message: {event_message.id}/{event_message.native_id}"
+                )
+
+                p.xack(event_message.stream, event_message.consumer_group, event_message.native_id)
+            await p.execute()
 
     async def _create_consumer_groups(self, streams, redis, consumer_group):
         for stream, since in streams.items():

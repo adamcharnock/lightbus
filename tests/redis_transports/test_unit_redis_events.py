@@ -83,7 +83,8 @@ async def test_consume_events(
         async for message_ in redis_event_transport.consume([("my.dummy", "my_event")], {}):
             return message_
 
-    enqueue_result, message = await asyncio.gather(co_enqeue(), co_consume())
+    enqueue_result, messages = await asyncio.gather(co_enqeue(), co_consume())
+    message = messages[0]
     assert message.api_name == "my.dummy"
     assert message.event_name == "my_event"
     assert message.kwargs == {"field": "value"}
@@ -103,9 +104,9 @@ async def test_consume_events_multiple_consumers(loop, redis_pool, redis_client,
             stream_use=StreamUse.PER_EVENT,
         )
 
-        async for message_ in event_transport.consume([("my.dummy", "my_event")], {}):
-            messages.append(message_)
-            await event_transport.acknowledge(message_)
+        async for messages_ in event_transport.consume([("my.dummy", "my_event")], {}):
+            messages.append(messages_)
+            await event_transport.acknowledge(*messages_)
 
     task1 = asyncio.ensure_future(co_consume(1))
     task2 = asyncio.ensure_future(co_consume(2))
@@ -131,7 +132,7 @@ async def test_consume_events_multiple_consumers(loop, redis_pool, redis_client,
 async def test_consume_events_multiple_consumers_one_group(
     loop, redis_pool, redis_client, dummy_api
 ):
-    messages = []
+    events = []
 
     async def co_consume(consumer_number):
         event_transport = RedisEventTransport(
@@ -143,9 +144,9 @@ async def test_consume_events_multiple_consumers_one_group(
         consumer = event_transport.consume(
             listen_for=[("my.dummy", "my_event")], consumer_group="single_group"
         )
-        async for message_ in consumer:
-            messages.append(message_)
-            await event_transport.acknowledge(message_)
+        async for messages in consumer:
+            events.append(messages)
+            await event_transport.acknowledge(*messages)
 
     task1 = asyncio.ensure_future(co_consume(1))
     task2 = asyncio.ensure_future(co_consume(2))
@@ -164,7 +165,7 @@ async def test_consume_events_multiple_consumers_one_group(
     await asyncio.sleep(0.1)
     await cancel(task1, task2)
 
-    assert len(messages) == 1
+    assert len(events) == 1
 
 
 @pytest.mark.asyncio
@@ -209,22 +210,22 @@ async def test_consume_events_since_id(
         [("my.dummy", "my_event")], "cg", since="1515000001500-0", forever=False
     )
 
-    yields = []
+    events = []
 
     async def co():
-        async for m in consumer:
-            yields.append(m)
-            await redis_event_transport.acknowledge(m)
+        async for messages in consumer:
+            events.extend(messages)
+            await redis_event_transport.acknowledge(*messages)
 
     task = asyncio.ensure_future(co())
     await asyncio.sleep(0.1)
     await cancel(task)
 
-    messages_ids = [m.native_id for m in yields if isinstance(m, EventMessage)]
+    messages_ids = [m.native_id for m in events if isinstance(m, EventMessage)]
     assert len(messages_ids) == 2
-    assert len(yields) == 2
-    assert yields[0].kwargs["field"] == "2"
-    assert yields[1].kwargs["field"] == "3"
+    assert len(events) == 2
+    assert events[0].kwargs["field"] == "2"
+    assert events[1].kwargs["field"] == "3"
 
 
 @pytest.mark.asyncio
@@ -271,20 +272,20 @@ async def test_consume_events_since_datetime(
         [("my.dummy", "my_event")], {}, since=since_datetime, forever=False
     )
 
-    yields = []
+    events = []
 
     async def co():
-        async for m in consumer:
-            yields.append(m)
-            await redis_event_transport.acknowledge(m)
+        async for messages in consumer:
+            events.extend(messages)
+            await redis_event_transport.acknowledge(*messages)
 
     task = asyncio.ensure_future(co())
     await asyncio.sleep(0.1)
     await cancel(task)
 
-    assert len(yields) == 2
-    assert yields[0].kwargs["field"] == "2"
-    assert yields[1].kwargs["field"] == "3"
+    assert len(events) == 2
+    assert events[0].kwargs["field"] == "2"
+    assert events[1].kwargs["field"] == "3"
 
 
 @pytest.mark.asyncio
@@ -348,7 +349,11 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
         consumer_group="test_group",
         expected_events={"my_event"},
     )
-    reclaimed_messages = [m async for m, id_ in reclaimer]
+
+    reclaimed_messages = []
+    async for m in reclaimer:
+        reclaimed_messages.extend(m)
+
     assert len(reclaimed_messages) == 1
     assert reclaimed_messages[0].native_id
     assert type(reclaimed_messages[0].native_id) == str
@@ -439,9 +444,8 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
     messages = []
 
     async def consume():
-        async for message in consumer:
-            if isinstance(message, EventMessage):
-                messages.append(message)
+        async for messages_ in consumer:
+            messages.extend(messages_)
 
     task = asyncio.ensure_future(consume())
     await asyncio.sleep(0.1)
@@ -487,10 +491,9 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
     messages = []
 
     async def consume():
-        async for message in consumer:
-            if isinstance(message, EventMessage):
-                messages.append(message)
-                await event_transport.acknowledge(message)
+        async for messages_ in consumer:
+            messages.extend(messages_)
+            await event_transport.acknowledge(*messages_)
 
     task = asyncio.ensure_future(consume())
     await asyncio.sleep(0.1)
@@ -522,8 +525,8 @@ async def test_consume_events_create_consumer_group_first(
     messages = []
 
     async def consume():
-        async for message in consumer:
-            messages.append(message)
+        async for messages in consumer:
+            messages.extend(messages)
 
     task = asyncio.ensure_future(consume())
     await asyncio.sleep(0.1)
@@ -573,12 +576,12 @@ async def test_consume_events_per_api_stream(
 ):
     redis_event_transport.stream_use = StreamUse.PER_API
 
-    event_names = []
+    events = []
 
     async def co_consume(event_name):
-        consumer = redis_event_transport.consume([("my.dummy", event_name)], {})
-        async for message_ in consumer:
-            event_names.append(message_.event_name)
+        consumer = redis_event_transport.consume([("my.dummy", event_name)], "cg")
+        async for messages in consumer:
+            events.extend(messages)
 
     task1 = asyncio.ensure_future(co_consume("my_event1"))
     task2 = asyncio.ensure_future(co_consume("my_event2"))
@@ -618,8 +621,8 @@ async def test_consume_events_per_api_stream(
     await asyncio.sleep(0.1)
     await cancel(task1, task2, task3)
 
-    assert len(event_names) == 3
-    assert set(event_names) == {"my_event1", "my_event2", "my_event3"}
+    assert len(events) == 3
+    assert set([e.event_name for e in events]) == {"my_event1", "my_event2", "my_event3"}
 
 
 @pytest.mark.asyncio
@@ -666,9 +669,9 @@ async def test_reconnect_while_listening(
         nonlocal total_messages
 
         consumer = redis_event_transport.consume([("my.dummy", "my_event")], {})
-        async for message_ in consumer:
-            total_messages += 1
-            await redis_event_transport.acknowledge(message_)
+        async for messages_ in consumer:
+            total_messages += len(messages_)
+            await redis_event_transport.acknowledge(*messages_)
 
     enque_task = asyncio.ensure_future(co_enqeue())
     consume_task = asyncio.ensure_future(co_consume())
