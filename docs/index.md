@@ -1,37 +1,33 @@
 <style>
-.md-content { margin-left: 0 !important; }
-.md-sidebar { display: none; }
-.md-content img { max-width: 800px; }
+
 </style>
 
 # What is Lightbus?
 
-Lightbus allows your backend processes to communicate, run background tasks,
-and expose internal APIs.
+Lightbus is a powerful but intuitive messaging client for your
+backend services. Lightbus is for use with Python, but can
+communicate with services written in other languages.
 
-Lightbus uses Redis as its underlying transport, although support
-for other platforms may eventually be added.
-
-Lightbus requires Python 3.6 or above.
+Lightbus uses Redis 5 as its underlying transport, although support
+for other platforms may be added in future.
 
 **Lightbus is under active development and is still pre-release.**
-You can [track progress in GitHub][issue-1].
 
-## Example service structure
+## Example Lightbus project
 
 ![A simple Lightbus deployment][simple-processes]
 
 ## Designed for ease of use
 
-Lightbus is designed with developers in mind. The syntax aims to
-be intuitive and familiar, and common problems are caught with
+Lightbus is designed to be intuitive and familiar,
+and common problems are caught with
 clear and helpful error messages.
 
 For example, a naïve authentication API:
 
 ```python3
 class AuthApi(Api):
-    user_registered = Event(parameters=('username', 'email'))
+    user_registered = Event(parameters=('user', 'email'))
 
     class Meta:
         name = 'auth'
@@ -50,30 +46,47 @@ import lightbus
 
 bus = lightbus.create()
 
-bus.auth.check_password(
+is_valid = bus.auth.check_password(
     user='admin',
     password='secret'
 )
-# Returns true
+# is_valid is True
 ```
 
 You can also listen for events:
 
 ```python3
+# bus.py
+import lightbus
+
+bus = lightbus.create()
+
+# Our event handler
 def send_signup_email(event_message,
-                      username, email):
+                      user, email):
     send_mail(email,
-        subject=f'Welcome {username}'
+        subject=f'Welcome {user}'
     )
 
-bus.auth.user_registered.listen(
-    send_signup_email
-)
+# Setup our listeners on startup
+def before_server_start():
+    bus.auth.user_registered.listen(
+        send_signup_email
+    )
 ```
 
-To get started checkout the [installation](tutorial/installation.md),
-[concepts](explanation/concepts.md),
-and [quickstart](tutorial/quick-start.md) guides.
+## Where to start?
+
+Starting with the **[tutorials] section** will give you a
+**practical introduction** to Lightbus.
+Alternatively, the **[explanation] section** will give you a
+grounding in the high level **concepts and theory**.
+
+Start with whichever section suits you best. You should
+ultimately look through both sections for a complete understanding.
+
 
 [issue-1]: https://github.com/adamcharnock/lightbus/issues/1
 [simple-processes]: /static/images/simple-processes.png
+[tutorials]: /tutorial/index.md
+[explanation]: /explanation/index.md

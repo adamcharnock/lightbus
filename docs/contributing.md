@@ -1,4 +1,6 @@
-TBA. Contributions welcome!
+TODO. Contributions welcome!
+
+Spin off into internal docs?
 
 ## Development
 

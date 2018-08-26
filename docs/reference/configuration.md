@@ -190,7 +190,7 @@ Each API can be individually configured using the options below:
 * `event_fire_timeout` (default: `1`) – Timeout seconds when firing events on the bus
   (only applies when using the blocking api)
 * `validate` – Contains the [api validation config]. May also be set to
-  boolean `true` or `false` to blanked enable/disable.
+  boolean `true` or `false` to blanket enable/disable.
 * `strict_validation` (default: `false`) – Raise an exception if we receive a message
   from an API for which there is no schema available on the bus. If `false`
   a warning will be emitted instead.
@@ -249,7 +249,6 @@ situations
 | --------------------- |:---:|:------:|:-----:|:------:|
 | `redis`               | ✔   | ✔      | ✔     | ✔      |
 | `debug`               | ✔   | ✔      | ✔     | ✔      |
-| `direct`              | ✔   | ✔      | ✔     | -      |
 
 Additional transports may be added in future. A single API
 can use different types for each of its `rpc`, `result`,

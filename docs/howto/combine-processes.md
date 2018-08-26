@@ -3,7 +3,11 @@
 Here we will build on the dashboard we created in the [worked example] tutorial.
 
 This *how to* requires some knowledge of Python's asyncio features.
-**You can use Lightbus perfectly well without adding this complexity.**
+
+!!! warning
+
+    **You can use Lightbus perfectly well without adding this complexity.**
+    See the [anatomy lesson] for additional discussion.
 
 ---
 
@@ -110,3 +114,4 @@ $ honcho start -f Procfile_combined
 
 [worked example]: /tutorial/worked-example.md
 [aiohttp]: https://aiohttp.readthedocs.io/
+[anatomy lesson]: /explanation/anatomy-lesson.md#addendum
