@@ -471,7 +471,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             serializer=serializer,
             deserializer=deserializer,
             acknowledgement_timeout=acknowledgement_timeout,
-            max_stream_length=max_stream_length,
+            max_stream_length=max_stream_length or None,
             stream_use=stream_use,
             consumption_restart_delay=consumption_restart_delay,
         )
