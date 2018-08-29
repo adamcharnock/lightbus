@@ -5,20 +5,27 @@
     below.
 
 APIs specify the functionality available on the bus. To do this you
-define API classes within (or import API classes into) your `bus.py` file.
+define API classes within your `bus.py` file. You can also define
+your API elsewhere and import it into your `bus.py` file.
 
-For example:
+## An example API
 
 ```python3
+# An example API. You can define this in your bus.py,
+# or import into your bus.py file from elsewhere
+
 class SupportCaseApi(Api):
-    # An event
+    # An event,
+    # available at bus.support.case.case_created
     case_created = Event(parameters=('id', 'sender', 'subject', 'body'))
 
+    # Options for this API
     class Meta:
         # API name on the bus
         name = 'support.case'
 
-    # A procedure
+    # Will be available as a remote procedure call at
+    # bus.support.case.get()
     def get(self, id):
         return get_case_from_db(pk=id)
 ```
@@ -26,7 +33,7 @@ class SupportCaseApi(Api):
 A service can define zero or more APIs, and each API can contain
 zero or more events and zero or more procedures.
 
-The `Meta` specifies options regarding the API, with `name` being
+The `Meta` class specifies options regarding the API, with `name` being
 the only required option. The name specifies how the API will be
 accessed on the bus.
 
@@ -62,13 +69,18 @@ Should this API be registered with Lightbus upon import? This defaults to `True`
 but if you specifically wish to prevent the API from being automatically
 registered with Lightbus you should set this to `False`.
 
+Note that should you set this to `False`, you can manually register the
+API at a later date using `lightbus.api.registry.add(MyApi())`.
+
 ## Naming
 
-As you can see above, API names can contain periods to allow you
+As you can from the `Meta.name` option in the example above, API names
+can contain periods which allow you
 to structure your bus in a suitable form for your situation.
 Some example API naming schemes may look like:
 
 ```coffeescript
+# Example API naming schemes for use within Meta.name
 Format:  <service>
 Example: support.get_case()
          support.get_activity()
