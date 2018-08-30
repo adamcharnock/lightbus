@@ -89,6 +89,10 @@ While `bus` is the default module name, you can override it using the
 `LIGHTBUS_MODULE` environment variable,
 or the `lightbus run --bus=...` option.
 
+**A service
+will only need a Lightbus process if it wishes to listen
+for events or provide any RPCs which can be called.**
+
 ## Addendum
 
 The distinction between client & Lightbus process as described above

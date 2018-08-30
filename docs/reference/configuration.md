@@ -1,9 +1,9 @@
 
 Lightbus' configuration happens in three stages:
 
-1. Module loading
-2. Service-level setup
-3. Global bus configuration
+1. **Module loading** – Lightbus discovers where your `bus.py` file can found via the `LIGHTBUS_MODULE` environment variable.
+2. **Service-level setup** – Your `bus.py` file specifies service-level settings (`service_name` and `process_name`)
+3. **Global bus configuration** – Your `bus.py` provides the location to the global config for your bus.
 
 ## 1. Module loading
 
@@ -36,14 +36,14 @@ options for your lightbus client. The following options are available:
 
 ```python3
 bus = lightbus.create(
-    # Global bus config. Can be path to file or URL
-    conifg='http://internal.mysite.com/bus/lightbus.yaml',
-
     # Relevent to event consumption
     service_name='my_service',
 
     # Will be replaced 4 random characters. Default
     process_name='{random4}',
+
+    # Global bus config. Can be path to file or URL
+    conifg='http://internal.mysite.com/bus/lightbus.yaml',
 )
 ```
 
@@ -238,9 +238,6 @@ Where `[transport-name]` can be one of:
 * `redis` – The redis-backed transport.
 * `debug` – A debug transport which logs what happens but
             takes no further action.
-* `direct` – An experimental in-memory transport. Provides no
-             network communication and will be useful for
-             single process testing only.
 
 The table below details which transports can be used in which
 situations

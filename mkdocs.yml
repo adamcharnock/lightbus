@@ -46,7 +46,14 @@ pages:
   - Explanation:
     - Overview: explanation/index.md
     - Anatomy lesson: explanation/anatomy-lesson.md
-    - Concepts: explanation/concepts.md
+    - Services: explanation/services.md
+    - The bus: explanation/bus.md
+    - APIs: explanation/apis.md
+    - Remote prcedure calls: explanation/rpcs.md
+    - Events: explanation/events.md
+    - Transports: explanation/transports.md
+    - Configuration*: explanation/configuration.md
+    - Schema*: explanation/schema.md
     - Contributing*: contributing.md
   - Reference:
     - Overview: reference/index.md
@@ -54,9 +61,9 @@ pages:
     - APIs: reference/apis.md
     - Remote prcedure calls: reference/rpcs.md
     - Events: reference/events.md
+    - Transports*: reference/transports.md
     - Configuration: reference/configuration.md
     - Schema: reference/schema.md
-    - Transports*: reference/transports.md
     - Command line use*: reference/command-line-use.md
     - Debugging*: reference/debugging.md
     - Plugins*: reference/plugins.md
