@@ -1,12 +1,8 @@
-
-!!! note
-    We recommend read the [concepts](concepts.md) section before continuing
-    as this will give you a useful overview before delving into the details
-    below.
-
 APIs specify the functionality available on the bus. To do this you
 define API classes within your `bus.py` file. You can also define
 your API elsewhere and import it into your `bus.py` file.
+
+**For further discussion of APIs [see the concepts section](../explanation/apis.md).**
 
 ## An example API
 
@@ -102,26 +98,8 @@ Example: marketing.website.stats.get()
          ops.monitoring.servers.get_status()
 ```
 
-## Authoritative/non-authoritative APIs
-
-The service which defines an API is *authoritative* for that API, and as
-such can perform some actions that are not allowed by services accessing the API.
-
-A service which is authoritative for an API:
-
-1. Must import the API class definition
-2. Should respond to remote procedure calls for the API
-   (i.e. by running a `lightbus run` process)
-3. May fire events for the API
-
-Conversely, a non-authoritative service may *not* perform the above actions.
-For example, the online store service could not fire the `bus.support.case.case_created`
-event, nor should it import the `SupportCaseApi` class.
-
 ## Organising many APIs
 
 * Will lightbus recognise a bus package as well as a bus module?
   (i.e.`bus/__init__.py`?) TODO
     * It does now
-
-
