@@ -37,13 +37,19 @@ The `Meta` class specifies options regarding the API, with `name` being
 the only required option. The name specifies how the API will be
 accessed on the bus.
 
-You could use the above API as follows:
+You could call an RPC on the above API as follows:
 
 ```python3
 bus = lightbus.create()
 
 # Call the get_case() RPC.
 case = bus.support.case.get_case(id=123)
+```
+
+You can also fire an event on this API:
+
+```python3
+bus = lightbus.create()
 
 # Fire the case_created event
 bus.support.case.case_created.fire(
@@ -72,7 +78,7 @@ registered with Lightbus you should set this to `False`.
 Note that should you set this to `False`, you can manually register the
 API at a later date using `lightbus.api.registry.add(MyApi())`.
 
-## Naming
+## Naming your APIs
 
 As you can from the `Meta.name` option in the example above, API names
 can contain periods which allow you
@@ -96,7 +102,7 @@ Example: marketing.website.stats.get()
          ops.monitoring.servers.get_status()
 ```
 
-## Authoritative and non-authoritative
+## Authoritative/non-authoritative APIs
 
 The service which defines an API is *authoritative* for that API, and as
 such can perform some actions that are not allowed by services accessing the API.
@@ -116,5 +122,6 @@ event, nor should it import the `SupportCaseApi` class.
 
 * Will lightbus recognise a bus package as well as a bus module?
   (i.e.`bus/__init__.py`?) TODO
+    * It does now
 
 
