@@ -51,16 +51,17 @@ pages:
     - APIs: explanation/apis.md
     - Remote prcedure calls: explanation/rpcs.md
     - Events: explanation/events.md
+    - Marselling: explanation/marshelling.md
     - Transports: explanation/transports.md
     - Configuration*: explanation/configuration.md
     - Schema*: explanation/schema.md
     - Contributing*: contributing.md
   - Reference:
     - Overview: reference/index.md
-    - Typing*: reference/typing.md
     - APIs: reference/apis.md
     - Remote prcedure calls: reference/rpcs.md
     - Events: reference/events.md
+    - Typing: reference/typing.md
     - Transports*: reference/transports.md
     - Configuration: reference/configuration.md
     - Schema: reference/schema.md

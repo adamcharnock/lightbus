@@ -102,55 +102,7 @@ def before_server_start():
 
 ## Type hints
 
-Type hinting for events is slightly different to that for RPCs.
-Firstly, events do not have return values. We also define the
-parameter types differently.
-
-Extending our example from above:
-
-```python3
-# auth_service/bus.py
-from lightbus import Api, Event, Parameter
-
-
-class AuthApi(Api):
-    user_created = Event(parameters=(
-        Parameter('username', str),
-        Parameter('new_email', str),
-    ))
-    user_updated = Event(parameters=(
-        Parameter('username', str),
-        Parameter('new_email', str),
-    ))
-    user_deleted = Event(parameters=(
-        Parameter('username', str),
-    ))
-    # You can also set default values
-    permission_changed = Event(parameters=(
-        Parameter('username', str),
-        Parameter('is_admin', bool, default=False),
-    ))
-```
-
-This will provide the same benefits as with RPCs. Firstly,
-incoming values will be best-effort casted to the given type
-(see [typing](typing.md)).
-
-Secondly, type hints will be used in creating your bus' schema. This
-schema is shared on the bus and will be used to validate incoming
-and outgoing messages. This allows a number of errors to be caught
-automatically.
-
-For example, when firing the `permission_changed` event above, Lightbus
-will check to ensure the `username` parameter is present and a string.
-Lightbus will also ensure `is_admin` is a boolean *if* it is present,
-otherwise it will default to `False`. These checks will be
-performed before the message is written to the bus.
-
-Conversely, upon Lightbus receiving a message from the bus it will
-also apply the same checks. An error will be raised if the checks fail.
-
-TODO: Link to config docs re validate
+See the [typing reference](typing.md).
 
 
 [idempotent]: https://en.wikipedia.org/wiki/Idempotence

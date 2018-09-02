@@ -60,31 +60,7 @@ is_valid = await bus.auth.check_password.call_async(
 
 ## Type hints
 
-Specifying type hints on your RPCs will provide a number of benefits.
-
-Firstly, incoming values will be best-effort casted to the given type
-(see [typing](typing.md)).
-
-Secondly, type hints will be used in creating your bus' schema. This
-schema is shared on the bus and will be used to validate incoming
-and outgoing messages. This allows a number of errors to be caught
-automatically. For example:
-
-```python3
-    ...
-    def get_user(self, username: str) -> User:
-        return get_user(username)
-```
-
-This will validate that:
-
-* The incoming `username` value is present and is a string
-* The returned data matches the annotations on the `User` class
-
-The above checks will also be applied when calling the `get_user()`
-RPC, and when receiving it's response.
-
-TODO: Link to config docs re validate
+See the [typing reference](typing.md).
 
 ## Best practices
 
