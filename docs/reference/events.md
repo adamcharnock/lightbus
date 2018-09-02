@@ -1,21 +1,17 @@
-!!! note
-    We recommend read the [concepts](concepts.md) section before continuing
-    as this will give you a useful overview before delving into the details
-    below.
+Events are defined as properties on your [API](apis.md) classes.
+Events are useful when:
 
-Events are definied as properties on your API classes. They are
-useful when:
+1. You need asynchronous communication between services
+1. You wish to loosely-couple your services
+1. You need a service to perform a task in the background
 
-1. You wish to allow non-authoritative services to receive
-   information without needing to concern yourself
-   with their implementation
-2. You wish the authoritative service to perform a known
-   task in the background
+See [event considerations] in the explanations section for further
+discussion.
 
 **Events provide at-least-once delivery semantics.** Given this,
 your event handlers should be [idempotent].
 
-## Definition
+## Defining events
 
 You can define events using the `lightbus.Event` class. For example,
 you could define the following bus.py in your authenication service:
@@ -34,7 +30,7 @@ class AuthApi(Api):
         name = 'auth'
 ```
 
-## Firing
+## Firing events
 
 You can fire events as follows:
 
@@ -61,7 +57,7 @@ await bus.auth.user_created.fire_async(
 )
 ```
 
-## Listening
+## Listening for events
 
 Listening for events is typically a long-running background
 activity, and is therefore dealt with by the `lightbus run`
@@ -156,17 +152,6 @@ also apply the same checks. An error will be raised if the checks fail.
 
 TODO: Link to config docs re validate
 
-## Event streaming
-
-## Best practices
-
-### Event naming
-
-### Architecture
-
-### Parameter values
-
-See the [parameter values](rpcs.md#parameter-values) section on the
-RPC page.
 
 [idempotent]: https://en.wikipedia.org/wiki/Idempotence
+[event considerations]: /explanation/events.md#considerations

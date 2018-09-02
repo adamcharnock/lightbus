@@ -2,7 +2,7 @@
 Lightbus' configuration happens in three stages:
 
 1. **Module loading** – Lightbus discovers where your `bus.py` file can found via the `LIGHTBUS_MODULE` environment variable.
-2. **Service-level setup** – Your `bus.py` file specifies service-level settings (`service_name` and `process_name`)
+2. **Service-level configuration** – Your `bus.py` file specifies service-level settings (`service_name` and `process_name`)
 3. **Global bus configuration** – Your `bus.py` provides the location to the global config for your bus.
 
 ## 1. Module loading
@@ -18,21 +18,27 @@ This stage is only required when starting a [Lightbus process]
 [Non-lightbus processes] will import the bus module manually in order
 to access the bus client within (see next stage, below).
 
-## 2. Service-level setup
+## 2. Service-level configuration
 
-The bus module discovered above must create a Lightbus client as
-follows:
+The `bus` module discovered in the module loading stage (above)
+must define a Lightbus client as follows:
 
 ```python3
 bus = lightbus.create()
 ```
 
-This serves several purposes. Firstly, `lightbus run` will use this
-client to access the bus. Secondly, you can import this client
-elsewhere in the service in order to call RPCs and fire events.
+This serves several purposes:
 
-Lastly, this allows you to configure service-level configuration
-options for your lightbus client. The following options are available:
+1. `lightbus run` will use this client to access the bus.
+2. You can (and should) import this client
+   elsewhere in the service in order to call RPCs and fire events.
+3. You can configure service-level configuration options for your
+   Lightbus client.
+
+Service-level configuration is different to your global configuration
+because the values will vary between services.
+
+The following service-level options are available:
 
 ```python3
 bus = lightbus.create(
@@ -50,19 +56,29 @@ bus = lightbus.create(
 The above configuration options can also be set using the following
 environment variables:
 
-* `LIGHTBUS_CONFIG`
 * `LIGHTBUS_SERVICE_NAME`
 * `LIGHTBUS_PROCESS_NAME`
+* `LIGHTBUS_CONFIG`
+
+### Service & process name placeholders
+
+The following placeholders may be used within your service and
+process name values:
 
 
-### Service name
+| Paceholder    | Example value | Notes                                                                               |
+| ------------- | ------------- | ----------------------------------------------------------------------------------- |
+| `{hostname}`  | `my-host`     | Lower case hostname |
+| `{pid}`       | `12345`       | The process' ID |
+| `{random4}`   | `abcd`        | Random 4-character string |
+| `{random8}`   | `abcdefgh`    | Random 8-character string |
+| `{random16}`  | `abcdefghijklmnop` | Random 16-character string |
+| `{friendly}`  | `delicate-wave-915` | Human-friendly random name |
 
-TODO
+### Event delivery
 
-### Process name
-
-TODO
-
+See the [events explanation section] for a discussion on how
+service & process names affect event delivery.
 
 ## 3. Global bus configuration
 
@@ -283,3 +299,4 @@ within the [API config].
 [transport selector]: #transport-selector
 [api config]: #api-config
 [api validation config]: #api-validation-config
+[events explanation section]: /explanation/events/

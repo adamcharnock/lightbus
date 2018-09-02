@@ -16,8 +16,93 @@ The [quickstart](/tutorial/quick-start.md#events) provides an example of the lat
 
 TODO
 
+## Service names & listener names
+
+An event will be delivered once to each *consumer group*. A consumer
+group is identified by a name in the form:
+
+    # Consumer group naming format
+    {service_name}-{listener_name}
+
+Your *service name* is specified in your [service-level configuration].
+Your *listener name* is setup when you create your event listener (see below).
+
+For example, this `bus` module sets up two listeners. Each listener is
+given a `listener_name`, thereby ensuring each listener receives a
+copy of every `competitor_prices.changed` event.
+
+```python3
+from my_handlers import send_price_alerts, update_db
+
+bus = lightbus.create(
+    service_name='price-monitor',
+)
+
+# Consumer group name: price-monitor-send-price-alerts
+bus.competitor_prices.changed.listen(
+    send_price_alerts,
+    listener_name="send-price-alerts",
+)
+
+# Consumer group name: price-monitor-update-db
+bus.competitor_prices.changed.listen(
+    update_db,
+    listener_name="update-db",
+)
+```
+
+!!! important
+
+    Failure to specify `listener_name` in the above example will
+    result in each message going to **either** one listener or the other,
+    which is almost certainly not what you want.
+
+## Process names
+
+Your [service-level configuration] also specifies a *process name*.
+This is less critical than the service name & listener name pairing
+described above, but still serves an important function.
+
+The *process name* is used to track which process within a consumer group
+is dealing with a given event.
+
+This is primarily useful when a service runs multiple Lightbus
+processes, normally as a result of scaling or reliability requirements.
+The purpose of a *process name* is twofold:
+
+1. Each process has a per-determined length of time to handle and
+   acknowledge a given event. If this time is exceeded then
+   failure will be assumed, and the event may be picked up by another process.
+2. When a Lightbus process starts up it will check for any
+   outstanding events reserved for its process name. In which case it
+   will process these messages first. This can happen if the process was
+   killed prior to acknowledging messages it was processing.
+
+Providing there is no timeout, **an event will only be delivered
+to one process per listener within a service**.
+
+The default process name is a random 4 character string. If left unchanged,
+then clause 2 (above) will never be triggered (as a process name will not
+persist between process restarts). Any outstanding messages
+will always have to wait for the timeout period to expire, at which point
+the will be picked up by another process.
+
 ## Considerations
 
 * More complex
 * More robust
 
+## Best practices
+
+### Event naming
+
+* Past tense
+* Domain-based vs technical-based
+
+### Parameter values
+
+* Consistent meaning over time (not 'tomorrow', or '6 days ago')
+* Chop up your relations (aggregates in DDD)
+
+
+[service-level configuration]: /reference/configuration.md#2-service-level-configuration
