@@ -63,7 +63,7 @@ Listening for events is typically a long-running background
 activity, and is therefore dealt with by the `lightbus run`
 command.
 
-You can setup these listeners in another services' bus.py file
+You can setup these listeners in another services' `bus` module
 as follows:
 
 ```python3
@@ -93,11 +93,24 @@ def before_server_start():
     # before_server_start() is called on lightbus startup,
     # this allows you to setup your listeners.
 
-    bus.auth.user_created.listen(handle_created)
-    bus.auth.user_updated.listen(handle_updated)
-    bus.auth.user_deleted.listen(handle_deleted)
+    bus.auth.user_created.listen(
+        handle_created,
+        listener_name="user_created"
+    )
+    bus.auth.user_updated.listen(
+        handle_updated,
+        listener_name="user_updated"
+    )
+    bus.auth.user_deleted.listen(
+        handle_deleted,
+        listener_name="user_deleted"
+    )
 
 ```
+
+Specifying `listener_name` for each listener ensures each
+listener will receive its own copy of the `auth.user_deleted` event.
+See the [events explanation page] for further discussion.
 
 
 ## Type hints
@@ -107,3 +120,4 @@ See the [typing reference](typing.md).
 
 [idempotent]: https://en.wikipedia.org/wiki/Idempotence
 [event considerations]: /explanation/events.md#considerations
+[events explanation page]: /explanation/events.md

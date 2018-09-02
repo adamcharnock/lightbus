@@ -14,7 +14,20 @@ The [quickstart](/tutorial/quick-start.md#events) provides an example of the lat
 
 ## At-least-once semantics
 
-TODO
+Delivering a message exactly once is Very Difficult.
+Delivering a message at-most-once, or at-least-once is
+much more practical. **Lightbus therefore provides
+at-least-once delivery for events**.
+
+As a result you can assume your event listeners will
+always receive an event, but sometimes a listener may
+be called multiple times for the same event.
+
+You can handle this by ensuring your event listeners
+are idempotent. That is, implement your event listeners in such a
+way that it doesn't matter how many times they are executed.
+
+See [how to write idempotent event handlers].
 
 ## Service names & listener names
 
@@ -41,13 +54,13 @@ bus = lightbus.create(
 # Consumer group name: price-monitor-send-price-alerts
 bus.competitor_prices.changed.listen(
     send_price_alerts,
-    listener_name="send-price-alerts",
+    listener_name="send_price_alerts",
 )
 
 # Consumer group name: price-monitor-update-db
 bus.competitor_prices.changed.listen(
     update_db,
-    listener_name="update-db",
+    listener_name="update_db",
 )
 ```
 
@@ -55,7 +68,7 @@ bus.competitor_prices.changed.listen(
 
     Failure to specify `listener_name` in the above example will
     result in each message going to **either** one listener or the other,
-    which is almost certainly not what you want.
+    but never to both. This is almost certainly not what you want.
 
 ## Process names
 
@@ -106,3 +119,4 @@ the will be picked up by another process.
 
 
 [service-level configuration]: /reference/configuration.md#2-service-level-configuration
+[how to write idempotent event handlers]: /howto/write-idempotent-event-handlers.md

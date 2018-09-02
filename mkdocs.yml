@@ -43,6 +43,7 @@ pages:
     - Combine processes: howto/combine-processes.md
     - Use Lightbus for realtime metrics*: howto/metrics.md
     - Use Lightbus for event sourcing*: howto/event-sourcing.md
+    - Write idempotent event handlers*: howto/write-idempotent-event-handlers.md
   - Explanation:
     - Overview: explanation/index.md
     - Anatomy lesson: explanation/anatomy-lesson.md

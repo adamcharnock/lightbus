@@ -1,12 +1,13 @@
-Specifying type hints allows you to validate both incoming
-and outgoing messages.
+Specifying type hints allows Lightbus to validate
+data types in both incoming and outgoing messages.
 
-Type hints are used to create your APIs' [schemas], which is shared
+Type hints are used to create your bus' [schema], which is shared
 across your entire bus.
 
-## Type hinting syntax for RPCs
+## Typing syntax for RPCs
 
-You can provide type hints for Remote Procedure Calls as follows:
+You can provide typing information for Remote Procedure Calls using
+regular Python type hinting:
 
 ```python3
 class AuthApi(lightbus.Api):
@@ -24,13 +25,13 @@ This will:
 * Ensure the received `password` parameter is a string
 * Ensure the returned value is a boolean
 
-This behaviour can be configure via the [validate configuration option].
+This behaviour can be configured via the [`validate` configuration option](configuration.md#api-config).
 
-## Type hinting syntax for events
+## Typing syntax for events
 
-Type hinting for events is slightly different to that for RPCs.
+Typing information for events is different to that for RPCs.
 Firstly, events do not provide return values. Secondly, event
-parameters are specified slightly differently.
+parameters are specified differently:
 
 ```python3
 # auth_service/bus.py
@@ -56,11 +57,12 @@ This will:
 * Ensure the received `is_admin` parameter is a boolean.
   If omitted, `False` will be used.
 
-This behaviour can be configure via the [validate configuration option].
+This behaviour can be configured via the [`validate` configuration option](configuration.md#api-config).
 
 ## Data structures
 
-The Lightbus can derive a schema from the following data structures:
+In additional to built in types, Lightbus can derive typing information from
+the following data structures:
 
 * Named Tuples
 * Dataclasses
@@ -176,5 +178,5 @@ class AuthApi(Api):
         return ...
 ```
 
-[schemas]: schema.md
-[validate configuration option]: configuration.md#api-config
+[schema]: schema.md
+

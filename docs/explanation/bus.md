@@ -31,13 +31,6 @@ by software.
 **Lightbus uses Redis as its communication medium**, although support
 for other mediums may be added in future.
 
-!!! note
-
-    The core of Lightbus mostly consists of a programming interface
-    and presentational nicities.
-    The connection with the communication medium is provided by
-    customisable transports (see below). Lightbus ships with transports for Redis,
-    but transports could be created for other mediums should you wish.
 
 [RPCs]: rpcs.md
 [events]: events.md

@@ -121,7 +121,10 @@ def before_server_start():
     # this allows you to setup your listeners.
 
     # Call send_welcome_email() when we receive the user_registered event
-    bus.auth.user_registered.listen(send_welcome_email)
+    bus.auth.user_registered.listen(
+        send_welcome_email,
+        listener_name="send_welcome_email"
+    )
 
 
 def send_welcome_email(event_message, username, email):
