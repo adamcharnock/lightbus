@@ -328,25 +328,30 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
         },
     )
     # Create the consumer group
-    await redis_client.xgroup_create("my.dummy.my_event:stream", "test_group", latest_id="0")
+    await redis_client.xgroup_create(
+        stream="my.dummy.my_event:stream", group_name="test_service", latest_id="0"
+    )
 
     # Claim it in the name of another consumer
     await redis_client.xread_group(
-        "test_group", "bad_consumer", ["my.dummy.my_event:stream"], latest_ids=[0]
+        group_name="test_service",
+        consumer_name="bad_consumer",
+        streams=["my.dummy.my_event:stream"],
+        latest_ids=[0],
     )
     # Sleep a moment to fake a short timeout
     await asyncio.sleep(0.02)
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
-        service_name="test_group",
+        service_name="test_service",
         consumer_name="good_consumer",
         acknowledgement_timeout=0.01,  # in ms, short for the sake of testing
         stream_use=StreamUse.PER_EVENT,
     )
     reclaimer = event_transport._reclaim_lost_messages(
         stream_names=["my.dummy.my_event:stream"],
-        consumer_group="test_group",
+        consumer_group="test_service",
         expected_events={"my_event"},
     )
 
@@ -376,18 +381,23 @@ async def test_reclaim_lost_messages_ignores_non_timed_out_messages(
         },
     )
     # Create the consumer group
-    await redis_client.xgroup_create("my.dummy.my_event:stream", "test_group", latest_id="0")
+    await redis_client.xgroup_create(
+        stream="my.dummy.my_event:stream", group_name="test_service", latest_id="0"
+    )
 
     # Claim it in the name of another consumer
     await redis_client.xread_group(
-        "test_group", "bad_consumer", ["my.dummy.my_event:stream"], latest_ids=[0]
+        group_name="test_service",
+        consumer_name="bad_consumer",
+        streams=["my.dummy.my_event:stream"],
+        latest_ids=[0],
     )
     # Sleep a moment to fake a short timeout
     await asyncio.sleep(0.02)
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
-        service_name="test_group",
+        service_name="test_service",
         consumer_name="good_consumer",
         # in ms, longer as we want to check that the messages is not reclaimed
         acknowledgement_timeout=0.9,
@@ -395,7 +405,7 @@ async def test_reclaim_lost_messages_ignores_non_timed_out_messages(
     )
     reclaimer = event_transport._reclaim_lost_messages(
         stream_names=["my.dummy.my_event:stream"],
-        consumer_group="test_group",
+        consumer_group="test_service",
         expected_events={"my_event"},
     )
     reclaimed_messages = [m async for m in reclaimer]
@@ -421,11 +431,16 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
         },
     )
     # Create the consumer group
-    await redis_client.xgroup_create("my.dummy.my_event:stream", "test_group", latest_id="0")
+    await redis_client.xgroup_create(
+        stream="my.dummy.my_event:stream", group_name="test_service", latest_id="0"
+    )
 
     # Claim it in the name of another consumer
     await redis_client.xread_group(
-        "test_group", "bad_consumer", ["my.dummy.my_event:stream"], latest_ids=[0]
+        group_name="test_service",
+        consumer_name="bad_consumer",
+        streams=["my.dummy.my_event:stream"],
+        latest_ids=[0],
     )
     # Sleep a moment to fake a short timeout
     await asyncio.sleep(0.02)
@@ -438,7 +453,7 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
         stream_use=StreamUse.PER_EVENT,
     )
     consumer = event_transport.consume(
-        listen_for=[("my.dummy", "my_event")], since="0", consumer_group="test_group"
+        listen_for=[("my.dummy", "my_event")], since="0", consumer_group="test_service"
     )
 
     messages = []
@@ -471,11 +486,16 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
         },
     )
     # Create the consumer group
-    await redis_client.xgroup_create("my.dummy.my_event:stream", "test_group", latest_id="0")
+    await redis_client.xgroup_create(
+        stream="my.dummy.my_event:stream", group_name="test_service", latest_id="0"
+    )
 
     # Claim it in the name of ourselves
     await redis_client.xread_group(
-        "test_group", "good_consumer", ["my.dummy.my_event:stream"], latest_ids=[0]
+        group_name="test_service",
+        consumer_name="good_consumer",
+        streams=["my.dummy.my_event:stream"],
+        latest_ids=[0],
     )
 
     event_transport = RedisEventTransport(
@@ -485,7 +505,7 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
         stream_use=StreamUse.PER_EVENT,
     )
     consumer = event_transport.consume(
-        listen_for=[("my.dummy", "my_event")], since="0", consumer_group="test_group"
+        listen_for=[("my.dummy", "my_event")], since="0", consumer_group="test_service"
     )
 
     messages = []
@@ -507,7 +527,7 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
     assert type(messages[0].native_id) == str
 
     # Now check that redis believes the message has been consumed
-    total_pending, *_ = await redis_client.xpending("my.dummy.my_event:stream", "test_group")
+    total_pending, *_ = await redis_client.xpending("my.dummy.my_event:stream", "test_service")
     assert total_pending == 0
 
 
@@ -520,7 +540,7 @@ async def test_consume_events_create_consumer_group_first(
     This should create a noop message which gets ignored by the event transport
     """
     consumer = redis_event_transport.consume(
-        listen_for=[("my.dummy", "my_event")], since="0", consumer_group="test_group"
+        listen_for=[("my.dummy", "my_event")], since="0", consumer_group="test_service"
     )
     messages = []
 
