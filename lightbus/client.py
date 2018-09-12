@@ -457,6 +457,8 @@ class BusClient(object):
     async def listen_for_event(
         self, api_name, name, listener, listener_name: str = None, options: dict = None
     ) -> asyncio.Task:
+        # TODO: Sanity check during pre-release use. Remove before official release
+        assert "listener_name" not in options, "Specify listener name as kwarg, not as bus_option"
         return await self.listen_for_events(
             [(api_name, name)], listener, listener_name=listener_name, options=options
         )
