@@ -142,7 +142,7 @@ async def test_consume_events_multiple_consumers_one_group(
             stream_use=StreamUse.PER_EVENT,
         )
         consumer = event_transport.consume(
-            listen_for=[("my.dummy", "my_event")], consumer_group="single_group"
+            listen_for=[("my.dummy", "my_event")], listener_name="test_listener"
         )
         async for messages in consumer:
             events.append(messages)
@@ -432,12 +432,12 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
     )
     # Create the consumer group
     await redis_client.xgroup_create(
-        stream="my.dummy.my_event:stream", group_name="test_service", latest_id="0"
+        stream="my.dummy.my_event:stream", group_name="test_service-test_listener", latest_id="0"
     )
 
     # Claim it in the name of another consumer
     await redis_client.xread_group(
-        group_name="test_service",
+        group_name="test_service-test_listener",
         consumer_name="bad_consumer",
         streams=["my.dummy.my_event:stream"],
         latest_ids=[0],
@@ -447,13 +447,13 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
-        service_name="",
+        service_name="test_service",
         consumer_name="good_consumer",
         acknowledgement_timeout=0.01,  # in ms, short for the sake of testing
         stream_use=StreamUse.PER_EVENT,
     )
     consumer = event_transport.consume(
-        listen_for=[("my.dummy", "my_event")], since="0", consumer_group="test_service"
+        listen_for=[("my.dummy", "my_event")], since="0", listener_name="test_listener"
     )
 
     messages = []
@@ -487,12 +487,12 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
     )
     # Create the consumer group
     await redis_client.xgroup_create(
-        stream="my.dummy.my_event:stream", group_name="test_service", latest_id="0"
+        stream="my.dummy.my_event:stream", group_name="test_service-test_listener", latest_id="0"
     )
 
     # Claim it in the name of ourselves
     await redis_client.xread_group(
-        group_name="test_service",
+        group_name="test_service-test_listener",
         consumer_name="good_consumer",
         streams=["my.dummy.my_event:stream"],
         latest_ids=[0],
@@ -500,12 +500,12 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
-        service_name="",
+        service_name="test_service",
         consumer_name="good_consumer",
         stream_use=StreamUse.PER_EVENT,
     )
     consumer = event_transport.consume(
-        listen_for=[("my.dummy", "my_event")], since="0", consumer_group="test_service"
+        listen_for=[("my.dummy", "my_event")], since="0", listener_name="test_listener"
     )
 
     messages = []
@@ -527,7 +527,9 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
     assert type(messages[0].native_id) == str
 
     # Now check that redis believes the message has been consumed
-    total_pending, *_ = await redis_client.xpending("my.dummy.my_event:stream", "test_service")
+    total_pending, *_ = await redis_client.xpending(
+        stream="my.dummy.my_event:stream", group_name="test_service-test_listener"
+    )
     assert total_pending == 0
 
 
@@ -540,7 +542,7 @@ async def test_consume_events_create_consumer_group_first(
     This should create a noop message which gets ignored by the event transport
     """
     consumer = redis_event_transport.consume(
-        listen_for=[("my.dummy", "my_event")], since="0", consumer_group="test_service"
+        listen_for=[("my.dummy", "my_event")], since="0", listener_name="test_listener"
     )
     messages = []
 

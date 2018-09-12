@@ -148,7 +148,7 @@ class TestEventTransport(EventTransport):
     async def send_event(self, event_message, options):
         self.events.append((event_message, options))
 
-    def consume(self, listen_for: List[Tuple[str, str]], consumer_group: str = None, **kwargs):
+    def consume(self, listen_for: List[Tuple[str, str]], listener_name: str = None, **kwargs):
         """Consume RPC events for the given API"""
         raise NotImplementedError("Not yet supported by mocks")
 

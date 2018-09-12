@@ -68,7 +68,7 @@ class DebugEventTransport(EventTransport):
         )
 
     async def consume(
-        self, listen_for: List[Tuple[str, str]], consumer_group: str = None, **kwargs
+        self, listen_for: List[Tuple[str, str]], listener_name: str = None, **kwargs
     ) -> AsyncGenerator[EventMessage, None]:
         """Consume RPC events for the given API"""
         self._sanity_check_listen_for(listen_for)

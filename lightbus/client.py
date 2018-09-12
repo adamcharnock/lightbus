@@ -685,7 +685,7 @@ class _EventListener(object):
         self.options = options or {}
         self.bus_client = bus_client
 
-        self.options.setdefault("consumer_group", "default")
+        self.options.setdefault("listener_name", "default")
 
         self.event_transports = self.get_event_transports()
 

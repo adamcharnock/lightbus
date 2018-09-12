@@ -150,7 +150,7 @@ class TransactionalEventTransport(EventTransport):
         await self.database.send_event(event_message, options)
 
     async def consume(
-        self, listen_for: List[Tuple[str, str]], consumer_group: str = None, **kwargs
+        self, listen_for: List[Tuple[str, str]], listener_name: str = None, **kwargs
     ) -> AsyncGenerator[EventMessage, None]:
         self._sanity_check_listen_for(listen_for)
 
@@ -172,7 +172,7 @@ class TransactionalEventTransport(EventTransport):
         database = self.database
 
         consumer = self.child_transport.consume(
-            listen_for=listen_for, consumer_group=consumer_group, **kwargs
+            listen_for=listen_for, listener_name=listener_name, **kwargs
         )
 
         # Wrap the child transport in order to de-duplicate incoming messages

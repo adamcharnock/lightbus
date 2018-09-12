@@ -114,7 +114,7 @@ class EventTransport(Transport):
         raise NotImplementedError()
 
     async def consume(
-        self, listen_for: List[Tuple[str, str]], consumer_group: str = None, **kwargs
+        self, listen_for: List[Tuple[str, str]], listener_name: str = None, **kwargs
     ) -> AsyncGenerator[List[EventMessage], None]:
         """Consume messages for the given APIs
 

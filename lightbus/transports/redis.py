@@ -516,14 +516,13 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
     async def consume(
         self,
         listen_for,
-        consumer_group: str = None,
+        listener_name: str = None,
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,
     ) -> AsyncGenerator[List[RedisEventMessage], None]:
         self._sanity_check_listen_for(listen_for)
 
-        if self.service_name:
-            consumer_group = f"{self.service_name}-{consumer_group}"
+        consumer_group = f"{self.service_name}-{listener_name}"
 
         if not isinstance(since, (list, tuple)):
             # Since has been specified as a single value. Normalise it into
