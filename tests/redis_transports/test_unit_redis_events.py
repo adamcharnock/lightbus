@@ -99,7 +99,7 @@ async def test_consume_events_multiple_consumers(loop, redis_pool, redis_client,
     async def co_consume(group_number):
         event_transport = RedisEventTransport(
             redis_pool=redis_pool,
-            consumer_group_prefix=f"test_cg{group_number}",
+            service_name=f"test_cg{group_number}",
             consumer_name=f"test_consumer",
             stream_use=StreamUse.PER_EVENT,
         )
@@ -137,7 +137,7 @@ async def test_consume_events_multiple_consumers_one_group(
     async def co_consume(consumer_number):
         event_transport = RedisEventTransport(
             redis_pool=redis_pool,
-            consumer_group_prefix="test_cg",
+            service_name="test_cg",
             consumer_name=f"test_consumer{consumer_number}",
             stream_use=StreamUse.PER_EVENT,
         )
@@ -339,7 +339,7 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
-        consumer_group_prefix="test_group",
+        service_name="test_group",
         consumer_name="good_consumer",
         acknowledgement_timeout=0.01,  # in ms, short for the sake of testing
         stream_use=StreamUse.PER_EVENT,
@@ -387,7 +387,7 @@ async def test_reclaim_lost_messages_ignores_non_timed_out_messages(
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
-        consumer_group_prefix="test_group",
+        service_name="test_group",
         consumer_name="good_consumer",
         # in ms, longer as we want to check that the messages is not reclaimed
         acknowledgement_timeout=0.9,
@@ -432,7 +432,7 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
-        consumer_group_prefix="",
+        service_name="",
         consumer_name="good_consumer",
         acknowledgement_timeout=0.01,  # in ms, short for the sake of testing
         stream_use=StreamUse.PER_EVENT,
@@ -480,7 +480,7 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
-        consumer_group_prefix="",
+        service_name="",
         consumer_name="good_consumer",
         stream_use=StreamUse.PER_EVENT,
     )

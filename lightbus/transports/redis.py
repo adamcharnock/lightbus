@@ -408,7 +408,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self,
         redis_pool=None,
         *,
-        consumer_group_prefix: str,
+        service_name: str,
         consumer_name: str,
         url=None,
         serializer=ByFieldMessageSerializer(),
@@ -426,7 +426,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self.deserializer = deserializer
         self.batch_size = batch_size
         self.reclaim_batch_size = reclaim_batch_size if reclaim_batch_size else batch_size * 10
-        self.consumer_group_prefix = consumer_group_prefix
+        self.service_name = service_name
         self.consumer_name = consumer_name
         self.acknowledgement_timeout = acknowledgement_timeout
         self.max_stream_length = max_stream_length
@@ -440,7 +440,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
     def from_config(
         cls,
         config: "Config",
-        consumer_group_prefix: str = None,
+        service_name: str = None,
         consumer_name: str = None,
         url: str = "redis://127.0.0.1:6379/0",
         connection_parameters: Mapping = frozendict(maxsize=100),
@@ -455,14 +455,14 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(RedisEventMessage)
-        consumer_group_prefix = consumer_group_prefix or config.service_name
+        service_name = service_name or config.service_name
         consumer_name = consumer_name or config.process_name
         if isinstance(stream_use, str):
             stream_use = StreamUse[stream_use.upper()]
 
         return cls(
             redis_pool=None,
-            consumer_group_prefix=consumer_group_prefix,
+            service_name=service_name,
             consumer_name=consumer_name,
             url=url,
             connection_parameters=connection_parameters,
@@ -522,8 +522,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
     ) -> AsyncGenerator[List[RedisEventMessage], None]:
         self._sanity_check_listen_for(listen_for)
 
-        if self.consumer_group_prefix:
-            consumer_group = f"{self.consumer_group_prefix}-{consumer_group}"
+        if self.service_name:
+            consumer_group = f"{self.service_name}-{consumer_group}"
 
         if not isinstance(since, (list, tuple)):
             # Since has been specified as a single value. Normalise it into

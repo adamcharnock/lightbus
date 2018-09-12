@@ -29,7 +29,7 @@ async def redis_event_transport(new_redis_pool, server, loop):
     """Get a redis transport backed by a running redis server."""
     transport = lightbus.RedisEventTransport(
         redis_pool=await new_redis_pool(maxsize=10000),
-        consumer_group_prefix="test_cg",
+        service_name="test_cg",
         consumer_name="test_consumer",
         # This used to be the default, so we still test against it here
         stream_use=StreamUse.PER_EVENT,
@@ -85,9 +85,7 @@ def new_bus(loop, server):
             rpc_transport=lightbus.RedisRpcTransport(redis_pool=rpc_pool),
             result_transport=lightbus.RedisResultTransport(redis_pool=result_pool),
             event_transport=lightbus.RedisEventTransport(
-                redis_pool=event_pool,
-                consumer_group_prefix="test_cg",
-                consumer_name="test_consumer",
+                redis_pool=event_pool, service_name="test_cg", consumer_name="test_consumer"
             ),
             schema_transport=lightbus.RedisSchemaTransport(redis_pool=schema_pool),
         )

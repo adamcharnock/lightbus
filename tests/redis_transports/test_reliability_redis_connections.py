@@ -55,7 +55,7 @@ async def test_create_and_destroy_redis_buses(redis_client, loop, dummy_api, new
         (lightbus.RedisResultTransport, {}),
         (
             lightbus.RedisEventTransport,
-            {"consumer_group_prefix": "test_cg", "consumer_name": "test_consumer"},
+            {"service_name": "test_cg", "consumer_name": "test_consumer"},
         ),
         (lightbus.RedisSchemaTransport, {}),
     ],
