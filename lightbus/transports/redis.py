@@ -516,7 +516,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
     async def consume(
         self,
         listen_for,
-        listener_name: str = None,
+        listener_name: str,
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,
     ) -> AsyncGenerator[List[RedisEventMessage], None]:

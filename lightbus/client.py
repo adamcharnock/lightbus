@@ -455,12 +455,18 @@ class BusClient(object):
         await self._plugin_hook("after_event_sent", event_message=event_message)
 
     async def listen_for_event(
-        self, api_name, name, listener, options: dict = None
+        self, api_name, name, listener, listener_name: str = None, options: dict = None
     ) -> asyncio.Task:
-        return await self.listen_for_events([(api_name, name)], listener, options)
+        return await self.listen_for_events(
+            [(api_name, name)], listener, listener_name=listener_name, options=options
+        )
 
     async def listen_for_events(
-        self, events: List[Tuple[str, str]], listener, options: dict = None
+        self,
+        events: List[Tuple[str, str]],
+        listener,
+        listener_name: str = None,
+        options: dict = None,
     ) -> asyncio.Task:
 
         self._sanity_check_listener(listener)
@@ -469,7 +475,11 @@ class BusClient(object):
             self._validate_name(api_name, "event", name)
 
         event_listener = _EventListener(
-            events=events, listener_callable=listener, options=options, bus_client=self
+            events=events,
+            listener_callable=listener,
+            listener_name=listener_name,
+            options=options,
+            bus_client=self,
         )
         return event_listener.make_task()
 
@@ -677,15 +687,15 @@ class _EventListener(object):
         *,
         events: List[Tuple[str, str]],
         listener_callable,
+        listener_name: str = None,
         options: dict = None,
         bus_client: "BusClient",
     ):
         self.events = events
         self.listener_callable = listener_callable
+        self.listener_name = listener_name or "default"
         self.options = options or {}
         self.bus_client = bus_client
-
-        self.options.setdefault("listener_name", "default")
 
         self.event_transports = self.get_event_transports()
 
@@ -772,7 +782,9 @@ class _EventListener(object):
         """
         # event_transport.consume() returns an asynchronous generator
         # which will provide us with messages
-        consumer = event_transport.consume(listen_for=events, **self.options)
+        consumer = event_transport.consume(
+            listen_for=events, listener_name=self.listener_name, **self.options
+        )
 
         with self.bus_client._register_listener(events):
             async for event_messages in consumer:

@@ -150,7 +150,7 @@ class TransactionalEventTransport(EventTransport):
         await self.database.send_event(event_message, options)
 
     async def consume(
-        self, listen_for: List[Tuple[str, str]], listener_name: str = None, **kwargs
+        self, listen_for: List[Tuple[str, str]], listener_name: str, **kwargs
     ) -> AsyncGenerator[EventMessage, None]:
         self._sanity_check_listen_for(listen_for)
 
