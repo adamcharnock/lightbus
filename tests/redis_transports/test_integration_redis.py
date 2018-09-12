@@ -444,7 +444,7 @@ async def test_event_exception_in_listener_realtime(
     message_ids = [id_ for id_, *_ in messages]
 
     pending_messages = await redis_client.xpending(
-        "my.dummy.my_event:stream", "test_cg-default", "-", "+", 10, "test_consumer"
+        "my.dummy.my_event:stream", "test_service-default", "-", "+", 10, "test_consumer"
     )
     pending_message_ids = [id_ for id_, *_ in pending_messages]
     # The first 4 messages are still pending. Why 4 messages? Because:
@@ -489,7 +489,7 @@ async def test_event_exception_in_listener_batch_fetch(
     message1_id, message2_id, message3_id = [id_ for id_, *_ in messages]
 
     pending_messages = await redis_client.xpending(
-        "my.dummy.my_event:stream", "test_cg-default", "-", "+", 10, "test_consumer"
+        "my.dummy.my_event:stream", "test_service-default", "-", "+", 10, "test_consumer"
     )
 
     assert len(pending_messages) == 3

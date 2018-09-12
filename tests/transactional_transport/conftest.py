@@ -165,7 +165,7 @@ async def transactional_bus_factory(dummy_bus: BusPath, new_redis_pool):
         transport = TransactionalEventTransport(
             child_transport=lightbus.RedisEventTransport(
                 redis_pool=pool,
-                service_name="test_cg",
+                service_name="test_service",
                 consumer_name="test_consumer",
                 stream_use=StreamUse.PER_EVENT,
             )
@@ -185,7 +185,7 @@ async def transactional_bus(dummy_bus: BusPath, new_redis_pool, aiopg_connection
     transport = TransactionalEventTransport(
         child_transport=lightbus.RedisEventTransport(
             redis_pool=await new_redis_pool(maxsize=10000),
-            service_name="test_cg",
+            service_name="test_service",
             consumer_name="test_consumer",
             stream_use=StreamUse.PER_EVENT,
         )

@@ -99,7 +99,7 @@ async def test_consume_events_multiple_consumers(loop, redis_pool, redis_client,
     async def co_consume(group_number):
         event_transport = RedisEventTransport(
             redis_pool=redis_pool,
-            service_name=f"test_cg{group_number}",
+            service_name=f"test_service{group_number}",
             consumer_name=f"test_consumer",
             stream_use=StreamUse.PER_EVENT,
         )
@@ -137,7 +137,7 @@ async def test_consume_events_multiple_consumers_one_group(
     async def co_consume(consumer_number):
         event_transport = RedisEventTransport(
             redis_pool=redis_pool,
-            service_name="test_cg",
+            service_name="test_service",
             consumer_name=f"test_consumer{consumer_number}",
             stream_use=StreamUse.PER_EVENT,
         )
