@@ -41,8 +41,16 @@ class AuthApi(Api):
 RPCs are called simply as follows:
 
 ```python3
+# Anywhere in your code
+
+# Import your project's bus instance
+from bus import bus
+
+# Call the RPC
 is_valid = bus.auth.check_password(username="adam", password="secr3t")
 ```
+
+## Calling (asynchronously)
 
 You can also perform the call asynchronously using asyncio:
 

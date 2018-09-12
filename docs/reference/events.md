@@ -43,6 +43,8 @@ from bus import bus
 bus.auth.user_created.fire(username='adam', password='adam@example.com')
 ```
 
+## Firing events (asynchronously)
+
 You can also fire events asynchronously using asyncio:
 
 ```python3
@@ -112,6 +114,26 @@ Specifying `listener_name` for each listener ensures each
 listener will receive its own copy of the `auth.user_deleted` event.
 See the [events explanation page] for further discussion.
 
+## Listening for events (asynchronously)
+
+Event listener setup shown above should normally happen very quickly,
+however the process does still require some input/output.
+
+You can therefore modify the above example to setup an event
+listener asynchronously using the `list_async()` method:
+
+```python3
+# ...snipped from above example
+
+# Note that before_server_start() is defined as async
+async def before_server_start():
+
+    # We await the listen_async() method
+    await bus.auth.user_created.listen_async(
+        handle_created,
+        listener_name="user_created"
+    )
+```
 
 ## Type hints
 
