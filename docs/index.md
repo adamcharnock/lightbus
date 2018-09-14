@@ -13,9 +13,19 @@ for other platforms may be added in future.
 
 **Lightbus is under active development and is still pre-release.**
 
-## Example Lightbus project
+## How Lightbus works
+
+Lightbus provides you with two tools:
+
+1. A **client** with which to fire events,
+  and make remote procedure calls (RPCs) from anywhere within your
+  codebase.
+1. A **stand-alone Lightbus worker process** in which you can setup
+  event listeners. This process will also respond to RPCs calls.
 
 ![A simple Lightbus deployment][simple-processes]
+
+See the [anatomy lesson] for further discussion.
 
 ## Designed for ease of use
 
@@ -91,3 +101,4 @@ ultimately look through both sections for a complete understanding.
 [simple-processes]: /static/images/simple-processes.png
 [tutorials]: /tutorial/index.md
 [explanation]: /explanation/index.md
+[anatomy lesson]: /explanation/anatomy-lesson.md

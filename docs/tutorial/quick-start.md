@@ -89,8 +89,8 @@ received by any Lightbus service, which can include the owning service itself
 (as we do below).
 
 The owning service can be more accurately referred to as the
-*authoritative service*. The authoritative service is the service
-which contains the class definition within its codebase. Lightbus only
+*[authoritative] service* for the given API. The authoritative service is the service
+which contains the API's class definition within its codebase. Lightbus only
 allows the authoritative service to fire events for an API. Any service can
 listen for any event.
 
@@ -170,3 +170,4 @@ a more realistic scenario involving multiple services.
 [anatomy lesson]: /explanation/anatomy-lesson.md
 [concepts]: /explanation/concepts.md
 [worked example]: worked-example.md
+[authoritative]: /explanation/apis.md#authoritativenon-authoritative-apis

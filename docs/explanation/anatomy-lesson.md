@@ -2,13 +2,16 @@
 
 Lightbus provides you with two tools:
 
-* A **client** with which to fire events and make remote procedure calls (RPCs).
-  This can be used from anywhere within your Python codebase.
-* A **stand-alone Lightbus process** which will listen for events,
-  and respond to remote procedure calls. These processes are long running,
-  and you will typically have one or more per [service].
+* A **client** with which to fire events, listen for events
+  and make remote procedure calls (RPCs).
+* A **stand-alone Lightbus worker process** in which you can setup
+  event listeners. This process will also respond to RPCs calls.
 
-You will need to make use of both when using Lightbus.
+
+
+![A simple Lightbus deployment][simple-processes]
+
+[simple-processes]: /static/images/simple-processes.png
 
 ## The client
 
@@ -40,9 +43,14 @@ You can use this client anywhere you need to, such as:
 * Within scheduled jobs
 * Within Lightbus event & RPC handlers (see below)
 
-## The Lightbus process
+## The Lightbus worker process (`lightbus run`)
 
-The Lightbus process listens for events and responds to
+The Lightbus worker is a long running process which serves two purposes:
+
+* Allows you to setup event listeners, and define functions to handle these events.
+* The worker will respond to RPC calls to procedures on the service's APIs.
+
+listens for events and responds to
 remote procedure calls. In order to set this up you must:
 
 1. Create a `bus.py` file. Within this file...
@@ -83,7 +91,7 @@ You start this process using the command:
 
 
 This will import a module named `bus` (your `bus.py` file) and wait
-for events and RPCs.
+for incoming events and RPC calls.
 
 While `bus` is the default module name, you can override it using the
 `LIGHTBUS_MODULE` environment variable,
@@ -91,7 +99,7 @@ or the `lightbus run --bus=...` option.
 
 **A service
 will only need a Lightbus process if it wishes to listen
-for events or provide any RPCs which can be called.**
+for [events] or provide any [RPCs] which can be called.**
 
 ## Addendum
 
@@ -110,3 +118,5 @@ Therefore only pursue this path if you are sure it suits your
 particular needs.
 
 [service]: concepts.md#service
+[events]: events.md
+[rpcs]: rpcs.md

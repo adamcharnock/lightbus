@@ -6,7 +6,7 @@ other service at all. No return value is provided when firing an event.
 
 This is useful when:
 
-1. You wish to allow non-authoritative services to receive information without needing to concern yourself
+1. You wish to allow non-[authoritative] services to receive information without needing to concern yourself
    with their implementation
 2. You wish the authoritative service to perform a known task in the background
 
@@ -120,3 +120,4 @@ the will be picked up by another process.
 
 [service-level configuration]: /reference/configuration.md#2-service-level-configuration
 [how to write idempotent event handlers]: /howto/write-idempotent-event-handlers.md
+[authoritative]: /explanation/apis.md#authoritativenon-authoritative-apis
