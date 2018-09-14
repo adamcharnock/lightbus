@@ -23,7 +23,20 @@ Lightbus provides you with two tools:
 1. A **stand-alone Lightbus worker process** in which you can setup
   event listeners. This process will also respond to RPCs calls.
 
+For example, you could architect an e-commerce system as follows:
+
 ![A simple Lightbus deployment][simple-processes]
+
+In this example:
+
+* **Django** serves pages using data from the database
+* **Django** performs remote procedure calls to resize images. The Lightbus
+  worker in the **image resizing service** performs the image resize and responds.
+* The **price monitoring service** fires `price_monitor.competitor_price_changed` events
+* The Lightbus worker in the **online shop web service** listens for
+  `price_monitor.competitor_price_changed` events and updates prices in the
+  database accordingly.
+
 
 See the [anatomy lesson] for further discussion.
 
