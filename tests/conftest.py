@@ -30,6 +30,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import lightbus
 import lightbus.creation
+from lightbus import BusClient
 from lightbus.api import registry
 from lightbus.commands import COMMAND_PARSED_ARGS
 from lightbus.path import BusPath
@@ -485,8 +486,18 @@ def set_env():
 
 
 @pytest.yield_fixture
-def make_test_bus_module():
+def make_test_bus_module(mocker):
     created_modules = []
+
+    # Prevent setup from being called, as it'll try to
+    # load the schema from redis at the default location.
+    # Plus this setup is needed for what this fixture is used
+    # for (module loading)
+
+    async def face_setup_async(*args, **kwargs):
+        pass
+
+    mocker.patch.object(BusClient, "setup_async", side_effect=face_setup_async)
 
     def inner(code: str = None):
         if code is None:
