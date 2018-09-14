@@ -68,7 +68,7 @@ class Schema(object):
         return item in self.local_schemas or item in self.remote_schemas
 
     async def add_api(self, api: "Api"):
-        """Adds an API locally, and sends to to the transport"""
+        """Adds an API locally, and sends to the transport"""
         schema = api_to_schema(api)
         self.local_schemas[api.meta.name] = schema
         await self.schema_transport.store(api.meta.name, schema, ttl_seconds=self.max_age_seconds)
