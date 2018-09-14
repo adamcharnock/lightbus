@@ -42,7 +42,8 @@ async def redis_config_file(loop, server, redis_client):
         await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
 
 
-def test_commands_run_cli(mocker, server, redis_config_file, test_bus_module):
+def test_commands_run_cli(mocker, server, redis_config_file, make_test_bus_module):
+    test_bus_module = make_test_bus_module()
     m = mocker.patch.object(BusClient, "_actually_run_forever")
 
     args = ["--config", redis_config_file, "run", "--bus", test_bus_module]
@@ -52,7 +53,8 @@ def test_commands_run_cli(mocker, server, redis_config_file, test_bus_module):
     assert m.called
 
 
-def test_commands_run_env(mocker, server, redis_config_file, set_env, test_bus_module):
+def test_commands_run_env(mocker, server, redis_config_file, set_env, make_test_bus_module):
+    test_bus_module = make_test_bus_module()
     m = mocker.patch.object(BusClient, "_actually_run_forever")
 
     args = commands.parse_args(args=["run"])
@@ -62,13 +64,15 @@ def test_commands_run_env(mocker, server, redis_config_file, set_env, test_bus_m
     assert m.called
 
 
-def test_commands_shell(redis_config_file, test_bus_module):
+def test_commands_shell(redis_config_file, make_test_bus_module):
+    test_bus_module = make_test_bus_module()
     # Prevent the shell mainloop from kicking off
     args = ["--config", redis_config_file, "shell", "--bus", test_bus_module]
     run_command_from_args(args, fake_it=True)
 
 
-def test_commands_dump_schema(redis_config_file, test_bus_module):
+def test_commands_dump_schema(redis_config_file, make_test_bus_module):
+    test_bus_module = make_test_bus_module()
     args = [
         "--config",
         redis_config_file,
@@ -90,7 +94,9 @@ def test_commands_dump_schema(redis_config_file, test_bus_module):
     os.remove("/tmp/test_commands_dump_schema.json")
 
 
-def test_commands_dump_config_schema(redis_config_file, dummy_api, test_bus_module):
+def test_commands_dump_config_schema(redis_config_file, dummy_api, make_test_bus_module):
+    test_bus_module = make_test_bus_module()
+
     args = [
         "--config",
         redis_config_file,

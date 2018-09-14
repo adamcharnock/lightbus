@@ -26,7 +26,7 @@ class BusImportMixin(object):
         )
 
     def import_bus(self, args):
-        bus_module = lightbus.creation.import_bus_py(args.bus_module_name)
+        bus_module = lightbus.creation.import_bus_module(args.bus_module_name)
         try:
             return bus_module, bus_module.bus
         except AttributeError:

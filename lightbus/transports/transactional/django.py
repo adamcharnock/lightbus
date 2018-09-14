@@ -14,7 +14,7 @@ class TransactionTransportMiddleware(object):
     # event loop may not be thread safe at all.
     def __init__(self, get_response=None):
         self.get_response = get_response
-        bus_module = lightbus.creation.import_bus_py()
+        bus_module = lightbus.creation.import_bus_module()
         self.bus = bus_module.bus
         self.migrate()
 

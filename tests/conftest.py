@@ -485,19 +485,32 @@ def set_env():
 
 
 @pytest.yield_fixture
-def test_bus_module():
-    project_name = f"test_project_{randint(1000000, 9999999)}"
-    with TemporaryDirectory() as d:
-        d = Path(d)
+def make_test_bus_module():
+    created_modules = []
+
+    def inner(code: str = None):
+        if code is None:
+            code = "bus = lightbus.create()"
+
+        project_name = f"test_project_{randint(1000000, 9999999)}"
+        d = Path(tempfile.mkdtemp())
         os.mkdir(str(d / project_name))
         with (d / project_name / "bus.py").open("w") as bus_py:
-            bus_py.write("import lightbus\n" "bus = lightbus.create()")
+            bus_py.write(f"import lightbus\n{code}\n")
         sys.path.insert(0, str(d))
         module_name = f"{project_name}.bus"
-        yield module_name
 
+        # Store the module we have made so we can clean it up later
+        created_modules.append((module_name, d))
+        return module_name
+
+    yield inner
+
+    for module_name, directory in created_modules:
         if module_name in sys.modules:
             module = sys.modules[module_name]
-            module.bus.client.close()
+            if hasattr(module, "bus") and isinstance(module.bus, BusPath):
+                module.bus.client.close()
+            sys.modules.pop(module_name)
 
-        sys.path.remove(str(d))
+        sys.path.remove(str(directory))

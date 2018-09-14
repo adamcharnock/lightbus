@@ -1,7 +1,5 @@
 """Utility functions relating to bus creation"""
 
-
-import asyncio
 import os
 import sys
 from typing import Union, Optional, Mapping
@@ -19,7 +17,7 @@ from lightbus.utilities.importing import import_module_from_string
 if False:
     from lightbus.transports import *
 
-__all__ = ["create", "create_async", "load_config", "import_bus_py"]
+__all__ = ["create", "create_async", "load_config", "import_bus_module", "get_bus"]
 
 
 async def create_async(
@@ -155,14 +153,35 @@ def load_config(
     return config
 
 
-def import_bus_py(bus_module_name: str = None):
+def import_bus_module(bus_module_name: str = None):
     bus_module_name = bus_module_name or os.environ.get("LIGHTBUS_MODULE", "bus")
     logger.info(f"Importing bus.py from {Bold(bus_module_name)}")
     try:
-        return import_module_from_string(bus_module_name)
+        bus_module = import_module_from_string(bus_module_name)
     except ImportError as e:
         raise FailedToImportBusModule(
             f"Failed to import bus module at '{bus_module_name}'. Perhaps you "
             f"need to set the LIGHTBUS_MODULE environment variable? Alternatively "
             f"you may need to configure your PYTHONPATH. Error was: {e}"
         )
+
+    if not hasattr(bus_module, "bus"):
+        raise FailedToImportBusModule(
+            f"Bus module at '{bus_module_name}' contains no attribute named 'bus'.\n"
+            f"Your bus module must set a variable named bus using:\n"
+            f"     bus = lightbus.create()"
+        )
+
+    if not isinstance(bus_module.bus, BusPath):
+        raise FailedToImportBusModule(
+            f"Bus module at '{bus_module_name}' contains an invalid value for the 'bus' attribute.\n"
+            f"We expected a BusPath instance, but found '{type(bus_module.bus).__name__}'.\n"
+            f"Your bus module must set a variable named bus using:\n"
+            f"     bus = lightbus.create()"
+        )
+
+    return bus_module
+
+
+def get_bus(bus_module_name: str = None) -> BusPath:
+    return import_bus_module(bus_module_name).bus
