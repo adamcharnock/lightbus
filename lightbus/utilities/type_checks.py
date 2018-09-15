@@ -26,7 +26,7 @@ def is_dataclass(v) -> bool:
 
 
 def is_optional(hint) -> Optional[Type]:
-    subs_tree = hint._subs_tree() if hasattr(hint, "_subs_tree") else None
+    subs_tree = hint._subs_tree() if hasattr(hint, "_subs_tree") else []
     if type(hint) == type(Union) and len(subs_tree) == 3 and subs_tree[2] == type(None):
         return subs_tree[1]
     else:
