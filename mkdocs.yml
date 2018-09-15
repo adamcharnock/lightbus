@@ -58,7 +58,7 @@ pages:
     - Configuration*: explanation/configuration.md
     - Schema*: explanation/schema.md
     - Contributing*: contributing.md
-    - Lightbus vs Celery*: explanation/lightbus-vs-celery.md
+    - Lightbus vs Celery: explanation/lightbus-vs-celery.md
   - Reference:
     - Overview: reference/index.md
     - APIs: reference/apis.md
