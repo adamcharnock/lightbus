@@ -4,7 +4,7 @@ import pytest
 from lightbus.api import registry, Api, Event
 from lightbus.path import BusPath
 from lightbus.plugins.state import StatePlugin
-from lightbus.utilities.async import cancel
+from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.unit
 

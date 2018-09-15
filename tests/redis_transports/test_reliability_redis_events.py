@@ -7,7 +7,7 @@ import pytest
 import lightbus
 import lightbus.path
 from lightbus.plugins import manually_set_plugins
-from lightbus.utilities.async import cancel
+from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.reliability
 

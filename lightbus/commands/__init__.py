@@ -9,7 +9,7 @@ import lightbus.creation
 from lightbus.config import Config
 from lightbus.plugins import autoload_plugins, plugin_hook, remove_all_plugins
 from lightbus.utilities.logging import configure_logging
-from lightbus.utilities.async import block, get_event_loop
+from lightbus.utilities.async_tools import block, get_event_loop
 import lightbus.commands.run
 import lightbus.commands.shell
 import lightbus.commands.dump_schema

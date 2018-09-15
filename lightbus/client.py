@@ -32,7 +32,7 @@ from lightbus.schema import Schema
 from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport
 from lightbus.transports.base import TransportRegistry, EventTransport
-from lightbus.utilities.async import (
+from lightbus.utilities.async_tools import (
     block,
     get_event_loop,
     cancel,

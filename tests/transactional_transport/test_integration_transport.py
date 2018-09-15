@@ -4,7 +4,7 @@ import pytest
 
 from lightbus.path import BusPath
 from lightbus.transports.transactional import lightbus_set_database
-from lightbus.utilities.async import cancel
+from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.integration
 

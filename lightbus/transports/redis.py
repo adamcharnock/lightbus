@@ -31,7 +31,7 @@ from lightbus.schema.encoder import json_encode
 from lightbus.serializers.blob import BlobMessageSerializer, BlobMessageDeserializer
 from lightbus.serializers.by_field import ByFieldMessageSerializer, ByFieldMessageDeserializer
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport, SchemaTransport
-from lightbus.utilities.async import cancel, check_for_exception
+from lightbus.utilities.async_tools import cancel, check_for_exception
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string

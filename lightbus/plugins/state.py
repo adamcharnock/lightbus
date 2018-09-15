@@ -12,7 +12,7 @@ from lightbus.api import registry
 from lightbus.message import EventMessage
 from lightbus.plugins import LightbusPlugin, is_plugin_loaded
 from lightbus.plugins.metrics import MetricsPlugin
-from lightbus.utilities.async import cancel
+from lightbus.utilities.async_tools import cancel
 
 if False:
     from lightbus import BusClient

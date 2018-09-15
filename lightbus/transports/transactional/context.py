@@ -9,7 +9,7 @@ from lightbus.exceptions import (
     ApisMustUseTransactionalTransport,
 )
 from lightbus.transports.transactional.transport import TransactionalEventTransport
-from lightbus.utilities.async import block, get_event_loop
+from lightbus.utilities.async_tools import block, get_event_loop
 
 try:
     import django

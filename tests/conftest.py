@@ -36,7 +36,7 @@ from lightbus.commands import COMMAND_PARSED_ARGS
 from lightbus.path import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import remove_all_plugins
-from lightbus.utilities.async import cancel
+from lightbus.utilities.async_tools import cancel
 
 TCPAddress = namedtuple("TCPAddress", "host port")
 

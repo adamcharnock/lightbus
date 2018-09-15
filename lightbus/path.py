@@ -7,7 +7,7 @@ from lightbus.exceptions import (
     InvalidParameters,
     OnlyAvailableOnRootNode,
 )
-from lightbus.utilities.async import block
+from lightbus.utilities.async_tools import block
 
 __all__ = ["BusPath"]
 

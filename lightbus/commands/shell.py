@@ -6,7 +6,7 @@ from inspect import isclass
 import lightbus
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.plugins import plugin_hook
-from lightbus.utilities.async import block
+from lightbus.utilities.async_tools import block
 
 logger = logging.getLogger(__name__)
 

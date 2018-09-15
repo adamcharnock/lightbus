@@ -6,7 +6,7 @@ from lightbus.path import BusPath
 from lightbus.message import RpcMessage, EventMessage
 from lightbus.plugins import manually_set_plugins
 from lightbus.plugins.metrics import MetricsPlugin
-from lightbus.utilities.async import cancel
+from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.unit
 

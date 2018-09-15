@@ -5,7 +5,7 @@ import lightbus.creation
 from lightbus.transports.transactional import lightbus_set_database, DbApiConnection
 from django.db import connections
 
-from lightbus.utilities.async import block
+from lightbus.utilities.async_tools import block
 
 
 class TransactionTransportMiddleware(object):

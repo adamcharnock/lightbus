@@ -13,7 +13,7 @@ from lightbus.serializers import (
     BlobMessageDeserializer,
 )
 from lightbus.transports.redis import RedisEventTransport, StreamUse
-from lightbus.utilities.async import cancel
+from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.unit
 

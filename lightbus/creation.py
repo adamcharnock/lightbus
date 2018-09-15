@@ -11,7 +11,7 @@ from lightbus.client import logger
 from lightbus.config import Config
 from lightbus.exceptions import FailedToImportBusModule
 from lightbus.transports.base import TransportRegistry
-from lightbus.utilities.async import block
+from lightbus.utilities.async_tools import block
 from lightbus.utilities.importing import import_module_from_string
 
 if False:

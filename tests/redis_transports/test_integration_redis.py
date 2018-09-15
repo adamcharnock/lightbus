@@ -14,7 +14,7 @@ from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
 from lightbus.plugins import manually_set_plugins
 from lightbus.transports.redis import StreamUse
-from lightbus.utilities.async import cancel
+from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.integration
 

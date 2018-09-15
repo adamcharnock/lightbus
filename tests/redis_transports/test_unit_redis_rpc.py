@@ -7,7 +7,7 @@ import pytest
 from lightbus import RedisRpcTransport
 from lightbus.message import RpcMessage
 from lightbus.serializers import BlobMessageSerializer, BlobMessageDeserializer
-from lightbus.utilities.async import cancel
+from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.unit
 
