@@ -20,6 +20,10 @@ matrix:
       dist: xenial
       sudo: true
 
+cache:
+  directories:
+    - .tox
+
 services:
   - docker
 
