@@ -25,6 +25,7 @@ matrix:
       env: TOXENV=docs
       before_install: pip install tox
       script: tox
+      after_script: 
       on:
         branch: master
   allow_failures:
