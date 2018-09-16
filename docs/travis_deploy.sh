@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
 eval "$(ssh-agent -s)"
 openssl aes-256-cbc -K $encrypted_739cc9c14904_key -iv $encrypted_739cc9c14904_iv -in docs/deploy_key.enc -out docs/deploy_key -d
