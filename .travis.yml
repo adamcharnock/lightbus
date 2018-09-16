@@ -2,8 +2,8 @@ sudo: required
 
 env:
   global:
-    - REDIS_URL: redis://localhost:6379
-    - REDIS_URL_B: redis://localhost:6380
+    - REDIS_URL: redis://localhost:60791
+    - REDIS_URL_B: redis://localhost:60792
     - PG_URL: postgres://postgres@localhost:54320/postgres
 
 language: python
@@ -28,6 +28,7 @@ before_install:
   # not just network access
   - docker-compose -f tests/docker-compose.yaml up -d db redis_a redis_b
   - pip install tox tox-travis coverage coveralls
+  - mkdir -p .coverage
 
 script:
   - tox -- --cov=lightbus

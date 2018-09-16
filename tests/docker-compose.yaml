@@ -9,19 +9,15 @@ services:
       - "54320:5432"
     command: ["postgres", "-c", "log_statement=all"]
 
-  travis_db:
-    image: postgres
-    restart: always
-
   redis_a:
     image: redis:5.0-rc5
     ports:
-      - "6379:6379"
+      - "60791:6379"
 
   redis_b:
     image: redis:5.0-rc5
     ports:
-      - "6380:6379"
+      - "60792:6379"
 
   local_tests:
     build:
