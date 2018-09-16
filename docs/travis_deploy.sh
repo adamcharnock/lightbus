@@ -10,5 +10,4 @@ ssh-add docs/deploy_key
 git remote remove origin
 git remote add origin git@github.com:adamcharnock/lightbus.git
 
-git pull origin gh-pages
-mkdocs gh-deploy
+mkdocs gh-deploy --force
