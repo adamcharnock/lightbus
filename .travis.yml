@@ -35,6 +35,7 @@ before_install:
   - mkdir -p .coverage
 
 script:
+  - env
   - tox -- --cov=lightbus
 
 after_script:
