@@ -5,7 +5,7 @@ import inspect
 import logging
 import signal
 import time
-from asyncio.futures import CancelledError
+from asyncio import CancelledError
 from collections import defaultdict
 from typing import List, Tuple
 

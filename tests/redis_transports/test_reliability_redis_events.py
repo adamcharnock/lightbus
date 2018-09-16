@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from asyncio.futures import CancelledError
+from asyncio import CancelledError
 
 import pytest
 
