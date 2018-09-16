@@ -1,5 +1,6 @@
 INTEREST
 /docs/_build
+/docs/deploy_key
 /build
 /dist
 /.cache
