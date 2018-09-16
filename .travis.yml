@@ -1,8 +1,9 @@
 sudo: required
 
 env:
-  - REDIS_URL: redis://redis_a:6379
-  - REDIS_URL_B: redis://redis_b:6380
+  global:
+    - REDIS_URL: redis://redis_a:6379
+    - REDIS_URL_B: redis://redis_b:6380
 
 language: python
 python:
