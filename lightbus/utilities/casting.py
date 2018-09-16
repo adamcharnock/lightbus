@@ -59,19 +59,19 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     elif type_is_dataclass(hint) and isinstance_safe(value, Mapping):
         # We can treat dataclasses the same as named tuples
         return mapping_to_named_tuple(mapping=value, named_tuple=hint)
-    elif is_class and issubclass(hint_type, datetime.datetime) and isinstance_safe(value, str):
+    elif is_class and issubclass_safe(hint_type, datetime.datetime) and isinstance_safe(value, str):
         # Datetime as a string
         return dateutil.parser.parse(value)
-    elif is_class and issubclass(hint_type, datetime.date) and isinstance_safe(value, str):
+    elif is_class and issubclass_safe(hint_type, datetime.date) and isinstance_safe(value, str):
         # Date as a string
         return dateutil.parser.parse(value).date()
-    elif is_class and issubclass(hint_type, list):
+    elif is_class and issubclass_safe(hint_type, list):
         # Lists
         if hint_args:
             return [cast_to_hint(i, hint_args[0]) for i in value]
         else:
             return list(value)
-    elif is_class and issubclass(hint_type, tuple):
+    elif is_class and issubclass_safe(hint_type, tuple):
         # Tuples
         if hint_args:
             return tuple(cast_to_hint(i, hint_args[0]) for i in value)
@@ -80,7 +80,7 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     elif (
         inspect.isclass(hint)
         and hasattr(hint, "__annotations__")
-        and not issubclass(hint_type, Enum)
+        and not issubclass_safe(hint_type, Enum)
     ):
         logger.warning(
             f"Cannot cast to arbitrary class {hint}, using un-casted value. "

@@ -11,7 +11,7 @@ from uuid import UUID
 
 import lightbus
 from lightbus.utilities.deforming import deform_to_bus
-from lightbus.utilities.type_checks import parse_hint
+from lightbus.utilities.type_checks import parse_hint, issubclass_safe
 
 NoneType = type(None)
 empty = inspect.Signature.empty
@@ -153,15 +153,15 @@ def python_type_to_json_schemas(type_):
         return [{}]
     elif type_ in (Any, ...):
         return [{}]
-    elif issubclass(type_, (str, bytes, complex, UUID)):
+    elif issubclass_safe(type_, (str, bytes, complex, UUID)):
         return [{"type": "string"}]
-    elif issubclass(type_, Decimal):
+    elif issubclass_safe(type_, Decimal):
         return [{"type": "string", "pattern": "^-?\d+(\.\d+)?$"}]
-    elif issubclass(type_, (bool,)):
+    elif issubclass_safe(type_, (bool,)):
         return [{"type": "boolean"}]
-    elif issubclass(type_, (int, float)):
+    elif issubclass_safe(type_, (int, float)):
         return [{"type": "number"}]
-    elif issubclass(type_, (Mapping,)) and hint_args and hint_args[0] == str:
+    elif issubclass_safe(type_, (Mapping,)) and hint_args and hint_args[0] == str:
         # Mapping with strings as keys
         return [
             {
@@ -171,12 +171,12 @@ def python_type_to_json_schemas(type_):
                 },
             }
         ]
-    elif issubclass(type_, (dict, Mapping)):
+    elif issubclass_safe(type_, (dict, Mapping)):
         return [{"type": "object"}]
-    elif issubclass(type_, tuple) and hasattr(type_, "_fields"):
+    elif issubclass_safe(type_, tuple) and hasattr(type_, "_fields"):
         # Named tuple
         return [make_custom_object_schema(type_, property_names=type_._fields)]
-    elif issubclass(type_, Enum) and type_.__members__:
+    elif issubclass_safe(type_, Enum) and type_.__members__:
         # Enum
         enum_first_value = list(type_.__members__.values())[0].value
         schema = {}
@@ -186,7 +186,7 @@ def python_type_to_json_schemas(type_):
         except KeyError:
             logger.warning(f"Could not determine type for values in enum: {type_}")
         return [schema]
-    elif issubclass(type_, (Tuple,)) and hint_args:
+    elif issubclass_safe(type_, (Tuple,)) and hint_args:
         return [
             {
                 "type": "array",
@@ -198,18 +198,18 @@ def python_type_to_json_schemas(type_):
                 ],
             }
         ]
-    elif issubclass(type_, (list, tuple)):
+    elif issubclass_safe(type_, (list, tuple)):
         return [{"type": "array"}]
-    elif issubclass(type_, NoneType):
+    elif issubclass_safe(type_, NoneType):
         return [{"type": "null"}]
-    elif issubclass(type_, (datetime.datetime)):
+    elif issubclass_safe(type_, (datetime.datetime)):
         return [
             {
                 "type": "string",
                 "pattern": "^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|[Zz])?$",
             }
         ]
-    elif issubclass(type_, (datetime.date)):
+    elif issubclass_safe(type_, (datetime.date)):
         return [{"type": "string", "pattern": "^\d{4}-\d\d-\d\d$"}]
     elif getattr(type_, "__annotations__", None):
         # Custom class
@@ -242,7 +242,7 @@ def make_custom_object_schema(type_, property_names=None):
             # is a method
             continue
 
-        if issubclass(type_, tuple):
+        if issubclass_safe(type_, tuple):
             # namedtuple
             if hasattr(type_, "_field_defaults"):
                 default = type_._field_defaults.get(property_name, empty)

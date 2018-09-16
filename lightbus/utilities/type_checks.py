@@ -35,6 +35,11 @@ def is_optional(hint) -> Optional[Type]:
 
 
 def isinstance_safe(value, type_):
+    """Determine if value is a subclass of type_
+
+    Will work even if it is not a valid question to ask of
+    the given value.
+    """
     try:
         return isinstance(value, type_)
     except TypeError:
@@ -43,9 +48,13 @@ def isinstance_safe(value, type_):
 
 
 def issubclass_safe(value, type_):
+    """Determine if value is a subclass of type_
+
+    Will work even value is not a class
+    """
     try:
         return issubclass(value, type_)
-    except TypeError:
+    except (TypeError, AttributeError):
         # Cannot perform issubclass on some types
         return False
 

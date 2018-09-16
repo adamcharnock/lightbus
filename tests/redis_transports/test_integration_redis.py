@@ -327,7 +327,9 @@ async def test_validation_rpc(loop, bus: lightbus.path.BusPath, dummy_api, mocke
 @pytest.mark.asyncio
 async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, mocker):
     """Check validation happens when firing an event"""
-    config = Config.load_dict({"apis": {"default": {"validate": True, "strict_validation": True}}})
+    config = Config.load_dict(
+        {"apis": {"default": {"validate": True, "strict_validation": True, "on_error": "ignore"}}}
+    )
     bus.client.config = config
     mocker.patch("jsonschema.validate", autospec=True)
 
@@ -342,6 +344,7 @@ async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, moc
 
     await asyncio.sleep(0.1)
     await bus.my.dummy.my_event.fire_async(field="Hello")
+    await asyncio.sleep(0.001)
 
     await cancel(listener_task)
 
