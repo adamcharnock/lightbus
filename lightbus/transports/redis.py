@@ -244,7 +244,9 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         while True:
             try:
                 return await self._consume_rpcs(apis)
-            except ConnectionClosedError:
+            except (ConnectionClosedError, ConnectionResetError):
+                # ConnectionClosedError is from aioredis. However, sometimes the connection
+                # can die outside of aioredis, in which case we get a builtin ConnectionResetError.
                 logger.warning(
                     f"Redis connection lost while consuming RPCs, reconnecting "
                     f"in {self.consumption_restart_delay} seconds..."
@@ -561,7 +563,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         await queue.put(messages)
                         # Wait for the queue to empty before getting trying to get another message
                         await queue.join()
-                except ConnectionClosedError:
+                except (ConnectionClosedError, ConnectionResetError):
+                    # ConnectionClosedError is from aioredis. However, sometimes the connection
+                    # can die outside of aioredis, in which case we get a builtin ConnectionResetError.
                     logger.warning(
                         f"Redis connection lost while consuming events, reconnecting "
                         f"in {self.consumption_restart_delay} seconds..."
