@@ -183,32 +183,30 @@ class ApiB(lightbus.Api):
 
 
 @pytest.mark.asyncio
-async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpcs):
+async def test_multiple_rpc_transports(loop, redis_server_url, redis_server_b_url, consume_rpcs):
     """Configure a bus with two redis transports and ensure they write to the correct redis servers"""
     registry.add(ApiA())
     registry.add(ApiB())
 
     manually_set_plugins(plugins={})
 
-    redis_server_a = server
+    redis_url_a = redis_server_url
+    redis_url_b = redis_server_b_url
 
-    port_a = redis_server_a.tcp_address.port
-    port_b = redis_server_b.tcp_address.port
-
-    logging.warning(f"Server A port: {port_a}")
-    logging.warning(f"Server B port: {port_b}")
+    logging.warning(f"Server A url: {redis_url_a}")
+    logging.warning(f"Server B url: {redis_url_b}")
 
     config = Config.load_dict(
         {
-            "bus": {"schema": {"transport": {"redis": {"url": f"redis://localhost:{port_a}"}}}},
+            "bus": {"schema": {"transport": {"redis": {"url": redis_url_a}}}},
             "apis": {
                 "default": {
-                    "rpc_transport": {"redis": {"url": f"redis://localhost:{port_a}"}},
-                    "result_transport": {"redis": {"url": f"redis://localhost:{port_a}"}},
+                    "rpc_transport": {"redis": {"url": redis_url_a}},
+                    "result_transport": {"redis": {"url": redis_url_a}},
                 },
                 "api_b": {
-                    "rpc_transport": {"redis": {"url": f"redis://localhost:{port_b}"}},
-                    "result_transport": {"redis": {"url": f"redis://localhost:{port_b}"}},
+                    "rpc_transport": {"redis": {"url": redis_url_b}},
+                    "result_transport": {"redis": {"url": redis_url_b}},
                 },
             },
         }
@@ -227,39 +225,31 @@ async def test_multiple_rpc_transports(loop, server, redis_server_b, consume_rpc
 
 
 @pytest.mark.asyncio
-async def test_multiple_event_transports(loop, server, redis_server_b):
+async def test_multiple_event_transports(loop, redis_server_url, redis_server_b_url):
     """Configure a bus with two redis transports and ensure they write to the correct redis servers"""
     registry.add(ApiA())
     registry.add(ApiB())
 
     manually_set_plugins(plugins={})
 
-    redis_server_a = server
+    redis_url_a = redis_server_url
+    redis_url_b = redis_server_b_url
 
-    port_a = redis_server_a.tcp_address.port
-    port_b = redis_server_b.tcp_address.port
-
-    logging.warning(f"Server A port: {port_a}")
-    logging.warning(f"Server B port: {port_b}")
+    logging.warning(f"Server A URL: {redis_url_a}")
+    logging.warning(f"Server B URL: {redis_url_b}")
 
     config = Config.load_dict(
         {
-            "bus": {"schema": {"transport": {"redis": {"url": f"redis://localhost:{port_a}"}}}},
+            "bus": {"schema": {"transport": {"redis": {"url": redis_url_a}}}},
             "apis": {
                 "default": {
                     "event_transport": {
-                        "redis": {
-                            "url": f"redis://localhost:{port_a}",
-                            "stream_use": StreamUse.PER_EVENT.value,
-                        }
+                        "redis": {"url": redis_url_a, "stream_use": StreamUse.PER_EVENT.value}
                     }
                 },
                 "api_b": {
                     "event_transport": {
-                        "redis": {
-                            "url": f"redis://localhost:{port_b}",
-                            "stream_use": StreamUse.PER_EVENT.value,
-                        }
+                        "redis": {"url": redis_url_b, "stream_use": StreamUse.PER_EVENT.value}
                     }
                 },
             },
@@ -363,26 +353,26 @@ async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, moc
 
 
 @pytest.mark.asyncio
-async def test_listen_to_multiple_events_across_multiple_transports(loop, server, redis_server_b):
+async def test_listen_to_multiple_events_across_multiple_transports(
+    loop, redis_server_url, redis_server_b_url
+):
     registry.add(ApiA())
     registry.add(ApiB())
 
     manually_set_plugins(plugins={})
 
-    redis_server_a = server
+    redis_url_a = redis_server_url
+    redis_url_b = redis_server_b_url
 
-    port_a = redis_server_a.tcp_address.port
-    port_b = redis_server_b.tcp_address.port
-
-    logging.warning(f"Server A port: {port_a}")
-    logging.warning(f"Server B port: {port_b}")
+    logging.warning(f"Server A URL: {redis_url_a}")
+    logging.warning(f"Server B URL: {redis_url_b}")
 
     config = Config.load_dict(
         {
-            "bus": {"schema": {"transport": {"redis": {"url": f"redis://localhost:{port_a}"}}}},
+            "bus": {"schema": {"transport": {"redis": {"url": redis_url_a}}}},
             "apis": {
-                "default": {"event_transport": {"redis": {"url": f"redis://localhost:{port_a}"}}},
-                "api_b": {"event_transport": {"redis": {"url": f"redis://localhost:{port_b}"}}},
+                "default": {"event_transport": {"redis": {"url": redis_url_a}}},
+                "api_b": {"event_transport": {"redis": {"url": redis_url_b}}},
             },
         }
     )

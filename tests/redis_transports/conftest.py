@@ -13,20 +13,17 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-async def redis_rpc_transport(new_redis_pool, server, loop):
-    """Get a redis transport backed by a running redis server."""
+async def redis_rpc_transport(new_redis_pool, loop):
     return lightbus.RedisRpcTransport(redis_pool=await new_redis_pool(maxsize=10000))
 
 
 @pytest.fixture
-async def redis_result_transport(new_redis_pool, server, loop):
-    """Get a redis transport backed by a running redis server."""
+async def redis_result_transport(new_redis_pool, loop):
     return lightbus.RedisResultTransport(redis_pool=await new_redis_pool(maxsize=10000))
 
 
 @pytest.yield_fixture
-async def redis_event_transport(new_redis_pool, server, loop):
-    """Get a redis transport backed by a running redis server."""
+async def redis_event_transport(new_redis_pool, loop):
     transport = lightbus.RedisEventTransport(
         redis_pool=await new_redis_pool(maxsize=10000),
         service_name="test_service",
@@ -39,9 +36,7 @@ async def redis_event_transport(new_redis_pool, server, loop):
 
 
 @pytest.fixture
-async def redis_schema_transport(new_redis_pool, server, loop):
-    """Get a redis transport backed by a running redis server."""
-    logger.debug("Loop: {}".format(id(loop)))
+async def redis_schema_transport(new_redis_pool, loop):
     return lightbus.RedisSchemaTransport(redis_pool=await new_redis_pool(maxsize=10000))
 
 
@@ -49,7 +44,6 @@ async def redis_schema_transport(new_redis_pool, server, loop):
 def bus(
     loop, redis_rpc_transport, redis_result_transport, redis_event_transport, redis_schema_transport
 ):
-    """Get a redis transport backed by a running redis server."""
     bus = lightbus.creation.create(
         rpc_transport=redis_rpc_transport,
         result_transport=redis_result_transport,
@@ -73,13 +67,13 @@ def fire_dummy_events_fixture(bus):
 
 
 @pytest.fixture
-def new_bus(loop, server):
+def new_bus(loop, redis_server_config):
 
     async def wrapped():
-        rpc_pool = await create_redis_pool(server.tcp_address, loop=loop, maxsize=1000)
-        result_pool = await create_redis_pool(server.tcp_address, loop=loop, maxsize=1000)
-        event_pool = await create_redis_pool(server.tcp_address, loop=loop, maxsize=1000)
-        schema_pool = await create_redis_pool(server.tcp_address, loop=loop, maxsize=1000)
+        rpc_pool = await create_redis_pool(**redis_server_config, loop=loop, maxsize=1000)
+        result_pool = await create_redis_pool(**redis_server_config, loop=loop, maxsize=1000)
+        event_pool = await create_redis_pool(**redis_server_config, loop=loop, maxsize=1000)
+        schema_pool = await create_redis_pool(**redis_server_config, loop=loop, maxsize=1000)
 
         return await lightbus.creation.create_async(
             rpc_transport=lightbus.RedisRpcTransport(redis_pool=rpc_pool),

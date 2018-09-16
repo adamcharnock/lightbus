@@ -8,21 +8,17 @@ will is still required to organise the setup code below.
 import asyncio
 from pathlib import Path
 from random import randint
+from urllib.parse import urlparse
 
 import pytest
-import socket
 import subprocess
 import sys
 import contextlib
 import os
-import ssl
-import time
 import logging
 import tempfile
-import atexit
 
 from collections import namedtuple
-from async_timeout import timeout as async_timeout
 
 import aioredis
 import aioredis.sentinel
@@ -54,18 +50,6 @@ def loop(event_loop):
     return event_loop
 
 
-@pytest.fixture(scope="session")
-def unused_port():
-    """Gets random free port."""
-
-    def fun():
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("127.0.0.1", 0))
-            return s.getsockname()[1]
-
-    return fun
-
-
 @pytest.fixture
 def create_redis_connection(_closable):
     """Wrapper around aioredis.create_connection."""
@@ -80,11 +64,40 @@ def create_redis_connection(_closable):
 
 
 @pytest.fixture
-def create_redis_client(_closable, loop, request):
+def redis_server_url():
+    return os.environ.get("REDIS_URL", "") or "redis://localhost:6379/10"
+
+
+@pytest.fixture
+def redis_server_b_url():
+    return os.environ.get("REDIS_URL_B", "") or "redis://localhost:6379/11"
+
+
+@pytest.fixture
+def redis_server_config(redis_server_url):
+    parsed = urlparse(redis_server_url)
+    assert parsed.scheme == "redis"
+    return {
+        "address": (parsed.hostname, parsed.port),
+        "password": parsed.password,
+        "db": int(parsed.path.strip("/") or "0"),
+    }
+
+
+@pytest.fixture
+def redis_server_b_config(redis_server_b_url):
+    return redis_server_config(redis_server_b_url)
+
+
+@pytest.fixture
+def create_redis_client(_closable, redis_server_config, loop, request):
     """Wrapper around aioredis.create_redis."""
 
     async def f(*args, **kw):
-        redis = await aioredis.create_redis(*args, **kw)
+        kwargs = {}
+        kwargs.update(redis_server_config)
+        kwargs.update(kw)
+        redis = await aioredis.create_redis(*args, **kwargs)
         _closable(redis)
         return redis
 
@@ -92,11 +105,14 @@ def create_redis_client(_closable, loop, request):
 
 
 @pytest.fixture
-def create_redis_pool(_closable, loop):
+def create_redis_pool(_closable, redis_server_config, loop):
     """Wrapper around aioredis.create_redis_pool."""
 
     async def f(*args, **kw):
-        redis = await aioredis.create_redis_pool(*args, **kw)
+        kwargs = {}
+        kwargs.update(redis_server_config)
+        kwargs.update(kw)
+        redis = await aioredis.create_redis_pool(*args, **kwargs)
         _closable(redis)
         return redis
 
@@ -104,25 +120,25 @@ def create_redis_pool(_closable, loop):
 
 
 @pytest.fixture
-async def redis_pool(create_redis_pool, server, loop):
+async def redis_pool(create_redis_pool, loop):
     """Returns RedisPool instance."""
-    return await create_redis_pool(server.tcp_address)
+    return await create_redis_pool()
 
 
 @pytest.fixture
-async def redis_client(create_redis_client, server, loop):
+async def redis_client(create_redis_client, loop):
     """Returns Redis client instance."""
-    redis = await create_redis_client(server.tcp_address)
+    redis = await create_redis_client()
     await redis.flushall()
     return redis
 
 
 @pytest.fixture
-def new_redis_pool(_closable, create_redis_pool, server, loop):
+def new_redis_pool(_closable, create_redis_pool, loop):
     """Useful when you need multiple redis connections."""
 
     async def make_new(**kwargs):
-        redis = await create_redis_pool(server.tcp_address, loop=loop, **kwargs)
+        redis = await create_redis_pool(loop=loop, **kwargs)
         await redis.flushall()
         return redis
 
@@ -143,18 +159,6 @@ def _closable(loop):
             waiters.append(conn.wait_closed())
         if waiters:
             loop.run_until_complete(asyncio.gather(*waiters, loop=loop))
-
-
-@pytest.fixture(scope="session")
-def server(start_redis_server):
-    """Starts redis-server instance."""
-    return start_redis_server("A")
-
-
-@pytest.fixture(scope="session")
-def redis_server_b(start_redis_server):
-    """Starts redis-server instance."""
-    return start_redis_server("B")
 
 
 # Lightbus fixtures
@@ -278,146 +282,7 @@ def config_writer(path):
         yield write
 
 
-REDIS_SERVERS = []
-REDIS_VERSIONS = {}
 TEST_TIMEOUT = 30
-
-
-def format_version(srv):
-    return "redis_v{}".format(".".join(map(str, REDIS_VERSIONS[srv])))
-
-
-@pytest.fixture(scope="session", params=REDIS_SERVERS, ids=format_version)
-def redis_server_bin(request):
-    """Common for start_redis_server and start_sentinel server bin path parameter.
-    """
-    return request.param
-
-
-@pytest.fixture(scope="session")
-def start_redis_server(_proc, request, unused_port, redis_server_bin):
-    """Starts Redis server instance.
-
-    Caches instances by name.
-    ``name`` param -- instance alias
-    ``config_lines`` -- optional list of config directives to put in config
-        (if no config_lines passed -- no config will be generated,
-         for backward compatibility).
-    """
-
-    version = _read_server_version(redis_server_bin)
-    verbose = request.config.getoption("-v") > 3
-
-    servers = {}
-
-    def timeout(t):
-        end = time.time() + t
-        while time.time() <= end:
-            yield True
-        raise RuntimeError("Redis startup timeout expired")
-
-    def maker(name, config_lines=None, *, slaveof=None):
-        assert slaveof is None or isinstance(slaveof, RedisServer), slaveof
-        if name in servers:
-            return servers[name]
-
-        port = unused_port()
-        tcp_address = TCPAddress("localhost", port)
-        if sys.platform == "win32":
-            unixsocket = None
-        else:
-            unixsocket = "/tmp/aioredis.{}.sock".format(port)
-        dumpfile = "dump-{}.rdb".format(port)
-        data_dir = tempfile.gettempdir()
-        dumpfile_path = os.path.join(data_dir, dumpfile)
-        stdout_file = os.path.join(data_dir, "aioredis.{}.stdout".format(port))
-        tmp_files = [dumpfile_path, stdout_file]
-        if config_lines:
-            config = os.path.join(data_dir, "aioredis.{}.conf".format(port))
-            with config_writer(config) as write:
-                write("daemonize no")
-                write('save ""')
-                write("dir ", data_dir)
-                write("dbfilename", dumpfile)
-                write("port", port)
-                if unixsocket:
-                    write("unixsocket", unixsocket)
-                    tmp_files.append(unixsocket)
-                write("# extra config")
-                for line in config_lines:
-                    write(line)
-                if slaveof is not None:
-                    write("slaveof {0.tcp_address.host} {0.tcp_address.port}".format(slaveof))
-            args = [config]
-            tmp_files.append(config)
-        else:
-            args = [
-                "--daemonize",
-                "no",
-                "--save",
-                '""',
-                "--dir",
-                data_dir,
-                "--dbfilename",
-                dumpfile,
-                "--port",
-                str(port),
-            ]
-            if unixsocket:
-                args += ["--unixsocket", unixsocket]
-            if slaveof is not None:
-                args += ["--slaveof", str(slaveof.tcp_address.host), str(slaveof.tcp_address.port)]
-
-        f = open(stdout_file, "w")
-        atexit.register(f.close)
-        proc = _proc(
-            redis_server_bin, *args, stdout=f, stderr=subprocess.STDOUT, _clear_tmp_files=tmp_files
-        )
-        with open(stdout_file, "rt") as f:
-            for _ in timeout(10):
-                assert proc.poll() is None, ("Process terminated", proc.returncode)
-                log = f.readline()
-                if log and verbose:
-                    print(name, ":", log, end="")
-                if "The server is now ready to accept connections " in log:
-                    break
-            if slaveof is not None:
-                for _ in timeout(10):
-                    log = f.readline()
-                    if log and verbose:
-                        print(name, ":", log, end="")
-                    if "sync: Finished with success" in log:
-                        break
-        info = RedisServer(name, tcp_address, unixsocket, version)
-        servers.setdefault(name, info)
-        return info
-
-    return maker
-
-
-@pytest.yield_fixture(scope="session")
-def _proc():
-    processes = []
-    tmp_files = set()
-
-    def run(*commandline, _clear_tmp_files=(), **kwargs):
-        proc = subprocess.Popen(commandline, **kwargs)
-        processes.append(proc)
-        tmp_files.update(_clear_tmp_files)
-        return proc
-
-    try:
-        yield run
-    finally:
-        while processes:
-            proc = processes.pop(0)
-            proc.terminate()
-            proc.wait()
-        for path in tmp_files:
-            try:
-                os.remove(path)
-            except OSError:
-                pass
 
 
 def pytest_runtest_setup(item):
@@ -429,15 +294,6 @@ def pytest_runtest_setup(item):
 
     # Clear out any stash command line args
     COMMAND_PARSED_ARGS.clear()
-
-
-def pytest_configure(config):
-    global TEST_TIMEOUT
-    TEST_TIMEOUT = config.getoption("--test-timeout")
-    bins = config.getoption("--redis-server")[:]
-    REDIS_SERVERS[:] = bins or ["/usr/bin/redis-server"]
-    REDIS_VERSIONS.update({srv: _read_server_version(srv) for srv in REDIS_SERVERS})
-    assert REDIS_VERSIONS, ("Expected to detect redis versions", REDIS_SERVERS)
 
 
 @pytest.fixture

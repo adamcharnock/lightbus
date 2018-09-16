@@ -17,24 +17,24 @@ apis:
   default:
     event_transport:
       redis:
-        url: redis://{host}:{port}/0
+        url: {redis_url}
     rpc_transport:
       redis:
-        url: redis://{host}:{port}/0
+        url: {redis_url}
     result_transport:
       redis:
-        url: redis://{host}:{port}/0
+        url: {redis_url}
 bus:
   schema:
     transport:
       redis:
-        url: redis://{host}:{port}/0
+        url: {redis_url}
 """
 
 
 @pytest.yield_fixture()
-async def redis_config_file(loop, server, redis_client):
-    config = REDIS_BUS_CONFIG.format(host=server.tcp_address.host, port=server.tcp_address.port)
+async def redis_config_file(loop, redis_server_url, redis_client):
+    config = REDIS_BUS_CONFIG.format(redis_url=redis_server_url)
     with NamedTemporaryFile() as f:
         f.write(config.encode("utf8"))
         f.flush()
@@ -42,7 +42,7 @@ async def redis_config_file(loop, server, redis_client):
         await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
 
 
-def test_commands_run_cli(mocker, server, redis_config_file, make_test_bus_module):
+def test_commands_run_cli(mocker, redis_config_file, make_test_bus_module):
     test_bus_module = make_test_bus_module()
     m = mocker.patch.object(BusClient, "_actually_run_forever")
 
@@ -53,7 +53,7 @@ def test_commands_run_cli(mocker, server, redis_config_file, make_test_bus_modul
     assert m.called
 
 
-def test_commands_run_env(mocker, server, redis_config_file, set_env, make_test_bus_module):
+def test_commands_run_env(mocker, redis_config_file, set_env, make_test_bus_module):
     test_bus_module = make_test_bus_module()
     m = mocker.patch.object(BusClient, "_actually_run_forever")
 

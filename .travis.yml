@@ -1,14 +1,14 @@
 sudo: required
 
 env:
-- CMD="docker run -v `pwd`:/lightbus lightbus-test"
+  - REDIS_URL: redis://redis_a:6379
+  - REDIS_URL_B: redis://redis_b:6380
 
-# The python language specified here is only used for combining & submitting
-# the coverage reports. The testing environment is provided by the docker image
-# built below.
 language: python
 python:
 - "3.6"
+- "3.7"
+- "3.8"
 
 services:
 - docker
@@ -16,13 +16,11 @@ services:
 before_install:
 # Note that the tests need access to the redis-server binary,
 # not just network access
-- docker build -t lightbus-test -f tests/Dockerfile .
-- pip install coverage coveralls
-- mkdir .coverage
-- docker-compose -f tests/docker-compose.yaml up -d travis_db
+- docker up -d db redis_a redis_b
+- pip install tox tox-travis coverage coveralls
 
 script:
-- docker-compose -f tests/docker-compose.yaml run travis_tests
+- tox -- --cov=lightbus
 
 after_script:
 - coverage combine .coverage/coverage
