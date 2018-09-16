@@ -22,8 +22,9 @@ matrix:
     - python: 3.6
       dist: trusty
       sudo: false
-      env:
-        TOXENV=docs
+      env: TOXENV=docs
+      before_install: pip install tox
+      script: tox
       on:
         branch: master
   allow_failures:
