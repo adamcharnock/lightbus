@@ -9,10 +9,10 @@ set -x
 eval "$(ssh-agent -s)"
 chmod 600 deploy_key
 ssh-add deploy_key
+rm deploy_key
 
 git remote remove origin
 git remote add origin git@github.com:adamcharnock/lightbus.git
 
 mkdocs gh-deploy --force
-rm deploy_key
 
