@@ -19,6 +19,11 @@ matrix:
     - python: 3.8-dev
       dist: xenial
       sudo: true
+    - python: 3.6
+      dist: trusty
+      sudo: false
+      env:
+        TOXENV=docs
   allow_failures:
     - python: 3.8-dev
 
