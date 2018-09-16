@@ -2,14 +2,22 @@ sudo: required
 
 env:
   global:
-    - REDIS_URL: redis://redis_a:6379
-    - REDIS_URL_B: redis://redis_b:6380
+    - REDIS_URL: redis://localhost:6379
+    - REDIS_URL_B: redis://localhost:6380
 
 language: python
-python:
-- "3.6"
-- "3.7"
-- "3.8"
+
+matrix:
+    include:
+        - python: 3.6
+          dist: trusty
+          sudo: false
+        - python: 3.7
+          dist: xenial
+          sudo: true
+        - python: 3.8-dev
+          dist: xenial
+          sudo: true
 
 services:
 - docker
@@ -17,7 +25,7 @@ services:
 before_install:
 # Note that the tests need access to the redis-server binary,
 # not just network access
-- docker up -d db redis_a redis_b
+- docker-compose up -d db redis_a redis_b
 - pip install tox tox-travis coverage coveralls
 
 script:
