@@ -9,6 +9,8 @@ set -x
 eval "$(ssh-agent -s)"
 chmod 600 deploy_key
 ssh-add deploy_key
+
+rm docs/deploy_key.enc
 rm deploy_key
 
 git remote remove origin
