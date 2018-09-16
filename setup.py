@@ -21,6 +21,7 @@ setup(
         "python-dateutil",
     ],
     extras_require={
+        ':python_version=="3.6"': ["dataclasses==0.6"],
         "development": [
             "pre-commit",
             "black",
@@ -44,7 +45,7 @@ setup(
             "mkdocs==0.17.4",
             "mkdocs-material==2.9.0",
             "bpython",
-        ]
+        ],
     },
     include_package_data=True,
     entry_points={
