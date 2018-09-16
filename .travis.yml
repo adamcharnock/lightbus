@@ -8,29 +8,29 @@ env:
 language: python
 
 matrix:
-    include:
-        - python: 3.6
-          dist: trusty
-          sudo: false
-        - python: 3.7
-          dist: xenial
-          sudo: true
-        - python: 3.8-dev
-          dist: xenial
-          sudo: true
+  include:
+    - python: 3.6
+      dist: trusty
+      sudo: false
+    - python: 3.7
+      dist: xenial
+      sudo: true
+    - python: 3.8-dev
+      dist: xenial
+      sudo: true
 
 services:
-- docker
+  - docker
 
 before_install:
-# Note that the tests need access to the redis-server binary,
-# not just network access
-- docker-compose up -d db redis_a redis_b
-- pip install tox tox-travis coverage coveralls
+  # Note that the tests need access to the redis-server binary,
+  # not just network access
+  - docker-compose -f tests/docker-compose.yaml up -d db redis_a redis_b
+  - pip install tox tox-travis coverage coveralls
 
 script:
-- tox -- --cov=lightbus
+  - tox -- --cov=lightbus
 
 after_script:
-- coverage combine .coverage/coverage
-- coveralls
+  - coverage combine .coverage/coverage
+  - coveralls
