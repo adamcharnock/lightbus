@@ -9,6 +9,7 @@ env:
 language: python
 
 matrix:
+  fast_finish: true
   include:
     - python: 3.6
       dist: trusty
@@ -25,7 +26,7 @@ matrix:
       env: TOXENV=docs
       before_install: pip install tox
       script: tox
-      after_script: 
+      after_script:
       on:
         branch: master
   allow_failures:
