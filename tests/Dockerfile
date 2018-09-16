@@ -2,7 +2,7 @@ FROM alpine:3.6 as redis_etc
 # Build redis unstable (until streams gets into a release), plus get the cc-test-reporter
 
 ENV REDIS_VERSION 999.999.999
-ENV REDIS_DOWNLOAD_URL https://github.com/antirez/redis/archive/5.0-rc4.tar.gz
+ENV REDIS_DOWNLOAD_URL https://github.com/antirez/redis/archive/5.0-rc5.tar.gz
 
 # for redis-sentinel see: http://redis.io/topics/sentinel
 RUN set -ex; \
