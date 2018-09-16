@@ -42,6 +42,14 @@ def isinstance_safe(value, type_):
         return False
 
 
+def issubclass_safe(value, type_):
+    try:
+        return issubclass(value, type_)
+    except TypeError:
+        # Cannot perform issubclass on some types
+        return False
+
+
 def parse_hint(hint: Type) -> Tuple[Type, Optional[List]]:
     if sys.version_info >= (3, 7):
         if hasattr(hint, "__origin__"):

@@ -13,6 +13,7 @@ from lightbus.utilities.type_checks import (
     is_optional,
     isinstance_safe,
     parse_hint,
+    issubclass_safe,
 )
 
 is_callable = callable
@@ -122,7 +123,6 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
         return None
 
     for key, hint in hints.items():
-        is_class = inspect.isclass(hint)
         value = mapping.get(key)
 
         if key not in mapping:
@@ -137,7 +137,7 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
 
         if type_is_namedtuple(hint):
             parameters[key] = mapping_to_named_tuple(value, hint)
-        elif is_class and issubclass(hint_type, Mapping) and len(hint_args) == 2:
+        elif issubclass_safe(hint_type, Mapping) and len(hint_args) == 2:
             # A mapping which contains more named tuples
             parameters[key] = dict()
             for k, v in value.items():
