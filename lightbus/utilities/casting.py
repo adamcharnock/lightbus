@@ -12,6 +12,7 @@ from lightbus.utilities.type_checks import (
     type_is_dataclass,
     is_optional,
     isinstance_safe,
+    parse_hint,
 )
 
 is_callable = callable
@@ -37,11 +38,10 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     if optional_hint and value is not None:
         hint = optional_hint
 
-    subs_tree = hint._subs_tree() if hasattr(hint, "_subs_tree") else None
-    subs_tree = subs_tree if isinstance(subs_tree, tuple) else None
-    is_class = inspect.isclass(hint)
+    hint_type, hint_args = parse_hint(hint)
+    is_class = inspect.isclass(hint_type)
 
-    if type(hint) == type(Union):
+    if hint_type == Union:
         # We don't attempt to deal with unions for now
         return value
     elif hint == inspect.Parameter.empty:
@@ -58,25 +58,29 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     elif type_is_dataclass(hint) and isinstance_safe(value, Mapping):
         # We can treat dataclasses the same as named tuples
         return mapping_to_named_tuple(mapping=value, named_tuple=hint)
-    elif is_class and issubclass(hint, datetime.datetime) and isinstance_safe(value, str):
+    elif is_class and issubclass(hint_type, datetime.datetime) and isinstance_safe(value, str):
         # Datetime as a string
         return dateutil.parser.parse(value)
-    elif is_class and issubclass(hint, datetime.date) and isinstance_safe(value, str):
+    elif is_class and issubclass(hint_type, datetime.date) and isinstance_safe(value, str):
         # Date as a string
         return dateutil.parser.parse(value).date()
-    elif is_class and issubclass(hint, list):
+    elif is_class and issubclass(hint_type, list):
         # Lists
-        if subs_tree:
-            return [cast_to_hint(i, subs_tree[1]) for i in value]
+        if hint_args:
+            return [cast_to_hint(i, hint_args[0]) for i in value]
         else:
             return list(value)
-    elif is_class and issubclass(hint, tuple):
+    elif is_class and issubclass(hint_type, tuple):
         # Tuples
-        if subs_tree:
-            return tuple(cast_to_hint(i, subs_tree[1]) for i in value)
+        if hint_args:
+            return tuple(cast_to_hint(i, hint_args[0]) for i in value)
         else:
             return tuple(value)
-    elif inspect.isclass(hint) and hasattr(hint, "__annotations__") and not issubclass(hint, Enum):
+    elif (
+        inspect.isclass(hint)
+        and hasattr(hint, "__annotations__")
+        and not issubclass(hint_type, Enum)
+    ):
         logger.warning(
             f"Cannot cast to arbitrary class {hint}, using un-casted value. "
             f"If you want to receive custom objects you can 1) "
@@ -124,17 +128,20 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
         if key not in mapping:
             continue
 
+        hint_type, hint_args = parse_hint(hint)
+
         # Is this an Optional[] hint (which looks like Union[Thing, None])
-        subs_tree = hint._subs_tree() if hasattr(hint, "_subs_tree") else None
         if is_optional(hint) and value is not None:
-            hint = subs_tree[1]
+            # Yep, it's an Optional. So unwrap it.
+            hint = hint_args[0]
 
         if type_is_namedtuple(hint):
             parameters[key] = mapping_to_named_tuple(value, hint)
-        elif is_class and issubclass(hint, Mapping) and subs_tree and len(subs_tree) == 3:
+        elif is_class and issubclass(hint_type, Mapping) and len(hint_args) == 2:
+            # A mapping which contains more named tuples
             parameters[key] = dict()
             for k, v in value.items():
-                parameters[key][k] = mapping_to_named_tuple(v, hint._subs_tree()[2])
+                parameters[key][k] = mapping_to_named_tuple(v, hint_args[1])
         else:
             parameters[key] = cast_to_hint(value, hint)
 

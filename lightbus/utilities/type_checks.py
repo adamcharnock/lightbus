@@ -1,4 +1,5 @@
-from typing import Optional, Type, Union
+import sys
+from typing import Optional, Type, Union, Tuple, List, Sequence
 
 
 def type_is_namedtuple(t) -> bool:
@@ -26,9 +27,9 @@ def is_dataclass(v) -> bool:
 
 
 def is_optional(hint) -> Optional[Type]:
-    subs_tree = hint._subs_tree() if hasattr(hint, "_subs_tree") else []
-    if type(hint) == type(Union) and len(subs_tree) == 3 and subs_tree[2] == type(None):
-        return subs_tree[1]
+    hint_type, hint_args = parse_hint(hint)
+    if hint_type == Union and len(hint_args) == 2 and hint_args[1] == type(None):
+        return hint_args[0]
     else:
         return None
 
@@ -39,3 +40,28 @@ def isinstance_safe(value, type_):
     except TypeError:
         # Cannot perform isinstance on some types
         return False
+
+
+def parse_hint(hint: Type) -> Tuple[Type, Optional[List]]:
+    if sys.version_info >= (3, 7):
+        if hasattr(hint, "__origin__"):
+            # Python 3.7, and this is a type hint (eg typing.Union)
+            return hint.__origin__, hint.__args__
+        else:
+            # Python 3.7, but this is something other than a type hint
+            # (e.g. an int or datetime)
+            return hint, None
+    else:
+        if hasattr(hint, "_subs_tree"):
+            # Python 3.6, and this is a type hint (eg typing.Union)
+            subs_tree = hint._subs_tree()
+            if isinstance(subs_tree, Sequence):
+                # Type hint has sub types (e.g. Sequence[str])
+                return subs_tree[0], subs_tree[1:]
+            else:
+                # Type hint has no sub types (e.g. Sequence)
+                return hint, None
+        else:
+            # Python 3.6, but this is something other than a type hint
+            # (e.g. an int or datetime)
+            return hint, None

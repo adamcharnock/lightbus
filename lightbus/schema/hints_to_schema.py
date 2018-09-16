@@ -11,6 +11,7 @@ from uuid import UUID
 
 import lightbus
 from lightbus.utilities.deforming import deform_to_bus
+from lightbus.utilities.type_checks import parse_hint
 
 NoneType = type(None)
 empty = inspect.Signature.empty
@@ -144,44 +145,38 @@ def python_type_to_json_schemas(type_):
     which is why this function returns a list of schemas. An example of this is
     the `Union` type hint. These are later combined via `wrap_with_one_of()`
     """
-    is_class = inspect.isclass(type_)
+    type_, hint_args = parse_hint(type_)
 
-    if hasattr(type_, "_subs_tree") and isinstance(type_._subs_tree(), Sequence):
-        subs_tree = type_._subs_tree()
-    else:
-        subs_tree = None
-
-    if type(type_) == type(Union):
-        sub_types = subs_tree[1:]
-        return list(itertools.chain(*map(python_type_to_json_schemas, sub_types)))
+    if type_ == Union:
+        return list(itertools.chain(*map(python_type_to_json_schemas, hint_args)))
     if type_ == empty:
         return [{}]
     elif type_ in (Any, ...):
         return [{}]
-    elif is_class and issubclass(type_, (str, bytes, complex, UUID)):
+    elif issubclass(type_, (str, bytes, complex, UUID)):
         return [{"type": "string"}]
-    elif is_class and issubclass(type_, Decimal):
+    elif issubclass(type_, Decimal):
         return [{"type": "string", "pattern": "^-?\d+(\.\d+)?$"}]
-    elif is_class and issubclass(type_, (bool,)):
+    elif issubclass(type_, (bool,)):
         return [{"type": "boolean"}]
-    elif is_class and issubclass(type_, (int, float)):
+    elif issubclass(type_, (int, float)):
         return [{"type": "number"}]
-    elif is_class and issubclass(type_, (Mapping,)) and subs_tree and subs_tree[1] == str:
+    elif issubclass(type_, (Mapping,)) and hint_args and hint_args[0] == str:
         # Mapping with strings as keys
         return [
             {
                 "type": "object",
                 "patternProperties": {
-                    ".*": wrap_with_one_of(python_type_to_json_schemas(subs_tree[2]))
+                    ".*": wrap_with_one_of(python_type_to_json_schemas(hint_args[1]))
                 },
             }
         ]
-    elif is_class and issubclass(type_, (dict, Mapping)):
+    elif issubclass(type_, (dict, Mapping)):
         return [{"type": "object"}]
-    elif is_class and issubclass(type_, tuple) and hasattr(type_, "_fields"):
+    elif issubclass(type_, tuple) and hasattr(type_, "_fields"):
         # Named tuple
         return [make_custom_object_schema(type_, property_names=type_._fields)]
-    elif is_class and issubclass(type_, Enum) and type_.__members__:
+    elif issubclass(type_, Enum) and type_.__members__:
         # Enum
         enum_first_value = list(type_.__members__.values())[0].value
         schema = {}
@@ -191,33 +186,32 @@ def python_type_to_json_schemas(type_):
         except KeyError:
             logger.warning(f"Could not determine type for values in enum: {type_}")
         return [schema]
-    elif type(type_) == type(Tuple) and len(subs_tree) > 1:
-        sub_types = subs_tree[1:]
+    elif issubclass(type_, (Tuple,)) and hint_args:
         return [
             {
                 "type": "array",
-                "maxItems": len(sub_types),
-                "minItems": len(sub_types),
+                "maxItems": len(hint_args),
+                "minItems": len(hint_args),
                 "items": [
                     wrap_with_one_of(python_type_to_json_schemas(sub_type))
-                    for sub_type in sub_types
+                    for sub_type in hint_args
                 ],
             }
         ]
-    elif is_class and issubclass(type_, (list, tuple)):
+    elif issubclass(type_, (list, tuple)):
         return [{"type": "array"}]
-    elif is_class and issubclass(type_, NoneType):
+    elif issubclass(type_, NoneType):
         return [{"type": "null"}]
-    elif is_class and issubclass(type_, (datetime.datetime)):
+    elif issubclass(type_, (datetime.datetime)):
         return [
             {
                 "type": "string",
                 "pattern": "^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|[Zz])?$",
             }
         ]
-    elif is_class and issubclass(type_, (datetime.date)):
+    elif issubclass(type_, (datetime.date)):
         return [{"type": "string", "pattern": "^\d{4}-\d\d-\d\d$"}]
-    elif is_class and getattr(type_, "__annotations__", None):
+    elif getattr(type_, "__annotations__", None):
         # Custom class
         return [make_custom_object_schema(type_)]
     else:
