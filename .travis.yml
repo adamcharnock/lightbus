@@ -4,6 +4,7 @@ env:
   global:
     - REDIS_URL: redis://localhost:6379
     - REDIS_URL_B: redis://localhost:6380
+    - PG_URL: postgres://postgres@localhost:54320/postgres
 
 language: python
 
