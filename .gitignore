@@ -9,3 +9,5 @@ INTEREST
 /.venv
 /Pipfile
 /Pipfile.lock
+/.tox
+/.python-version
