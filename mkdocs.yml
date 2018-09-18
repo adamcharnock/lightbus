@@ -59,6 +59,7 @@ pages:
     - Schema*: explanation/schema.md
     - Contributing*: contributing.md
     - Lightbus vs Celery: explanation/lightbus-vs-celery.md
+    - Architecture tips: explanation/architecture-tips.md
   - Reference:
     - Overview: reference/index.md
     - APIs: reference/apis.md
