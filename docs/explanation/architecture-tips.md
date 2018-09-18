@@ -86,6 +86,14 @@ entities as follows:
 
 **You should only ever pass around the top level aggregates.**
 
+Additionally:
+
+* Identify aggregates with UUIDs
+* Do not enforce foreign keys between aggregates. Your application code
+  will need to deal with inconsistencies gracefully.
+* Probably still still a good idea to use sequential integer primary keys in your RDBMS
+* Do **not** share database-level sequential integer primary keys
+
 ## Writes are special
 
 Writes are inherently different to reads in a distributed system.
@@ -106,7 +114,7 @@ An **initial attempt at writing data** may look like this:
 
 TODO: Pros/cons.
 
-**Writing data (version 2)** looks like this:
+A more **CQRS-based approach to writing data** looks like this:
 
 1. Broadcast the change (Lightbus event)
 1. Services (including the broadcasting service) receive & apply the change
