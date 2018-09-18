@@ -10,7 +10,7 @@ here is to provide a digestible starting point.
 
 ## Use common data structures
 
-Create data structures which represent the data you wish to transmit.
+Create structures which represent the data you wish to transmit.
 Both [NamedTuples] and [dataclasses] work well for this purpose.
 
 For example:
@@ -54,7 +54,23 @@ bus.customer.create(
 This provides a standard way of communicating shared concepts across
 your services.
 
-## Decide on some boundaries
+!!! note
+
+    You can still send and receive events even if you do
+    not have the data strucuture available. To send you can simply
+    use a dictionary:
+
+    ```python3
+    bus.customer.create(
+        customer={"name": "Joe", "email": "joe@gmail.com", "age": 54)
+    )
+    ```
+
+    Likewise, an RPC or event listener without type hints will simply
+    receive a dictionary.
+
+
+## Decide on boundaries
 
 Your services will likely use an assortment of entities. It is common
 for these to map to database tables or [ORM] classes. For example,
