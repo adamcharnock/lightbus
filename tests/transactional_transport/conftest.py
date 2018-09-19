@@ -41,8 +41,8 @@ def cursor_factory():
                         f"Postgres issued a warning. The best way to check "
                         f"what is going on is to set log_statement=all in postgres "
                         f"and view the output (this is how the tests/docker-compose.yaml "
-                        f"file is setup already). However, it is POSSIBLE this query may have "
-                        f"been at fault: {message.strip()}"
+                        f"file is setup already). However, it is POSSIBLE this may have "
+                        f"been the error: {message.strip()}"
                     )
 
             return result

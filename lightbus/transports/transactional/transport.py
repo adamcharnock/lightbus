@@ -177,6 +177,8 @@ class TransactionalEventTransport(EventTransport):
 
         # Wrap the child transport in order to de-duplicate incoming messages
         async for messages in consumer:
+            # TODO: It is very feasible to consume several messages at once,
+            # TODO: rather than iterating through them individually.
             for message in messages:
                 await database.start_transaction()
 
@@ -186,30 +188,35 @@ class TransactionalEventTransport(EventTransport):
                         f"Skipping."
                     )
                     await self.child_transport.acknowledge(message)
-                    continue
+                    await database.rollback_transaction()
                 else:
                     await database.store_processed_event(message, listener_name)
 
-                yield [message]
-
-                try:
-                    await database.commit_transaction()
-                    await self.child_transport.acknowledge(message)
-                except DuplicateMessage:
-                    # TODO: Can this even happen with the appropriate transaction isolation level?
-                    logger.info(
-                        f"Duplicate event {message.canonical_name} discovered upon commit, "
-                        f"will rollback transaction. "
-                        f"Duplicates were probably being processed simultaneously, otherwise "
-                        f"this would have been caught earlier. Event ID: {message.id}, "
-                        f"listener name: {listener_name}"
-                    )
-                    await database.rollback_transaction()
+                    message._database = database
+                    yield [message]
 
     async def publish_pending(self, message_id=None):
         async for message, options in self.database.consume_pending_events(message_id):
             await self.child_transport.send_event(message, options)
             await self.database.remove_pending_event(message.id)
+
+    async def acknowledge(self, *event_messages: EventMessage):
+        for message in event_messages:
+            try:
+                await message._database.commit_transaction()
+                await self.child_transport.acknowledge(message)
+            except DuplicateMessage:
+                # TODO: Can this even happen with the appropriate transaction isolation level?
+                logger.info(
+                    f"Duplicate event {message.canonical_name} discovered upon commit, "
+                    f"will rollback transaction. "
+                    f"Duplicates were probably being processed simultaneously, otherwise "
+                    f"this would have been caught earlier. Event ID: {message.id}, "
+                    f"listener name: {listener_name}"
+                )
+                await message._database.rollback_transaction()
+            finally:
+                del message._database
 
 
 class ConnectionAlreadySet(LightbusException):

@@ -39,10 +39,13 @@ async def transaction_transport(aiopg_connection, aiopg_cursor, loop):
     return transport
 
 
-async def consumer_to_messages(consumer):
+async def consumer_to_messages(transport, consumer):
     messages = []
     async for messages_ in consumer:
         messages.extend(messages_)
+        # Normally the BusClient would do the ack, but we're using the transport
+        # without the BusClient, so do it manually
+        await transport.acknowledge(*messages_)
     return messages
 
 
@@ -54,7 +57,6 @@ def transaction_transport_with_consumer(aiopg_connection, aiopg_cursor):
         async def dummy_consume_method(*args, **kwargs):
             for event_message in event_messages:
                 yield [event_message]
-                await transport.acknowledge(event_message)
 
         transport = TransactionalEventTransport(DebugEventTransport())
         # start_transaction=False, as we start a transaction below (using BEGIN)
@@ -151,7 +153,7 @@ async def test_fetch_ok(transaction_transport_with_consumer, aiopg_cursor, loop)
         event_messages=[message1, message2, message3]
     )
     consumer = transport.consume(listen_for="api.event", listener_name="default")
-    produced_events = await consumer_to_messages(consumer)
+    produced_events = await consumer_to_messages(transport, consumer)
     assert produced_events == [message1, message2, message3]
 
     await aiopg_cursor.execute("SELECT COUNT(*) FROM lightbus_processed_events")
@@ -167,7 +169,7 @@ async def test_fetch_duplicate(transaction_transport_with_consumer, aiopg_cursor
 
     transport = await transaction_transport_with_consumer(event_messages=[message1, message2])
     consumer = transport.consume(listen_for="api.event", listener_name="default")
-    produced_events = await consumer_to_messages(consumer)
+    produced_events = await consumer_to_messages(transport, consumer)
     assert produced_events == [message1]  # The second message should be ignored
 
     await aiopg_cursor.execute("SELECT COUNT(*) FROM lightbus_processed_events")
@@ -195,3 +197,39 @@ async def test_publish_pending(transaction_transport, mocker):
     messages = [c[0][0] for c in m.call_args_list]
     message_ids = [message.id for message in messages]
     assert message_ids == ["1", "2", "3"]
+
+
+@pytest.mark.asyncio
+async def test_processed_message_acknowledged(transaction_transport_with_consumer, mocker):
+    message1 = EventMessage(api_name="api", event_name="event", id="1")
+    message2 = EventMessage(api_name="api", event_name="event", id="2")
+    message3 = EventMessage(api_name="api", event_name="event", id="3")
+
+    transport = await transaction_transport_with_consumer(
+        event_messages=[message1, message2, message3]
+    )
+    mocker.spy(transport.child_transport, "acknowledge")
+    consumer = transport.consume(listen_for="api.event", listener_name="default")
+    await consumer_to_messages(transport, consumer)
+
+    assert transport.child_transport.acknowledge.call_count == 3
+
+
+@pytest.mark.asyncio
+async def test_duplicate_message_acknowledged(transaction_transport_with_consumer, mocker):
+    # Same ID for each messages
+    message1 = EventMessage(api_name="api", event_name="event", id="1")
+    message2 = EventMessage(api_name="api", event_name="event", id="1")
+    message3 = EventMessage(api_name="api", event_name="event", id="1")
+
+    transport = await transaction_transport_with_consumer(
+        event_messages=[message1, message2, message3]
+    )
+    mocker.spy(transport.child_transport, "acknowledge")
+    consumer = transport.consume(listen_for="api.event", listener_name="default")
+    await consumer_to_messages(transport, consumer)
+
+    # Messages still get acked even though they are duplicates.
+    # If we don't ack them then the broker will just keep handing them
+    # out to consumers.
+    assert transport.child_transport.acknowledge.call_count == 3
