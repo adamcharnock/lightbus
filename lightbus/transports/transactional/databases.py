@@ -44,10 +44,10 @@ class DatabaseConnection(object):
     async def rollback_transaction(self):
         raise NotImplementedError()
 
-    async def is_event_duplicate(self, message: EventMessage) -> bool:
+    async def is_event_duplicate(self, message: EventMessage, listener_name: str) -> bool:
         raise NotImplementedError()
 
-    async def store_processed_event(self, message: EventMessage):
+    async def store_processed_event(self, message: EventMessage, listener_name: str):
         # Store message in de-duping table
         # Should raise DuplicateMessage() if message is duplicate
         raise NotImplementedError()
@@ -79,8 +79,10 @@ class DbApiConnection(DatabaseConnection):
         await self.execute(
             """
             CREATE TABLE IF NOT EXISTS lightbus_processed_events (
-                message_id VARCHAR(100) PRIMARY KEY,
-                processed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                message_id VARCHAR(100),
+                listener_name VARCHAR(200),
+                processed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                PRIMARY KEY(message_id, listener_name)
             )
         """
         )
@@ -128,16 +130,18 @@ class DbApiConnection(DatabaseConnection):
         #   http://initd.org/psycopg/docs/advanced.html#asynchronous-support
         await self.execute("ROLLBACK -- DbApiConnection.rollback_transaction()")
 
-    async def is_event_duplicate(self, message: EventMessage) -> bool:
-        sql = "SELECT EXISTS(SELECT 1 FROM lightbus_processed_events WHERE message_id = %s)"
-        await self.execute(sql, [message.id])
+    async def is_event_duplicate(self, message: EventMessage, listener_name: str) -> bool:
+        sql = (
+            "SELECT EXISTS(SELECT 1 FROM lightbus_processed_events WHERE message_id = %s AND listener_name = %s)"
+        )
+        await self.execute(sql, [message.id, listener_name])
         result = await self.fetchall()
         return result[0][0]
 
-    async def store_processed_event(self, message: EventMessage):
+    async def store_processed_event(self, message: EventMessage, listener_name: str):
         # Store message in de-duping table
-        sql = "INSERT INTO lightbus_processed_events (message_id) VALUES (%s)"
-        await self.execute(sql, [message.id])
+        sql = "INSERT INTO lightbus_processed_events (message_id, listener_name) VALUES (%s, %s)"
+        await self.execute(sql, [message.id, listener_name])
 
     async def send_event(self, message: EventMessage, options: dict):
         # Store message in messages-to-be-published table

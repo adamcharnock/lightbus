@@ -21,7 +21,7 @@ async def test_migrate(dbapi_database: DbApiConnection, get_processed_events, ge
 async def test_transaction_commit(dbapi_database: DbApiConnection, get_processed_events):
     await dbapi_database.migrate()
     await dbapi_database.store_processed_event(
-        EventMessage(api_name="api", event_name="event", id="123")
+        EventMessage(api_name="api", event_name="event", id="123"), "my_listener"
     )
     await dbapi_database.commit_transaction()
     assert len(await get_processed_events()) == 1
@@ -34,7 +34,7 @@ async def test_transaction_rollback(dbapi_database: DbApiConnection, get_process
     await dbapi_database.start_transaction()
 
     await dbapi_database.store_processed_event(
-        EventMessage(api_name="api", event_name="event", id="123")
+        EventMessage(api_name="api", event_name="event", id="123"), "my_listener"
     )
     await dbapi_database.rollback_transaction()
     assert len(await get_processed_events()) == 0
@@ -47,11 +47,11 @@ async def test_transaction_rollback_continue(dbapi_database: DbApiConnection, ge
 
     await dbapi_database.start_transaction()
     await dbapi_database.store_processed_event(
-        EventMessage(api_name="api", event_name="event", id="123")
+        EventMessage(api_name="api", event_name="event", id="123"), "my_listener"
     )
     await dbapi_database.rollback_transaction()  # Rollback
     await dbapi_database.store_processed_event(
-        EventMessage(api_name="api", event_name="event", id="123")
+        EventMessage(api_name="api", event_name="event", id="123"), "my_listener"
     )
 
     assert len(await get_processed_events()) == 1
@@ -61,15 +61,23 @@ async def test_transaction_rollback_continue(dbapi_database: DbApiConnection, ge
 async def test_is_event_duplicate_true(dbapi_database: DbApiConnection):
     await dbapi_database.migrate()
     message = EventMessage(api_name="api", event_name="event", id="123")
-    await dbapi_database.store_processed_event(message)
-    assert await dbapi_database.is_event_duplicate(message) == True
+    await dbapi_database.store_processed_event(message, "my_listener")
+    assert await dbapi_database.is_event_duplicate(message, "my_listener") == True
 
 
 @pytest.mark.asyncio
 async def test_is_event_duplicate_false(dbapi_database: DbApiConnection):
     await dbapi_database.migrate()
     message = EventMessage(api_name="api", event_name="event", id="123")
-    assert await dbapi_database.is_event_duplicate(message) == False
+    assert await dbapi_database.is_event_duplicate(message, "my_listener") == False
+
+
+@pytest.mark.asyncio
+async def test_is_event_duplicate_different_listener(dbapi_database: DbApiConnection):
+    await dbapi_database.migrate()
+    message = EventMessage(api_name="api", event_name="event", id="123")
+    await dbapi_database.store_processed_event(message, "my_listener")
+    assert await dbapi_database.is_event_duplicate(message, "another_listener") == False
 
 
 @pytest.mark.asyncio

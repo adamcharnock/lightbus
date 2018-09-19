@@ -180,14 +180,14 @@ class TransactionalEventTransport(EventTransport):
             for message in messages:
                 await database.start_transaction()
 
-                if await database.is_event_duplicate(message):
+                if await database.is_event_duplicate(message, listener_name):
                     logger.info(
                         f"Duplicate event {message.canonical_name} detected with ID {message.id}. "
                         f"Skipping."
                     )
                     continue
                 else:
-                    await database.store_processed_event(message)
+                    await database.store_processed_event(message, listener_name)
 
                 yield [message]
 
@@ -199,7 +199,8 @@ class TransactionalEventTransport(EventTransport):
                         f"Duplicate event {message.canonical_name} discovered upon commit, "
                         f"will rollback transaction. "
                         f"Duplicates were probably being processed simultaneously, otherwise "
-                        f"this would have been caught earlier. Event ID: {message.id}"
+                        f"this would have been caught earlier. Event ID: {message.id}, "
+                        f"listener name: {listener_name}"
                     )
                     await database.rollback_transaction()
 
