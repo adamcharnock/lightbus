@@ -185,6 +185,7 @@ class TransactionalEventTransport(EventTransport):
                         f"Duplicate event {message.canonical_name} detected with ID {message.id}. "
                         f"Skipping."
                     )
+                    await self.child_transport.acknowledge(message)
                     continue
                 else:
                     await database.store_processed_event(message, listener_name)
@@ -193,6 +194,7 @@ class TransactionalEventTransport(EventTransport):
 
                 try:
                     await database.commit_transaction()
+                    await self.child_transport.acknowledge(message)
                 except DuplicateMessage:
                     # TODO: Can this even happen with the appropriate transaction isolation level?
                     logger.info(
