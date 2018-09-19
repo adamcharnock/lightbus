@@ -8,7 +8,7 @@ import yaml as yamllib
 
 from lightbus.exceptions import UnexpectedConfigurationFormat
 from lightbus.schema.hints_to_schema import python_type_to_json_schemas, SCHEMA_URI
-from lightbus.utilities.casting import mapping_to_named_tuple
+from lightbus.utilities.casting import cast_to_hint
 from lightbus.utilities.deforming import deform_to_bus
 
 if False:
@@ -91,7 +91,7 @@ class Config(object):
         if set_defaults:
             config = set_default_config(config)
         validate_config(config)
-        return cls(root_config=mapping_to_named_tuple(config, RootConfig))
+        return cls(root_config=cast_to_hint(config, RootConfig))
 
     def __getattr__(self, item):
         if hasattr(self._config, item):

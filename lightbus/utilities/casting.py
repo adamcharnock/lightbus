@@ -3,7 +3,7 @@ import datetime
 import inspect
 import logging
 from enum import Enum
-from typing import Mapping, Type, get_type_hints, Union, TypeVar
+from typing import Mapping, Type, get_type_hints, Union, TypeVar, Callable
 
 import dateutil.parser
 
@@ -53,12 +53,16 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
         return value
     elif hasattr(hint, "__from_bus__"):
         # Hint supports custom deserializing.
-        return hint.__from_bus__(value)
+        return _mapping_to_instance(
+            mapping=value,
+            destination_type=hint,
+            instantiator=hint.__from_bus__,
+            expand_kwargs=False,
+        )
     elif type_is_namedtuple(hint) and isinstance_safe(value, Mapping):
-        return mapping_to_named_tuple(mapping=value, named_tuple=hint)
+        return _mapping_to_instance(mapping=value, destination_type=hint)
     elif type_is_dataclass(hint) and isinstance_safe(value, Mapping):
-        # We can treat dataclasses the same as named tuples
-        return mapping_to_named_tuple(mapping=value, named_tuple=hint)
+        return _mapping_to_instance(mapping=value, destination_type=hint)
     elif is_class and issubclass_safe(hint_type, datetime.datetime) and isinstance_safe(value, str):
         # Datetime as a string
         return dateutil.parser.parse(value)
@@ -104,28 +108,36 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
 T = TypeVar("T")
 
 
-def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
-    """Convert a dictionary-like object into the given named tuple
+def _mapping_to_instance(
+    mapping: Mapping, destination_type: Type[T], instantiator: Callable = None, expand_kwargs=True
+) -> T:
+    """Convert a dictionary-like object into an instance of the given type
 
-    This conversion is performed recursively. If the passed named tuple
-    class contains child named tuples, then the the corresponding
+    This conversion is performed recursively. If the passed type
+    class contains child structures, then the corresponding
     child keys of the dictionary will be mapped.
 
-    This is used to take the supplied configuration and load it into the
-    expected configuration structures.
+    If `instantiator` is provided, it will be called rather than simply
+    calling `destination_type`.
+
+    If `expand_kwargs` is True then the the parameters will be
+    expended (i.e. **) when the `destination_type` / `instantiator`
+    is called.
     """
     import lightbus.config.structure
 
-    hints = get_type_hints(named_tuple, None, lightbus.config.structure.__dict__)
+    hints = get_type_hints(destination_type, None, lightbus.config.structure.__dict__)
     parameters = {}
 
     if mapping is None:
         return None
 
+    # Iterate through each key/type-hint pairing in the destination type
     for key, hint in hints.items():
         value = mapping.get(key)
 
         if key not in mapping:
+            # This attribute has not been provided by in the mapping. Skip it
             continue
 
         hint_type, hint_args = parse_hint(hint)
@@ -135,14 +147,15 @@ def mapping_to_named_tuple(mapping: Mapping, named_tuple: Type[T]) -> T:
             # Yep, it's an Optional. So unwrap it.
             hint = hint_args[0]
 
-        if type_is_namedtuple(hint):
-            parameters[key] = mapping_to_named_tuple(value, hint)
-        elif issubclass_safe(hint_type, Mapping) and len(hint_args) == 2:
-            # A mapping which contains more named tuples
+        if issubclass_safe(hint_type, Mapping) and hint_args and len(hint_args) == 2:
             parameters[key] = dict()
             for k, v in value.items():
-                parameters[key][k] = mapping_to_named_tuple(v, hint_args[1])
+                parameters[key][k] = cast_to_hint(v, hint_args[1])
         else:
             parameters[key] = cast_to_hint(value, hint)
 
-    return named_tuple(**parameters)
+    instantiator = instantiator or destination_type
+    if expand_kwargs:
+        return instantiator(**parameters)
+    else:
+        return instantiator(parameters)

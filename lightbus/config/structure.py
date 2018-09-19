@@ -110,6 +110,11 @@ class ApiConfig(object):
 
         self._normalise_validate()
 
+    @classmethod
+    def __from_bus__(cls, data: dict):
+        data = {k: v for k, v in data.items() if k in dir(cls)}
+        return cls(**data)
+
     def _normalise_validate(self):
         if self.validate in (True, False):
             # Expand out the true/false shortcut
@@ -142,6 +147,11 @@ class RootConfig(object):
 
         self.set_service_name(self.service_name)
         self.set_process_name(self.process_name)
+
+    @classmethod
+    def __from_bus__(cls, data: dict):
+        data = {k: v for k, v in data.items() if k in dir(cls)}
+        return cls(**data)
 
     def set_service_name(self, name):
         self.service_name = self._format_name(name)

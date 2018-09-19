@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, date
 from decimal import Decimal
 from enum import Enum
-from typing import NamedTuple, Optional, List, Any, SupportsRound
+from typing import NamedTuple, Optional, List, Any, SupportsRound, Mapping
 from uuid import UUID
 
 import pytest
@@ -69,6 +69,28 @@ class DataclassWithMethod(object):
         pass
 
 
+class NamedTupleWithMapping(NamedTuple):
+    a: dict
+    b: Mapping
+    c: Mapping[str, int]
+
+
+@dataclass
+class DataclassWithMapping(object):
+    a: dict
+    b: Mapping
+    c: Mapping[str, int]
+
+
+class NamedTupleWithMappingToNamedTuple(NamedTuple):
+    a: Mapping[str, SimpleNamedTuple]
+
+
+@dataclass
+class DataclassWithMappingToDataclass(object):
+    a: Mapping[str, SimpleDataclass]
+
+
 class CustomClass(object):
     pass
 
@@ -81,6 +103,15 @@ class CustomClassWithMagicMethod(object):
         o = cls()
         o.value = data["value"]
         return o
+
+
+class NamedTupleWithMappingToCustomObject(NamedTuple):
+    a: Mapping[str, CustomClassWithMagicMethod]
+
+
+@dataclass
+class DataclassWithMappingToCustomObject(object):
+    a: Mapping[str, CustomClassWithMagicMethod]
 
 
 @pytest.mark.parametrize(
@@ -135,6 +166,26 @@ class CustomClassWithMagicMethod(object):
         (["1", 2], SupportsRound, ["1", 2]),
         ("a", ExampleEnum, ExampleEnum.foo),
         ("x", ExampleEnum, "x"),
+        (
+            {"a": {"z": 1}, "b": {"z": 1}, "c": {"z": 1}},
+            NamedTupleWithMapping,
+            NamedTupleWithMapping(a={"z": 1}, b={"z": 1}, c={"z": 1}),
+        ),
+        (
+            {"a": {"z": 1}, "b": {"z": 1}, "c": {"z": 1}},
+            DataclassWithMapping,
+            DataclassWithMapping(a={"z": 1}, b={"z": 1}, c={"z": 1}),
+        ),
+        (
+            {"a": {"foo": {"a": 1, "b": "2"}}},
+            NamedTupleWithMappingToNamedTuple,
+            NamedTupleWithMappingToNamedTuple(a={"foo": SimpleNamedTuple(a="1", b=2)}),
+        ),
+        (
+            {"a": {"foo": {"a": 1, "b": "2"}}},
+            DataclassWithMappingToDataclass,
+            DataclassWithMappingToDataclass(a={"foo": SimpleDataclass(a="1", b=2)}),
+        ),
     ],
     ids=[
         "int_same",
@@ -169,6 +220,10 @@ class CustomClassWithMagicMethod(object):
         "unsupported_generic",
         "enum",
         "enum_bad_value",
+        "nametuple_with_mapping",
+        "dataclass_with_mapping",
+        "namedtuple_with_mapping_to_namedtuple",
+        "dataclass_with_mapping_to_dataclass",
     ],
 )
 def test_cast_to_annotation(test_input, hint, expected):
@@ -180,3 +235,11 @@ def test_cast_to_annotation_custom_class_with_magic_method():
     casted = cast_to_hint(value={"value": "abc"}, hint=CustomClassWithMagicMethod)
     assert isinstance(casted, CustomClassWithMagicMethod)
     assert casted.value == "abc"
+
+
+def test_cast_to_annotation_custom_class_with_magic_method_on_mapping():
+    casted = cast_to_hint({"a": {"b": {"value": "abc"}}}, hint=NamedTupleWithMappingToCustomObject)
+    assert isinstance(casted, NamedTupleWithMappingToCustomObject)
+    assert isinstance(casted.a, Mapping)
+    assert isinstance(casted.a["b"], CustomClassWithMagicMethod)
+    assert casted.a["b"].value == "abc"

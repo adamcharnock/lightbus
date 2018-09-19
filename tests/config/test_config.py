@@ -5,7 +5,7 @@ import pytest
 from lightbus import DebugRpcTransport
 from lightbus.config import Config
 from lightbus.config.config import config_as_json_schema
-from lightbus.utilities.casting import mapping_to_named_tuple
+from lightbus.utilities.casting import cast_to_hint
 from lightbus.config.structure import RootConfig, BusConfig, LogLevelEnum
 from lightbus.plugins import autoload_plugins, manually_set_plugins
 from lightbus.plugins.metrics import MetricsPlugin
@@ -100,18 +100,18 @@ def test_load_bus_config(tmp_file):
     assert config.bus().log_level == LogLevelEnum.WARNING
 
 
-def test_mapping_to_named_tuple_ok():
-    root_config = mapping_to_named_tuple({"bus": {"log_level": "warning"}}, RootConfig)
+def test_cast_to_hint_ok():
+    root_config = cast_to_hint({"bus": {"log_level": "warning"}}, RootConfig)
     assert root_config.bus.log_level == LogLevelEnum.WARNING
 
 
-def test_mapping_to_named_tuple_apis():
-    root_config = mapping_to_named_tuple({"apis": {"my_api": {"rpc_timeout": 1}}}, RootConfig)
+def test_cast_to_hint_apis():
+    root_config = cast_to_hint({"apis": {"my_api": {"rpc_timeout": 1}}}, RootConfig)
     assert root_config.apis["my_api"].rpc_timeout == 1
 
 
-def test_mapping_to_named_tuple_unknown_property():
-    root_config = mapping_to_named_tuple({"bus": {"foo": "xyz"}}, RootConfig)
+def test_cast_to_hint_unknown_property():
+    root_config = cast_to_hint({"bus": {"foo": "xyz"}}, RootConfig)
     assert not hasattr(root_config.bus, "foo")
 
 
@@ -125,8 +125,8 @@ def test_api_config_customised():
     assert config.api("my.api").event_transport.redis.batch_size == 1
 
 
-def test_mapping_to_named_tuple_validate():
-    root_config = mapping_to_named_tuple(
+def test_cast_to_hint_validate():
+    root_config = cast_to_hint(
         {"apis": {"my_api": {"validate": {"incoming": True, "outgoing": False}}}}, RootConfig
     )
     assert root_config.apis["my_api"].validate.incoming == True
