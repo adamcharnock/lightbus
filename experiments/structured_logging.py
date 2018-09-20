@@ -28,3 +28,5 @@ structlog.configure(
 if __name__ == "__main__":
     log = structlog.wrap_logger(logging.getLogger("test"))
     log.warning("hello from std", foo=1)
+
+    log.info("Loaded plugins", plugins={...}, context={"service_name": "..."})
