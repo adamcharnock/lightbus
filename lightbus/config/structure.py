@@ -214,6 +214,10 @@ class ConfigProxy(object):
         self.__dict__["_pairs"] = pairs
         self.__dict__["_parents"] = parents or []
 
+    def __repr__(self):
+        fallback_object = self._pairs[-1][0]
+        return f"{repr(fallback_object)} (via ConfigProxy)"
+
     def __getattr__(self, key):
         for obj, source_data in self._pairs:
             if isinstance(source_data, dict) and key not in source_data:

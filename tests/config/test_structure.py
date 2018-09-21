@@ -41,6 +41,13 @@ def test_root_config_process_name():
     assert "{" not in process_name
 
 
+def test_config_proxy_repr():
+    config = ApiConfig(rpc_timeout=100)
+    proxied_config = ConfigProxy((config, {"rpc_timeout": 100}))
+    assert "ApiConfig" in repr(proxied_config)
+    assert "ConfigProxy" in repr(proxied_config)
+
+
 def test_config_proxy_top_level_primary():
     config = ApiConfig(rpc_timeout=100)
     config_fallback = ApiConfig(rpc_timeout=123)
