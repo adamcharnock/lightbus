@@ -215,8 +215,8 @@ class ConfigProxy(object):
         self.__dict__["_parents"] = parents or []
 
     def __getattr__(self, key):
-        for obj, source_dict in self._pairs:
-            if isinstance(source_dict, dict) and key not in source_dict:
+        for obj, source_data in self._pairs:
+            if isinstance(source_data, dict) and key not in source_data:
                 # Either:
                 #   1. Key not present in the source data, so fallback to next config
                 #   2. Dict does not match object structure (e.g. ApiConfig.validate)
@@ -248,23 +248,23 @@ class ConfigProxy(object):
 
     def _get_child_pairs(self, key):
         child_pairs = []
-        for obj, source_dict in self._pairs:
+        for obj, source_data in self._pairs:
             child_obj = getattr(obj, key, None)
-            if isinstance(source_dict, dict):
-                child_dict = source_dict.get(key, {})
+            if isinstance(source_data, dict):
+                child_dict = source_data.get(key, {})
                 child_pairs.append((child_obj, child_dict))
         return child_pairs
 
     def _get_value(self, key):
-        for obj, source_dict in self._pairs:
-            if isinstance(source_dict, dict) and key in source_dict:
+        for obj, source_data in self._pairs:
+            if isinstance(source_data, dict) and key in source_data:
                 return getattr(obj, key)
 
         # We only end up here when the dictionary structure
         # and config structure do not match. For example,
         # this can be the case with ApiConfig.validate.
-        for obj, source_dict in self._pairs:
-            if not isinstance(source_dict, dict) and hasattr(obj, key):
+        for obj, source_data in self._pairs:
+            if not isinstance(source_data, dict) and hasattr(obj, key):
                 return getattr(obj, key)
 
         assert False, "Shouldn't happen"
