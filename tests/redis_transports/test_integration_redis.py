@@ -410,7 +410,9 @@ async def test_event_exception_in_listener_realtime(
     received_messages = []
 
     # Don't shutdown on error
-    bus.client.config.api("default").on_error = OnError.STOP_LISTENER
+    bus.client.config._source["apis"]["default"]["on_error"] = "x"
+    bus.client.config._config.apis["default"].on_error = OnError.STOP_LISTENER
+    assert bus.client.config.api("default").on_error == OnError.STOP_LISTENER
 
     async def listener(event_message, **kwargs):
         nonlocal received_messages
@@ -458,7 +460,9 @@ async def test_event_exception_in_listener_batch_fetch(
     received_messages = []
 
     # Don't shutdown on error
-    bus.client.config.api("default").on_error = OnError.STOP_LISTENER
+    bus.client.config._source["apis"]["default"]["on_error"] = "x"
+    bus.client.config._config.apis["default"].on_error = OnError.STOP_LISTENER
+    assert bus.client.config.api("default").on_error == OnError.STOP_LISTENER
 
     async def listener(event_message, **kwargs):
         nonlocal received_messages
