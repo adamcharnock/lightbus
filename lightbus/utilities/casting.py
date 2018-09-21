@@ -34,7 +34,7 @@ V = TypeVar("V")
 H = TypeVar("A")
 
 
-def cast_to_hint(value: V, hint: H) -> Union[V, H]:
+def cast_to_hint(value: V, hint: Type[H]) -> Union[V, H]:
     optional_hint = is_optional(hint)
     if optional_hint and value is not None:
         hint = optional_hint

@@ -21,7 +21,7 @@ import logging
 import os
 import socket
 from enum import Enum
-from typing import NamedTuple, Optional, Union, Dict
+from typing import NamedTuple, Optional, Union, Dict, Tuple, List
 
 from lightbus.plugins import find_plugins
 from lightbus.transports.base import get_available_transports
@@ -91,6 +91,71 @@ class ApiValidationConfig(NamedTuple):
     incoming: bool = True
 
 
+class ConfigProxy(object):
+    """ Provides config inheritance
+
+    Instantiate with the API config objects and the dictionaries
+    from which they originated.
+
+    The dictionaries will be used to determine which keys are
+    available on an object, and when to fallback to the next object.
+    """
+
+    def __init__(self, *pairs: Tuple[object, dict], parents: List[str] = None):
+        self.__dict__["_pairs"] = pairs
+        self.__dict__["_parents"] = parents or []
+
+    def __getattr__(self, key):
+        for obj, source_dict in self._pairs:
+            if key not in source_dict:
+                # Key not present in the source data, so fallback to next config
+                continue
+            else:
+                source_value = source_dict[key]
+                value = self._get_value(key)
+                child_pairs = self._get_child_pairs(key)
+                if self._should_proxy(source_value):
+                    return ConfigProxy(*child_pairs, parents=self._parents + [key])
+                else:
+                    # Not a dictionary, so assume it is the leaf value
+                    return value
+
+        fallback_object = self._pairs[-1][0]
+        if hasattr(fallback_object, key):
+            # Not found, but does exist on the object, so just return whatever
+            # default value it is given
+            return getattr(fallback_object, key)
+        else:
+            # Was not found, so raise AttributeError
+            proxied_type = type(fallback_object)
+            raise AttributeError(f"{proxied_type.__name__} has no attribute {repr(key)}")
+
+    def __setattr__(self, key, value):
+        raise AttributeError(
+            "Setting config options at runtime is not supported. If you really must "
+            "do this then modify the configuration dictionary, then pass it to "
+            "Config.load_dict(...)"
+        )
+
+    def _get_child_pairs(self, key):
+        child_pairs = []
+        for obj, source_dict in self._pairs:
+            child_obj = getattr(obj, key, None)
+            child_dict = source_dict.get(key, {})
+            child_pairs.append((child_obj, child_dict))
+        return child_pairs
+
+    def _get_value(self, key):
+        for obj, source_dict in self._pairs:
+            if key in source_dict:
+                return getattr(obj, key)
+
+        assert False, "Shouldn't happen"
+
+    def _should_proxy(self, value):
+        return isinstance(value, dict)
+
+
 class ApiConfig(object):
     rpc_timeout: int = 5
     event_listener_setup_timeout: int = 1
@@ -105,6 +170,7 @@ class ApiConfig(object):
     on_error: OnError = OnError.SHUTDOWN
 
     def __init__(self, **kw):
+        self._explicitly_set_fields = set(kw.keys())
         for k, v in kw.items():
             setattr(self, k, v)
 

@@ -59,7 +59,7 @@ def test_commands_run_env(mocker, redis_config_file, set_env, make_test_bus_modu
 
     args = commands.parse_args(args=["run"])
     with set_env(LIGHTBUS_CONFIG=redis_config_file, LIGHTBUS_MODULE=test_bus_module):
-        lightbus.commands.run.Command().handle(args, config=Config(RootConfig()))
+        lightbus.commands.run.Command().handle(args, config=Config(RootConfig(), source={}))
 
     assert m.called
 

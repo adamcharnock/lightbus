@@ -359,7 +359,9 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
 
 @pytest.mark.asyncio
 async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, loop, caplog):
-    dummy_bus.client.config.api("default").on_error = OnError.SHUTDOWN
+    # Force override config
+    dummy_bus.client.config._source["apis"]["default"]["on_error"] = "x"
+    dummy_bus.client.config._config.apis["default"].on_error = OnError.SHUTDOWN
 
     class SomeException(Exception):
         pass
@@ -389,7 +391,9 @@ async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, 
 
 @pytest.mark.asyncio
 async def test_exception_in_listener_stop_listener(dummy_bus: lightbus.path.BusPath, loop, caplog):
-    dummy_bus.client.config.api("default").on_error = OnError.STOP_LISTENER
+    # Force override config
+    dummy_bus.client.config._source["apis"]["default"]["on_error"] = "x"
+    dummy_bus.client.config._config.apis["default"].on_error = OnError.STOP_LISTENER
 
     class SomeException(Exception):
         pass
@@ -418,7 +422,9 @@ async def test_exception_in_listener_stop_listener(dummy_bus: lightbus.path.BusP
 
 @pytest.mark.asyncio
 async def test_exception_in_listener_ignore(dummy_bus: lightbus.path.BusPath, loop, caplog):
-    dummy_bus.client.config.api("default").on_error = OnError.IGNORE
+    # Force override config
+    dummy_bus.client.config._source["apis"]["default"]["on_error"] = "x"
+    dummy_bus.client.config._config.apis["default"].on_error = OnError.IGNORE
 
     class SomeException(Exception):
         pass

@@ -1,7 +1,7 @@
 import json as jsonlib
 import os
 from pathlib import Path
-from typing import TypeVar, Dict, NamedTuple
+from typing import TypeVar, Dict, NamedTuple, Union
 
 import jsonschema
 import yaml as yamllib
@@ -12,7 +12,7 @@ from lightbus.utilities.casting import cast_to_hint
 from lightbus.utilities.deforming import deform_to_bus
 
 if False:
-    from .structure import RootConfig, BusConfig, ApiConfig
+    from .structure import RootConfig, BusConfig, ApiConfig, ConfigProxy
 
 
 class Config(object):
@@ -29,19 +29,29 @@ class Config(object):
     """
     _config: "RootConfig"
 
-    def __init__(self, root_config: "RootConfig"):
+    def __init__(self, root_config: "RootConfig", source: dict):
         self._config = root_config
+        self._source = source
 
     def bus(self) -> "BusConfig":
         return self._config.bus
 
-    def api(self, api_name=None) -> "ApiConfig":
+    def api(self, api_name=None) -> Union["ApiConfig", "ConfigProxy"]:
         """Returns config for the given API
 
         If there is no API-specific config available for the
         given api_name, then the root API config will be returned.
         """
-        return self._config.apis.get(api_name, None) or self._config.apis["default"]
+        from .structure import ApiConfig, ConfigProxy
+
+        return ConfigProxy(
+            (self._config.apis.get(api_name, None), self._source.get("apis", {}).get(api_name, {})),
+            (
+                self._config.apis.get("default", None),
+                self._source.get("apis", {}).get("default", {}),
+            ),
+            (ApiConfig(), {}),
+        )
 
     def apis(self) -> Dict[str, "ApiConfig"]:
         return self._config.apis
@@ -91,7 +101,9 @@ class Config(object):
         if set_defaults:
             config = set_default_config(config)
         validate_config(config)
-        return cls(root_config=cast_to_hint(config, RootConfig))
+
+        root_config = cast_to_hint(config, RootConfig)
+        return cls(root_config, source=config)
 
     def __getattr__(self, item):
         if hasattr(self._config, item):

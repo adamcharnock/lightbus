@@ -125,6 +125,12 @@ def test_api_config_customised():
     assert config.api("my.api").event_transport.redis.batch_size == 1
 
 
+def test_api_set_attribute():
+    config = Config.load_yaml(EXAMPLE_VALID_YAML)
+    with pytest.raises(AttributeError):
+        config.api("default").bar = 1
+
+
 def test_cast_to_hint_validate():
     root_config = cast_to_hint(
         {"apis": {"my_api": {"validate": {"incoming": True, "outgoing": False}}}}, RootConfig
