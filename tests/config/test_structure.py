@@ -106,3 +106,33 @@ def test_config_proxy_attribute_error():
     with pytest.raises(AttributeError) as e:
         # Raises an attribute error when getting an attribute from a child
         _ = ConfigProxy((ApiConfig(), {"validate": {"outgoing": True}})).validate.foo
+
+
+def test_config_proxy_dict_value():
+
+    class CustomConfig(object):
+        value: dict = {}
+
+    config = CustomConfig()
+
+    config_fallback = CustomConfig()
+    config_fallback.value = {"a": 1}
+
+    proxied_config = ConfigProxy((config, {}), (config_fallback, {"value": {"a": 1}}))
+    assert proxied_config.value == {"a": 1}
+
+
+def test_config_proxy_mismatched_structures_primary():
+    config = ApiConfig(validate=ApiValidationConfig(outgoing=False, incoming=False))
+    config_fallback = ApiConfig()
+    proxied_config = ConfigProxy((config, {"validate": False}), (config_fallback, {}))
+    assert proxied_config.validate.outgoing == False
+    assert proxied_config.validate.incoming == False
+
+
+def test_config_proxy_mismatched_structures_fallback():
+    config = ApiConfig()
+    config_fallback = ApiConfig(validate=ApiValidationConfig(outgoing=False, incoming=False))
+    proxied_config = ConfigProxy((config, {}), (config_fallback, {"validate": False}))
+    assert proxied_config.validate.outgoing == False
+    assert proxied_config.validate.incoming == False

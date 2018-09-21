@@ -25,8 +25,9 @@ from typing import NamedTuple, Optional, Union, Dict, Tuple, List
 
 from lightbus.plugins import find_plugins
 from lightbus.transports.base import get_available_transports
-from lightbus.utilities.config import random_name
+from lightbus.utilities.config import random_name, enable_config_inheritance
 from lightbus.utilities.human import generate_human_friendly_name
+from lightbus.utilities.type_checks import parse_hint
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,8 @@ def make_transport_selector_structure(type_) -> NamedTuple:
     globals_ = globals().copy()
     globals_.update(vars)
     exec(code, globals_)
-    return globals_[class_name]
+    structure = globals_[class_name]
+    return enable_config_inheritance(structure)
 
 
 def make_plugin_selector_structure() -> NamedTuple:
@@ -86,11 +88,13 @@ class OnError(Enum):
     SHUTDOWN = "shutdown"
 
 
+@enable_config_inheritance
 class ApiValidationConfig(NamedTuple):
     outgoing: bool = True
     incoming: bool = True
 
 
+@enable_config_inheritance
 class ApiConfig(object):
     rpc_timeout: int = 5
     event_listener_setup_timeout: int = 1
@@ -124,17 +128,20 @@ class ApiConfig(object):
             self.validate = ApiValidationConfig(**self.validate)
 
 
+@enable_config_inheritance
 class SchemaConfig(NamedTuple):
     human_readable: bool = True
     ttl: int = 60
     transport: SchemaTransportSelector = None
 
 
+@enable_config_inheritance
 class BusConfig(NamedTuple):
     log_level: LogLevelEnum = LogLevelEnum.INFO
     schema: SchemaConfig = SchemaConfig()
 
 
+@enable_config_inheritance
 class RootConfig(object):
     service_name: str = "{friendly}"
     process_name: str = "{random4}"
@@ -175,11 +182,32 @@ class RootConfig(object):
 class ConfigProxy(object):
     """ Provides config inheritance
 
-    Instantiate with the API config objects and the dictionaries
-    from which they originated.
+    Must be instantiated with pairs of config objects and the
+    dictionaries from which the object originated. For example:
+
+        >>> proxy = ConfigProxy(
+        ...     (ApiConfig(rpc_timeout=60), {"rpc_timeout": 60}),
+        ...     (ApiConfig(rpc_timeout=2), {"rpc_timeout": 2})
+        ... )
+        >>> proxy.rpc_timeout
+        60
 
     The dictionaries will be used to determine which keys are
-    available on an object, and when to fallback to the next object.
+    available on an object. The dictionary values are never returned.
+
+    If a key is found in the pair's dictionary, then the corresponding
+    attribute from the config object will be returned. Otherwise the next
+    pair will be checked.
+
+    If no value is found at the end of this process then we assume that
+    not value has been explicitly provided. In which case the default
+    determined and returned.
+
+    The default value is determined by taking the config object of the final
+    pair and retrieving whatever value the desired attribute has, regardless
+    of its presence in the pair's dictionary.
+
+    This proxy operates recursively on child config objects.
     """
 
     def __init__(self, *pairs: Tuple[object, dict], parents: List[str] = None):
@@ -188,17 +216,17 @@ class ConfigProxy(object):
 
     def __getattr__(self, key):
         for obj, source_dict in self._pairs:
-            if key not in source_dict:
-                # Key not present in the source data, so fallback to next config
+            if isinstance(source_dict, dict) and key not in source_dict:
+                # Either:
+                #   1. Key not present in the source data, so fallback to next config
+                #   2. Dict does not match object structure (e.g. ApiConfig.validate)
                 continue
             else:
-                source_value = source_dict[key]
                 value = self._get_value(key)
                 child_pairs = self._get_child_pairs(key)
-                if self._should_proxy(source_value):
+                if self._should_proxy(obj, key):
                     return ConfigProxy(*child_pairs, parents=self._parents + [key])
                 else:
-                    # Not a dictionary, so assume it is the leaf value
                     return value
 
         fallback_object = self._pairs[-1][0]
@@ -222,16 +250,34 @@ class ConfigProxy(object):
         child_pairs = []
         for obj, source_dict in self._pairs:
             child_obj = getattr(obj, key, None)
-            child_dict = source_dict.get(key, {})
-            child_pairs.append((child_obj, child_dict))
+            if isinstance(source_dict, dict):
+                child_dict = source_dict.get(key, {})
+                child_pairs.append((child_obj, child_dict))
         return child_pairs
 
     def _get_value(self, key):
         for obj, source_dict in self._pairs:
-            if key in source_dict:
+            if isinstance(source_dict, dict) and key in source_dict:
+                return getattr(obj, key)
+
+        # We only end up here when the dictionary structure
+        # and config structure do not match. For example,
+        # this can be the case with ApiConfig.validate.
+        for obj, source_dict in self._pairs:
+            if not isinstance(source_dict, dict) and hasattr(obj, key):
                 return getattr(obj, key)
 
         assert False, "Shouldn't happen"
 
-    def _should_proxy(self, value):
-        return isinstance(value, dict)
+    def _should_proxy(self, obj, key):
+        annotations = getattr(obj, "__annotations__", {})
+        key_hint = annotations.get(key)
+        # Attribute set by the @enable_config_inheritance() decorator
+        key_hint, child_types = parse_hint(key_hint)
+
+        if child_types:
+            types_to_check = child_types
+        else:
+            types_to_check = [key_hint]
+
+        return any(getattr(t, "_enable_config_inheritance", False) for t in types_to_check)

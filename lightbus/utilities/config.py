@@ -44,8 +44,15 @@ def make_from_config_structure(class_name, from_config_method, extra_parameters=
     globals_ = globals().copy()
     globals_.update(vars)
     exec(code, globals_)
-    return globals_[f"{class_name}Config"]
+    cls = globals_[f"{class_name}Config"]
+    return enable_config_inheritance(cls)
 
 
 def random_name(length: int) -> str:
     return "".join(random.choice(string.ascii_lowercase) for _ in range(length))
+
+
+def enable_config_inheritance(cls):
+    """Decorator to make classes as supporting inheritance"""
+    cls._enable_config_inheritance = True
+    return cls
