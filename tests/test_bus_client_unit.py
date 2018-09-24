@@ -443,3 +443,20 @@ async def test_exception_in_listener_ignore(dummy_bus: lightbus.path.BusPath, lo
     log_levels = {r.levelname for r in caplog.records}
     # Ensure the error was logged
     assert "ERROR" in log_levels
+
+
+def test_add_background_task(dummy_bus: lightbus.path.BusPath):
+    calls = 0
+
+    async def test_coroutine():
+        nonlocal calls
+        while True:
+            calls += 1
+            if calls == 5:
+                raise Exception("Intentional exception: stopping lightbus dummy bus from running")
+            await asyncio.sleep(0.001)
+
+    dummy_bus.client.add_background_task(test_coroutine())
+    dummy_bus.client._run_forever(consume_rpcs=False)
+
+    assert calls == 5

@@ -133,7 +133,7 @@ class BusPath(object):
                 yield parent
             parent = parent.parent
 
-    def run_forever(self, consume_rpcs=True):
+    def xrun_forever(self, consume_rpcs=True):
         self.client.run_forever(consume_rpcs=consume_rpcs)
 
     @property

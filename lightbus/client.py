@@ -7,7 +7,8 @@ import signal
 import time
 from asyncio import CancelledError
 from collections import defaultdict
-from typing import List, Tuple
+from itertools import chain
+from typing import List, Tuple, Coroutine, Union
 
 from lightbus.api import registry, Api
 from lightbus.config import Config
@@ -70,6 +71,7 @@ class BusClient(object):
             human_readable=self.config.bus().schema.human_readable,
         )
         self._listeners = {}
+        self._background_tasks = []
         self._hook_callbacks = defaultdict(list)
         self._exit_code = 0
 
@@ -149,18 +151,11 @@ class BusClient(object):
             task for task in asyncio.Task.all_tasks() if getattr(task, "is_listener", False)
         ]
 
-        for task in listener_tasks:
+        for task in chain(listener_tasks, self._background_tasks):
             try:
                 await cancel(task)
             except Exception as e:
                 logger.exception(e)
-                # The log message assumes that we are closing because of this error
-                # (is this a safe assumption?)
-                logger.error(
-                    f"An event listener raised an exception while processing an event. "
-                    f"Lightbus will now shutdown because the on_error option is set to"
-                    f" '{OnError.SHUTDOWN.value}'"
-                )
 
         for transport in self.transport_registry.get_all_transports():
             await transport.close()
@@ -565,6 +560,21 @@ class BusClient(object):
         elif isinstance(message, ResultMessage):
             self.schema.validate_response(api_name, event_or_rpc_name, message.result)
 
+    def add_background_task(
+        self, coroutine: Union[Coroutine, asyncio.Future], cancel_on_close=True
+    ) -> asyncio.Task:
+        """Run an asyncio task in the background
+
+        The provided coroutine will be run in the background once
+        Lightbus startup is complete.
+        """
+        task = asyncio.ensure_future(coroutine)
+        task.add_done_callback(make_exception_checker(die=True))
+        if cancel_on_close:
+            # Store task for closing later
+            self._background_tasks.append(task)
+        return task
+
     # Utilities
 
     def _validate_name(self, api_name: str, type_: str, name: str):
@@ -605,6 +615,8 @@ class BusClient(object):
                 f"This will be the event message. For example: "
                 f"my_listener(event_message, other, ...)"
             )
+
+    # Hooks
 
     async def _plugin_hook(self, name, **kwargs):
         # Hooks that need to run before plugins
