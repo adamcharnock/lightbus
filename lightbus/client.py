@@ -563,10 +563,16 @@ class BusClient(object):
     def add_background_task(
         self, coroutine: Union[Coroutine, asyncio.Future], cancel_on_close=True
     ) -> asyncio.Task:
-        """Run an asyncio task in the background
+        """Run a coroutine in the background
 
         The provided coroutine will be run in the background once
         Lightbus startup is complete.
+
+        The coroutine will be cancelled when the bus client is closed if
+        `cancel_on_close` is set to `True`.
+
+        The Lightbus process will exit if the coroutine raises an exception.
+        See lightbus.utilities.async_tools.check_for_exception() for details.
         """
         task = asyncio.ensure_future(coroutine)
         task.add_done_callback(make_exception_checker(die=True))
