@@ -467,3 +467,47 @@ def test_add_background_task(dummy_bus: lightbus.path.BusPath, event_loop):
     del dummy_bus.client.loop.lightbus_exit_code  # Delete to stop lightbus actually quitting
 
     assert calls == 5
+
+
+def test_every(dummy_bus: lightbus.path.BusPath, event_loop):
+    calls = 0
+
+    @dummy_bus.client.every(seconds=0.001)
+    async def test_coroutine():
+        nonlocal calls
+        while True:
+            calls += 1
+            if calls == 5:
+                raise Exception("Intentional exception: stopping lightbus dummy bus from running")
+            await asyncio.sleep(0.001)
+
+    dummy_bus.client._run_forever(consume_rpcs=False)
+    dummy_bus.client.close()
+
+    assert dummy_bus.client.loop.lightbus_exit_code
+    del dummy_bus.client.loop.lightbus_exit_code  # Delete to stop lightbus actually quitting
+
+    assert calls == 5
+
+
+def test_schedule(dummy_bus: lightbus.path.BusPath, event_loop):
+    import schedule
+
+    calls = 0
+
+    @dummy_bus.client.schedule(schedule.every(0.001).seconds)
+    async def test_coroutine():
+        nonlocal calls
+        while True:
+            calls += 1
+            if calls == 5:
+                raise Exception("Intentional exception: stopping lightbus dummy bus from running")
+            await asyncio.sleep(0.001)
+
+    dummy_bus.client._run_forever(consume_rpcs=False)
+    dummy_bus.client.close()
+
+    assert dummy_bus.client.loop.lightbus_exit_code
+    del dummy_bus.client.loop.lightbus_exit_code  # Delete to stop lightbus actually quitting
+
+    assert calls == 5

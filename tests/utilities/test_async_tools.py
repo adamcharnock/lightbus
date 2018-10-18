@@ -2,7 +2,6 @@ import asyncio
 from datetime import timedelta
 
 import pytest
-import schedule
 
 from lightbus.utilities.async_tools import call_every, cancel, call_on_schedule
 
@@ -120,6 +119,8 @@ async def test_call_on_schedule_run_immediate(run_for, call_counter):
 
 @pytest.mark.asyncio
 async def test_call_on_schedule_async(run_for):
+    import schedule
+
     await_count = 0
 
     async def cb():
@@ -138,6 +139,8 @@ async def test_call_on_schedule_async(run_for):
 @pytest.mark.asyncio
 async def test_call_on_schedule_with_long_execution_time(run_for):
     """Execution time should get taken into account"""
+    import schedule
+
     await_count = 0
 
     async def cb():
