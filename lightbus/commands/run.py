@@ -69,6 +69,6 @@ class Command(LogLevelMixin, BusImportMixin, object):
         block(plugin_hook("receive_args", args=args), timeout=5)
 
         if args.events_only:
-            bus.run_forever(consume_rpcs=False)
+            bus.client.run_forever(consume_rpcs=False)
         else:
-            bus.run_forever()
+            bus.client.run_forever()
