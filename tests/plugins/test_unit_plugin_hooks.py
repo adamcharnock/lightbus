@@ -37,7 +37,7 @@ def add_base_plugin():
 def test_server_start_stop(mocker, called_hooks, dummy_bus: BusPath, add_base_plugin, dummy_api):
     add_base_plugin()
     mocker.patch.object(BusClient, "_run_forever")
-    dummy_bus.run_forever()
+    dummy_bus.client.run_forever()
     assert called_hooks() == ["before_server_start", "after_server_stopped"]
 
 
