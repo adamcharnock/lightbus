@@ -42,12 +42,16 @@ from lightbus.utilities.async_tools import (
     await_if_necessary,
     make_exception_checker,
     call_every,
+    call_on_schedule,
 )
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.logging import log_transport_information
+
+if False:
+    from schedule import Job
 
 __all__ = ["BusClient"]
 
@@ -737,6 +741,19 @@ class BusClient(object):
             )
             self.add_background_task(coroutine)
             return f
+
+        return wrapper
+
+    def schedule(self, schedule: "Job", also_run_immediately=False):
+
+        def wrapper(f):
+            coroutine = call_on_schedule(
+                callback=f, schedule=schedule, also_run_immediately=also_run_immediately
+            )
+            self.add_background_task(coroutine)
+            return f
+
+        return wrapper
 
 
 class _EventListener(object):

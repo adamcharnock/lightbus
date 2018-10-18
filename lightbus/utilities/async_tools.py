@@ -4,7 +4,10 @@ from functools import partial
 from inspect import isawaitable
 from time import time
 from typing import Coroutine
-from datetime import timedelta
+from datetime import timedelta, datetime
+
+if False:
+    from schedule import Job
 
 from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 
@@ -118,6 +121,24 @@ async def call_every(*, callback, timedelta: timedelta, also_run_immediately: bo
             result = callback()
             if isawaitable(result):
                 await result
-        total_execution_time = start_time - time()
+        total_execution_time = time() - start_time
         sleep_time = max(0.0, timedelta.total_seconds() - total_execution_time)
         await asyncio.sleep(sleep_time)
+        first_run = False
+
+
+async def call_on_schedule(callback, schedule: "Job", also_run_immediately: bool):
+    first_run = True
+    while True:
+        schedule._schedule_next_run()
+
+        if not first_run or also_run_immediately:
+            schedule.last_run = datetime.now()
+            result = callback()
+            if isawaitable(result):
+                await result
+
+        td = schedule.next_run - datetime.now()
+        print(td.total_seconds())
+        await asyncio.sleep(td.total_seconds())
+        first_run = False
