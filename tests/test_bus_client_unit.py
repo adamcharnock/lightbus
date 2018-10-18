@@ -377,6 +377,9 @@ async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, 
         await asyncio.sleep(0.15)
         assert m.called
 
+    assert loop.lightbus_exit_code
+    del loop.lightbus_exit_code  # Delete to stop lightbus actually quitting
+
     # Close the bus to force tasks to be cleaned up
     # (This would have happened normally when the event loop was stopped,
     # but we prevented that my mocking stop() above)
@@ -445,7 +448,7 @@ async def test_exception_in_listener_ignore(dummy_bus: lightbus.path.BusPath, lo
     assert "ERROR" in log_levels
 
 
-def test_add_background_task(dummy_bus: lightbus.path.BusPath):
+def test_add_background_task(dummy_bus: lightbus.path.BusPath, event_loop):
     calls = 0
 
     async def test_coroutine():
@@ -458,5 +461,9 @@ def test_add_background_task(dummy_bus: lightbus.path.BusPath):
 
     dummy_bus.client.add_background_task(test_coroutine())
     dummy_bus.client._run_forever(consume_rpcs=False)
+    dummy_bus.client.close()
+
+    assert dummy_bus.client.loop.lightbus_exit_code
+    del dummy_bus.client.loop.lightbus_exit_code  # Delete to stop lightbus actually quitting
 
     assert calls == 5
