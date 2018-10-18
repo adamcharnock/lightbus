@@ -173,3 +173,7 @@ class DeformError(LightbusException):
 
 class ValidationError(LightbusException):
     pass
+
+
+class InvalidSchedule(LightbusException):
+    pass

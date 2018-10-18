@@ -2,7 +2,9 @@ import asyncio
 import logging
 from functools import partial
 from inspect import isawaitable
+from time import time
 from typing import Coroutine
+from datetime import timedelta
 
 from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 
@@ -97,3 +99,25 @@ async def await_if_necessary(value):
         return await value
     else:
         return value
+
+
+async def call_every(*, callback, timedelta: timedelta, also_run_immediately: bool):
+    """Call callback every timedelta
+
+    If also_run_immediately is set then the callback will be called before any waiting
+    happens. If the callback's result is awaitable then it will be awaited
+
+    Callback execution time is accounted for in the scheduling. If the execution takes
+    2 seconds, and timedelta is 10 seconds, then call_every() will wait 8 seconds
+    before the subsequent execution.
+    """
+    first_run = True
+    while True:
+        start_time = time()
+        if not first_run or also_run_immediately:
+            result = callback()
+            if isawaitable(result):
+                await result
+        total_execution_time = start_time - time()
+        sleep_time = max(0.0, timedelta.total_seconds() - total_execution_time)
+        await asyncio.sleep(sleep_time)

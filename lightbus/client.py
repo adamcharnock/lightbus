@@ -7,6 +7,7 @@ import signal
 import time
 from asyncio import CancelledError
 from collections import defaultdict
+from datetime import timedelta
 from itertools import chain
 from typing import List, Tuple, Coroutine, Union
 
@@ -24,6 +25,7 @@ from lightbus.exceptions import (
     NoApisToListenOn,
     InvalidName,
     LightbusShutdownInProgress,
+    InvalidSchedule,
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
@@ -39,6 +41,7 @@ from lightbus.utilities.async_tools import (
     cancel,
     await_if_necessary,
     make_exception_checker,
+    call_every,
 )
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
@@ -687,6 +690,53 @@ class BusClient(object):
 
     def after_event_execution(self, callback=None, *, before_plugins=False):
         return self._make_hook_decorator("after_event_execution", before_plugins, callback)
+
+    # Scheduling
+
+    def every(
+        self,
+        *,
+        seconds=0,
+        minutes=0,
+        hours=0,
+        days=0,
+        also_run_immediately=False,
+        **timedelta_extra,
+    ):
+        """ Call a coroutine at the specified interval
+
+        This is a simple scheduling mechanism which you can use in your bus module to setup
+        recurring tasks. For example:
+
+            bus = lightbus.create()
+
+            @bus.client.every(seconds=30)
+            def my_func():
+                print("Hello")
+
+        This can also be used to decorate async functions. In this case the function will be awaited.
+
+        Note that the timing is best effort and is not guaranteed. That being said, execution
+        time is accounted for.
+
+        See Also:
+
+            @bus.client.schedule()
+        """
+        td = timedelta(seconds=seconds, minutes=minutes, hours=hours, days=days, **timedelta_extra)
+
+        if td.total_seconds() == 0:
+            raise InvalidSchedule(
+                "The @bus.client.every() decorator must be provided with a non-zero time argument. "
+                "Ensure you are passing at least one time argument, and that it has a non-zero value."
+            )
+
+        def wrapper(f):
+            coroutine = call_every(
+                callback=f, timedelta=td, also_run_immediately=also_run_immediately
+            )
+            self.add_background_task(coroutine)
+            return f
 
 
 class _EventListener(object):
