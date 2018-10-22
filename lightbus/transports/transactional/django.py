@@ -46,9 +46,18 @@ class TransactionTransportMiddleware(object):
 
         response = self.get_response(request)
 
-        if 500 <= response.status_code < 600:
-            block(lightbus_transaction_context.__aexit__(True, True, True), timeout=5)
-        else:
-            block(lightbus_transaction_context.__aexit__(None, None, None), timeout=5)
+        try:
+            if 500 <= response.status_code < 600:
+                block(lightbus_transaction_context.__aexit__(True, True, True), timeout=5)
+            else:
+                block(lightbus_transaction_context.__aexit__(None, None, None), timeout=5)
+        except Exception:
+            # TODO: Experimental fix to cleanup context in case of timeout. Cleanup
+            #       and remove use of private method. Perhaps add transport.panic() method which
+            #       handles all this
+            lightbus_transaction_context.cursor = None
+            lightbus_transaction_context.connection.close()
+            lightbus_transaction_context.transport._clear_connection()
+            raise
 
         return response
