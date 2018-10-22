@@ -2,6 +2,7 @@ import asyncio
 from datetime import timedelta
 
 import pytest
+import schedule
 
 from lightbus.utilities.async_tools import call_every, cancel, call_on_schedule
 
