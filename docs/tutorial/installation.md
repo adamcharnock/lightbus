@@ -59,24 +59,12 @@ if you need the latest (albeit unstable) changes, or if you wish to modify the L
 
 ## 1.3. Installing Redis
 
-Lightbus relies on [Redis] as its primary transport. Specifically, Lightbus relies on the new Redis 'streams'
-feature in order to provide robust message handling. This will be available in Redis 5.0, due around mid-2018.
-Until then you should build Redis from source as follows:
+You will need Redis 5.0 or above in order to use Lightbus.
 
-```bash
-# Download
-$ wget https://github.com/antirez/redis/archive/5.0-rc4.zip
+You can install Redis 5.0 on macOS by either:
 
-# Extact
-$ tar -zxf 5.0-rc4.zip
-
-# Compile (requires xcode on mac)
-$ cd redis-5.0-rc4
-$ make
-
-# Start redis server
-$ ./src/redis-server
-```
+1. Using [Homebrew] (`brew install redis`), or
+2. Using docker (`docker run --rm -p 6379:6379 -d redis`) 
 
 ## 1.4. Check it works
 
