@@ -14,12 +14,7 @@ setup(
     license="MIT",
     description="Filling the gap between monolithic and microservice",
     long_description=open("README.rst").read() if exists("README.rst") else "",
-    install_requires=[
-        "aioredis",  # TODO: Pin version once streams support is merged
-        "jsonschema>=2.6.0,<3",
-        "pyyaml",
-        "python-dateutil",
-    ],
+    install_requires=["aioredis>=1.2.0,<2", "jsonschema>=2.6.0,<3", "pyyaml", "python-dateutil"],
     extras_require={':python_version=="3.6"': ["dataclasses==0.6"]},
     include_package_data=True,
     entry_points={
