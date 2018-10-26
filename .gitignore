@@ -8,7 +8,5 @@ INTEREST
 /site
 /.env
 /.venv
-/Pipfile
-/Pipfile.lock
 /.tox
 /.python-version

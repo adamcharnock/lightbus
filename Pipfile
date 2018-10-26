@@ -1,0 +1,36 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+aioredis = "==1.2.0"
+jsonschema = ">=2.6.0,<3"
+pyyaml = "*"
+python-dateutil = "*"
+
+[dev-packages]
+flake8 = "==3.4.1"
+coverage = "==4.4.1"
+pytest = "==3.9.2"
+pytest-cov = "==2.5.1"
+pytest-xdist = "==1.20.1"
+pytest-mock = "==1.6.3"
+pytest-repeat = "==0.4.1"
+pytest-asyncio = "==0.9.0"
+coveralls = "==1.2.0"
+dataclasses = "==0.6"
+async_timeout = "==1.4.0"
+psycopg2-binary = "*"
+aiopg = "*"
+mkdocs = "*"
+bpython = "*"
+pyyaml = "==3.12"
+structlog = "*"
+colorama = "*"
+schedule = "*"
+tox = "*"
+pre-commit = "*"
+
+[requires]
+python_version = "3.6"
