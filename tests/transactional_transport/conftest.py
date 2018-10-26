@@ -19,12 +19,24 @@ from lightbus.transports.transactional import DbApiConnection
 if False:
     import aiopg
 
+PG_URL = os.environ.get("PG_URL", "postgres://postgres@localhost:5432/postgres")
+
+
+def url_to_pg_kwargs(pg_url):
+    parsed = urllib.parse.urlparse(pg_url)
+    assert parsed.scheme == "postgres"
+    return {
+        "dbname": parsed.path.strip("/") or "postgres",
+        "user": parsed.username or "postgres",
+        "password": parsed.password,
+        "host": parsed.hostname,
+        "port": parsed.port or 5432,
+    }
+
 
 @pytest.fixture()
 def cursor_factory():
-
     class ErrorThrowingCursor(cursor):
-
         def __init__(self, conn, *args, **kwargs):
             self.conn = conn
             super().__init__(conn, *args, **kwargs)
@@ -52,20 +64,12 @@ def cursor_factory():
 
 @pytest.fixture()
 def pg_url():
-    return os.environ.get("PG_URL", "postgres://postgres@localhost:5432/postgres")
+    return PG_URL
 
 
 @pytest.fixture()
 def pg_kwargs(pg_url):
-    parsed = urllib.parse.urlparse(pg_url)
-    assert parsed.scheme == "postgres"
-    return {
-        "dbname": parsed.path.strip("/") or "postgres",
-        "user": parsed.username or "postgres",
-        "password": parsed.password,
-        "host": parsed.hostname,
-        "port": parsed.port or 5432,
-    }
+    return url_to_pg_kwargs(pg_url)
 
 
 @pytest.yield_fixture()
@@ -121,12 +125,11 @@ def dbapi_database(aiopg_connection, aiopg_cursor):
 def verification_connection() -> Awaitable["aiopg.Connection"]:
     import aiopg
 
-    return aiopg.connect(**pg_kwargs(pg_url()))
+    return aiopg.connect(**url_to_pg_kwargs(PG_URL))
 
 
 @pytest.fixture()
 def get_outbox():
-
     async def inner():
         async with verification_connection() as connection:
             async with connection.cursor() as cursor:
@@ -138,7 +141,6 @@ def get_outbox():
 
 @pytest.fixture()
 def get_processed_events():
-
     async def inner():
         async with verification_connection() as connection:
             async with connection.cursor() as cursor:
@@ -150,7 +152,6 @@ def get_processed_events():
 
 @pytest.fixture()
 def messages_in_redis(redis_client):
-
     async def inner(api_name, event_name):
         return await redis_client.xrange(f"{api_name}.{event_name}:stream")
 
@@ -208,7 +209,6 @@ async def test_table(aiopg_cursor):
     await aiopg_cursor.execute("COMMIT -- test_table (setup)")
 
     class TestTable(object):
-
         async def total_rows(self):
             await aiopg_cursor.execute("SELECT COUNT(*) FROM test_table")
             return (await aiopg_cursor.fetchone())[0]
