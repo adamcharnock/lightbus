@@ -56,11 +56,10 @@ def bus(
 
 @pytest.fixture(name="fire_dummy_events")
 def fire_dummy_events_fixture(bus):
-
     async def fire_dummy_events(total, initial_delay=0.1):
         await asyncio.sleep(initial_delay)
         for x in range(0, total):
-            await bus.my.dummy.my_event.fire_async(field=x)
+            await bus.my.dummy.my_event.fire_async(field=str(x))
         logger.warning("TEST: fire_dummy_events() completed")
 
     return fire_dummy_events
@@ -68,7 +67,6 @@ def fire_dummy_events_fixture(bus):
 
 @pytest.fixture
 def new_bus(loop, redis_server_config):
-
     async def wrapped():
         rpc_pool = await create_redis_pool(**redis_server_config, loop=loop, maxsize=1000)
         result_pool = await create_redis_pool(**redis_server_config, loop=loop, maxsize=1000)
@@ -89,7 +87,6 @@ def new_bus(loop, redis_server_config):
 
 @pytest.fixture
 def get_total_redis_connections(redis_client):
-
     async def _get_total_redis_connections():
         return int((await redis_client.info())["clients"]["connected_clients"])
 

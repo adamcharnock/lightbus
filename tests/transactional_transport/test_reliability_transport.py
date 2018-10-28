@@ -35,11 +35,11 @@ async def test_multiple_connections(
         async with aiopg.connect(loop=loop, **pg_kwargs) as connection:
             async with connection.cursor(cursor_factory=cursor_factory) as cursor:
                 bus = await transactional_bus_factory()
-                bus.client.register_api(dummy_api)
+                await bus.client.register_api_async(dummy_api)
 
                 for x in range(0, 50):
                     async with lightbus_set_database(bus, connection, apis=["my.dummy"]):
-                        await bus.my.dummy.my_event.fire_async(field=1)
+                        await bus.my.dummy.my_event.fire_async(field="a")
                         await cursor.execute(
                             "INSERT INTO test_table VALUES (%s)", [f"{number}-{x}"]
                         )

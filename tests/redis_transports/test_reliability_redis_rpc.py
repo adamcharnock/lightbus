@@ -15,7 +15,7 @@ pytestmark = pytest.mark.reliability
 
 @pytest.mark.asyncio
 async def test_timeouts(bus: lightbus.path.BusPath, caplog, dummy_api, loop):
-    bus.client.register_api(dummy_api)
+    await bus.client.register_api_async(dummy_api)
     caplog.set_level(logging.WARNING)
     loop.slow_callback_duration = 0.01
     results = []

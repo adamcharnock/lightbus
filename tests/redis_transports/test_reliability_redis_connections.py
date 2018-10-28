@@ -37,7 +37,7 @@ async def test_create_and_destroy_redis_buses(redis_client, dummy_api, new_bus, 
     for _ in range(0, 100):
         # make a bus
         bus = await new_bus()
-        bus.client.register_api(dummy_api)
+        await bus.client.register_api_async(dummy_api)
         # fire an event
         await bus.my.dummy.my_event.fire_async(field="a")
         # close it

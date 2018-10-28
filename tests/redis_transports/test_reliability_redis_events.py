@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 async def test_random_failures(
     bus: lightbus.path.BusPath, caplog, fire_dummy_events, dummy_api, mocker
 ):
-    bus.client.register_api(dummy_api)
+    await bus.client.register_api_async(dummy_api)
 
     # Use test_history() (below) to repeat any cases which fail
     caplog.set_level(logging.WARNING)
@@ -26,7 +26,7 @@ async def test_random_failures(
     history = []
 
     async def listener(event_message, field, **kwargs):
-        call_id = field
+        call_id = int(field)
         event_ok_ids.setdefault(call_id, 0)
         event_ok_ids[call_id] += 1
         await asyncio.sleep(0.01)

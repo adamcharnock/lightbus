@@ -47,7 +47,7 @@ def test_server_start_stop(mocker, called_hooks, dummy_bus: BusPath, add_base_pl
 def test_rpc_calls(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
     dummy_bus.client.register_api(dummy_api)
-    dummy_bus.my.dummy.my_proc()
+    dummy_bus.my.dummy.my_proc(field=123)
     assert called_hooks() == ["before_rpc_call", "after_rpc_call"]
 
 
@@ -59,7 +59,7 @@ async def test_rpc_execution(
         pass
 
     add_base_plugin()
-    dummy_bus.client.register_api(dummy_api)
+    await dummy_bus.client.register_api_async(dummy_api)
 
     async def dummy_transport_consume_rpcs(*args, **kwargs):
         if m.call_count == 1:
@@ -90,7 +90,7 @@ def test_event_sent(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dum
 @pytest.mark.asyncio
 async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
-    dummy_bus.client.register_api(dummy_api)
+    await dummy_bus.client.register_api_async(dummy_api)
 
     task = await dummy_bus.client.listen_for_event("my.dummy", "my_event", lambda *a, **kw: None)
     await asyncio.sleep(0.1)

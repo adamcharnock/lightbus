@@ -19,9 +19,9 @@ async def test_fire_events_all_ok(
     messages_in_redis,
     get_outbox,
 ):
-    transactional_bus.client.register_api(dummy_api)
+    await transactional_bus.client.register_api_async(dummy_api)
     async with lightbus_set_database(transactional_bus, aiopg_connection, apis=["foo", "bar"]):
-        await transactional_bus.my.dummy.my_event.fire_async(field=1)
+        await transactional_bus.my.dummy.my_event.fire_async(field="a")
         await aiopg_cursor.execute("INSERT INTO test_table VALUES ('hey')")
 
     assert await test_table.total_rows() == 1  # Test table has data
@@ -39,14 +39,14 @@ async def test_fire_events_exception(
     messages_in_redis,
     get_outbox,
 ):
-    transactional_bus.client.register_api(dummy_api)
+    await transactional_bus.client.register_api_async(dummy_api)
 
     class OhNo(Exception):
         pass
 
     with pytest.raises(OhNo):
         async with lightbus_set_database(transactional_bus, aiopg_connection, apis=["foo", "bar"]):
-            await transactional_bus.my.dummy.my_event.fire_async(field=1)
+            await transactional_bus.my.dummy.my_event.fire_async(field="a")
             await aiopg_cursor.execute("INSERT INTO test_table VALUES ('hey')")
             raise OhNo()
 
@@ -57,7 +57,7 @@ async def test_fire_events_exception(
 
 @pytest.mark.asyncio
 async def test_consume_events(transactional_bus: BusPath, aiopg_connection_factory, dummy_api):
-    transactional_bus.client.register_api(dummy_api)
+    await transactional_bus.client.register_api_async(dummy_api)
     events = []
 
     def listener(event_message, *, field):
@@ -76,7 +76,7 @@ async def test_consume_events(transactional_bus: BusPath, aiopg_connection_facto
     print("connection 2", connection2)
 
     async with lightbus_set_database(transactional_bus, connection2, apis=["my.dummy"]):
-        await transactional_bus.my.dummy.my_event.fire_async(field=1)
+        await transactional_bus.my.dummy.my_event.fire_async(field="a")
 
     await asyncio.sleep(0.2)
 
