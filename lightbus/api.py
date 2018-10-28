@@ -21,7 +21,9 @@ class Registry(object):
             raise InvalidApiRegistryEntry(
                 "An attempt was made to add a type to the API registry. This "
                 "is probably because you are trying to add the API class, rather "
-                "than an instance of the API class."
+                "than an instance of the API class.\n"
+                "\n"
+                "Use bus.client.register_api(MyApi()), rather than bus.client.register_api(MyApi)"
             )
 
         self._apis[api.meta.name] = api

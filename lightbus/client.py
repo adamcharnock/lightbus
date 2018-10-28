@@ -550,14 +550,14 @@ class BusClient(object):
         if api_name not in self.schema:
             if strict_validation:
                 raise UnknownApi(
-                    f"Validation is enabled for API {api_name}, but there is no schema present for this API. "
+                    f"Validation is enabled for API named '{api_name}', but there is no schema present for this API. "
                     f"Validation is therefore not possible. You are also seeing this error because the "
                     f"'strict_validation' setting is enabled. Disabling this setting will turn this exception "
                     f"into a warning. "
                 )
             else:
                 logger.warning(
-                    f"Validation is enabled for API {api_name}, but there is no schema present for this API. "
+                    f"Validation is enabled for API named '{api_name}', but there is no schema present for this API. "
                     f"Validation is therefore not possible. You can force this to be an error by enabling "
                     f"the 'strict_validation' config option. You can silence this message by disabling validation "
                     f"for this API using the 'validate' option."

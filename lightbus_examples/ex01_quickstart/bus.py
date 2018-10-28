@@ -4,7 +4,6 @@ bus = lightbus.create()
 
 
 class AuthApi(lightbus.Api):
-
     class Meta:
         name = "auth"
 

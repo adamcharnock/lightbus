@@ -12,11 +12,12 @@ Optionally, you can read some additional *explanation* in the
 
 ## 2.2 Define your API
 
-First we will define the API the lightbus will serve.
-Create the following in a `bus.py` file:
+First we will define the API the Lightbus will serve.
+Create an `auth_service` directory and within there create 
+the following in a `bus.py` file:
 
 ```python3
-# bus.py
+# File: auth_service/bus.py
 import lightbus
 
 # Create your service's bus client. You can import this elsewere
@@ -24,6 +25,7 @@ import lightbus
 bus = lightbus.create()
 
 class AuthApi(lightbus.Api):
+    user_registered = lightbus.Event(parameters=('username', 'email'))
 
     class Meta:
         name = 'auth'
@@ -31,34 +33,55 @@ class AuthApi(lightbus.Api):
     def check_password(self, username, password):
         return username == 'admin' and password == 'secret'
 
+# Register this API with Lightbus. Lightbus will respond to 
+# remote procedure calls for registered APIs, as well as allow you 
+# as the developer to fire events on any registered APIs.
+bus.client.register_api(AuthApi())
 ```
 
 You should now be able to startup Lightbus as follows:
 
 ```
+cd ./auth_service/
 lightbus run
 ```
 
 Lightbus will output some logging data which will include a list of
-APIs in its registry, including your new `auth` API:
+registered APIs, including your new `auth` API:
 
 ![lightbus run output][lightbus-run]
 
-Leave Lightbus running and open a new terminal window for the next stage.
+**Leave Lightbus running and open a new terminal window for the next stage.**
 
 ## 2.3 Remote procedure calls
 
-With Lightbus running, open a new terminal window and create a file named
-`call_procedure.py` in the same directory as your `bus.py`. This is
-just a regular Python script which will use to call the bus.
+With Lightbus running, create a new directory alongside `auth_service` 
+called `another_service`. This will be an example service which will 
+interact with the auth service. 
+
+You should now have the following structure:
+
+* `./auth_service/bus.py`, created above
+* `./another_service/`, which we will create files within now.
+
+We always we define a service's `bus` client within a `bus.py` file.
+Therefore, create `./another_service/bus.py` containing the following:
 
 ```python3
-# call_procedure.py
+# File: ./another_service/bus.py
 import lightbus
 
-# We'll assume we're writing a new service here,
-# so create a new bus client
 bus = lightbus.create()
+```
+
+Now create `./another_service/check_password.py`. We will use this 
+to experiment with making RPC calls:
+
+```python3
+# File: ./another_service/check_password.py
+
+# Import our service's bus client
+from .bus import bus
 
 # Call the check_password() procedure on our auth API
 valid = bus.auth.check_password(
@@ -74,8 +97,9 @@ else:
 ```
 
 Running this script should show you the following:
-
-    $ python3 ./call_procedure.py
+    
+    cd ./another_service/
+    python3 ./check_password.py
     Password valid!
 
 Looking at the other terminal window you have open you should see that
@@ -84,81 +108,49 @@ Lightbus has also reported that it is handled a remote procedure call.
 ## 2.4 Events
 
 Events allow services to broadcast a message to any other services which
-cares to listen. Events are fired by the service which 'owns' the API and
-received by any Lightbus service, which can include the owning service itself
-(as we do below).
+care to listen. Your service can fire events on any API which has been registered.
 
-The owning service can be more accurately referred to as the
-*[authoritative] service* for the given API. The authoritative service is the service
-which contains the API's class definition within its codebase. Lightbus only
-allows the authoritative service to fire events for an API. Any service can
-listen for any event.
+We have already created and registered our `AuthApi` in `./auth_service/bus.py` 
+which provides the `user_registered` event. 
 
-We will talk more about this in [concepts](/explanation/concepts.md). For now let's look
-at some code. Below we modify our `AuthApi` in `bus.py` to add a `user_registered`
-event. We also use the `before_server_start()` hook to setup a listener for
-that event:
+Let's write a simple script to manually register users and fire events. However, we can only 
+fire events for APIs we have registered. We have registered the API in `auth_service`, 
+so it is within this service that this new script must reside. We could not put the script 
+within `another_service` as this service does not include the `AuthApi` class and can therefore not 
+register it.
 
 
 ```python3
-# bus.py
-import lightbus
+# ./auth_service/manually_register_user.py
 
-bus = lightbus.create()
-
-class AuthApi(lightbus.Api):
-    user_registered = lightbus.Event(parameters=('username', 'email'))
-
-    class Meta:
-        name = 'auth'
-
-    def check_password(self, username, password):
-        return username == 'admin' and password == 'secret'
-
-
-def before_server_start():
-    # before_server_start() is called on lightbus startup,
-    # this allows you to setup your listeners.
-
-    # Call send_welcome_email() when we receive the user_registered event
-    bus.auth.user_registered.listen(
-        send_welcome_email,
-        listener_name="send_welcome_email"
-    )
-
-
-def send_welcome_email(event_message, username, email):
-    # In our example we'll just print something to the console,
-    # rather than send an actual email
-    print(f'Subject: Welcome to our site, {username}')
-    print(f'To: {email}')
-```
-
-Now create `fire_event.py`, this will fire the event on the bus.
-As with the previous example, this file name is arbitrary.
-In a real-world scenario this code may live in your web application's
-user registration success handler.
-
-```python3
-# fire_event.py
-import lightbus
-
-# Here we assume we're writing another module within
-# the same auth service, not creating a new service.
-# Therefore import our bus client from bus.py
+# Import our bus client from bus.py
 from bus import bus
 
-# Fire the event. There is no return value when firing events
+print("New user creation")
+new_username = input("Enter a username: ").strip()
+new_email = input("Enter a password: ").strip()
+
+# You would normally store the new user in your database
+# at this point. We don't show this here for simplicity.
+
+# Let the bus know a user has been registered by firing the event
 bus.auth.user_registered.fire(
-    username='admin',
-    email='admin@example.com'
+    username=new_username,
+    email=new_email
 )
+
+print("Done")
 ```
 
+Run this script using:
 
-Here we call `bus.auth.user_registered.fire()` to fire the `user_registered` event on
-the `auth` API. This will place the event onto the bus to be consumed any
-listening services.
+```bash
+cd ./auth_service/
+python3 manually_register_user.py
+```
+
+You should be prompted for a a username & password, at which point an event will be 
+fired onto the bus.
 
 ## 2.5 Next
 
