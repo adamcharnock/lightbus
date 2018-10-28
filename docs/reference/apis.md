@@ -65,15 +65,6 @@ on the bus. See [naming](#naming), below.
 
 `name` is a required option.
 
-### `auto_register (bool) = True`
-
-Should this API be registered with Lightbus upon import? This defaults to `True`,
-but if you specifically wish to prevent the API from being automatically
-registered with Lightbus you should set this to `False`.
-
-Note that should you set this to `False`, you can manually register the
-API at a later date using `lightbus.api.registry.add(MyApi())`.
-
 ## Naming your APIs
 
 As you can from the `Meta.name` option in the example above, API names

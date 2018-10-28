@@ -13,7 +13,6 @@ __all__ = ["Api", "Event"]
 
 
 class Registry(object):
-
     def __init__(self):
         self._apis: Dict[str, Api] = dict()
 
@@ -37,6 +36,16 @@ class Registry(object):
                 "was specified, or maybe the API has not been registered.".format(name)
             )
 
+    def remove(self, name) -> None:
+        try:
+            del self._apis[name]
+        except KeyError:
+            raise UnknownApi(
+                "An attempt was made to remove an API named '{}' from the registry, but the API "
+                "could not be found. Maybe the incorrect API name "
+                "was specified, or maybe the API has not been registered.".format(name)
+            )
+
     def public(self):
         return [api for api in self._apis.values() if not api.meta.internal]
 
@@ -50,13 +59,9 @@ class Registry(object):
         return list(self._apis.keys())
 
 
-registry = Registry()
-
-
 class ApiOptions(object):
     name: str
     internal: bool = False
-    auto_register: bool = True
 
     def __init__(self, options):
         for k, v in options.items():
@@ -65,7 +70,6 @@ class ApiOptions(object):
 
 
 class ApiMetaclass(type):
-
     def __init__(cls, name, bases=None, dict=None):
         is_api_base_class = name == "Api" and bases == (object,)
         if is_api_base_class:
@@ -83,9 +87,6 @@ class ApiMetaclass(type):
             cls.meta = ApiOptions(cls.Meta.__dict__.copy())
             super(ApiMetaclass, cls).__init__(name, bases, dict)
 
-            if cls.meta.auto_register:
-                registry.add(cls())
-
             if cls.meta.name == "default" or cls.meta.name.startswith("default."):
                 raise MisconfiguredApiOptions(
                     f"API class {name} is named 'default', or starts with 'default.'. "
@@ -102,7 +103,6 @@ class ApiMetaclass(type):
 
 
 class Api(object, metaclass=ApiMetaclass):
-
     class Meta:
         name = None
 
@@ -118,7 +118,6 @@ class Api(object, metaclass=ApiMetaclass):
 
 
 class Event(object):
-
     def __init__(self, parameters=tuple()):
         # Ensure you update the __copy__() method if adding other instance variables below
         if isinstance(parameters, str):

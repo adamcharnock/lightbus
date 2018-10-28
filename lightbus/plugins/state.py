@@ -8,7 +8,6 @@ from datetime import datetime
 
 import os
 
-from lightbus.api import registry
 from lightbus.message import EventMessage
 from lightbus.plugins import LightbusPlugin, is_plugin_loaded
 from lightbus.plugins.metrics import MetricsPlugin
@@ -44,6 +43,7 @@ class StatePlugin(LightbusPlugin):
 
     Per-message events are available via the MetricsPlugin, which is substantially higher volume.
     """
+
     priority = 100
 
     def __init__(
@@ -143,7 +143,7 @@ class StatePlugin(LightbusPlugin):
             process_name=self.process_name,
             service_name=self.service_name,
             metrics_enabled=is_plugin_loaded(MetricsPlugin),
-            api_names=[api.meta.name for api in registry.public()],
+            api_names=[api.meta.name for api in client.api_registry.public()],
             listening_for=[
                 "{}.{}".format(api_name, event_name)
                 for api_name, event_name in client._listeners.keys()

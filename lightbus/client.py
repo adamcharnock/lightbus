@@ -11,7 +11,7 @@ from datetime import timedelta
 from itertools import chain
 from typing import List, Tuple, Coroutine, Union
 
-from lightbus.api import registry, Api
+from lightbus.api import Api, Registry
 from lightbus.config import Config
 from lightbus.config.structure import OnError
 from lightbus.exceptions import (
@@ -69,7 +69,7 @@ class BusClient(object):
     """
 
     def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
-
+        self.api_registry = Registry()
         self.config = config
         self.transport_registry = transport_registry or TransportRegistry().load_config(config)
         self.schema = Schema(
@@ -134,7 +134,7 @@ class BusClient(object):
         await self.schema.load_from_bus()
 
         # Share the schema of the registered APIs
-        for api in registry.all():
+        for api in self.api_registry.all():
             await self.schema.add_api(api)
 
         logger.info(
@@ -174,13 +174,14 @@ class BusClient(object):
         return get_event_loop()
 
     def run_forever(self, *, consume_rpcs=True):
-        registry.add(LightbusStateApi())
-        registry.add(LightbusMetricsApi())
+        self.api_registry.add(LightbusStateApi())
+        self.api_registry.add(LightbusMetricsApi())
 
         if consume_rpcs:
             logger.info(
                 LBullets(
-                    "APIs in registry ({})".format(len(registry.all())), items=registry.names()
+                    "APIs in registry ({})".format(len(self.api_registry.all())),
+                    items=self.api_registry.names(),
                 )
             )
 
@@ -200,7 +201,7 @@ class BusClient(object):
     def _run_forever(self, consume_rpcs):
         # Setup RPC consumption
         consume_rpc_task = None
-        if consume_rpcs and registry.all():
+        if consume_rpcs and self.api_registry.all():
             consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
 
         # Setup schema monitoring
@@ -235,7 +236,7 @@ class BusClient(object):
 
     async def consume_rpcs(self, apis: List[Api] = None):
         if apis is None:
-            apis = registry.all()
+            apis = self.api_registry.all()
 
         if not apis:
             raise NoApisToListenOn(
@@ -251,7 +252,7 @@ class BusClient(object):
 
             coroutines = []
             for rpc_transport, transport_api_names in api_names_by_transport:
-                transport_apis = list(map(registry.get, transport_api_names))
+                transport_apis = list(map(self.api_registry.get, transport_api_names))
                 coroutines.append(
                     self._consume_rpcs_with_transport(
                         rpc_transport=rpc_transport, apis=transport_apis
@@ -374,7 +375,7 @@ class BusClient(object):
         return result_message.result
 
     async def call_rpc_local(self, api_name: str, name: str, kwargs: dict = frozendict()):
-        api = registry.get(api_name)
+        api = self.api_registry.get(api_name)
         self._validate_name(api_name, "rpc", name)
 
         start_time = time.time()
@@ -412,15 +413,15 @@ class BusClient(object):
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         kwargs = kwargs or {}
         try:
-            api = registry.get(api_name)
+            api = self.api_registry.get(api_name)
         except UnknownApi:
             raise UnknownApi(
-                "Lightbus tried to fire the event {api_name}.{name}, but could not find API {api_name} in the "
+                "Lightbus tried to fire the event {api_name}.{name}, but no API named {api_name} was found in the "
                 "registry. An API being in the registry implies you are an authority on that API. Therefore, "
                 "Lightbus requires the API to be in the registry as it is a bad idea to fire "
                 "events on behalf of remote APIs. However, this could also be caused by a typo in the "
                 "API name or event name, or be because the API class has not been "
-                "imported. ".format(**locals())
+                "registered using bus.client.register_api(). ".format(**locals())
             )
 
         self._validate_name(api_name, "event", name)
@@ -745,7 +746,6 @@ class BusClient(object):
         return wrapper
 
     def schedule(self, schedule: "Job", also_run_immediately=False):
-
         def wrapper(f):
             coroutine = call_on_schedule(
                 callback=f, schedule=schedule, also_run_immediately=also_run_immediately
@@ -754,6 +754,12 @@ class BusClient(object):
             return f
 
         return wrapper
+
+    def register_api(self, api: Api):
+        self.api_registry.add(api)
+
+    def unregister_api(self, api: Api):
+        self.api_registry.remove(api)
 
 
 class _EventListener(object):

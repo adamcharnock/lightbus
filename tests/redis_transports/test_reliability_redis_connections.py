@@ -10,7 +10,7 @@ pytestmark = pytest.mark.reliability
 
 
 @pytest.mark.asyncio
-async def test_redis_connections_closed(redis_client, loop, dummy_api, new_bus, caplog):
+async def test_redis_connections_closed(redis_client, loop, new_bus, caplog):
     # Ensure we have no connections at the start
     await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
 
@@ -31,12 +31,13 @@ async def test_redis_connections_closed(redis_client, loop, dummy_api, new_bus, 
 
 
 @pytest.mark.asyncio
-async def test_create_and_destroy_redis_buses(redis_client, loop, dummy_api, new_bus, caplog):
+async def test_create_and_destroy_redis_buses(redis_client, dummy_api, new_bus, caplog):
     caplog.set_level(logging.WARNING)
 
     for _ in range(0, 100):
         # make a bus
         bus = await new_bus()
+        bus.client.register_api(dummy_api)
         # fire an event
         await bus.my.dummy.my_event.fire_async(field="a")
         # close it

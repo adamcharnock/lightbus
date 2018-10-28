@@ -36,6 +36,7 @@ def add_base_plugin():
 
 def test_server_start_stop(mocker, called_hooks, dummy_bus: BusPath, add_base_plugin, dummy_api):
     add_base_plugin()
+    dummy_bus.client.register_api(dummy_api)
     mocker.patch.object(BusClient, "_run_forever")
     dummy_bus.client.run_forever()
     assert called_hooks() == ["before_server_start", "after_server_stopped"]
@@ -43,6 +44,7 @@ def test_server_start_stop(mocker, called_hooks, dummy_bus: BusPath, add_base_pl
 
 def test_rpc_calls(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
+    dummy_bus.client.register_api(dummy_api)
     dummy_bus.my.dummy.my_proc()
     assert called_hooks() == ["before_rpc_call", "after_rpc_call"]
 
@@ -51,11 +53,11 @@ def test_rpc_calls(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dumm
 async def test_rpc_execution(
     called_hooks, dummy_bus: BusPath, loop, mocker, add_base_plugin, dummy_api
 ):
-
     class StopIt(Exception):
         pass
 
     add_base_plugin()
+    dummy_bus.client.register_api(dummy_api)
 
     async def dummy_transport_consume_rpcs(*args, **kwargs):
         if m.call_count == 1:
@@ -78,6 +80,7 @@ async def test_rpc_execution(
 
 def test_event_sent(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
+    dummy_bus.client.register_api(dummy_api)
     dummy_bus.my.dummy.my_event.fire(field="foo")
     assert called_hooks() == ["before_event_sent", "after_event_sent"]
 
@@ -85,6 +88,7 @@ def test_event_sent(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dum
 @pytest.mark.asyncio
 async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
+    dummy_bus.client.register_api(dummy_api)
 
     task = await dummy_bus.client.listen_for_event("my.dummy", "my_event", lambda *a, **kw: None)
     await asyncio.sleep(0.1)

@@ -3,7 +3,7 @@ import logging
 from typing import Sequence
 
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
-from lightbus.api import registry, Api
+from lightbus.api import Api
 from lightbus.exceptions import UnsupportedUse
 from lightbus.log import L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class DirectRpcTransport(RpcTransport):  # pragma: no cover
-
     def __init__(self, result_transport: "DirectResultTransport"):
         self.result_transport = result_transport
 
@@ -43,7 +42,6 @@ class DirectRpcTransport(RpcTransport):  # pragma: no cover
 
 
 class DirectResultTransport(ResultTransport):  # pragma: no cover
-
     def get_return_path(self, rpc_message: RpcMessage) -> asyncio.Future:
         # We can return a future rather than a string because we know it won't have to be serialised
         return asyncio.Future()
@@ -64,7 +62,6 @@ class DirectResultTransport(ResultTransport):  # pragma: no cover
 
 
 class DirectEventTransport(EventTransport):  # pragma: no cover
-
     def __init__(self):
         self.queue = asyncio.Queue()
 

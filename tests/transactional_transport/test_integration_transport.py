@@ -19,6 +19,7 @@ async def test_fire_events_all_ok(
     messages_in_redis,
     get_outbox,
 ):
+    transactional_bus.client.register_api(dummy_api)
     async with lightbus_set_database(transactional_bus, aiopg_connection, apis=["foo", "bar"]):
         await transactional_bus.my.dummy.my_event.fire_async(field=1)
         await aiopg_cursor.execute("INSERT INTO test_table VALUES ('hey')")
@@ -38,6 +39,7 @@ async def test_fire_events_exception(
     messages_in_redis,
     get_outbox,
 ):
+    transactional_bus.client.register_api(dummy_api)
 
     class OhNo(Exception):
         pass
@@ -55,6 +57,7 @@ async def test_fire_events_exception(
 
 @pytest.mark.asyncio
 async def test_consume_events(transactional_bus: BusPath, aiopg_connection_factory, dummy_api):
+    transactional_bus.client.register_api(dummy_api)
     events = []
 
     def listener(event_message, *, field):

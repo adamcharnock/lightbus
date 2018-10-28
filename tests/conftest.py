@@ -27,7 +27,6 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 import lightbus
 import lightbus.creation
 from lightbus import BusClient
-from lightbus.api import registry
 from lightbus.commands import COMMAND_PARSED_ARGS
 from lightbus.path import BusPath
 from lightbus.message import EventMessage
@@ -183,7 +182,6 @@ async def dummy_listener(dummy_bus: BusPath, loop):
     tasks = []
 
     async def listen(api_name, event_name):
-
         def pass_listener(*args, **kwargs):
             pass
 
@@ -289,9 +287,6 @@ def pytest_runtest_setup(item):
     # Clear out any plugins
     remove_all_plugins()
 
-    # Clear out the API registry
-    registry._apis = dict()
-
     # Clear out any stash command line args
     COMMAND_PARSED_ARGS.clear()
 
@@ -300,9 +295,7 @@ def pytest_runtest_setup(item):
 def dummy_api():
     from tests.dummy_api import DummyApi
 
-    dummy_api = DummyApi()
-    registry.add(dummy_api)
-    return dummy_api
+    return DummyApi()
 
 
 @pytest.yield_fixture
@@ -327,7 +320,6 @@ def tmp_directory():
 
 @pytest.fixture
 def set_env():
-
     @contextlib.contextmanager
     def _set_env(**environ):
         old_environ = dict(os.environ)

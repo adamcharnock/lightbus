@@ -11,7 +11,6 @@ pytestmark = pytest.mark.reliability
 
 @pytest.mark.asyncio
 async def test_multiple_connections(
-    transactional_bus,  # Ensure migrations get run
     transactional_bus_factory,
     pg_kwargs,
     test_table,
@@ -36,6 +35,7 @@ async def test_multiple_connections(
         async with aiopg.connect(loop=loop, **pg_kwargs) as connection:
             async with connection.cursor(cursor_factory=cursor_factory) as cursor:
                 bus = await transactional_bus_factory()
+                bus.client.register_api(dummy_api)
 
                 for x in range(0, 50):
                     async with lightbus_set_database(bus, connection, apis=["my.dummy"]):

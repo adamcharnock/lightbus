@@ -9,7 +9,6 @@ import lightbus
 import lightbus.path
 from lightbus.config.structure import OnError
 from lightbus.path import BusPath
-from lightbus.api import registry
 from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
 from lightbus.plugins import manually_set_plugins
@@ -52,6 +51,7 @@ async def test_bus_fixture(bus: lightbus.path.BusPath):
 @pytest.mark.asyncio
 async def test_rpc(bus: lightbus.path.BusPath, dummy_api):
     """Full rpc call integration test"""
+    bus.client.register_api(dummy_api)
 
     async def co_call_rpc():
         await asyncio.sleep(0.1)
@@ -70,6 +70,7 @@ async def test_rpc(bus: lightbus.path.BusPath, dummy_api):
 @pytest.mark.asyncio
 async def test_rpc_timeout(bus: lightbus.path.BusPath, dummy_api):
     """Full rpc call integration test"""
+    bus.client.register_api(dummy_api)
 
     async def co_call_rpc():
         await asyncio.sleep(0.1)
@@ -90,6 +91,7 @@ async def test_rpc_timeout(bus: lightbus.path.BusPath, dummy_api):
 @pytest.mark.asyncio
 async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
     """Test what happens when the remote procedure throws an error"""
+    bus.client.register_api(dummy_api)
 
     async def co_call_rpc():
         await asyncio.sleep(0.1)
@@ -115,6 +117,7 @@ async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
 )
 async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
     """Full event integration test"""
+    bus.client.register_api(dummy_api)
     bus.client.transport_registry.get_event_transport("default").stream_use = stream_use
     manually_set_plugins({})
     received_messages = []
@@ -139,6 +142,7 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
 @pytest.mark.asyncio
 async def test_ids(bus: lightbus.path.BusPath, dummy_api, mocker):
     """Ensure the id comes back correctly"""
+    bus.client.register_api(dummy_api)
 
     async def co_call_rpc():
         await asyncio.sleep(0.1)
@@ -185,9 +189,6 @@ class ApiB(lightbus.Api):
 @pytest.mark.asyncio
 async def test_multiple_rpc_transports(loop, redis_server_url, redis_server_b_url, consume_rpcs):
     """Configure a bus with two redis transports and ensure they write to the correct redis servers"""
-    registry.add(ApiA())
-    registry.add(ApiB())
-
     manually_set_plugins(plugins={})
 
     redis_url_a = redis_server_url
@@ -213,6 +214,9 @@ async def test_multiple_rpc_transports(loop, redis_server_url, redis_server_b_ur
     )
 
     bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config))
+    bus.client.register_api(ApiA())
+    bus.client.register_api(ApiB())
+
     task = asyncio.ensure_future(consume_rpcs(bus))
     await asyncio.sleep(0.1)
 
@@ -227,9 +231,6 @@ async def test_multiple_rpc_transports(loop, redis_server_url, redis_server_b_ur
 @pytest.mark.asyncio
 async def test_multiple_event_transports(loop, redis_server_url, redis_server_b_url):
     """Configure a bus with two redis transports and ensure they write to the correct redis servers"""
-    registry.add(ApiA())
-    registry.add(ApiB())
-
     manually_set_plugins(plugins={})
 
     redis_url_a = redis_server_url
@@ -257,6 +258,8 @@ async def test_multiple_event_transports(loop, redis_server_url, redis_server_b_
     )
 
     bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config))
+    bus.client.register_api(ApiA())
+    bus.client.register_api(ApiB())
     await asyncio.sleep(0.1)
 
     await bus.api_a.event_a.fire_async()
@@ -283,6 +286,7 @@ async def test_multiple_event_transports(loop, redis_server_url, redis_server_b_
 @pytest.mark.asyncio
 async def test_validation_rpc(loop, bus: lightbus.path.BusPath, dummy_api, mocker):
     """Check validation happens when performing an RPC"""
+    bus.client.register_api(dummy_api)
     config = Config.load_dict({"apis": {"default": {"validate": True, "strict_validation": True}}})
     bus.client.config = config
     mocker.patch("jsonschema.validate", autospec=True)
@@ -317,6 +321,7 @@ async def test_validation_rpc(loop, bus: lightbus.path.BusPath, dummy_api, mocke
 @pytest.mark.asyncio
 async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, mocker):
     """Check validation happens when firing an event"""
+    bus.client.register_api(dummy_api)
     config = Config.load_dict(
         {"apis": {"default": {"validate": True, "strict_validation": True, "on_error": "ignore"}}}
     )
@@ -356,9 +361,6 @@ async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, moc
 async def test_listen_to_multiple_events_across_multiple_transports(
     loop, redis_server_url, redis_server_b_url
 ):
-    registry.add(ApiA())
-    registry.add(ApiB())
-
     manually_set_plugins(plugins={})
 
     redis_url_a = redis_server_url
@@ -378,6 +380,8 @@ async def test_listen_to_multiple_events_across_multiple_transports(
     )
 
     bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config))
+    bus.client.register_api(ApiA())
+    bus.client.register_api(ApiB())
     await asyncio.sleep(0.1)
 
     calls = 0
@@ -406,6 +410,7 @@ async def test_event_exception_in_listener_realtime(
 ):
     """Start a listener (which errors) and then add events to the stream.
     The listener will load them one-by-one."""
+    bus.client.register_api(dummy_api)
     manually_set_plugins({})
     received_messages = []
 
@@ -454,6 +459,7 @@ async def test_event_exception_in_listener_batch_fetch(
 ):
     """Add a number of events to a stream the startup a listener which errors.
     The listener will fetch them all at once."""
+    bus.client.register_api(dummy_api)
     manually_set_plugins({})
     received_messages = []
 

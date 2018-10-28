@@ -35,6 +35,7 @@ async def test_fully_qualified_name():
 
 @pytest.mark.asyncio
 async def test_dir(dummy_bus: lightbus.path.BusPath, dummy_api):
+    dummy_bus.client.register_api(dummy_api)
     assert "my" in dir(dummy_bus)
     assert "dummy" in dir(dummy_bus.my)
     assert "my_event" in dir(dummy_bus.my.dummy)

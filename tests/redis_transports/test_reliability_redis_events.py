@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 async def test_random_failures(
     bus: lightbus.path.BusPath, caplog, fire_dummy_events, dummy_api, mocker
 ):
+    bus.client.register_api(dummy_api)
+
     # Use test_history() (below) to repeat any cases which fail
     caplog.set_level(logging.WARNING)
 

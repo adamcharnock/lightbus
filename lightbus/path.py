@@ -1,7 +1,6 @@
 from typing import Optional, List
 
 from lightbus import BusClient
-from lightbus.api import registry
 from lightbus.exceptions import (
     InvalidBusPathConfiguration,
     InvalidParameters,
@@ -50,7 +49,7 @@ class BusPath(object):
         path = [node.name for node in self.ancestors(include_self=True)]
         path.reverse()
 
-        api_names = [[""] + n.split(".") for n in registry.names()]
+        api_names = [[""] + n.split(".") for n in self.client.api_registry.names()]
 
         matches = []
         apis = []
@@ -63,7 +62,7 @@ class BusPath(object):
                 matches.append(api_name[len(path)])
 
         for api_name in apis:
-            api = registry.get(".".join(api_name[1:]))
+            api = self.client.api_registry.get(".".join(api_name[1:]))
             matches.extend(dir(api))
 
         return matches

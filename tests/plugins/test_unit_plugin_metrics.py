@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 
-from lightbus.api import registry, Api, Event
+from lightbus.api import Api, Event
 from lightbus.path import BusPath
 from lightbus.message import RpcMessage, EventMessage
 from lightbus.plugins import manually_set_plugins
@@ -25,7 +25,7 @@ class TestApi(Api):
 async def test_remote_rpc_call(dummy_bus: BusPath, get_dummy_events):
     # Setup the bus and do the call
     manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
-    registry.add(TestApi())
+    dummy_bus.client.register_api(TestApi())
     await dummy_bus.example.test.my_method.call_async(f=123)
 
     # What events were fired?
@@ -75,7 +75,7 @@ async def test_local_rpc_call(loop, dummy_bus: BusPath, consume_rpcs, get_dummy_
 
     # Setup the bus and do the call
     manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
-    registry.add(TestApi())
+    dummy_bus.client.register_api(TestApi())
 
     task = asyncio.ensure_future(consume_rpcs(dummy_bus), loop=loop)
 
@@ -116,7 +116,7 @@ async def test_local_rpc_call(loop, dummy_bus: BusPath, consume_rpcs, get_dummy_
 @pytest.mark.asyncio
 async def test_send_event(dummy_bus: BusPath, get_dummy_events):
     manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
-    registry.add(TestApi())
+    dummy_bus.client.register_api(TestApi())
     await dummy_bus.example.test.my_event.fire_async(f=123)
 
     # What events were fired?
@@ -152,7 +152,7 @@ async def test_execute_events(dummy_bus: BusPath, dummy_listener, get_dummy_even
 
     # Setup the bus and do the call
     manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
-    registry.add(TestApi())
+    dummy_bus.client.register_api(TestApi())
 
     # The dummy transport will fire an every every 0.1 seconds
     await asyncio.sleep(0.15)
