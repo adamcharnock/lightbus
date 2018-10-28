@@ -65,7 +65,6 @@ async def test_send_event_per_api_stream(redis_event_transport: RedisEventTransp
 async def test_consume_events(
     loop, redis_event_transport: RedisEventTransport, redis_client, dummy_api
 ):
-
     async def co_enqeue():
         await asyncio.sleep(0.1)
         return await redis_client.xadd(
@@ -80,7 +79,9 @@ async def test_consume_events(
         )
 
     async def co_consume():
-        async for message_ in redis_event_transport.consume([("my.dummy", "my_event")], {}):
+        async for message_ in redis_event_transport.consume(
+            [("my.dummy", "my_event")], "test_listener"
+        ):
             return message_
 
     enqueue_result, messages = await asyncio.gather(co_enqeue(), co_consume())
@@ -104,7 +105,7 @@ async def test_consume_events_multiple_consumers(loop, redis_pool, redis_client,
             stream_use=StreamUse.PER_EVENT,
         )
 
-        async for messages_ in event_transport.consume([("my.dummy", "my_event")], {}):
+        async for messages_ in event_transport.consume([("my.dummy", "my_event")], "test_listener"):
             messages.append(messages_)
             await event_transport.acknowledge(*messages_)
 
@@ -690,7 +691,7 @@ async def test_reconnect_while_listening(
     async def co_consume():
         nonlocal total_messages
 
-        consumer = redis_event_transport.consume([("my.dummy", "my_event")], {})
+        consumer = redis_event_transport.consume([("my.dummy", "my_event")], "test_listener")
         async for messages_ in consumer:
             total_messages += len(messages_)
             await redis_event_transport.acknowledge(*messages_)
