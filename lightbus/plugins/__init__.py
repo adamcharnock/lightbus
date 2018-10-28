@@ -157,25 +157,25 @@ class PluginRegistry(object):
     VALID_HOOK_NAMES = {k for k in LightbusPlugin.__dict__ if not k.startswith("_")}
 
     def __init__(self):
-        self.plugins = []
+        self._plugins = []
 
     def autoload_plugins(self, config: "Config"):
         """Autoload this registry with plugins from the 'lightbus_plugins' entrypoint"""
         for name, cls in find_plugins().items():
             plugin_config = config.plugin(name)
             if plugin_config.enabled:
-                self.plugins.append(
+                self._plugins.append(
                     instantiate_plugin(config=config, plugin_config=plugin_config, cls=cls)
                 )
 
-        return self.plugins
+        return self._plugins
 
-    def manually_set_plugins(self, plugins: list):
+    def set_plugins(self, plugins: list):
         """Manually set the plugins in this registry"""
-        self.plugins = plugins
+        self._plugins = plugins
 
     def is_plugin_loaded(self, plugin_class: Type[LightbusPlugin]):
-        return plugin_class in [type(p) for p in self.plugins]
+        return plugin_class in [type(p) for p in self._plugins]
 
     async def execute_hook(self, name, **kwargs):
         if name not in self.VALID_HOOK_NAMES:
@@ -186,7 +186,7 @@ class PluginRegistry(object):
             )
 
         return_values = []
-        for plugin in self.plugins:
+        for plugin in self._plugins:
             handler = getattr(plugin, name, None)
             if handler:
                 try:

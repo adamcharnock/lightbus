@@ -23,7 +23,7 @@ class TestApi(Api):
 @pytest.mark.asyncio
 async def test_remote_rpc_call(dummy_bus: BusPath, get_dummy_events):
     # Setup the bus and do the call
-    dummy_bus.client.plugin_registry.manually_set_plugins(
+    dummy_bus.client.plugin_registry.set_plugins(
         plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
     )
     dummy_bus.client.register_api(TestApi())
@@ -75,7 +75,7 @@ async def test_local_rpc_call(loop, dummy_bus: BusPath, consume_rpcs, get_dummy_
     )
 
     # Setup the bus and do the call
-    dummy_bus.client.plugin_registry.manually_set_plugins(
+    dummy_bus.client.plugin_registry.set_plugins(
         plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
     )
     dummy_bus.client.register_api(TestApi())
@@ -118,7 +118,7 @@ async def test_local_rpc_call(loop, dummy_bus: BusPath, consume_rpcs, get_dummy_
 
 @pytest.mark.asyncio
 async def test_send_event(dummy_bus: BusPath, get_dummy_events):
-    dummy_bus.client.plugin_registry.manually_set_plugins(
+    dummy_bus.client.plugin_registry.set_plugins(
         plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
     )
     dummy_bus.client.register_api(TestApi())
@@ -156,7 +156,7 @@ async def test_execute_events(dummy_bus: BusPath, dummy_listener, get_dummy_even
     await dummy_listener("example.test", "my_event")
 
     # Setup the bus and do the call
-    dummy_bus.client.plugin_registry.manually_set_plugins(
+    dummy_bus.client.plugin_registry.set_plugins(
         plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
     )
     dummy_bus.client.register_api(TestApi())

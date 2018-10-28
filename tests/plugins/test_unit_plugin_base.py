@@ -12,26 +12,26 @@ pytestmark = pytest.mark.unit
 
 
 def test_manually_set_plugins(plugin_registry: PluginRegistry):
-    assert not plugin_registry.plugins
+    assert not plugin_registry._plugins
     p1 = LightbusPlugin()
     p2 = LightbusPlugin()
-    plugin_registry.manually_set_plugins([p1, p2])
-    assert plugin_registry.plugins == [p1, p2]
+    plugin_registry.set_plugins([p1, p2])
+    assert plugin_registry._plugins == [p1, p2]
 
 
 def test_autoload_plugins(plugin_registry: PluginRegistry):
     config = Config.load_dict({})
-    assert not plugin_registry.plugins
+    assert not plugin_registry._plugins
     assert plugin_registry.autoload_plugins(config)
-    assert [type(p) for p in plugin_registry.plugins] == [StatePlugin, MetricsPlugin]
+    assert [type(p) for p in plugin_registry._plugins] == [StatePlugin, MetricsPlugin]
 
 
 @pytest.mark.asyncio
 async def test_execute_hook(mocker, plugin_registry: PluginRegistry):
     """Ensure calling execute_hook() calls the method on the plugin"""
-    assert not plugin_registry.plugins
+    assert not plugin_registry._plugins
     plugin = LightbusPlugin()
-    plugin_registry.manually_set_plugins([plugin])
+    plugin_registry.set_plugins([plugin])
 
     async def dummy_coroutine(*args, **kwargs):
         pass
@@ -44,7 +44,7 @@ async def test_execute_hook(mocker, plugin_registry: PluginRegistry):
 
 def test_is_plugin_loaded(plugin_registry: PluginRegistry):
     assert plugin_registry.is_plugin_loaded(LightbusPlugin) == False
-    plugin_registry.manually_set_plugins([LightbusPlugin()])
+    plugin_registry.set_plugins([LightbusPlugin()])
     assert plugin_registry.is_plugin_loaded(LightbusPlugin) == True
 
 

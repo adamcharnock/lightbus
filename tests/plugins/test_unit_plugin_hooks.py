@@ -31,7 +31,7 @@ def add_base_plugin(dummy_bus: BusPath):
     # None of the base plugin's methods do anything, but it allows our
     # called_hooks() fixture above to detch the call
     def do_add_base_plugin():
-        dummy_bus.client.plugin_registry.manually_set_plugins([LightbusPlugin()])
+        dummy_bus.client.plugin_registry.set_plugins([LightbusPlugin()])
 
     return do_add_base_plugin
 

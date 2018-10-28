@@ -152,7 +152,7 @@ def test_plugin_disabled(plugin_registry: PluginRegistry):
         {"plugins": {"internal_state": {"enabled": False}, "internal_metrics": {"enabled": False}}}
     )
     plugin_registry.autoload_plugins(config)
-    assert not plugin_registry.plugins
+    assert not plugin_registry._plugins
 
 
 def test_plugin_enabled(plugin_registry: PluginRegistry):
@@ -160,7 +160,7 @@ def test_plugin_enabled(plugin_registry: PluginRegistry):
         {"plugins": {"internal_state": {"enabled": True}, "internal_metrics": {"enabled": True}}}
     )
     plugin_registry.autoload_plugins(config)
-    assert plugin_registry.plugins
+    assert plugin_registry._plugins
 
 
 EXAMPLE_VALID_YAML = """
