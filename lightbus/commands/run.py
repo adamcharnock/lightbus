@@ -40,7 +40,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         try:
             self._handle(args, config, plugin_registry)
         except Exception as e:
-            block(plugin_registry.plugin_hook("exception", e=e), timeout=5)
+            block(plugin_registry.execute_hook("exception", e=e), timeout=5)
             raise
 
     def _handle(self, args, config, plugin_registry: PluginRegistry):
@@ -64,7 +64,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
             if iscoroutine(co):
                 block(co, timeout=10)
 
-        block(plugin_registry.plugin_hook("receive_args", args=args), timeout=5)
+        block(plugin_registry.execute_hook("receive_args", args=args), timeout=5)
 
         if args.events_only:
             bus.client.run_forever(consume_rpcs=False)

@@ -82,7 +82,7 @@ def parse_args(args=None):
     plugin_registry.autoload_plugins(config=Config.load_dict({}))
 
     block(
-        plugin_registry.plugin_hook("before_parse_args", parser=parser, subparsers=subparsers),
+        plugin_registry.execute_hook("before_parse_args", parser=parser, subparsers=subparsers),
         timeout=5,
     )
     args = parser.parse_args(sys.argv[1:] if args is None else args)

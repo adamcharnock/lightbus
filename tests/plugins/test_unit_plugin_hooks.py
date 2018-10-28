@@ -14,13 +14,13 @@ pytestmark = pytest.mark.unit
 
 @pytest.fixture
 def called_hooks(mocker, dummy_bus: BusPath):
-    # Patch only applies to module in which plugin_hook is used, not
+    # Patch only applies to module in which execute_hook is used, not
     # where it is defined
     async def dummy_coroutine(*args, **kwargs):
         pass
 
     m = mocker.patch.object(
-        dummy_bus.client.plugin_registry, "plugin_hook", side_effect=dummy_coroutine
+        dummy_bus.client.plugin_registry, "execute_hook", side_effect=dummy_coroutine
     )
     return lambda: [kwargs.get("name") or args[0] for args, kwargs in m.call_args_list]
 

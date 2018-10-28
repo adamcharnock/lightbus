@@ -184,11 +184,11 @@ class BusClient(object):
                 )
             )
 
-        block(self._plugin_hook("before_server_start"), timeout=5)
+        block(self._execute_hook("before_server_start"), timeout=5)
 
         self._run_forever(consume_rpcs)
 
-        self.loop.run_until_complete(self._plugin_hook("after_server_stopped"))
+        self.loop.run_until_complete(self._execute_hook("after_server_stopped"))
 
         # Close the bus (which will in turn close the transports)
         self.close()
@@ -267,7 +267,7 @@ class BusClient(object):
         for rpc_message in rpc_messages:
             self._validate(rpc_message, "incoming")
 
-            await self._plugin_hook("before_rpc_execution", rpc_message=rpc_message)
+            await self._execute_hook("before_rpc_execution", rpc_message=rpc_message)
             try:
                 result = await self.call_rpc_local(
                     api_name=rpc_message.api_name,
@@ -280,7 +280,7 @@ class BusClient(object):
             else:
                 result = deform_to_bus(result)
                 result_message = ResultMessage(result=result, rpc_message_id=rpc_message.id)
-                await self._plugin_hook(
+                await self._execute_hook(
                     "after_rpc_execution", rpc_message=rpc_message, result_message=result_message
                 )
 
@@ -320,7 +320,7 @@ class BusClient(object):
             rpc_transport.call_rpc(rpc_message, options=options),
         )
 
-        await self._plugin_hook("before_rpc_call", rpc_message=rpc_message)
+        await self._execute_hook("before_rpc_call", rpc_message=rpc_message)
 
         try:
             result_message, _ = await asyncio.wait_for(future, timeout=timeout)
@@ -342,7 +342,7 @@ class BusClient(object):
                 f"config option."
             ) from None
 
-        await self._plugin_hook(
+        await self._execute_hook(
             "after_rpc_call", rpc_message=rpc_message, result_message=result_message
         )
 
@@ -451,10 +451,10 @@ class BusClient(object):
         self._validate(event_message, "outgoing")
 
         event_transport = self.transport_registry.get_event_transport(api_name)
-        await self._plugin_hook("before_event_sent", event_message=event_message)
+        await self._execute_hook("before_event_sent", event_message=event_message)
         logger.info(L("📤  Sending event {}.{}".format(Bold(api_name), Bold(name))))
         await event_transport.send_event(event_message, options=options)
-        await self._plugin_hook("after_event_sent", event_message=event_message)
+        await self._execute_hook("after_event_sent", event_message=event_message)
 
     async def listen_for_event(
         self, api_name, name, listener, listener_name: str = None, options: dict = None
@@ -631,12 +631,12 @@ class BusClient(object):
 
     # Hooks
 
-    async def _plugin_hook(self, name, **kwargs):
+    async def _execute_hook(self, name, **kwargs):
         # Hooks that need to run before plugins
         for callback in self._hook_callbacks[(name, True)]:
             await await_if_necessary(callback(client=self, **kwargs))
 
-        await self.plugin_registry.plugin_hook(name, client=self, **kwargs)
+        await self.plugin_registry.execute_hook(name, client=self, **kwargs)
 
         # Hooks that need to run after plugins
         for callback in self._hook_callbacks[(name, False)]:
@@ -899,7 +899,7 @@ class _EventListener(object):
 
                     self.bus_client._validate(event_message, "incoming")
 
-                    await self.bus_client._plugin_hook(
+                    await self.bus_client._execute_hook(
                         "before_event_execution", event_message=event_message
                     )
 
@@ -950,6 +950,6 @@ class _EventListener(object):
                     # Acknowledge the successfully processed message
                     await event_transport.acknowledge(event_message)
 
-                    await self.bus_client._plugin_hook(
+                    await self.bus_client._execute_hook(
                         "after_event_execution", event_message=event_message
                     )

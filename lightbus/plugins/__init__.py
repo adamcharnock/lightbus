@@ -186,12 +186,7 @@ class PluginRegistry(object):
     def is_plugin_loaded(self, plugin_class: Type[LightbusPlugin]):
         return plugin_class in [type(p) for p in self.plugins.values()]
 
-    async def plugin_hook(self, name, **kwargs):
-        # TODO: Rename to execute_hook()
-        if self.plugins is None:
-            raise PluginsNotLoaded(
-                "You must call autoload_plugins() before calling plugin_hook('{}').".format(name)
-            )
+    async def execute_hook(self, name, **kwargs):
         if name not in self.VALID_HOOK_NAMES:
             raise PluginHookNotFound(
                 "Plugin hook '{}' could not be found. Must be one of: {}".format(

@@ -30,8 +30,8 @@ def test_autoload_plugins(plugin_registry: PluginRegistry):
 
 
 @pytest.mark.asyncio
-async def test_plugin_hook(mocker, plugin_registry: PluginRegistry):
-    """Ensure calling plugin_hook() calls the method on the plugin"""
+async def test_execute_hook(mocker, plugin_registry: PluginRegistry):
+    """Ensure calling execute_hook() calls the method on the plugin"""
     assert not plugin_registry.plugins
     plugin = LightbusPlugin()
     plugin_registry.manually_set_plugins(OrderedDict([("p1", plugin)]))
@@ -41,7 +41,7 @@ async def test_plugin_hook(mocker, plugin_registry: PluginRegistry):
 
     m = mocker.patch.object(plugin, "before_server_start", return_value=dummy_coroutine())
 
-    await plugin_registry.plugin_hook("before_server_start", client=None, loop=None)
+    await plugin_registry.execute_hook("before_server_start", client=None, loop=None)
     assert m.called
 
 

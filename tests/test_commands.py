@@ -65,15 +65,15 @@ def test_commands_run_env(
 
     args = commands.parse_args(args=["run"])
     with set_env(LIGHTBUS_CONFIG=redis_config_file, LIGHTBUS_MODULE=test_bus_module):
-        plugin_hook_mock = mocker.patch.object(
-            plugin_registry, "plugin_hook", side_effect=dummy_coroutine
+        execute_hook_mock = mocker.patch.object(
+            plugin_registry, "execute_hook", side_effect=dummy_coroutine
         )
         lightbus.commands.run.Command().handle(
             args, config=Config(RootConfig()), plugin_registry=plugin_registry
         )
 
     assert run_forever_mock.called
-    assert plugin_hook_mock.called
+    assert execute_hook_mock.called
 
 
 def test_commands_shell(redis_config_file, make_test_bus_module):

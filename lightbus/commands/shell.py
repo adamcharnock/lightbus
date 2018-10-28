@@ -40,7 +40,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         objects = {k: v for k, v in lightbus.__dict__.items() if isclass(v)}
         objects.update(bus=bus)
 
-        block(plugin_registry.plugin_hook("receive_args", args=args), timeout=5)
+        block(plugin_registry.execute_hook("receive_args", args=args), timeout=5)
 
         # Ability to not start up the repl is useful for testing
         if not fake_it:
