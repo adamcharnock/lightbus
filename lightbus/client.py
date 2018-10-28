@@ -134,10 +134,6 @@ class BusClient(object):
         logger.debug("Loading schema...")
         await self.schema.load_from_bus()
 
-        # Share the schema of the registered APIs
-        for api in self.api_registry.all():
-            await self.schema.add_api(api)
-
         logger.info(
             LBullets(
                 "Loaded the following remote schemas ({})".format(len(self.schema.remote_schemas)),
@@ -757,10 +753,11 @@ class BusClient(object):
         return wrapper
 
     def register_api(self, api: Api):
-        self.api_registry.add(api)
+        block(self.register_api_async(api), timeout=5)
 
-    def unregister_api(self, api: Api):
-        self.api_registry.remove(api)
+    async def register_api_async(self, api: Api):
+        self.api_registry.add(api)
+        await self.schema.add_api(api)
 
 
 class _EventListener(object):
