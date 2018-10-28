@@ -30,7 +30,7 @@ from lightbus.exceptions import (
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
-from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
+from lightbus.plugins import PluginRegistry
 from lightbus.schema import Schema
 from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport
@@ -69,8 +69,9 @@ class BusClient(object):
     """
 
     def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
-        self.api_registry = Registry()
         self.config = config
+        self.api_registry = Registry()
+        self.plugin_registry = PluginRegistry()
         self.transport_registry = transport_registry or TransportRegistry().load_config(config)
         self.schema = Schema(
             schema_transport=self.transport_registry.get_schema_transport("default"),
@@ -114,14 +115,12 @@ class BusClient(object):
         # Log the plugins we have
         if plugins is None:
             logger.debug("Auto-loading any installed Lightbus plugins...")
-            # Force auto-loading as many commands need to do config-less best-effort
-            # plugin loading. But now we have the config loaded so we can
-            # make sure we load the plugins properly.
-            plugins = autoload_plugins(self.config, force=True)
+            self.plugin_registry.autoload_plugins(self.config)
         else:
             logger.debug("Loading explicitly specified Lightbus plugins....")
-            manually_set_plugins(plugins)
+            self.plugin_registry.manually_set_plugins(plugins)
 
+        plugins = self.plugin_registry.plugins.values()
         if plugins:
             logger.info(
                 LBullets("Loaded the following plugins ({})".format(len(plugins)), items=plugins)
@@ -637,7 +636,7 @@ class BusClient(object):
         for callback in self._hook_callbacks[(name, True)]:
             await await_if_necessary(callback(client=self, **kwargs))
 
-        await plugin_hook(name, client=self, **kwargs)
+        await self.plugin_registry.plugin_hook(name, client=self, **kwargs)
 
         # Hooks that need to run after plugins
         for callback in self._hook_callbacks[(name, False)]:

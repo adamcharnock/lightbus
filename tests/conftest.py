@@ -30,7 +30,7 @@ from lightbus import BusClient
 from lightbus.commands import COMMAND_PARSED_ARGS
 from lightbus.path import BusPath
 from lightbus.message import EventMessage
-from lightbus.plugins import remove_all_plugins
+from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import cancel
 
 TCPAddress = namedtuple("TCPAddress", "host port")
@@ -284,9 +284,6 @@ TEST_TIMEOUT = 30
 
 
 def pytest_runtest_setup(item):
-    # Clear out any plugins
-    remove_all_plugins()
-
     # Clear out any stash command line args
     COMMAND_PARSED_ARGS.clear()
 
@@ -373,3 +370,8 @@ def make_test_bus_module(mocker):
             sys.modules.pop(module_name)
 
         sys.path.remove(str(directory))
+
+
+@pytest.fixture()
+def plugin_registry():
+    return PluginRegistry()

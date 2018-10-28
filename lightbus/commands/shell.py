@@ -5,14 +5,13 @@ from inspect import isclass
 
 import lightbus
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
-from lightbus.plugins import plugin_hook
+from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
 
 logger = logging.getLogger(__name__)
 
 
 class Command(LogLevelMixin, BusImportMixin, object):
-
     def setup(self, parser, subparsers):
         parser_shell = subparsers.add_parser(
             "shell",
@@ -22,7 +21,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         self.setup_import_parameter(parser_shell)
         parser_shell.set_defaults(func=self.handle)
 
-    def handle(self, args, config, fake_it=False):
+    def handle(self, args, config, plugin_registry: PluginRegistry, fake_it=False):
         self.setup_logging(args.log_level or "warning", config)
 
         try:
@@ -41,7 +40,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         objects = {k: v for k, v in lightbus.__dict__.items() if isclass(v)}
         objects.update(bus=bus)
 
-        block(plugin_hook("receive_args", args=args), timeout=5)
+        block(plugin_registry.plugin_hook("receive_args", args=args), timeout=5)
 
         # Ability to not start up the repl is useful for testing
         if not fake_it:

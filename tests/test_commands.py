@@ -8,6 +8,7 @@ from lightbus import commands, BusClient
 from lightbus.commands import run_command_from_args
 from lightbus.config import Config
 from lightbus.config.structure import RootConfig
+from lightbus.plugins import PluginRegistry
 
 pytestmark = pytest.mark.unit
 
@@ -53,15 +54,26 @@ def test_commands_run_cli(mocker, redis_config_file, make_test_bus_module):
     assert m.called
 
 
-def test_commands_run_env(mocker, redis_config_file, set_env, make_test_bus_module):
+def test_commands_run_env(
+    mocker, redis_config_file, set_env, make_test_bus_module, plugin_registry
+):
     test_bus_module = make_test_bus_module()
-    m = mocker.patch.object(BusClient, "_actually_run_forever")
+    run_forever_mock = mocker.patch.object(BusClient, "_actually_run_forever")
+
+    async def dummy_coroutine(*args, **kwargs):
+        pass
 
     args = commands.parse_args(args=["run"])
     with set_env(LIGHTBUS_CONFIG=redis_config_file, LIGHTBUS_MODULE=test_bus_module):
-        lightbus.commands.run.Command().handle(args, config=Config(RootConfig()))
+        plugin_hook_mock = mocker.patch.object(
+            plugin_registry, "plugin_hook", side_effect=dummy_coroutine
+        )
+        lightbus.commands.run.Command().handle(
+            args, config=Config(RootConfig()), plugin_registry=plugin_registry
+        )
 
-    assert m.called
+    assert run_forever_mock.called
+    assert plugin_hook_mock.called
 
 
 def test_commands_shell(redis_config_file, make_test_bus_module):

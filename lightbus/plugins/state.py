@@ -9,7 +9,7 @@ from datetime import datetime
 import os
 
 from lightbus.message import EventMessage
-from lightbus.plugins import LightbusPlugin, is_plugin_loaded
+from lightbus.plugins import LightbusPlugin
 from lightbus.plugins.metrics import MetricsPlugin
 from lightbus.utilities.async_tools import cancel
 
@@ -142,7 +142,7 @@ class StatePlugin(LightbusPlugin):
         return dict(
             process_name=self.process_name,
             service_name=self.service_name,
-            metrics_enabled=is_plugin_loaded(MetricsPlugin),
+            metrics_enabled=client.plugin_registry.is_plugin_loaded(MetricsPlugin),
             api_names=[api.meta.name for api in client.api_registry.public()],
             listening_for=[
                 "{}.{}".format(api_name, event_name)

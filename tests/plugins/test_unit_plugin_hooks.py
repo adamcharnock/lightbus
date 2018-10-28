@@ -7,29 +7,31 @@ import pytest
 from lightbus import BusClient
 from lightbus.path import BusPath
 from lightbus.message import RpcMessage, EventMessage
-from lightbus.plugins import manually_set_plugins, LightbusPlugin
+from lightbus.plugins import LightbusPlugin
 
 pytestmark = pytest.mark.unit
 
 
 @pytest.fixture
-def called_hooks(mocker):
+def called_hooks(mocker, dummy_bus: BusPath):
     # Patch only applies to module in which plugin_hook is used, not
     # where it is defined
     async def dummy_coroutine(*args, **kwargs):
         pass
 
-    m = mocker.patch("lightbus.client.plugin_hook", side_effect=dummy_coroutine)
+    m = mocker.patch.object(
+        dummy_bus.client.plugin_registry, "plugin_hook", side_effect=dummy_coroutine
+    )
     return lambda: [kwargs.get("name") or args[0] for args, kwargs in m.call_args_list]
 
 
 @pytest.fixture
-def add_base_plugin():
+def add_base_plugin(dummy_bus: BusPath):
     # Add the base plugin so that the plugins framework has something to call
     # None of the base plugin's methods do anything, but it allows our
     # called_hooks() fixture above to detch the call
     def do_add_base_plugin():
-        manually_set_plugins(plugins={"base": LightbusPlugin()})
+        dummy_bus.client.plugin_registry.manually_set_plugins(plugins={"base": LightbusPlugin()})
 
     return do_add_base_plugin
 

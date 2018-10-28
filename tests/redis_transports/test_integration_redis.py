@@ -11,7 +11,6 @@ from lightbus.config.structure import OnError
 from lightbus.path import BusPath
 from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
-from lightbus.plugins import manually_set_plugins
 from lightbus.transports.redis import StreamUse
 from lightbus.utilities.async_tools import cancel
 
@@ -119,7 +118,6 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
     """Full event integration test"""
     bus.client.register_api(dummy_api)
     bus.client.transport_registry.get_event_transport("default").stream_use = stream_use
-    manually_set_plugins({})
     received_messages = []
 
     async def listener(event_message, **kwargs):
@@ -189,8 +187,6 @@ class ApiB(lightbus.Api):
 @pytest.mark.asyncio
 async def test_multiple_rpc_transports(loop, redis_server_url, redis_server_b_url, consume_rpcs):
     """Configure a bus with two redis transports and ensure they write to the correct redis servers"""
-    manually_set_plugins(plugins={})
-
     redis_url_a = redis_server_url
     redis_url_b = redis_server_b_url
 
@@ -231,8 +227,6 @@ async def test_multiple_rpc_transports(loop, redis_server_url, redis_server_b_ur
 @pytest.mark.asyncio
 async def test_multiple_event_transports(loop, redis_server_url, redis_server_b_url):
     """Configure a bus with two redis transports and ensure they write to the correct redis servers"""
-    manually_set_plugins(plugins={})
-
     redis_url_a = redis_server_url
     redis_url_b = redis_server_b_url
 
@@ -361,8 +355,6 @@ async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, moc
 async def test_listen_to_multiple_events_across_multiple_transports(
     loop, redis_server_url, redis_server_b_url
 ):
-    manually_set_plugins(plugins={})
-
     redis_url_a = redis_server_url
     redis_url_b = redis_server_b_url
 
@@ -411,7 +403,6 @@ async def test_event_exception_in_listener_realtime(
     """Start a listener (which errors) and then add events to the stream.
     The listener will load them one-by-one."""
     bus.client.register_api(dummy_api)
-    manually_set_plugins({})
     received_messages = []
 
     # Don't shutdown on error
@@ -460,7 +451,6 @@ async def test_event_exception_in_listener_batch_fetch(
     """Add a number of events to a stream the startup a listener which errors.
     The listener will fetch them all at once."""
     bus.client.register_api(dummy_api)
-    manually_set_plugins({})
     received_messages = []
 
     # Don't shutdown on error

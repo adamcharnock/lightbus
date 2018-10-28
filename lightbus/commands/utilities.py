@@ -1,4 +1,3 @@
-import importlib.util
 import logging
 
 import lightbus.creation
@@ -11,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class BusImportMixin(object):
-
     def setup_import_parameter(self, argument_group):
         group = argument_group.add_mutually_exclusive_group()
         group.add_argument(
@@ -37,6 +35,5 @@ class BusImportMixin(object):
 
 
 class LogLevelMixin(object):
-
     def setup_logging(self, override: str, config: Config):
         configure_logging(log_level=(override or config.bus().log_level.value).upper())

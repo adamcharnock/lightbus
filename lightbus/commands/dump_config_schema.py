@@ -4,13 +4,13 @@ import logging
 
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.config.config import config_as_json_schema
+from lightbus.plugins import PluginRegistry
 from lightbus.schema.encoder import json_encode
 
 logger = logging.getLogger(__name__)
 
 
 class Command(LogLevelMixin, BusImportMixin, object):
-
     def setup(self, parser, subparsers):
         parser_shell = subparsers.add_parser(
             "dumpconfigschema",
@@ -34,7 +34,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         self.setup_import_parameter(parser_shell)
         parser_shell.set_defaults(func=self.handle)
 
-    def handle(self, args, config):
+    def handle(self, args, config, plugin_registry: PluginRegistry):
         self.setup_logging(args.log_level or "warning", config)
 
         bus_module, bus = self.import_bus(args)

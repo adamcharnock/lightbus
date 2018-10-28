@@ -4,15 +4,13 @@ import logging
 from inspect import iscoroutine
 
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
-from lightbus.exceptions import NoBusFoundInBusModule
-from lightbus.plugins import plugin_hook
+from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
 
 logger = logging.getLogger(__name__)
 
 
 class Command(LogLevelMixin, BusImportMixin, object):
-
     def setup(self, parser, subparsers):
         parser_run = subparsers.add_parser(
             "run", help="Run Lightbus", formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -38,14 +36,14 @@ class Command(LogLevelMixin, BusImportMixin, object):
         )
         parser_run.set_defaults(func=self.handle)
 
-    def handle(self, args, config):
+    def handle(self, args, config, plugin_registry: PluginRegistry):
         try:
-            self._handle(args, config)
+            self._handle(args, config, plugin_registry)
         except Exception as e:
-            block(plugin_hook("exception", e=e), timeout=5)
+            block(plugin_registry.plugin_hook("exception", e=e), timeout=5)
             raise
 
-    def _handle(self, args, config):
+    def _handle(self, args, config, plugin_registry: PluginRegistry):
         self.setup_logging(override=getattr(args, "log_level", None), config=config)
 
         bus_module, bus = self.import_bus(args)
@@ -66,7 +64,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
             if iscoroutine(co):
                 block(co, timeout=10)
 
-        block(plugin_hook("receive_args", args=args), timeout=5)
+        block(plugin_registry.plugin_hook("receive_args", args=args), timeout=5)
 
         if args.events_only:
             bus.client.run_forever(consume_rpcs=False)

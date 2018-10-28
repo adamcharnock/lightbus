@@ -5,9 +5,9 @@ import pytest
 from lightbus import DebugRpcTransport
 from lightbus.config import Config
 from lightbus.config.config import config_as_json_schema
+from lightbus.plugins import PluginRegistry
 from lightbus.utilities.casting import cast_to_hint
 from lightbus.config.structure import RootConfig, BusConfig, LogLevelEnum
-from lightbus.plugins import autoload_plugins, manually_set_plugins
 from lightbus.plugins.metrics import MetricsPlugin
 from lightbus.plugins.state import StatePlugin
 from lightbus.schema.encoder import json_encode
@@ -147,20 +147,20 @@ def test_plugin_selector_custom_config():
     assert config.plugin("internal_state").ping_interval == 123
 
 
-def test_plugin_disabled():
+def test_plugin_disabled(plugin_registry: PluginRegistry):
     config = Config.load_dict(
         {"plugins": {"internal_state": {"enabled": False}, "internal_metrics": {"enabled": False}}}
     )
-    plugins = autoload_plugins(config)
-    assert not plugins
+    plugin_registry.autoload_plugins(config)
+    assert not plugin_registry.plugins
 
 
-def test_plugin_enabled():
+def test_plugin_enabled(plugin_registry: PluginRegistry):
     config = Config.load_dict(
         {"plugins": {"internal_state": {"enabled": True}, "internal_metrics": {"enabled": True}}}
     )
-    plugins = autoload_plugins(config)
-    assert plugins
+    plugin_registry.autoload_plugins(config)
+    assert plugin_registry.plugins
 
 
 EXAMPLE_VALID_YAML = """

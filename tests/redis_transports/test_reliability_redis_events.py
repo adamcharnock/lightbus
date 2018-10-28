@@ -6,7 +6,6 @@ import pytest
 
 import lightbus
 import lightbus.path
-from lightbus.plugins import manually_set_plugins
 from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.reliability
@@ -22,9 +21,6 @@ async def test_random_failures(
 
     # Use test_history() (below) to repeat any cases which fail
     caplog.set_level(logging.WARNING)
-
-    # The metrics plugins will add too much overhead to this test
-    manually_set_plugins({})
 
     event_ok_ids = dict()
     history = []
