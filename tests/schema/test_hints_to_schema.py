@@ -20,7 +20,6 @@ pytestmark = pytest.mark.unit
 
 
 def test_no_types():
-
     def func(username):
         pass
 
@@ -31,7 +30,6 @@ def test_no_types():
 
 
 def test_default():
-
     def func(field=123):
         pass
 
@@ -41,7 +39,6 @@ def test_default():
 
 
 def test_type():
-
     def func(field: dict):
         pass
 
@@ -51,7 +48,6 @@ def test_type():
 
 
 def test_type_with_default():
-
     def func(field: float = 3.142):
         pass
 
@@ -61,7 +57,6 @@ def test_type_with_default():
 
 
 def test_kwargs():
-
     def func(field: dict, **kwargs):
         pass
 
@@ -73,7 +68,6 @@ def test_kwargs():
 
 
 def test_positional_args():
-
     def func(field: dict, *args):
         pass
 
@@ -97,7 +91,6 @@ def test_python_type_to_json_types_empty(caplog):
 
 
 def test_union():
-
     def func(field: Union[str, int]):
         pass
 
@@ -107,7 +100,6 @@ def test_union():
 
 
 def test_union_default():
-
     def func(field: Union[str, int] = 123):
         pass
 
@@ -122,7 +114,6 @@ def test_union_default():
 
 
 def test_optional():
-
     def func(username: Optional[str]):
         pass
 
@@ -132,7 +123,6 @@ def test_optional():
 
 
 def test_named_tuple():
-
     class User(NamedTuple):
         username: str
         password: str
@@ -153,7 +143,6 @@ def test_named_tuple():
 
 
 def test_named_tuple_enum_with_default():
-
     class MyEnum(Enum):
         foo: int = 1
         bar: int = 2
@@ -188,7 +177,6 @@ def test_named_tuple_using_function():
 
 
 def test_response_no_types():
-
     def func(username):
         pass
 
@@ -197,7 +185,6 @@ def test_response_no_types():
 
 
 def test_response_bool():
-
     def func(username) -> bool:
         pass
 
@@ -205,8 +192,15 @@ def test_response_bool():
     assert schema["type"] == "boolean"
 
 
-def test_response_typed_tuple():
+def test_response_null():
+    def func(username) -> None:
+        pass
 
+    schema = make_response_schema("api_name", "rpc_name", func)
+    assert schema["type"] == "null"
+
+
+def test_response_typed_tuple():
     def func(username) -> Tuple[str, int, bool]:
         pass
 
@@ -216,7 +210,6 @@ def test_response_typed_tuple():
 
 
 def test_response_named_tuple():
-
     class User(NamedTuple):
         username: str
         password: str
@@ -237,7 +230,6 @@ def test_response_named_tuple():
 
 
 def test_unknown_type():
-
     class UnknownThing(object):
         pass
 
@@ -249,7 +241,6 @@ def test_unknown_type():
 
 
 def test_any():
-
     def func(username) -> Any:
         pass
 
@@ -258,7 +249,6 @@ def test_any():
 
 
 def test_ellipsis():
-
     def func(username) -> ...:
         pass
 
@@ -267,7 +257,6 @@ def test_ellipsis():
 
 
 def test_mapping_with_types():
-
     def func(username) -> Mapping[str, int]:
         pass
 
@@ -277,7 +266,6 @@ def test_mapping_with_types():
 
 
 def test_mapping_without_types():
-
     def func(username) -> Mapping:
         pass
 
@@ -321,7 +309,6 @@ def test_enum_empty():
 
 
 def test_enum_unknown_value_types():
-
     class UnknownThing(object):
         pass
 
@@ -336,7 +323,6 @@ def test_enum_unknown_value_types():
 
 
 def test_datetime():
-
     def func(username) -> datetime:
         pass
 
@@ -346,7 +332,6 @@ def test_datetime():
 
 
 def test_date():
-
     def func(username) -> date:
         pass
 
@@ -356,7 +341,6 @@ def test_date():
 
 
 def test_decimal():
-
     def func(username) -> Decimal:
         pass
 
@@ -366,7 +350,6 @@ def test_decimal():
 
 
 def test_uuid():
-
     def func(username) -> UUID:
         pass
 
@@ -376,7 +359,6 @@ def test_uuid():
 
 
 def test_object_with_method():
-
     class User:
         username: str
 
@@ -391,3 +373,12 @@ def test_object_with_method():
     assert schema["properties"] == {"username": {"type": "string"}}
     assert set(schema["required"]) == {"username"}
     assert schema["additionalProperties"] == False
+
+
+def test_make_rpc_parameter_schema_null():
+    def func(username=None):
+        pass
+
+    schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
+    # Note that type is not set to null
+    assert schema["properties"]["username"] == {"default": None}

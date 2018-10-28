@@ -132,10 +132,10 @@ def parameter_to_json_schemas(parameter):
     """
     if parameter.annotation is not empty:
         return python_type_to_json_schemas(parameter.annotation)
-    elif parameter.default is not empty:
+    elif parameter.default is not empty and parameter.default is not None:
         return python_type_to_json_schemas(type(parameter.default))
     else:
-        return None
+        return [{}]
 
 
 def python_type_to_json_schemas(type_):
@@ -200,7 +200,7 @@ def python_type_to_json_schemas(type_):
         ]
     elif issubclass_safe(type_, (list, tuple)):
         return [{"type": "array"}]
-    elif issubclass_safe(type_, NoneType):
+    elif issubclass_safe(type_, NoneType) or type_ is None:
         return [{"type": "null"}]
     elif issubclass_safe(type_, (datetime.datetime)):
         return [
