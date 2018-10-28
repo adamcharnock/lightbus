@@ -157,34 +157,25 @@ class PluginRegistry(object):
     VALID_HOOK_NAMES = {k for k in LightbusPlugin.__dict__ if not k.startswith("_")}
 
     def __init__(self):
-        # TODO: Turn into list
-        self.plugins: Dict[str, LightbusPlugin] = OrderedDict()
+        self.plugins = []
 
     def autoload_plugins(self, config: "Config"):
         """Autoload this registry with plugins from the 'lightbus_plugins' entrypoint"""
         for name, cls in find_plugins().items():
             plugin_config = config.plugin(name)
             if plugin_config.enabled:
-                self.plugins[name] = instantiate_plugin(
-                    config=config, plugin_config=plugin_config, cls=cls
+                self.plugins.append(
+                    instantiate_plugin(config=config, plugin_config=plugin_config, cls=cls)
                 )
 
         return self.plugins
 
-    def manually_set_plugins(self, plugins: Dict[str, LightbusPlugin]):
+    def manually_set_plugins(self, plugins: list):
         """Manually set the plugins in this registry"""
-        if not isinstance(plugins, dict):
-            raise InvalidPlugins(
-                "You have attempted to specify your desired plugins as a {} ({}). This is not supported. "
-                "Plugins must be specified as a dictionary, where the key is the plugin name.".format(
-                    type(plugins).__name__, plugins
-                )
-            )
-
         self.plugins = plugins
 
     def is_plugin_loaded(self, plugin_class: Type[LightbusPlugin]):
-        return plugin_class in [type(p) for p in self.plugins.values()]
+        return plugin_class in [type(p) for p in self.plugins]
 
     async def execute_hook(self, name, **kwargs):
         if name not in self.VALID_HOOK_NAMES:
@@ -195,7 +186,7 @@ class PluginRegistry(object):
             )
 
         return_values = []
-        for plugin in self.plugins.values():
+        for plugin in self.plugins:
             handler = getattr(plugin, name, None)
             if handler:
                 try:

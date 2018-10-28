@@ -63,7 +63,7 @@ async def create_async(
         schema_transport (SchemaTransport): The schema transport instance to use, defaults to Redis
         client_class (BusClient): The class from which the bus client will be instantiated
         node_class (BusPath): The class from which the bus path will be instantiated
-        plugins (dict): A dictionary of plugins to load, where keys are the plugin name defined in the plugin's entrypoint
+        plugins (list): A list of plugin instances to load
         flask (bool): Are we using flask? If so we will make sure we don't start lightbus in the reloader process
         **kwargs (): Any additional instantiation arguments to be passed to `client_class`.
 

@@ -170,7 +170,7 @@ def dummy_bus(loop):
         result_transport=lightbus.DebugResultTransport(),
         event_transport=lightbus.DebugEventTransport(),
         schema_transport=lightbus.DebugSchemaTransport(),
-        plugins={},
+        plugins=[],
     )
     yield dummy_bus
     dummy_bus.client.close()

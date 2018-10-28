@@ -120,10 +120,12 @@ class BusClient(object):
             logger.debug("Loading explicitly specified Lightbus plugins....")
             self.plugin_registry.manually_set_plugins(plugins)
 
-        plugins = self.plugin_registry.plugins.values()
-        if plugins:
+        if self.plugin_registry.plugins:
             logger.info(
-                LBullets("Loaded the following plugins ({})".format(len(plugins)), items=plugins)
+                LBullets(
+                    "Loaded the following plugins ({})".format(len(self.plugin_registry.plugins)),
+                    items=self.plugin_registry.plugins,
+                )
             )
         else:
             logger.info("No plugins loaded")
