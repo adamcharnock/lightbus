@@ -4,3 +4,9 @@ Version 0.0.1 (first version), Tue 18 Jul 2017
 ===============================================
 
 
+Migrating from master to first release
+======================================
+
+* before_server_start() is gone. Use @bus.client.on_start()
+* bus_options={'consumer_name': ...} is gone. Use bus.API.EVENT.listen(fn, listener_name: "foo")
+
