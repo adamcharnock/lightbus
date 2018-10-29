@@ -56,7 +56,6 @@ class StreamUse(Enum):
 
 
 class RedisEventMessage(EventMessage):
-
     def __init__(self, *, stream: str, native_id: str, consumer_group: str, **kwargs):
         super(RedisEventMessage, self).__init__(**kwargs)
         self.stream = stream
@@ -224,7 +223,6 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
         with await self.connection_manager() as redis:
             start_time = time.time()
-            print("setting " + expiry_key)
             p = redis.pipeline()
             p.rpush(key=queue_key, value=self.serializer(rpc_message))
             p.set(expiry_key, 1)
@@ -278,7 +276,6 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             stream = decode(stream, "utf8")
             rpc_message = self.deserializer(data)
             expiry_key = f"rpc_expiry_key:{rpc_message.id}"
-            print("deleting " + expiry_key)
             key_deleted = await redis.delete(expiry_key)
 
             if not key_deleted:
@@ -295,7 +292,6 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
 
 class RedisResultTransport(RedisTransportMixin, ResultTransport):
-
     def __init__(
         self,
         *,
@@ -405,7 +401,6 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
 
 
 class RedisEventTransport(RedisTransportMixin, EventTransport):
-
     def __init__(
         self,
         redis_pool=None,
@@ -419,7 +414,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         batch_size=10,
         reclaim_batch_size: int = None,
         acknowledgement_timeout: float = 60,
-        max_stream_length: Optional[int] = 100000,
+        max_stream_length: Optional[int] = 100_000,
         stream_use: StreamUse = StreamUse.PER_API,
         consumption_restart_delay: int = 5,
     ):
@@ -451,7 +446,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         serializer: str = "lightbus.serializers.ByFieldMessageSerializer",
         deserializer: str = "lightbus.serializers.ByFieldMessageDeserializer",
         acknowledgement_timeout: float = 60,
-        max_stream_length: Optional[int] = 100000,
+        max_stream_length: Optional[int] = 100_000,
         stream_use: StreamUse = StreamUse.PER_API,
         consumption_restart_delay: int = 5,
     ):
@@ -856,7 +851,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
 
 class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
-
     def __init__(
         self,
         *,

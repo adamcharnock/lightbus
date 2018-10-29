@@ -139,6 +139,5 @@ async def call_on_schedule(callback, schedule: "Job", also_run_immediately: bool
                 await result
 
         td = schedule.next_run - datetime.now()
-        print(td.total_seconds())
         await asyncio.sleep(td.total_seconds())
         first_run = False
