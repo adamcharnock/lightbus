@@ -10,7 +10,7 @@ import pytest
 
 import lightbus
 import lightbus.path
-from lightbus import TransactionalEventTransport
+from lightbus import TransactionalEventTransport, RedisSchemaTransport
 from lightbus.path import BusPath
 from lightbus.transports.base import TransportRegistry
 from lightbus.transports.redis import StreamUse
@@ -174,6 +174,9 @@ async def transactional_bus_factory(dummy_bus: BusPath, new_redis_pool):
         config = dummy_bus.client.config
         transport_registry = TransportRegistry().load_config(config)
         transport_registry.set_event_transport("default", transport)
+        transport_registry.set_schema_transport(
+            RedisSchemaTransport(redis_pool=await new_redis_pool())
+        )
         client = lightbus.BusClient(config=config, transport_registry=transport_registry)
         bus = lightbus.path.BusPath(name="", parent=None, client=client)
         return bus
