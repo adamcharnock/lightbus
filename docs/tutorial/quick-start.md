@@ -214,6 +214,18 @@ You should see that the event gets sent by the `manually_register_user.py` scrip
 
 ![Listening for and firing an event][events]
 
+### Listener names
+
+You may have noticed we specified the `listener_name` parameter in the above example, 
+and we set it to an arbitrary value of `"print_on_new_registration"`. This is important, because Lightbus tracks 
+which listeners have received which events. It is this listener name which is used to 
+uniquely identify each listener. You don't need to worry about this often, just follow the rule:
+
+**Ensure you specify a unique `listener_name` every time you setup a new listener**.
+
+The listener name should be unique within the service. Two listeners with the same name 
+will only receive a partial set of events each.
+
 ## 2.5 Next
 
 This was a simple example to get you started. The [worked example] considers
