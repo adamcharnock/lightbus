@@ -91,9 +91,9 @@ def handle_deleted(username, email):
     print(user_db)
 
 
-def before_server_start():
-    # before_server_start() is called on lightbus startup,
-    # this allows you to setup your listeners.
+@bus.client.on_start()
+def on_start():
+    # Bus client has started up, so register our listeners
 
     bus.auth.user_created.listen(
         handle_created,
@@ -125,8 +125,9 @@ listener asynchronously using the `list_async()` method:
 ```python3
 # ...snipped from above example
 
-# Note that before_server_start() is defined as async
-async def before_server_start():
+# Note that our startup handler below is defined as async
+@bus.client.on_start()
+async def on_start():
 
     # We await the listen_async() method
     await bus.auth.user_created.listen_async(

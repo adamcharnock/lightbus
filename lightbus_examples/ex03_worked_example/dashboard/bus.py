@@ -18,5 +18,6 @@ def handle_page_view(event_message, url):
         json.dump(page_views, f)
 
 
-def before_server_start(bus):
+@bus.client.on_start()
+def my_startup(bus):
     bus.store.page_view.listen(handle_page_view, listener_name="handle_page_view")

@@ -57,13 +57,6 @@ class Command(LogLevelMixin, BusImportMixin, object):
                 source = args.schema
             bus.schema.load_local(source)
 
-        before_server_start = getattr(bus_module, "before_server_start", None)
-        if before_server_start:
-            logger.debug("Calling {}.before_server_start() callback".format(bus_module.__name__))
-            co = before_server_start(bus)
-            if iscoroutine(co):
-                block(co, timeout=10)
-
         block(plugin_registry.execute_hook("receive_args", args=args), timeout=5)
 
         if args.events_only:

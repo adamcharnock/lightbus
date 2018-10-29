@@ -180,7 +180,8 @@ def handle_page_view(event_message, url):
     with open('/tmp/.dashboard.db.json', 'w') as f:
         json.dump(page_views, f)
 
-def before_server_start(bus):
+@bus.client.on_start()
+def on_start(bus):
     # Called when lightbus starts up
     bus.store.page_view.listen(handle_page_view)
 ```
@@ -189,7 +190,7 @@ This is a simple listener for the `bus.store.page_view` event. This is event is 
 store's web interface we created above.
 
 Note we do not define any APIs,
-instead we setup our event listener using the `before_server_start()` hook. Listening for this
+instead we setup our event listener once the bus client has started up. Listening for this
 event is all the dashboard's Lightbus process will do, it will not provide any APIs.
 
 The `handle_page_view()` handler persists each view to the Dashboard services' local database.

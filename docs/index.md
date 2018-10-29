@@ -92,7 +92,8 @@ def send_signup_email(event_message,
     )
 
 # Setup our listeners on startup
-def before_server_start():
+@bus.client.on_start()
+def on_start():
     bus.auth.user_registered.listen(
         send_signup_email,
         listener_name="send_signup_email"

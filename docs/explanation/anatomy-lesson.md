@@ -78,7 +78,8 @@ def create_user_for_customer(event_message,
     )
 
 # Setup our listeners on startup
-def before_server_start():
+@bus.client.on_start()
+def on_start():
     # Create a new user for each new customer
     bus.customers.new_customer.listen(
         create_user_for_customer
