@@ -10,3 +10,4 @@ Migrating from master to first release
 * You can no longer use before_server_start() in your bus.py file. Use the @bus.client.on_start() decorator instead.
 * bus_options={'consumer_name': ...} is gone. Use bus.API.EVENT.listen(fn, listener_name="foo")
 * listener_name is now a required parameter when setting up an event listener
+* api-specific configuration now inherits from the default API configuration
