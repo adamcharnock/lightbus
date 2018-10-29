@@ -781,13 +781,13 @@ class _EventListener(object):
         *,
         events: List[Tuple[str, str]],
         listener_callable,
-        listener_name: str = None,
+        listener_name: str,
         options: dict = None,
         bus_client: "BusClient",
     ):
         self.events = events
         self.listener_callable = listener_callable
-        self.listener_name = listener_name or "default"
+        self.listener_name = listener_name
         self.options = options or {}
         self.bus_client = bus_client
 

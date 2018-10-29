@@ -9,4 +9,4 @@ Migrating from master to first release
 
 * before_server_start() is gone. Use @bus.client.on_start()
 * bus_options={'consumer_name': ...} is gone. Use bus.API.EVENT.listen(fn, listener_name: "foo")
-
+* listener_name is now a required parameter when setting up an event listener

@@ -124,7 +124,7 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
         nonlocal received_messages
         received_messages.append(event_message)
 
-    await bus.my.dummy.my_event.listen_async(listener)
+    await bus.my.dummy.my_event.listen_async(listener, listener_name="test")
     await asyncio.sleep(0.01)
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
     await asyncio.sleep(0.01)
@@ -413,7 +413,9 @@ async def test_event_exception_in_listener_realtime(
         received_messages.append(event_message)
         raise Exception()
 
-    await bus.my.dummy.my_event.listen_async(listener, bus_options={"since": "0"})
+    await bus.my.dummy.my_event.listen_async(
+        listener, listener_name="test_listener", bus_options={"since": "0"}
+    )
     await asyncio.sleep(0.1)
 
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
@@ -433,7 +435,7 @@ async def test_event_exception_in_listener_realtime(
     message_ids = [id_ for id_, *_ in messages]
 
     pending_messages = await redis_client.xpending(
-        "my.dummy.my_event:stream", "test_service-default", "-", "+", 10, "test_consumer"
+        "my.dummy.my_event:stream", "test_service-test_listener", "-", "+", 10, "test_consumer"
     )
     pending_message_ids = [id_ for id_, *_ in pending_messages]
     # The first 4 messages are still pending. Why 4 messages? Because:
@@ -465,7 +467,9 @@ async def test_event_exception_in_listener_batch_fetch(
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
 
-    await bus.my.dummy.my_event.listen_async(listener, bus_options={"since": "0"})
+    await bus.my.dummy.my_event.listen_async(
+        listener, listener_name="test_listener", bus_options={"since": "0"}
+    )
     await asyncio.sleep(0.1)
 
     # Died when processing first message, so we only saw one message
@@ -478,7 +482,7 @@ async def test_event_exception_in_listener_batch_fetch(
     message1_id, message2_id, message3_id = [id_ for id_, *_ in messages]
 
     pending_messages = await redis_client.xpending(
-        "my.dummy.my_event:stream", "test_service-default", "-", "+", 10, "test_consumer"
+        "my.dummy.my_event:stream", "test_service-test_listener", "-", "+", 10, "test_consumer"
     )
 
     assert len(pending_messages) == 3

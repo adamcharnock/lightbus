@@ -65,7 +65,9 @@ async def test_consume_events(transactional_bus: BusPath, aiopg_connection_facto
 
     connection1 = await aiopg_connection_factory()
     async with lightbus_set_database(transactional_bus, connection1, apis=["my.dummy"]):
-        listener_co = await transactional_bus.my.dummy.my_event.listen_async(listener)
+        listener_co = await transactional_bus.my.dummy.my_event.listen_async(
+            listener, listener_name="test"
+        )
 
     task = asyncio.ensure_future(listener_co)
     await asyncio.sleep(0.2)

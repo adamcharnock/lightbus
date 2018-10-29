@@ -23,7 +23,9 @@ def handle_page_view(event_message, url):
 
 async def start_listener(app):
     # Create the asyncio task which will listen for the page_view event
-    listener_task = await app.bus.store.page_view.listen_async(handle_page_view)
+    listener_task = await app.bus.store.page_view.listen_async(
+        handle_page_view, listener_name="handle_page_view"
+    )
     # Store it against app in case we need it later
     app["page_view_listener"] = listener_task
 

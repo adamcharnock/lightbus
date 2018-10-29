@@ -38,7 +38,9 @@ async def test_random_failures(
             "TEST: Still waiting for events to finish. {} so far".format(len(event_ok_ids))
         )
         for _ in range(0, 5):
-            listen_task = asyncio.ensure_future(bus.my.dummy.my_event.listen_async(listener))
+            listen_task = asyncio.ensure_future(
+                bus.my.dummy.my_event.listen_async(listener, listener_name="test")
+            )
             await asyncio.sleep(0.2)
             await cancel(listen_task)
 

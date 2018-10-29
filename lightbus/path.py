@@ -91,7 +91,7 @@ class BusPath(object):
 
     # Events
 
-    async def listen_async(self, listener, *, listener_name: str = None, bus_options: dict = None):
+    async def listen_async(self, listener, *, listener_name: str, bus_options: dict = None):
         return await self.client.listen_for_event(
             api_name=self.api_name,
             name=self.name,
@@ -100,7 +100,7 @@ class BusPath(object):
             options=bus_options,
         )
 
-    def listen(self, listener, *, listener_name: str = None, bus_options: dict = None):
+    def listen(self, listener, *, listener_name: str, bus_options: dict = None):
         return block(
             self.listen_async(listener, listener_name=listener_name, bus_options=bus_options),
             timeout=self.client.config.api(self.api_name).event_listener_setup_timeout,
