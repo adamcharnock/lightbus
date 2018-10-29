@@ -5,14 +5,17 @@ the [installation section](/tutorial/installation.md):
 
 * Installed Python 3.6 or above
 * Installed Lightbus
-* Running Redis
+* Running Redis 5 locally on the default port (6379)
 
 Optionally, you can read some additional *explanation* in the
 [anatomy lesson] and [concepts] sections.
 
 ## 2.2 Define your API
 
-First we will define the API the Lightbus will serve.
+First we will define an API for Lightbus to serve.
+This will be an authentication API and will live in an 
+authentication service.
+
 Create an `auth_service` directory and within there create 
 the following in a `bus.py` file:
 
@@ -51,11 +54,15 @@ registered APIs, including your new `auth` API:
 
 ![lightbus run output][lightbus-run]
 
+Congratulations, you have now created an authentication service 
+which contains a single API named `auth`.
+
 **Leave Lightbus running and open a new terminal window for the next stage.**
 
 ## 2.3 Remote procedure calls
 
-With Lightbus running, create a new directory alongside `auth_service` 
+With Lightbus still running in another terminal window, 
+create a new directory alongside `auth_service` 
 called `another_service`. This will be an example service which will 
 interact with the auth service. 
 
@@ -115,8 +122,8 @@ which provides the `user_registered` event.
 
 ### Firing events
 
-Let's write a simple script to manually register users and fire events. However, we can only 
-fire events for APIs we have registered. We have registered the API in `auth_service`, 
+Let's write a simple script to manually register users and fire events. Note we can only 
+fire events for APIs we have registered. We have registered the `auth` API in `auth_service`, 
 so it is within this service that this new script must reside. We could not put the script 
 within `another_service` as this service does not include the `AuthApi` class and can therefore not 
 register it.
@@ -130,7 +137,7 @@ from bus import bus
 
 print("New user creation")
 new_username = input("Enter a username: ").strip()
-new_email = input("Enter a password: ").strip()
+new_email = input("Enter the user's email address: ").strip()
 
 # You would normally store the new user in your database
 # at this point. We don't show this here for simplicity.
@@ -151,8 +158,8 @@ cd ./auth_service/
 python3 manually_register_user.py
 ```
 
-You should be prompted for a a username & password, at which point an event will be 
-fired onto the bus. We will make use of this in the next section.
+You should be prompted for a new username & email address, at which point an event will be 
+fired onto the bus. We will make use of this event in the next section.
 
 ### Listening for events
 
