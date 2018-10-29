@@ -19,7 +19,7 @@ You can access the bus client in two ways.
 ## Method 1: Direct import (recommended)
 
 The first approach is to import your bus client directly from
-your bus module, in the say way you would import anything else
+your bus module, in the same way you would import anything else
 in your codebase:
 
 ```python3
