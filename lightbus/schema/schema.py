@@ -357,6 +357,7 @@ class Schema(object):
 
 class Parameter(inspect.Parameter):
     """Describes the name and type of an event parameter"""
+
     empty = inspect.Parameter.empty
 
     def __init__(self, name, annotation=empty, *, default=empty):
@@ -368,8 +369,6 @@ class Parameter(inspect.Parameter):
 class WildcardParameter(inspect.Parameter):
     """Describes a **kwargs style parameter to an event
     """
-    # TODO: Consider removing if not found to be useful
-    empty = inspect.Parameter.empty
 
     def __init__(self):
         super(WildcardParameter, self).__init__(
