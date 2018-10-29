@@ -1,6 +1,6 @@
 # ./auth_service/manually_register_user.py
 
-# Import our bus client from bus.py
+# Import the service's bus client from bus.py
 from bus import bus
 
 print("New user creation")

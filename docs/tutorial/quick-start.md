@@ -111,7 +111,9 @@ Events allow services to broadcast a message to any other services which
 care to listen. Your service can fire events on any API which has been registered.
 
 We have already created and registered our `AuthApi` in `./auth_service/bus.py` 
-which provides the `user_registered` event. 
+which provides the `user_registered` event.
+
+### Firing events
 
 Let's write a simple script to manually register users and fire events. However, we can only 
 fire events for APIs we have registered. We have registered the API in `auth_service`, 
@@ -123,7 +125,7 @@ register it.
 ```python3
 # ./auth_service/manually_register_user.py
 
-# Import our bus client from bus.py
+# Import the service's bus client from bus.py
 from bus import bus
 
 print("New user creation")
@@ -150,7 +152,60 @@ python3 manually_register_user.py
 ```
 
 You should be prompted for a a username & password, at which point an event will be 
-fired onto the bus.
+fired onto the bus. We will make use of this in the next section.
+
+### Listening for events
+
+Perhaps `another_service` needs to be notified when a user is created. To achieve this 
+we can setup an event listener by modifying `./another_service/bus.py`:
+
+```python3
+# File: ./another_service/bus.py
+import lightbus
+
+bus = lightbus.create()
+
+def handler_new_user(event, username, email):
+    print(f"A new user was created in the authentication service:")
+    print(f"    Username: {username}")
+    print(f"    Email: {email}")
+
+
+@bus.client.on_start()
+async def bus_start():
+    await bus.auth.user_registered.listen_async(
+        handler_new_user,
+        listener_name="print_on_new_registration"
+    )
+```
+
+Listening for events requires your service to sit waiting for something to 
+happen. Sitting around and waiting for something to happen is precisely 
+what the `lightbus run` command is for. 
+
+Therefore, in **one terminal window** startup the `lightbus run` command for 
+`another_service`:
+
+```bash
+# In the first terminal window:
+cd ./another_service/
+lightbus run
+```
+
+Your service is now waiting for events.
+
+In the **second terminal window** let's cause an event to be fired 
+using the script we wrote in the previous section:
+
+```bash
+cd ./auth_service/
+python3 manually_register_user.py
+``` 
+
+You should see that the event gets sent by the `manually_register_user.py` script within the 
+`auth_service`, and received by by the `lightbus run` process within the `another_service`.
+
+![Listening for and firing an event][events]
 
 ## 2.5 Next
 
@@ -159,6 +214,7 @@ a more realistic scenario involving multiple services.
 
 
 [lightbus-run]: /static/images/quickstart-lightbus-run.png
+[events]: /static/images/quickstart-events.png
 [anatomy lesson]: /explanation/anatomy-lesson.md
 [concepts]: /explanation/concepts.md
 [worked example]: worked-example.md
