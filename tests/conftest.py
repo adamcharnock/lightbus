@@ -185,7 +185,9 @@ async def dummy_listener(dummy_bus: BusPath, loop):
         def pass_listener(*args, **kwargs):
             pass
 
-        task = await dummy_bus.client.listen_for_event(api_name, event_name, pass_listener)
+        task = await dummy_bus.client.listen_for_event(
+            api_name, event_name, pass_listener, listener_name="test"
+        )
         tasks.append(task)
 
     try:

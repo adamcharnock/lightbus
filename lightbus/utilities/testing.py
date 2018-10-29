@@ -40,7 +40,6 @@ def crash_at(hook_name):
 
 
 class MockResult(object):
-
     def __init__(self, rpc_transport, result_transport, event_transport, schema_transport):
         self.rpc: TestRpcTransport = rpc_transport
         self.result: TestResultTransport = result_transport
@@ -55,9 +54,10 @@ class MockResult(object):
 
         if times:
             total_times_fired = len([v for v in fired_events if v == full_event_name])
-            assert (
-                total_times_fired == times
-            ), f"Event fired the incorrect number of times. " f"Expected {times}, actual {total_times_fired}"
+            assert total_times_fired == times, (
+                f"Event fired the incorrect number of times. "
+                f"Expected {times}, actual {total_times_fired}"
+            )
 
     def getEventMessages(self, full_event_name=None):
         if full_event_name is None:
@@ -70,13 +70,11 @@ class MockResult(object):
 
 
 class BusMocker(ContextDecorator):
-
     def __init__(self, bus: BusPath):
         self.bus = bus
 
     # Overriding ContextDecorator to pass the mock result to the function
     def __call__(self, func):
-
         @wraps(func)
         def inner(*args, **kwds):
             with self._recreate_cm() as mock_result:
@@ -117,7 +115,6 @@ bus_mocker = BusMocker
 
 
 class TestRpcTransport(RpcTransport):
-
     def __init__(self):
         self.rpcs = []
 
@@ -129,7 +126,6 @@ class TestRpcTransport(RpcTransport):
 
 
 class TestResultTransport(ResultTransport):
-
     def get_return_path(self, rpc_message):
         return "test://"
 
@@ -141,20 +137,18 @@ class TestResultTransport(ResultTransport):
 
 
 class TestEventTransport(EventTransport):
-
     def __init__(self):
         self.events = []
 
     async def send_event(self, event_message, options):
         self.events.append((event_message, options))
 
-    def consume(self, listen_for: List[Tuple[str, str]], listener_name: str = None, **kwargs):
+    def consume(self, listen_for: List[Tuple[str, str]], listener_name: str, **kwargs):
         """Consume RPC events for the given API"""
         raise NotImplementedError("Not yet supported by mocks")
 
 
 class TestSchemaTransport(SchemaTransport):
-
     def __init__(self):
         self.schemas = {}
 

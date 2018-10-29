@@ -92,7 +92,9 @@ async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_
     add_base_plugin()
     await dummy_bus.client.register_api_async(dummy_api)
 
-    task = await dummy_bus.client.listen_for_event("my.dummy", "my_event", lambda *a, **kw: None)
+    task = await dummy_bus.client.listen_for_event(
+        "my.dummy", "my_event", lambda *a, **kw: None, listener_name="test"
+    )
     await asyncio.sleep(0.1)
 
     # Send the event message using a lower-level API to avoid triggering the

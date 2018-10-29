@@ -129,7 +129,6 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
     await asyncio.sleep(0.01)
 
-    # await asyncio.gather(co_fire_event(), co_listen_for_events())
     assert len(received_messages) == 1
     assert received_messages[0].kwargs == {"field": "Hello! 😎"}
     assert received_messages[0].api_name == "my.dummy"
@@ -329,7 +328,9 @@ async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, moc
     await bus.client.schema.save_to_bus()
     await bus.client.schema.load_from_bus()
 
-    listener_task = await bus.client.listen_for_event("my.dummy", "my_event", co_listener)
+    listener_task = await bus.client.listen_for_event(
+        "my.dummy", "my_event", co_listener, listener_name="test"
+    )
 
     await asyncio.sleep(0.1)
     await bus.my.dummy.my_event.fire_async(field="Hello")
@@ -383,7 +384,7 @@ async def test_listen_to_multiple_events_across_multiple_transports(
         calls += 1
 
     await bus.client.listen_for_events(
-        events=[("api_a", "event_a"), ("api_b", "event_b")], listener=listener
+        events=[("api_a", "event_a"), ("api_b", "event_b")], listener=listener, listener_name="test"
     )
 
     await asyncio.sleep(0.1)
