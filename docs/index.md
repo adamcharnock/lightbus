@@ -110,9 +110,15 @@ grounding in the high level **concepts and theory**.
 Start with whichever section suits you best. You should
 ultimately look through both sections for a complete understanding.
 
+In addition, the [how to] section gives solutions to common 
+use cases, and the [reference] section provides detailed 
+technical information regarding specific features.
+
 
 [issue-1]: https://github.com/adamcharnock/lightbus/issues/1
 [simple-processes]: /static/images/simple-processes.png
+[anatomy lesson]: /explanation/anatomy-lesson.md
 [tutorials]: /tutorial/index.md
 [explanation]: /explanation/index.md
-[anatomy lesson]: /explanation/anatomy-lesson.md
+[How to]: /howto/index.md
+[Reference]: /reference/index.md

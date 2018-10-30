@@ -7,8 +7,6 @@ Lightbus provides you with two tools:
 * A **stand-alone Lightbus worker process** in which you can setup
   event listeners. This process will also respond to RPCs calls.
 
-
-
 ![A simple Lightbus deployment][simple-processes]
 
 [simple-processes]: /static/images/simple-processes.png
@@ -19,10 +17,13 @@ The client allows you to interact with the bus from within your Python
 codebase. For example:
 
 ```python3
+## Creation in bus.py ##
 import lightbus
 
-# Create the lightbus client
 bus = lightbus.create()
+
+
+## Example uses ##
 
 # Perform a remote procedure call
 is_valid = bus.auth.check_password(
@@ -43,20 +44,27 @@ You can use this client anywhere you need to, such as:
 * Within scheduled jobs
 * Within Lightbus event & RPC handlers (see below)
 
+!!! important
+
+    Each service should create its bus client with the service's bus module (ie. the service's `bus.py` file). 
+    Other modules in the service should import the bus client from the bus module as needed.
+    See [how to access your bus client](/howto/access-your-bus-client.md).
+
+
 ## The Lightbus worker process (`lightbus run`)
 
-The Lightbus worker is a long running process which serves two purposes:
+The Lightbus worker is a long running process started using `lightbus run`. 
+This process serves two purposes:
 
-* Allows you to setup event listeners, and define functions to handle these events.
-* The worker will respond to RPC calls to procedures on the service's APIs.
+* Listens for events and fires any executes any listeners you have created.
+* Respond to incoming remote procedure calls for the service's registered APIs.
 
-listens for events and responds to
-remote procedure calls. In order to set this up you must:
+This process imports your bus module (see the [module loading configuration] reference) 
+in order to bootstrap itself. Your bus module should therefore
 
-1. Create a `bus.py` file. Within this file...
-1. Instantiate the `bus` client
-1. Import any API definitions you wish to serve remote procedure calls for
-1. Register handlers for any events you wish to listen for
+1. Instantiate the `bus` client in a module variable named `bus`
+1. Register any API definitions for your service
+1. Setup listeners for any events you wish to listen for
 
 For example, let's use the `auth.create_user()` remote procedure call
 to create a new user every time a `customers.new_customer` event appears on the
@@ -91,12 +99,8 @@ You start this process using the command:
     lightbus run
 
 
-This will import a module named `bus` (your `bus.py` file) and wait
-for incoming events and RPC calls.
-
-While `bus` is the default module name, you can override it using the
-`LIGHTBUS_MODULE` environment variable,
-or the `lightbus run --bus=...` option.
+Lightbus will import the bus module (your `bus.py` file) and wait
+for incoming events and remote procedure calls.
 
 **A service
 will only need a Lightbus process if it wishes to listen
@@ -121,3 +125,4 @@ particular needs.
 [service]: concepts.md#service
 [events]: events.md
 [rpcs]: rpcs.md
+[module loading configuration]: /reference/configuration.md/#1-module-loading

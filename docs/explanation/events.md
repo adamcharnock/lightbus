@@ -102,15 +102,33 @@ the will be picked up by another process.
 
 ## Considerations
 
-* More complex
-* More robust
+* Events are more complex, you may need maintain state as events are received. 
+  The source-of-truth regarding stored state may no longer be clear. Enforcing 
+  consistency can become difficult.
+* Events are more robust. Your service will be able to fire events as long as the bus 
+  client can connect. Likewise, you service can listen for events until the cows come home.
+  Incoming events may be delayed by problems in other services, but each service should 
+  be isolated from those problems.
+  
+Concepts such as Domain Driven Design and Event Sourcing can help to tackle some 
+of these problems.
 
 ## Best practices
 
+You may find some of these best practices & suggestions useful. Just 
+remember that there can be exceptions to every rule.
+
+!!! note
+
+    See [architecture tips](architecture-tips.md) for further details.
+
 ### Event naming
 
-* Past tense
-* Domain-based vs technical-based
+* Name events using the past tense. Use `page_viewed`, not `page_view`. 
+  Use `item_created`, not `create_item`.
+* Where relevant, consider using domain-based naming rather than technical names.
+  For example, use `order_placed`, not `order_created`. Use 
+  `parcel_delivered`, not `parcel_updated`.
 
 ### Parameter values
 

@@ -25,15 +25,19 @@ Consider using [events] if you need this feature.
 
 ## At most once semantics
 
-TODO
+Remote procedure calls will be processed at most once. In some situations the call will 
+never be processed, in which case the client will raise a `LigutbusTimeout` exception. 
 
 ## Considerations
 
-TODO
+Whether to use RPCs or events for communication will depend upon your project's particular needs.
+Some considerations are:
 
-* Conceptually simple
-* Fragility
-* Their use can be buried, leading to poor performance.
+* RPCs are **conceptually simple**. You call a procedure and wait for a response. You do not need to 
+  store any state locally, you can simply request data on demand (performance considerations aside).
+* RPCs can be **fragile**. Any errors in the remote service will propagate to the client's service.
+  You should handle these if possible.
+* Their use within a codebase may be non-obvious, leading to poor performance.
   Lightbus tries to alleviate this somewhat by using the
   `bus.api.method()` calling format, making it clear that this is a
   bus-based operation.

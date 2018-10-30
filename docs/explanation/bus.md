@@ -15,7 +15,7 @@ bus = lightbus.create()
 ```
 
 This creates a high-level client through which you can
-call [RPCs] and fire [events].
+perform [remote procedure calls] and fire [events].
 
 ## About buses
 
@@ -32,5 +32,5 @@ by software.
 for other mediums may be added in future.
 
 
-[RPCs]: rpcs.md
+[remote procedure calls]: rpcs.md
 [events]: events.md

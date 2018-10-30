@@ -1,4 +1,4 @@
-Lightbus has three stages of data marshalling:
+Lightbus has four stages of data marshalling:
 
 * Encode / Decode
 * Serialize / Deserialize
@@ -33,9 +33,9 @@ prepare the data for transmission on bus:
    the inverse of the *cast* process.
 2. **Validate:** Validate the outgoing message against the JSON schema
    available on the bus.
-2. **Serialize:** Structures the data in a way suitable for the
+3. **Serialize:** Structures the data in a way suitable for the
   transport.
-3. **Encode:** Converts the data to a form suitable for transmission.
+4. **Encode:** Converts the data to a form suitable for transmission.
   This typically means stringifying it, for which lightbus
   uses JSON encoding by default.
 
