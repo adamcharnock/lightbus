@@ -62,7 +62,7 @@ your services.
 
     ```python3
     bus.customer.create(
-        customer={"name": "Joe", "email": "joe@gmail.com", "age": 54)
+        customer={"name": "Joe", "email": "joe@gmail.com", "age": 54}
     )
     ```
 
