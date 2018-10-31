@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from inspect import isawaitable
 from typing import List, Optional
@@ -33,8 +34,10 @@ if False:
     from lightbus.path import BusPath
 
 
-class LightbusDbContext(object):
+logger = logging.getLogger(__name__)
 
+
+class LightbusDbContext(object):
     def __init__(
         self,
         bus: "BusPath",
@@ -105,8 +108,10 @@ class LightbusDbContext(object):
 
         if self.manage_transaction:
             if exc_type:
+                logger.debug(f"Event handler raised {exc_type}. Rolling back transaction")
                 await self.transport.rollback_and_finish()
             else:
+                logger.debug(f"Event handler completed successfully. Committing back transaction")
                 await self.transport.commit_and_finish()
         self.cursor = None
 

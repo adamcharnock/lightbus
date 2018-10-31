@@ -916,6 +916,7 @@ class _EventListener(object):
 
                     except LightbusShutdownInProgress as e:
                         logger.info("Shutdown in progress: {}".format(e))
+                        return
                     except Exception as e:
                         if self.on_error == OnError.IGNORE:
                             # We're ignore errors, so log it and move on

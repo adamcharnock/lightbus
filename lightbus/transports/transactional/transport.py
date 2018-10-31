@@ -24,6 +24,7 @@ class TransactionalEventTransport(EventTransport):
 
     Additionally, incoming messages are de-duplicated.
     """
+
     # TODO: Note in docs that this transport will not work with the metrics and state APIs
 
     def __init__(
@@ -202,6 +203,7 @@ class TransactionalEventTransport(EventTransport):
 
     async def acknowledge(self, *event_messages: EventMessage):
         for message in event_messages:
+            logger.debug(f"Acknowledging message {message.id}")
             try:
                 await message._database.commit_transaction()
                 await self.child_transport.acknowledge(message)
