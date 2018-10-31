@@ -12,7 +12,7 @@ from lightbus.serializers import (
     BlobMessageSerializer,
     BlobMessageDeserializer,
 )
-from lightbus.transports.redis import RedisEventTransport, StreamUse
+from lightbus.transports.redis import RedisEventTransport, StreamUse, RedisEventMessage
 from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.unit
@@ -707,3 +707,30 @@ async def test_reconnect_while_listening(
     assert total_messages > 0
 
     await cancel(enque_task, consume_task)
+
+
+@pytest.mark.asyncio
+async def test_acknowledge(redis_event_transport: RedisEventTransport, redis_client, dummy_api):
+    message_id = await redis_client.xadd("test_api.test_event:stream", fields={"a": 1})
+    await redis_client.xgroup_create("test_api.test_event:stream", "test_group", latest_id="0")
+
+    messages = await redis_client.xread_group(
+        "test_group", "test_consumer", ["test_api.test_event:stream"], latest_ids=[">"]
+    )
+    assert len(messages) == 1
+
+    total_pending, *_ = await redis_client.xpending("test_api.test_event:stream", "test_group")
+    assert total_pending == 1
+
+    await redis_event_transport.acknowledge(
+        RedisEventMessage(
+            api_name="test_api",
+            event_name="test_event",
+            consumer_group="test_group",
+            stream="test_api.test_event:stream",
+            native_id=message_id,
+        )
+    )
+
+    total_pending, *_ = await redis_client.xpending("test_api.test_event:stream", "test_group")
+    assert total_pending == 0
