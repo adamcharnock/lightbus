@@ -785,12 +785,14 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         with await self.connection_manager() as redis:
             p = redis.pipeline()
             for event_message in event_messages:
-                logger.debug(
-                    f"Batch acknowledging successful processing of {len(event_messages)} "
-                    f"messages. Message: {event_message.id}/{event_message.native_id}"
+                p.xack(event_message.stream, event_message.consumer_group, event_message.native_id)
+                logging.debug(
+                    f"Preparing to acknowledge message {event_message.id} (Native ID: {event_message.native_id})"
                 )
 
-                p.xack(event_message.stream, event_message.consumer_group, event_message.native_id)
+            logger.debug(
+                f"Batch acknowledging successful processing of {len(event_messages)} message."
+            )
             await p.execute()
 
     async def _create_consumer_groups(self, streams, redis, consumer_group):
