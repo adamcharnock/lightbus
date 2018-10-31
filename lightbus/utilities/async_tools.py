@@ -6,6 +6,8 @@ from time import time
 from typing import Coroutine
 from datetime import timedelta, datetime
 
+import aioredis
+
 if False:
     from schedule import Job
 
@@ -57,12 +59,23 @@ async def cancel(*tasks):
             task.result()
         except asyncio.CancelledError:
             pass
-
         except Exception as e:
-            # If there was an exception, and this is the first
-            # exception we've seen, then stash it away for later
-            if ex is None:
-                ex = e
+            # aioredis hides errors which occurred within a pipline
+            # by wrapping them up in a PipelineError. So see if that is
+            # the case here
+            if (
+                # An aioredis pipeline error
+                isinstance(e, aioredis.PipelineError)
+                # Where one of the errors that caused it was a CancelledError
+                and len(e.args) > 1
+                and asyncio.CancelledError in map(type, e.args[1])
+            ):
+                pass
+            else:
+                # If there was an exception, and this is the first
+                # exception we've seen, then stash it away for later
+                if ex is None:
+                    ex = e
 
     # Now raise the first exception we saw, if any
     if ex:
