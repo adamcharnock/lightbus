@@ -35,6 +35,7 @@ def test_default():
 
     schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
     assert schema["properties"]["field"] == {"type": "number", "default": 123}
+    # Has a default value, so not required
     assert "required" not in schema
 
 
