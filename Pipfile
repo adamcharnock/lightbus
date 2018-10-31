@@ -8,7 +8,6 @@ aioredis = "==1.2.0"
 jsonschema = ">=2.6.0,<3"
 pyyaml = "*"
 python-dateutil = "*"
-lightbus = {editable = true, path = "."}
 
 [dev-packages]
 flake8 = "==3.4.1"
