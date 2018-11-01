@@ -444,7 +444,9 @@ class BusClient(object):
             )
 
         kwargs = deform_to_bus(kwargs)
-        event_message = EventMessage(api_name=api.meta.name, event_name=name, kwargs=kwargs)
+        event_message = EventMessage(
+            api_name=api.meta.name, event_name=name, kwargs=kwargs, version=api.meta.version
+        )
 
         self._validate(event_message, "outgoing")
 

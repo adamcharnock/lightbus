@@ -132,6 +132,27 @@ async def test_fire_event_empty_name(dummy_bus: lightbus.path.BusPath, dummy_api
 
 
 @pytest.mark.asyncio
+async def test_fire_event_version(dummy_bus: lightbus.path.BusPath, mocker):
+    class ApiWithVersion(lightbus.Api):
+        my_event = lightbus.Event()
+
+        class Meta:
+            name = "versioned_api"
+            version = 5
+
+    await dummy_bus.client.register_api_async(ApiWithVersion())
+
+    send_event_spy = mocker.spy(
+        dummy_bus.client.transport_registry.get_event_transport("versioned_api"), "send_event"
+    )
+
+    await dummy_bus.client.fire_event("versioned_api", "my_event")
+    assert send_event_spy.called
+    (message,), _ = send_event_spy.call_args
+    assert message.version == 5
+
+
+@pytest.mark.asyncio
 async def test_call_rpc_remote_empty_name(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidName):
         await dummy_bus.client.call_rpc_remote("my.dummy", "_my_event")

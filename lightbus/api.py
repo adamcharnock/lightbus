@@ -64,6 +64,7 @@ class Registry(object):
 class ApiOptions(object):
     name: str
     internal: bool = False
+    version: int = 1
 
     def __init__(self, options):
         for k, v in options.items():
