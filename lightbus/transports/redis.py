@@ -226,6 +226,10 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             p = redis.pipeline()
             p.rpush(key=queue_key, value=self.serializer(rpc_message))
             p.set(expiry_key, 1)
+            # TODO: Ditch this somehow. We kind of need the ApiConfig here, but a transports can be
+            #       used for multiple APIs. So we could pass it in for each use of the transports,
+            #       but even then it doesn't work for the event listening. This is because an event listener
+            #       can span multiple APIs
             p.expire(expiry_key, timeout=self.rpc_timeout)
             await p.execute()
 
@@ -379,6 +383,8 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
                 # Sometimes blpop() will return None in the case of timeout or
                 # cancellation. We therefore perform this step with a loop to catch
                 # this. A more elegant solution is welcome.
+                # TODO: RPC & result Transports should not be applying a timeout, leave
+                #       this to the client which coordinates between the two
                 result = await redis.blpop(redis_key, timeout=self.rpc_timeout)
             _, serialized = result
 

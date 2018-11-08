@@ -303,7 +303,10 @@ class BusClient(object):
         rpc_message.return_path = return_path
         options = options or {}
         timeout = options.get("timeout", self.config.api(api_name).rpc_timeout)
-
+        # TODO: rpc_timeout is in three different places in the config!
+        #       Fix this. Really it makes most sense for the use if it goes on the
+        #       ApiConfig rather than having to repeat it on both the result & RPC
+        #       transports.
         self._validate_name(api_name, "rpc", name)
 
         logger.info("📞  Calling remote RPC {}.{}".format(Bold(api_name), Bold(name)))
