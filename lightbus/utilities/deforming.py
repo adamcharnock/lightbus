@@ -41,9 +41,9 @@ def deform_to_bus(value):
     elif isinstance_safe(value, UUID):
         return str(value)
     elif isinstance_safe(value, set):
-        return list(value)
+        return [deform_to_bus(v) for v in value]
     elif type(value) == tuple:
-        return list(value)
+        return [deform_to_bus(v) for v in value]
     elif isinstance_safe(value, list):
         return [deform_to_bus(v) for v in value]
     elif isinstance_safe(value, (int, float, str)):

@@ -87,6 +87,8 @@ class ExampleEnum(Enum):
         ({"a": 1}, {"a": 1}),
         ({"val": ExampleEnum.foo}, {"val": "a"}),
         (OrderedDict({"val": ExampleEnum.foo}), {"val": "a"}),
+        ({ExampleEnum.foo}, ["a"]),
+        ((ExampleEnum.foo,), ["a"]),
     ],
     ids=[
         "int",
@@ -112,6 +114,8 @@ class ExampleEnum(Enum):
         "dict",
         "dict_with_types",
         "orderd_dict_with_types",
+        "set_enum",
+        "tuple_enum",
     ],
 )
 def test_deform_to_bus(test_input, expected):
