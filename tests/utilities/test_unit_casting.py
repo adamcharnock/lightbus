@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, date
 from decimal import Decimal
 from enum import Enum
-from typing import NamedTuple, Optional, List, Any, SupportsRound, Mapping
+from typing import NamedTuple, Optional, List, Any, SupportsRound, Mapping, Set
 from uuid import UUID
 
 import pytest
@@ -15,7 +15,6 @@ pytestmark = pytest.mark.unit
 
 
 def test_cast_to_signature_simple():
-
     def fn(a: int, b: str, c):
         pass
 
@@ -25,7 +24,6 @@ def test_cast_to_signature_simple():
 
 
 def test_cast_to_signature_no_annotations():
-
     def fn(a, b, c):
         pass
 
@@ -151,7 +149,7 @@ class DataclassWithMappingToCustomObject(object):
         (
             "2018-06-05T10:48:12.792937+00:00",
             datetime,
-            datetime(2018, 6, 5, 10, 48, 12, 792937, tzinfo=timezone.utc),
+            datetime(2018, 6, 5, 10, 48, 12, 792_937, tzinfo=timezone.utc),
         ),
         ("2018-06-05", date, date(2018, 6, 5)),
         ("123", Any, "123"),
@@ -163,6 +161,9 @@ class DataclassWithMappingToCustomObject(object):
         (["1", 2], list, ["1", 2]),
         (["1", 2], List, ["1", 2]),
         (["1", 2], List[int], [1, 2]),
+        (["1", 2], set, {"1", 2}),
+        (["1", 2], Set, {"1", 2}),
+        (["1", 2], Set[int], {1, 2}),
         (["1", 2], SupportsRound, ["1", 2]),
         ("a", ExampleEnum, ExampleEnum.foo),
         ("x", ExampleEnum, "x"),
@@ -217,6 +218,9 @@ class DataclassWithMappingToCustomObject(object):
         "list_builtin",
         "list_generic_untyped",
         "list_generic_typed",
+        "set_builtin",
+        "set_generic_untyped",
+        "set_generic_typed",
         "unsupported_generic",
         "enum",
         "enum_bad_value",

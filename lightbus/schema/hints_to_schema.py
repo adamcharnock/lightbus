@@ -198,8 +198,11 @@ def python_type_to_json_schemas(type_):
                 ],
             }
         ]
-    elif issubclass_safe(type_, (list, tuple)):
-        return [{"type": "array"}]
+    elif issubclass_safe(type_, (list, tuple, set)):
+        schema = {"type": "array"}
+        if hint_args:
+            schema["items"] = wrap_with_one_of(python_type_to_json_schemas(hint_args[0]))
+        return [schema]
     elif issubclass_safe(type_, NoneType) or type_ is None:
         return [{"type": "null"}]
     elif issubclass_safe(type_, (datetime.datetime)):

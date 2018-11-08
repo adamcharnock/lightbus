@@ -1,7 +1,7 @@
 import inspect
 import logging
 from decimal import Decimal
-from typing import Union, Optional, NamedTuple, Tuple, Any, Mapping
+from typing import Union, Optional, NamedTuple, Tuple, Any, Mapping, Set
 from collections import namedtuple
 from uuid import UUID
 
@@ -321,6 +321,33 @@ def test_enum_unknown_value_types():
     schema = make_response_schema("api_name", "rpc_name", func)
     assert "type" not in schema
     assert "enum" not in schema
+
+
+def test_set_type():
+    def func(username) -> Set:
+        pass
+
+    schema = make_response_schema("api_name", "rpc_name", func)
+    assert schema["type"] == "array"
+    assert "items" not in schema
+
+
+def test_set_type_with_hints():
+    def func(username) -> Set[int]:
+        pass
+
+    schema = make_response_schema("api_name", "rpc_name", func)
+    assert schema["type"] == "array"
+    assert schema["items"] == {"type": "number"}
+
+
+def test_set_builtin():
+    def func(username) -> Set:
+        pass
+
+    schema = make_response_schema("api_name", "rpc_name", func)
+    assert schema["type"] == "array"
+    assert "items" not in schema
 
 
 def test_datetime():

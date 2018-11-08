@@ -81,6 +81,12 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
             return tuple(cast_to_hint(i, hint_args[0]) for i in value)
         else:
             return tuple(value)
+    elif is_class and issubclass_safe(hint_type, set):
+        # Sets
+        if hint_args:
+            return set(cast_to_hint(i, hint_args[0]) for i in value)
+        else:
+            return set(value)
     elif (
         inspect.isclass(hint)
         and hasattr(hint, "__annotations__")
