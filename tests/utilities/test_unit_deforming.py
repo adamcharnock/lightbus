@@ -49,7 +49,6 @@ class CustomClass(object):
 
 
 class CustomClassWithMagicMethod(object):
-
     def __to_bus__(self):
         return {"a": 1}
 
@@ -68,6 +67,7 @@ class ExampleEnum(Enum):
         (None, None),
         ("a", "a"),
         ([1, "a"], [1, "a"]),
+        ({1}, [1]),
         (ExampleEnum.foo, "a"),
         (SimpleNamedTuple(a="x", b=1), {"a": "x", "b": 1}),
         (SimpleDataclass(a="x", b=1), {"a": "x", "b": 1}),
@@ -75,7 +75,7 @@ class ExampleEnum(Enum):
         (ComplexDataclass(val=SimpleDataclass(a="x", b=1)), {"val": {"a": "x", "b": 1}}),
         (DataclassWithMethod(a="x", b=1), {"a": "x", "b": 1}),
         (
-            datetime(2018, 6, 5, 10, 48, 12, 792937, tzinfo=timezone.utc),
+            datetime(2018, 6, 5, 10, 48, 12, 792_937, tzinfo=timezone.utc),
             "2018-06-05T10:48:12.792937+00:00",
         ),
         (date(2018, 6, 5), "2018-06-05"),
@@ -95,6 +95,7 @@ class ExampleEnum(Enum):
         "none",
         "str",
         "list",
+        "set",
         "enum",
         "namedtuple_simple",
         "dataclass_simple",

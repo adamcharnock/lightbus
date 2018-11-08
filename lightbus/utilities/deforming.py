@@ -40,6 +40,8 @@ def deform_to_bus(value):
         return value.isoformat()
     elif isinstance_safe(value, UUID):
         return str(value)
+    elif isinstance_safe(value, set):
+        return list(value)
     elif type(value) == tuple:
         return list(value)
     elif isinstance_safe(value, list):
