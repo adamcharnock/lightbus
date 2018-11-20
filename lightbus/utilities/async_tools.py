@@ -155,9 +155,7 @@ async def call_every(*, callback, timedelta: timedelta, also_run_immediately: bo
     while True:
         start_time = time()
         if not first_run or also_run_immediately:
-            result = callback()
-            if isawaitable(result):
-                await result
+            await execute_in_thread(callback, args=[], kwargs={})
         total_execution_time = time() - start_time
         sleep_time = max(0.0, timedelta.total_seconds() - total_execution_time)
         await asyncio.sleep(sleep_time)
@@ -171,9 +169,7 @@ async def call_on_schedule(callback, schedule: "Job", also_run_immediately: bool
 
         if not first_run or also_run_immediately:
             schedule.last_run = datetime.now()
-            result = callback()
-            if isawaitable(result):
-                await result
+            await execute_in_thread(callback, args=[], kwargs={})
 
         td = schedule.next_run - datetime.now()
         await asyncio.sleep(td.total_seconds())
