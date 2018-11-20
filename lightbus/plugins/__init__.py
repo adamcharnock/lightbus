@@ -15,6 +15,7 @@ from lightbus.exceptions import (
     LightbusShutdownInProgress,
 )
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
+from lightbus.utilities.async_tools import execute_in_thread
 from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
 
@@ -190,7 +191,8 @@ class PluginRegistry(object):
             handler = getattr(plugin, name, None)
             if handler:
                 try:
-                    return_values.append(await handler(**kwargs))
+                    return_value = await execute_in_thread(handler, args=[], kwargs=kwargs)
+                    return_values.append(return_value)
                 except asyncio.CancelledError:
                     raise
                 except LightbusShutdownInProgress as e:
