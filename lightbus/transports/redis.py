@@ -436,8 +436,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self.stream_use = stream_use
         self.consumption_restart_delay = consumption_restart_delay
 
-        self._task = None
-        self._reload = False
+        self.consume_task = None
+        self.reclaim_task = None
 
     @classmethod
     def from_config(
@@ -586,12 +586,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 await queue.join()
 
         # Run the two above coroutines in their own tasks
-        consume_task = asyncio.ensure_future(consume_loop())
-        reclaim_task = asyncio.ensure_future(reclaim_loop())
+        self.consume_task = asyncio.ensure_future(consume_loop())
+        self.reclaim_task = asyncio.ensure_future(reclaim_loop())
 
         # Make sure we surface any exceptions that occur in either task
-        consume_task.add_done_callback(check_for_exception)
-        reclaim_task.add_done_callback(check_for_exception)
+        self.consume_task.add_done_callback(check_for_exception)
+        self.reclaim_task.add_done_callback(check_for_exception)
 
         try:
             while True:
@@ -602,8 +602,16 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 except GeneratorExit:
                     return
         finally:
-            # TODO: This often doesn't get called during test teardown
-            await cancel(consume_task, reclaim_task)
+            await self.cancel_tasks()
+
+    async def cancel_tasks(self):
+        await cancel(self.consume_task, self.reclaim_task)
+        self.consume_task = None
+        self.reclaim_task = None
+
+    async def close(self):
+        await self.cancel_tasks()
+        await super().close()
 
     async def _fetch_new_messages(
         self, streams, consumer_group, expected_events, forever
