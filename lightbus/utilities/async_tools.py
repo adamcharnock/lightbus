@@ -119,6 +119,13 @@ async def await_if_necessary(value):
 
 
 async def execute_in_thread(callable, args, kwargs):
+    """Execute the given callable in a thread, and await the result
+
+    If the callable returns an awaitable, then it will be awaited.
+    The callable may therefore be a coroutine or a regular function.
+
+    The callable will be called with the given args and kwargs
+    """
     loop = asyncio.get_event_loop()
 
     def make_func(callable, args, kwargs):
