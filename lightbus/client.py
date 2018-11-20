@@ -43,6 +43,7 @@ from lightbus.utilities.async_tools import (
     make_exception_checker,
     call_every,
     call_on_schedule,
+    execute_in_thread,
 )
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
@@ -906,7 +907,13 @@ class _EventListener(object):
                         parameters = event_message.kwargs
 
                     try:
-                        await self.execute_listener(event_message, parameters)
+                        # Call the listener.
+                        # Pass the event message as a positional argument,
+                        # thereby allowing listeners to have flexibility in the argument names.
+                        # (And therefore allowing listeners to use the `event` parameter themselves)
+                        await execute_in_thread(
+                            self.listener_callable, args=[event_message], kwargs=parameters
+                        )
                     except LightbusShutdownInProgress as e:
                         logger.info("Shutdown in progress: {}".format(e))
                         return
@@ -937,19 +944,3 @@ class _EventListener(object):
                     await self.bus_client._execute_hook(
                         "after_event_execution", event_message=event_message
                     )
-
-    async def execute_listener(self, event_message: EventMessage, parameters: dict):
-        loop = asyncio.get_event_loop()
-
-        def make_func(callable, event_message, parameters):
-            def wrapper():
-                result = callable(event_message, **parameters)
-                if inspect.isawaitable(result):
-                    loop = asyncio.new_event_loop()
-                    loop.run_until_complete(result)
-
-            return wrapper
-
-        await loop.run_in_executor(
-            executor=None, func=make_func(self.listener_callable, event_message, parameters)
-        )
