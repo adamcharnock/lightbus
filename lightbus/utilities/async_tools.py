@@ -126,11 +126,12 @@ async def execute_in_thread(callable, args, kwargs):
             result = callable(*args, **kwargs)
             if inspect.isawaitable(result):
                 loop = asyncio.new_event_loop()
-                loop.run_until_complete(result)
+                result = loop.run_until_complete(result)
+            return result
 
         return wrapper
 
-    await loop.run_in_executor(executor=None, func=make_func(callable, args, kwargs))
+    return await loop.run_in_executor(executor=None, func=make_func(callable, args, kwargs))
 
 
 async def call_every(*, callback, timedelta: timedelta, also_run_immediately: bool):

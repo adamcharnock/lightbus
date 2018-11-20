@@ -384,8 +384,7 @@ class BusClient(object):
             method = getattr(api, name)
             if self.config.api(api_name).cast_values:
                 kwargs = cast_to_signature(kwargs, method)
-            result = method(**kwargs)
-            result = await await_if_necessary(result)
+            result = await execute_in_thread(method, args=[], kwargs=kwargs)
         except (CancelledError, SuddenDeathException):
             raise
         except Exception as e:
