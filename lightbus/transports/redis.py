@@ -602,6 +602,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 except GeneratorExit:
                     return
         finally:
+            # TODO: This often doesn't get called during test teardown
             await cancel(consume_task, reclaim_task)
 
     async def _fetch_new_messages(

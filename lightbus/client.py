@@ -906,18 +906,22 @@ class _EventListener(object):
                         parameters = event_message.kwargs
 
                     try:
-                        # Call the listener
-                        co = self.listener_callable(
-                            # Pass the event message as a positional argument,
-                            # thereby allowing listeners to have flexibility in the argument names.
-                            # (And therefore allowing listeners to use the `event` parameter themselves)
-                            event_message,
-                            **parameters,
-                        )
+                        loop = asyncio.get_event_loop()
 
-                        # Support awaitable event listeners
-                        if inspect.isawaitable(co):
-                            await co
+                        # TODO: Cleanup, extract to own method
+                        def make_func(callable, event_message, parameters):
+                            def wrapper():
+                                result = callable(event_message, **parameters)
+                                if inspect.isawaitable(result):
+                                    loop = asyncio.new_event_loop()
+                                    loop.run_until_complete(result)
+
+                            return wrapper
+
+                        await loop.run_in_executor(
+                            executor=None,
+                            func=make_func(self.listener_callable, event_message, parameters),
+                        )
 
                     except LightbusShutdownInProgress as e:
                         logger.info("Shutdown in progress: {}".format(e))
