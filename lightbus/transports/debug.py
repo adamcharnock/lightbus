@@ -16,8 +16,8 @@ class DebugRpcTransport(RpcTransport):
 
     async def consume_rpcs(self, api) -> Sequence[RpcMessage]:
         """Consume RPC calls for the given API"""
-        logger.debug("Faking consumption of RPCs. Waiting 10ms before issuing fake RPC call...")
-        await asyncio.sleep(0.01)
+        logger.debug("Faking consumption of RPCs. Waiting 100ms before issuing fake RPC call...")
+        await asyncio.sleep(0.1)
         logger.debug("Issuing fake RPC call")
         return self._get_fake_messages()
 
