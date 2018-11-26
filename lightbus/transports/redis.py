@@ -85,7 +85,6 @@ class RedisTransportMixin(object):
         else:
             # Use the provided connection
 
-            self.connection_parameters = None
             if isinstance(redis_pool, (ConnectionsPool,)):
                 # If they've passed a raw pool then wrap it up in a Redis object.
                 # aioredis.create_redis_pool() normally does this for us.
@@ -102,6 +101,21 @@ class RedisTransportMixin(object):
                     "If unsure, use aioredis.create_redis_pool() to create your redis connection."
                 )
 
+            # Determine the connection parameters from the given pool
+            # (we will need these in other to create new pools for other threads)
+            self.connection_parameters = dict(
+                address=redis_pool.address,
+                db=redis_pool.db,
+                password=redis_pool._pool_or_conn._password,
+                encoding=redis_pool.encoding,
+                minsize=redis_pool._pool_or_conn.minsize,
+                maxsize=redis_pool._pool_or_conn.maxsize,
+                ssl=redis_pool._pool_or_conn._ssl,
+                parser=redis_pool._pool_or_conn._parser_class,
+                timeout=redis_pool._pool_or_conn._create_connection_timeout,
+                connection_cls=redis_pool._pool_or_conn._connection_cls,
+            )
+
             self._local.redis_pool = redis_pool
 
     async def connection_manager(self) -> Redis:
@@ -113,14 +127,7 @@ class RedisTransportMixin(object):
             )
 
         if not hasattr(self._local, "redis_pool"):
-            if self.connection_parameters is None:
-                raise Exception(
-                    f"It looks like you are using the redis transport in a threaded environment. "
-                    f"In this case, you must instantiate the transport using the `connection_parameters` "
-                    f"option, not using redis_pool."
-                )
             self._local.redis_pool = await aioredis.create_redis_pool(**self.connection_parameters)
-
         try:
             internal_pool = self._local.redis_pool._pool_or_conn
             if hasattr(internal_pool, "size") and hasattr(internal_pool, "maxsize"):
@@ -141,10 +148,17 @@ class RedisTransportMixin(object):
 
     async def close(self):
         if getattr(self._local, "redis_pool", None):
-            self._local.redis_pool.close()
-            await self._local.redis_pool.wait_closed()
-            del self._local.redis_pool
+            await self._close_redis_pool()
         self._closed = True
+
+    async def cleanup_thread(self):
+        if getattr(self._local, "redis_pool", None):
+            await self._close_redis_pool()
+
+    async def _close_redis_pool(self):
+        self._local.redis_pool.close()
+        await self._local.redis_pool.wait_closed()
+        del self._local.redis_pool
 
     def __str__(self):
         if hasattr(self._local, "redis_pool"):

@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 class TransportMetaclass(type):
-
     def __new__(mcs, name, bases, attrs, **kwds):
         cls = super().__new__(mcs, name, bases, attrs)
         if not hasattr(cls, f"{name}Config") and hasattr(cls, "from_config"):
@@ -36,7 +35,6 @@ class TransportMetaclass(type):
 
 
 class Transport(object, metaclass=TransportMetaclass):
-
     @classmethod
     def from_config(cls: Type[T], *config) -> T:
         return cls()
@@ -53,6 +51,13 @@ class Transport(object, metaclass=TransportMetaclass):
         """Cleanup prior to termination
 
         Can be used for closing connections etc.
+        """
+        pass
+
+    async def cleanup_thread(self):
+        """Perform any child thread cleanup
+
+        For example, closing connections in any thread-local storage
         """
         pass
 

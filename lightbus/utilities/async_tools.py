@@ -118,7 +118,7 @@ async def await_if_necessary(value):
         return value
 
 
-async def execute_in_thread(callable, args, kwargs):
+async def execute_in_thread(callable, args, kwargs, bus_client):
     """Execute the given callable in a thread, and await the result
 
     If the callable returns an awaitable, then it will be awaited.
@@ -126,9 +126,12 @@ async def execute_in_thread(callable, args, kwargs):
 
     The callable will be called with the given args and kwargs
     """
-    loop = asyncio.get_event_loop()
 
     def make_func(callable, args, kwargs):
+        async def coro_wrapper(result):
+            await result
+            await bus_client._cleanup_thread()
+
         def wrapper():
             result = callable(*args, **kwargs)
             if inspect.isawaitable(result):
@@ -138,7 +141,9 @@ async def execute_in_thread(callable, args, kwargs):
 
         return wrapper
 
-    return await loop.run_in_executor(executor=None, func=make_func(callable, args, kwargs))
+    return await asyncio.get_event_loop().run_in_executor(
+        executor=None, func=make_func(callable, args, kwargs)
+    )
 
 
 async def call_every(*, callback, timedelta: timedelta, also_run_immediately: bool):

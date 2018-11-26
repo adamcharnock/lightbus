@@ -191,8 +191,7 @@ class PluginRegistry(object):
             handler = getattr(plugin, name, None)
             if handler:
                 try:
-                    return_value = await execute_in_thread(handler, args=[], kwargs=kwargs)
-                    return_values.append(return_value)
+                    return_values.append(await handler(**kwargs))
                 except asyncio.CancelledError:
                     raise
                 except LightbusShutdownInProgress as e:
