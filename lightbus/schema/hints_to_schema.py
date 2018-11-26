@@ -87,11 +87,11 @@ def make_parameter_schema(parameters: Sequence[inspect.Parameter]):
 def parameter_to_schema(parameter):
     """Convert an `inspect.Parameter` to a single JSON schema
 
-    This will create the schemas using `parameter_to_json_schemas()`,
+    This will create the schemas using `annotation_to_json_schemas()`,
     set the default values based on the parameters default value
     annotation, and combine the schemas with `wrap_with_one_of()`
     """
-    type_schemas = parameter_to_json_schemas(parameter)
+    type_schemas = annotation_to_json_schemas(parameter.annotation, parameter.default)
     if not type_schemas:
         return {}
 
@@ -119,7 +119,7 @@ def return_type_to_schema(type_):
     return wrap_with_one_of(type_schemas)
 
 
-def parameter_to_json_schemas(parameter):
+def annotation_to_json_schemas(annotation, default=empty):
     """Convert an `inspect.Parameter` to JSON schemas
 
     This wraps `python_type_to_json_schemas()` with a little extra logic. Specifically,
@@ -130,12 +130,21 @@ def parameter_to_json_schemas(parameter):
 
     This will return a list of JSON schemas. See note one `python_type_to_json_schemas()`
     """
-    if parameter.annotation is not empty:
-        return python_type_to_json_schemas(parameter.annotation)
-    elif parameter.default is not empty and parameter.default is not None:
-        return python_type_to_json_schemas(type(parameter.default))
+    if annotation is not empty:
+        schemas = python_type_to_json_schemas(annotation)
+
+        # Allow nulls if the parameter has a default value of None
+        if default is not empty and default is None:
+            null_schema = {"type": "null"}
+            if null_schema not in schemas:
+                schemas.append(null_schema)
+
+    elif default is not empty and default is not None:
+        schemas = python_type_to_json_schemas(type(default))
     else:
-        return [{}]
+        schemas = [{}]
+
+    return schemas
 
 
 def python_type_to_json_schemas(type_):
@@ -257,7 +266,9 @@ def make_custom_object_schema(type_, property_names=None):
 
         if hasattr(type_, "__annotations__"):
             properties[property_name] = wrap_with_one_of(
-                python_type_to_json_schemas(type_.__annotations__.get(property_name, None))
+                annotation_to_json_schemas(
+                    annotation=type_.__annotations__.get(property_name, None), default=default
+                )
             )
         elif default is not empty:
             properties[property_name] = wrap_with_one_of(python_type_to_json_schemas(type(default)))

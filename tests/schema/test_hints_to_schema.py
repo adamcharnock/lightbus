@@ -410,3 +410,42 @@ def test_make_rpc_parameter_schema_null():
     schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
     # Note that type is not set to null
     assert schema["properties"]["username"] == {"default": None}
+
+
+def test_named_tuple_with_none_default():
+    class User(NamedTuple):
+        pass
+
+    def func(user: User = None):
+        pass
+
+    schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
+    assert len(schema["properties"]["user"]["oneOf"]) == 2
+
+
+def test_named_tuple_optional_with_none_default():
+    # There is a risk of {'type': 'null'} being present twice here,
+    # resulting in three values in oneOf. Check this doesn't happen
+
+    class User(NamedTuple):
+        pass
+
+    def func(user: Optional[User] = None):
+        pass
+
+    schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
+    assert len(schema["properties"]["user"]["oneOf"]) == 2
+
+
+def test_named_tuple_field_with_none_default():
+    class Child(NamedTuple):
+        pass
+
+    class User(NamedTuple):
+        foo: Child = None
+
+    def func(user: User):
+        pass
+
+    schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
+    assert len(schema["properties"]["user"]["properties"]["foo"]["oneOf"]) == 2
