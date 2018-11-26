@@ -11,10 +11,10 @@ from uuid import UUID
 
 import lightbus
 from lightbus.utilities.deforming import deform_to_bus
-from lightbus.utilities.type_checks import parse_hint, issubclass_safe
+from lightbus.utilities.type_checks import parse_hint, issubclass_safe, get_property_default
 
 NoneType = type(None)
-empty = inspect.Signature.empty
+empty = inspect.Parameter.empty
 logger = logging.getLogger(__name__)
 
 
@@ -254,15 +254,7 @@ def make_custom_object_schema(type_, property_names=None):
             # is a method
             continue
 
-        if issubclass_safe(type_, tuple):
-            # namedtuple
-            if hasattr(type_, "_field_defaults"):
-                default = type_._field_defaults.get(property_name, empty)
-        else:
-            default = getattr(type_, property_name, empty)
-
-        if callable(default):
-            default = empty
+        default = get_property_default(type_, property_name)
 
         if hasattr(type_, "__annotations__"):
             properties[property_name] = wrap_with_one_of(

@@ -3,7 +3,7 @@ import datetime
 import inspect
 import logging
 from enum import Enum
-from typing import Mapping, Type, get_type_hints, Union, TypeVar, Callable
+from typing import Mapping, Type, get_type_hints, Union, TypeVar, Callable, Any
 
 import dateutil.parser
 
@@ -14,6 +14,7 @@ from lightbus.utilities.type_checks import (
     isinstance_safe,
     parse_hint,
     issubclass_safe,
+    get_property_default,
 )
 
 is_callable = callable
@@ -35,6 +36,11 @@ H = TypeVar("A")
 
 
 def cast_to_hint(value: V, hint: H) -> Union[V, H]:
+    if value is None:
+        return None
+    elif hint in (Any, ...):
+        return value
+
     optional_hint = is_optional(hint)
     if optional_hint and value is not None:
         hint = optional_hint
@@ -141,6 +147,7 @@ def _mapping_to_instance(
     # Iterate through each key/type-hint pairing in the destination type
     for key, hint in hints.items():
         value = mapping.get(key)
+        default = get_property_default(destination_type, key)
 
         if key not in mapping:
             # This attribute has not been provided by in the mapping. Skip it
