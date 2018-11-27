@@ -2,7 +2,6 @@ from time import time
 
 
 class Timer(object):
-
     def __init__(self):
         self.totals = []
         self.stack = []
