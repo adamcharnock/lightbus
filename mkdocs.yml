@@ -55,7 +55,7 @@ pages:
     - APIs: explanation/apis.md
     - Remote prcedure calls: explanation/rpcs.md
     - Events: explanation/events.md
-    - Marselling: explanation/marshelling.md
+    - Marshelling: explanation/marshelling.md
     - Transports: explanation/transports.md
     - Configuration*: explanation/configuration.md
     - Schema*: explanation/schema.md
