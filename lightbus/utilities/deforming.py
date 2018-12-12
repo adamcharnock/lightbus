@@ -19,7 +19,7 @@ def deform_to_bus(value):
     if value is None:
         return value
     elif hasattr(value, "__to_bus__"):
-        return value.__to_bus__()
+        return deform_to_bus(value.__to_bus__())
     elif isinstance(value, OrderedDict):
         return deform_to_bus(dict(value))
     elif isinstance_safe(value, dict):

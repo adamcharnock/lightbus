@@ -53,6 +53,11 @@ class CustomClassWithMagicMethod(object):
         return {"a": 1}
 
 
+class CustomClassWithMagicMethodNeedsEncoding(object):
+    def __to_bus__(self):
+        return {"a": complex(1, 2)}
+
+
 class ExampleEnum(Enum):
     foo: str = "a"
     bar: str = "b"
@@ -80,6 +85,7 @@ class ExampleEnum(Enum):
         ),
         (date(2018, 6, 5), "2018-06-05"),
         (CustomClassWithMagicMethod(), {"a": 1}),
+        (CustomClassWithMagicMethodNeedsEncoding(), {"a": "(1+2j)"}),
         (Decimal("1.23"), "1.23"),
         (complex(1, 2), "(1+2j)"),
         (frozendict(a=1), {"a": 1}),
@@ -107,6 +113,7 @@ class ExampleEnum(Enum):
         "datetime",
         "date",
         "custom_class_magic_method",
+        "custom_class_magic_method_needs_encoding",
         "decimal",
         "complex",
         "frozendict",
