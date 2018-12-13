@@ -4,6 +4,7 @@ from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum
 from uuid import UUID
+from base64 import b64encode
 
 from lightbus.exceptions import DeformError
 from lightbus.utilities.frozendict import frozendict
@@ -48,6 +49,8 @@ def deform_to_bus(value):
         return [deform_to_bus(v) for v in value]
     elif isinstance_safe(value, (int, float, str)):
         return value
+    elif isinstance_safe(value, (bytes, memoryview)):
+        return b64encode(bytes(value)).decode("utf8")
     elif isinstance_safe(value, (Decimal, complex)):
         return str(value)
     elif hasattr(value, "__module__"):

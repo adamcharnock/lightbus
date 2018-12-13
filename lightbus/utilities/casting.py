@@ -4,6 +4,7 @@ import inspect
 import logging
 from enum import Enum
 from typing import Mapping, Type, get_type_hints, Union, TypeVar, Callable, Any
+from base64 import b64decode
 
 import dateutil.parser
 
@@ -65,6 +66,8 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
             instantiator=hint.__from_bus__,
             expand_kwargs=False,
         )
+    elif issubclass_safe(hint, bytes):
+        return b64decode(value.encode("utf8"))
     elif type_is_namedtuple(hint) and isinstance_safe(value, Mapping):
         return _mapping_to_instance(mapping=value, destination_type=hint)
     elif type_is_dataclass(hint) and isinstance_safe(value, Mapping):
