@@ -24,9 +24,10 @@ def deform_to_bus(value):
     elif isinstance(value, OrderedDict):
         return deform_to_bus(dict(value))
     elif isinstance_safe(value, dict):
+        new_dict = {}
         for dict_key, dict_value in value.items():
-            value[dict_key] = deform_to_bus(dict_value)
-        return value
+            new_dict[dict_key] = deform_to_bus(dict_value)
+        return new_dict
     elif is_namedtuple(value):
         return deform_to_bus(dict(value._asdict()))
     elif is_dataclass(value):
