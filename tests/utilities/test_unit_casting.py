@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone, date
 from decimal import Decimal
 from enum import Enum
-from typing import NamedTuple, Optional, List, Any, SupportsRound, Mapping, Set
+from typing import NamedTuple, Optional, List, Any, SupportsRound, Mapping, Set, Tuple
 from uuid import UUID
 
 import pytest
@@ -173,6 +173,8 @@ class DataclassWithMappingToCustomObject(object):
         (["1", 2], set, {"1", 2}),
         (["1", 2], Set, {"1", 2}),
         (["1", 2], Set[int], {1, 2}),
+        (["1", 2], Tuple, ("1", 2)),
+        (["1", "a", "2"], Tuple[int, str, int], (1, "a", 2)),
         ("a", ExampleEnum, ExampleEnum.foo),
         (
             {"a": {"z": 1}, "b": {"z": 1}, "c": {"z": 1}},
@@ -233,6 +235,8 @@ class DataclassWithMappingToCustomObject(object):
         "set_builtin",
         "set_generic_untyped",
         "set_generic_typed",
+        "tuple_generic_untyped",
+        "tuple_generic_typed",
         "enum",
         "nametuple_with_mapping",
         "dataclass_with_mapping",
@@ -242,7 +246,7 @@ class DataclassWithMappingToCustomObject(object):
         "dataclass_with_child_none_default",
     ],
 )
-def test_cast_to_annotation_no_warnings(test_input, hint, expected, caplog):
+def test_cast_to_hit(test_input, hint, expected, caplog):
     with caplog.at_level(logging.WARNING, logger=""):
         casted = cast_to_hint(value=test_input, hint=hint)
     assert casted == expected

@@ -87,7 +87,7 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     elif is_class and issubclass_safe(hint_type, tuple):
         # Tuples
         if hint_args:
-            return tuple(cast_to_hint(i, hint_args[0]) for i in value)
+            return tuple(cast_to_hint(h, hint_args[i]) for i, h in enumerate(value))
         else:
             return tuple(value)
     elif is_class and issubclass_safe(hint_type, set):
