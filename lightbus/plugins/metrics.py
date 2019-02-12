@@ -129,6 +129,7 @@ class MetricsPlugin(LightbusPlugin):
         kwargs.setdefault("timestamp", datetime.utcnow().timestamp())
         kwargs.setdefault("service_name", self.service_name)
         kwargs.setdefault("process_name", self.process_name)
+        kwargs = deform_to_bus(kwargs)
         event_transport = client.transport_registry.get_event_transport("internal.metrics")
         return event_transport.send_event(
             EventMessage(api_name="internal.metrics", event_name=event_name_, kwargs=kwargs),
