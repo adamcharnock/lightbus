@@ -183,7 +183,7 @@ class BusClient(object):
             )
 
         logger.info("Executing before_server_start & on_start hooks...")
-        block(self._execute_hook("before_server_start"), timeout=None)
+        block(self._execute_hook("before_server_start"))
         logger.info("Execution of before_server_start & on_start hooks was successful")
 
         self._run_forever(consume_rpcs)
