@@ -182,11 +182,15 @@ class BusClient(object):
                 )
             )
 
-        block(self._execute_hook("before_server_start"), timeout=5)
+        logger.info("Executing before_server_start & on_start hooks")
+        block(self._execute_hook("before_server_start"), timeout=120)
+        logger.info("Execution of before_server_start & on_start hooks was successful")
 
         self._run_forever(consume_rpcs)
 
+        logger.info("Executing after_server_stopped & on_stop hooks")
         self.loop.run_until_complete(self._execute_hook("after_server_stopped"))
+        logger.info("Execution of after_server_stopped & on_stop hooks was successful")
 
         # Close the bus (which will in turn close the transports)
         self.close()
