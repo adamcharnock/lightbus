@@ -6,6 +6,7 @@ import pytest
 import lightbus.commands.run
 from lightbus import commands, BusClient
 from lightbus.commands import run_command_from_args
+from lightbus.commands.utilities import LogLevelMixin
 from lightbus.config import Config
 from lightbus.config.structure import RootConfig
 from lightbus.plugins import PluginRegistry
@@ -45,6 +46,8 @@ async def redis_config_file(loop, redis_server_url, redis_client):
 
 def test_commands_run_cli(mocker, redis_config_file, make_test_bus_module):
     test_bus_module = make_test_bus_module()
+    # Mock logging, otherwise it interferes with other tests.
+    mocker.patch.object(LogLevelMixin, "setup_logging")
     m = mocker.patch.object(BusClient, "_actually_run_forever")
 
     args = ["--config", redis_config_file, "run", "--bus", test_bus_module]
@@ -58,6 +61,8 @@ def test_commands_run_env(
     mocker, redis_config_file, set_env, make_test_bus_module, plugin_registry
 ):
     test_bus_module = make_test_bus_module()
+    # Mock logging, otherwise it interferes with other tests.
+    mocker.patch.object(LogLevelMixin, "setup_logging")
     run_forever_mock = mocker.patch.object(BusClient, "_actually_run_forever")
 
     async def dummy_coroutine(*args, **kwargs):
@@ -76,15 +81,21 @@ def test_commands_run_env(
     assert execute_hook_mock.called
 
 
-def test_commands_shell(redis_config_file, make_test_bus_module):
+def test_commands_shell(redis_config_file, make_test_bus_module, mocker):
+    # Mock logging, otherwise it interferes with other tests.
+    mocker.patch.object(LogLevelMixin, "setup_logging")
+
     test_bus_module = make_test_bus_module()
     # Prevent the shell mainloop from kicking off
     args = ["--config", redis_config_file, "shell", "--bus", test_bus_module]
     run_command_from_args(args, fake_it=True)
 
 
-def test_commands_dump_schema(redis_config_file, make_test_bus_module):
+def test_commands_dump_schema(redis_config_file, make_test_bus_module, mocker):
     test_bus_module = make_test_bus_module()
+    # Mock logging, otherwise it interferes with other tests.
+    mocker.patch.object(LogLevelMixin, "setup_logging")
+
     args = [
         "--config",
         redis_config_file,
@@ -106,8 +117,10 @@ def test_commands_dump_schema(redis_config_file, make_test_bus_module):
     os.remove("/tmp/test_commands_dump_schema.json")
 
 
-def test_commands_dump_config_schema(redis_config_file, dummy_api, make_test_bus_module):
+def test_commands_dump_config_schema(redis_config_file, dummy_api, make_test_bus_module, mocker):
     test_bus_module = make_test_bus_module()
+    # Mock logging, otherwise it interferes with other tests.
+    mocker.patch.object(LogLevelMixin, "setup_logging")
 
     args = [
         "--config",

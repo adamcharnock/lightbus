@@ -4,7 +4,6 @@ T = TypeVar("T", bound="Parent")
 
 
 class Parent(object):
-
     def instance_method(self: T, x: int) -> T:
         return self
 
@@ -14,7 +13,6 @@ class Parent(object):
 
 
 class Child(Parent):
-
     def foo(self):
         pass
 

@@ -6,3 +6,4 @@ repos:
       args: [--line-length=100, --safe, --py36]
       python_version: python3.6
       verbose: true
+      exclude: ^lightbus_experiments/

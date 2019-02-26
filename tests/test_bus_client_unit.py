@@ -117,6 +117,31 @@ async def test_call_rpc_local_starts_with_underscore(dummy_bus: lightbus.path.Bu
 
 
 @pytest.mark.asyncio
+async def test_consume_rpcs_with_transport_error(
+    mocker, dummy_bus: lightbus.path.BusPath, dummy_api
+):
+    class TestException(Exception):
+        pass
+
+    async def co(e=None):
+        if e:
+            raise e
+
+    await dummy_bus.client.register_api_async(dummy_api)
+
+    mocker.patch.object(dummy_bus.client, "call_rpc_local", return_value=co(TestException()))
+    send_result = mocker.patch.object(dummy_bus.client, "send_result", return_value=co())
+
+    await dummy_bus.client._consume_rpcs_with_transport(
+        rpc_transport=dummy_bus.client.transport_registry.get_rpc_transport("default"), apis=[]
+    )
+    result_kwargs = send_result.call_args[1]
+    assert result_kwargs["result_message"].error
+    assert result_kwargs["result_message"].result
+    assert result_kwargs["result_message"].trace
+
+
+@pytest.mark.asyncio
 async def test_listen_for_event_empty_name(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidName):
         await dummy_bus.client.listen_for_event(

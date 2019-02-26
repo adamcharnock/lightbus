@@ -1,3 +1,4 @@
+import inspect
 import sys
 from typing import Optional, Type, Union, Tuple, List, Sequence
 
@@ -82,3 +83,20 @@ def parse_hint(hint: Type) -> Tuple[Type, Optional[List]]:
             # Python 3.6, but this is something other than a type hint
             # (e.g. an int or datetime)
             return hint, None
+
+
+def get_property_default(type: Type, property_name: str) -> ...:
+    if issubclass_safe(type, tuple):
+        # namedtuple
+        if hasattr(type, "_field_defaults"):
+            default = type._field_defaults.get(property_name, inspect.Parameter.empty)
+        else:
+            default = inspect.Parameter.empty
+    else:
+        # everything else
+        default = getattr(type, property_name, inspect.Parameter.empty)
+
+    if callable(default):
+        default = inspect.Parameter.empty
+
+    return default

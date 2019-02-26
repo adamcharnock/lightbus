@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from copy import copy
 from datetime import datetime, timezone, date
 from decimal import Decimal
 from enum import Enum
@@ -45,12 +46,27 @@ class DataclassWithMethod(object):
 
 
 class CustomClass(object):
-    pass
+    def __eq__(self, other):
+        # Used below for checking the object hasn't been mutated
+        return other.__dict__ == self.__dict__
 
 
 class CustomClassWithMagicMethod(object):
     def __to_bus__(self):
         return {"a": 1}
+
+    def __eq__(self, other):
+        # Used below for checking the object hasn't been mutated
+        return other.__dict__ == self.__dict__
+
+
+class CustomClassWithMagicMethodNeedsEncoding(object):
+    def __to_bus__(self):
+        return {"a": complex(1, 2)}
+
+    def __eq__(self, other):
+        # Used below for checking the object hasn't been mutated
+        return other.__dict__ == self.__dict__
 
 
 class ExampleEnum(Enum):
@@ -66,6 +82,7 @@ class ExampleEnum(Enum):
         (True, True),
         (None, None),
         ("a", "a"),
+        (b"abc\0", "YWJjAA=="),
         ([1, "a"], [1, "a"]),
         ({1}, [1]),
         (ExampleEnum.foo, "a"),
@@ -80,6 +97,7 @@ class ExampleEnum(Enum):
         ),
         (date(2018, 6, 5), "2018-06-05"),
         (CustomClassWithMagicMethod(), {"a": 1}),
+        (CustomClassWithMagicMethodNeedsEncoding(), {"a": "(1+2j)"}),
         (Decimal("1.23"), "1.23"),
         (complex(1, 2), "(1+2j)"),
         (frozendict(a=1), {"a": 1}),
@@ -96,6 +114,7 @@ class ExampleEnum(Enum):
         "bool",
         "none",
         "str",
+        "bytes",
         "list",
         "set",
         "enum",
@@ -107,6 +126,7 @@ class ExampleEnum(Enum):
         "datetime",
         "date",
         "custom_class_magic_method",
+        "custom_class_magic_method_needs_encoding",
         "decimal",
         "complex",
         "frozendict",
@@ -119,9 +139,13 @@ class ExampleEnum(Enum):
     ],
 )
 def test_deform_to_bus(test_input, expected):
+    value_before = copy(test_input)
     actual = deform_to_bus(test_input)
     assert actual == expected
     assert type(actual) == type(expected)
+
+    # Test input value has not been mutated
+    assert value_before == test_input
 
 
 def test_deform_to_bus_custom_object():

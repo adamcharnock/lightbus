@@ -8,7 +8,7 @@ setup(
     version=open("VERSION").read().strip(),
     author="Adam Charnock",
     author_email="adam@adamcharnock.com",
-    packages=find_packages(exclude=("lightbus_examples", "experiments", "tests")),
+    packages=find_packages(exclude=("lightbus_examples", "tests")),
     scripts=[],
     url="http://lightbus.org",
     license="MIT",

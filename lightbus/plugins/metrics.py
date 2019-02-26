@@ -5,6 +5,7 @@ from typing import Coroutine
 import lightbus
 from lightbus.message import EventMessage, RpcMessage, ResultMessage
 from lightbus.plugins import LightbusPlugin
+from lightbus.utilities.deforming import deform_to_bus
 
 if False:
     from lightbus.config import Config
@@ -32,7 +33,7 @@ class MetricsPlugin(LightbusPlugin):
             id=rpc_message.id,
             api_name=rpc_message.api_name,
             procedure_name=rpc_message.procedure_name,
-            kwargs=rpc_message.kwargs,
+            kwargs=deform_to_bus(rpc_message.kwargs),
         )
 
     async def after_rpc_call(
@@ -76,7 +77,7 @@ class MetricsPlugin(LightbusPlugin):
             id=rpc_message.id,
             api_name=rpc_message.api_name,
             procedure_name=rpc_message.procedure_name,
-            result=result_message.result,
+            result=deform_to_bus(result_message.result),
         )
 
     # Client-side event hooks
@@ -90,7 +91,7 @@ class MetricsPlugin(LightbusPlugin):
             event_id="event_id",
             api_name=event_message.api_name,
             event_name=event_message.event_name,
-            kwargs=event_message.kwargs,
+            kwargs=deform_to_bus(event_message.kwargs),
         )
 
     # Server-side event hooks
@@ -104,7 +105,7 @@ class MetricsPlugin(LightbusPlugin):
             event_id="event_id",
             api_name=event_message.api_name,
             event_name=event_message.event_name,
-            kwargs=event_message.kwargs,
+            kwargs=deform_to_bus(event_message.kwargs),
         )
 
     async def after_event_execution(
@@ -116,7 +117,7 @@ class MetricsPlugin(LightbusPlugin):
             event_id="event_id",
             api_name=event_message.api_name,
             event_name=event_message.event_name,
-            kwargs=event_message.kwargs,
+            kwargs=deform_to_bus(event_message.kwargs),
         )
 
     def send_event(self, client, event_name_, **kwargs) -> Coroutine:
@@ -128,6 +129,7 @@ class MetricsPlugin(LightbusPlugin):
         kwargs.setdefault("timestamp", datetime.utcnow().timestamp())
         kwargs.setdefault("service_name", self.service_name)
         kwargs.setdefault("process_name", self.process_name)
+        kwargs = deform_to_bus(kwargs)
         event_transport = client.transport_registry.get_event_transport("internal.metrics")
         return event_transport.send_event(
             EventMessage(api_name="internal.metrics", event_name=event_name_, kwargs=kwargs),

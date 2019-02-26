@@ -101,7 +101,7 @@ class ResultMessage(Message):
         self.rpc_message_id = rpc_message_id
 
         if isinstance(result, BaseException):
-            self.result = str(result)
+            self.result = repr(result)
             self.error = True
             self.trace = "".join(
                 traceback.format_exception(

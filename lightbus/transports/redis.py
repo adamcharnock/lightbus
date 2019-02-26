@@ -135,8 +135,8 @@ class RedisTransportMixin(object):
                     logging.critical(
                         "Redis pool has reached maximum size. It is possible that this will recover normally, "
                         "but may be you have more event listeners than connections available to the Redis pool. "
-                        "You can increase the redis pull size by specifying the `maxsize` "
-                        "parameter when instantiating each Redis transport. Current maxsize is: "
+                        "You can increase the redis pool size by specifying the `maxsize` "
+                        "parameter in each of the Redis transport configuration sections. Current maxsize is: {}"
                         "".format(self.connection_parameters.get("maxsize"))
                     )
 

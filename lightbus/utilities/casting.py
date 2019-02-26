@@ -3,7 +3,8 @@ import datetime
 import inspect
 import logging
 from enum import Enum
-from typing import Mapping, Type, get_type_hints, Union, TypeVar, Callable
+from typing import Mapping, Type, get_type_hints, Union, TypeVar, Callable, Any
+from base64 import b64decode
 
 import dateutil.parser
 
@@ -14,6 +15,7 @@ from lightbus.utilities.type_checks import (
     isinstance_safe,
     parse_hint,
     issubclass_safe,
+    get_property_default,
 )
 
 is_callable = callable
@@ -35,6 +37,11 @@ H = TypeVar("A")
 
 
 def cast_to_hint(value: V, hint: H) -> Union[V, H]:
+    if value is None:
+        return None
+    elif hint in (Any, ...):
+        return value
+
     optional_hint = is_optional(hint)
     if optional_hint and value is not None:
         hint = optional_hint
@@ -59,6 +66,8 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
             instantiator=hint.__from_bus__,
             expand_kwargs=False,
         )
+    elif issubclass_safe(hint, bytes):
+        return b64decode(value.encode("utf8"))
     elif type_is_namedtuple(hint) and isinstance_safe(value, Mapping):
         return _mapping_to_instance(mapping=value, destination_type=hint)
     elif type_is_dataclass(hint) and isinstance_safe(value, Mapping):
@@ -78,7 +87,7 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     elif is_class and issubclass_safe(hint_type, tuple):
         # Tuples
         if hint_args:
-            return tuple(cast_to_hint(i, hint_args[0]) for i in value)
+            return tuple(cast_to_hint(h, hint_args[i]) for i, h in enumerate(value))
         else:
             return tuple(value)
     elif is_class and issubclass_safe(hint_type, set):
@@ -141,6 +150,7 @@ def _mapping_to_instance(
     # Iterate through each key/type-hint pairing in the destination type
     for key, hint in hints.items():
         value = mapping.get(key)
+        default = get_property_default(destination_type, key)
 
         if key not in mapping:
             # This attribute has not been provided by in the mapping. Skip it

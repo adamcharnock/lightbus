@@ -189,11 +189,15 @@ class BusClient(object):
                 )
             )
 
-        block(self._execute_hook("before_server_start"), timeout=5)
+        logger.info("Executing before_server_start & on_start hooks...")
+        block(self._execute_hook("before_server_start"))
+        logger.info("Execution of before_server_start & on_start hooks was successful")
 
         self._run_forever(consume_rpcs)
 
+        logger.info("Executing after_server_stopped & on_stop hooks...")
         self.loop.run_until_complete(self._execute_hook("after_server_stopped"))
+        logger.info("Execution of after_server_stopped & on_stop hooks was successful")
 
         # Close the bus (which will in turn close the transports)
         self.close()
@@ -281,22 +285,27 @@ class BusClient(object):
                 )
             except SuddenDeathException:
                 # Used to simulate message failure for testing
-                pass
+                return
+            except CancelledError:
+                raise
+            except Exception as e:
+                result = e
             else:
                 result = deform_to_bus(result)
-                result_message = ResultMessage(result=result, rpc_message_id=rpc_message.id)
-                await self._execute_hook(
-                    "after_rpc_execution", rpc_message=rpc_message, result_message=result_message
-                )
 
-                self._validate(
-                    result_message,
-                    "outgoing",
-                    api_name=rpc_message.api_name,
-                    procedure_name=rpc_message.procedure_name,
-                )
+            result_message = ResultMessage(result=result, rpc_message_id=rpc_message.id)
+            await self._execute_hook(
+                "after_rpc_execution", rpc_message=rpc_message, result_message=result_message
+            )
 
-                await self.send_result(rpc_message=rpc_message, result_message=result_message)
+            self._validate(
+                result_message,
+                "outgoing",
+                api_name=rpc_message.api_name,
+                procedure_name=rpc_message.procedure_name,
+            )
+
+            await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
     async def call_rpc_remote(
         self, api_name: str, name: str, kwargs: dict = frozendict(), options: dict = frozendict()
@@ -394,6 +403,7 @@ class BusClient(object):
         except (CancelledError, SuddenDeathException):
             raise
         except Exception as e:
+            logging.exception(e)
             logger.warning(
                 L(
                     "⚡  Error while executing {}.{}. Took {}",
@@ -402,7 +412,7 @@ class BusClient(object):
                     human_time(time.time() - start_time),
                 )
             )
-            return e
+            raise
         else:
             logger.info(
                 L(

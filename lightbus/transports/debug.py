@@ -10,14 +10,13 @@ logger = logging.getLogger(__name__)
 
 
 class DebugRpcTransport(RpcTransport):
-
     async def call_rpc(self, rpc_message: RpcMessage, options: dict):
         """Publish a call to a remote procedure"""
         logger.debug("Faking dispatch of message {}".format(rpc_message))
 
     async def consume_rpcs(self, api) -> Sequence[RpcMessage]:
         """Consume RPC calls for the given API"""
-        logger.debug("Faking consumption of RPCs. Waiting 1 second before issuing fake RPC call...")
+        logger.debug("Faking consumption of RPCs. Waiting 100ms before issuing fake RPC call...")
         await asyncio.sleep(0.1)
         logger.debug("Issuing fake RPC call")
         return self._get_fake_messages()
@@ -33,7 +32,6 @@ class DebugRpcTransport(RpcTransport):
 
 
 class DebugResultTransport(ResultTransport):
-
     def get_return_path(self, rpc_message: RpcMessage) -> str:
         return "debug://foo"
 
@@ -53,7 +51,6 @@ class DebugResultTransport(ResultTransport):
 
 
 class DebugEventTransport(EventTransport):
-
     def __init__(self):
         self._task = None
         self._reload = False
@@ -86,7 +83,6 @@ class DebugEventTransport(EventTransport):
 
 
 class DebugSchemaTransport(SchemaTransport):
-
     def __init__(self):
         self._schemas = {}
 

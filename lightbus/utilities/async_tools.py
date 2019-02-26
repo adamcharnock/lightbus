@@ -17,7 +17,7 @@ from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 logger = logging.getLogger(__name__)
 
 
-def block(coroutine: Coroutine, loop=None, *, timeout):
+def block(coroutine: Coroutine, loop=None, *, timeout=None):
     loop = loop or get_event_loop()
     if loop.is_running():
         coroutine.close()
@@ -29,7 +29,10 @@ def block(coroutine: Coroutine, loop=None, *, timeout):
             "In this case the only option is to define you listeners as async."
         )
     try:
-        val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout, loop=loop))
+        if timeout is None:
+            val = loop.run_until_complete(coroutine)
+        else:
+            val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout, loop=loop))
     except Exception as e:
         # The intention here is to get sensible stack traces from exceptions within blocking calls
         raise e

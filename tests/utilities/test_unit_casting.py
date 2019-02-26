@@ -1,7 +1,8 @@
+import logging
 from datetime import datetime, timezone, date
 from decimal import Decimal
 from enum import Enum
-from typing import NamedTuple, Optional, List, Any, SupportsRound, Mapping, Set
+from typing import NamedTuple, Optional, List, Any, SupportsRound, Mapping, Set, Tuple
 from uuid import UUID
 
 import pytest
@@ -89,6 +90,16 @@ class DataclassWithMappingToDataclass(object):
     a: Mapping[str, SimpleDataclass]
 
 
+@dataclass
+class DataclassWithNoneDefault(object):
+    a: SimpleDataclass = None
+
+
+@dataclass
+class DataclassWithChildNoneDefault(object):
+    z: DataclassWithNoneDefault
+
+
 class CustomClass(object):
     pass
 
@@ -124,6 +135,7 @@ class DataclassWithMappingToCustomObject(object):
         ("", bool, False),
         (None, int, None),
         ("a", str, "a"),
+        ("YWJjAA==", bytes, b"abc\0"),
         (1, str, "1"),
         ("1.23", Decimal, Decimal("1.23")),
         ("(1+2j)", complex, complex("(1+2j)")),
@@ -153,20 +165,17 @@ class DataclassWithMappingToCustomObject(object):
         ),
         ("2018-06-05", date, date(2018, 6, 5)),
         ("123", Any, "123"),
-        ("a", int, "a"),
         ("123", Optional[int], 123),
         (None, Optional[int], None),
-        # Custom classes not supported, so the hint is ignored
-        ("a", CustomClass, "a"),
         (["1", 2], list, ["1", 2]),
         (["1", 2], List, ["1", 2]),
         (["1", 2], List[int], [1, 2]),
         (["1", 2], set, {"1", 2}),
         (["1", 2], Set, {"1", 2}),
         (["1", 2], Set[int], {1, 2}),
-        (["1", 2], SupportsRound, ["1", 2]),
+        (["1", 2], Tuple, ("1", 2)),
+        (["1", "a", "2"], Tuple[int, str, int], (1, "a", 2)),
         ("a", ExampleEnum, ExampleEnum.foo),
-        ("x", ExampleEnum, "x"),
         (
             {"a": {"z": 1}, "b": {"z": 1}, "c": {"z": 1}},
             NamedTupleWithMapping,
@@ -187,6 +196,12 @@ class DataclassWithMappingToCustomObject(object):
             DataclassWithMappingToDataclass,
             DataclassWithMappingToDataclass(a={"foo": SimpleDataclass(a="1", b=2)}),
         ),
+        ({"a": None}, DataclassWithNoneDefault, DataclassWithNoneDefault(a=None)),
+        (
+            {"z": {"a": None}},
+            DataclassWithChildNoneDefault,
+            DataclassWithChildNoneDefault(DataclassWithNoneDefault(a=None)),
+        ),
     ],
     ids=[
         "int_same",
@@ -198,6 +213,7 @@ class DataclassWithMappingToCustomObject(object):
         "bool_cast_false",
         "none",
         "str_same",
+        "bytes",
         "str_cast",
         "decimal",
         "complex",
@@ -211,28 +227,52 @@ class DataclassWithMappingToCustomObject(object):
         "datetime",
         "date",
         "str_any",
-        "str_int",
         "optional_int_present",
         "optional_int_none",
-        "custom_class",
         "list_builtin",
         "list_generic_untyped",
         "list_generic_typed",
         "set_builtin",
         "set_generic_untyped",
         "set_generic_typed",
-        "unsupported_generic",
+        "tuple_generic_untyped",
+        "tuple_generic_typed",
         "enum",
-        "enum_bad_value",
         "nametuple_with_mapping",
         "dataclass_with_mapping",
         "namedtuple_with_mapping_to_namedtuple",
         "dataclass_with_mapping_to_dataclass",
+        "dataclass_with_none_default",
+        "dataclass_with_child_none_default",
     ],
 )
-def test_cast_to_annotation(test_input, hint, expected):
-    casted = cast_to_hint(value=test_input, hint=hint)
+def test_cast_to_hit(test_input, hint, expected, caplog):
+    with caplog.at_level(logging.WARNING, logger=""):
+        casted = cast_to_hint(value=test_input, hint=hint)
     assert casted == expected
+
+    # Check there were no warnings
+    assert not caplog.records, "\n".join(r.message for r in caplog.records)
+
+
+@pytest.mark.parametrize(
+    "test_input,hint,expected",
+    [
+        ("a", int, "a"),
+        # Custom classes not supported, so the hint is ignored
+        ("a", CustomClass, "a"),
+        (["1", 2], SupportsRound, ["1", 2]),
+        ("x", ExampleEnum, "x"),
+    ],
+    ids=["str_int", "custom_class", "unsupported_generic", "enum_bad_value"],
+)
+def test_cast_to_annotation_with_warnings(test_input, hint, expected, caplog):
+    with caplog.at_level(logging.WARNING, logger=""):
+        casted = cast_to_hint(value=test_input, hint=hint)
+        assert casted == expected
+
+        # Check there were some warnings
+        assert caplog.records
 
 
 def test_cast_to_annotation_custom_class_with_magic_method():

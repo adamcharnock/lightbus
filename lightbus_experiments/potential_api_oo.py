@@ -28,7 +28,6 @@ api = AuthApi.as_client()
 
 
 class AuthImplementation(AuthApi):  # Inherits from client definition
-
     def get_user(self, username: str) -> dict:
         # Actual implementation
         return {"name": "Test User", "email": "test@example.com"}
