@@ -10,12 +10,12 @@ services:
     command: ["postgres", "-c", "log_statement=all"]
 
   redis_a:
-    image: redis:5.0-rc5
+    image: redis:5.0
     ports:
       - "60791:6379"
 
   redis_b:
-    image: redis:5.0-rc5
+    image: redis:5.0
     ports:
       - "60792:6379"
 
