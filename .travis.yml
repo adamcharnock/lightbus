@@ -45,6 +45,12 @@ before_install:
   - docker-compose -f tests/docker-compose.yaml up -d db redis_a redis_b
   - pip install tox tox-travis coverage coveralls
   - mkdir -p .coverage
+  # Let postgres start up
+  - |
+    while ! psql --port=54320 --host=localhost --username=postgres -c 'SELECT 1'> /dev/null 2>&1; do
+      echo 'Waiting for postgres...'
+      sleep 1;
+    done;
 
 script:
   - tox -- --cov=lightbus
