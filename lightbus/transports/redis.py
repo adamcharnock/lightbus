@@ -450,9 +450,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self.stream_use = stream_use
         self.consumption_restart_delay = consumption_restart_delay
 
-        self.consume_task = None
-        self.reclaim_task = None
-
     @classmethod
     def from_config(
         cls,
@@ -599,16 +596,18 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 # Wait for the queue to empty before getting trying to get another message
                 await queue.join()
 
-        # Run the two above coroutines in their own tasks
-        await self.cancel_tasks()
-        self.consume_task = asyncio.ensure_future(consume_loop())
-        self.reclaim_task = asyncio.ensure_future(reclaim_loop())
-
-        # Make sure we surface any exceptions that occur in either task
-        self.consume_task.add_done_callback(check_for_exception)
-        self.reclaim_task.add_done_callback(check_for_exception)
+        consume_task = None
+        reclaim_task = None
 
         try:
+            # Run the two above coroutines in their own tasks
+            consume_task = asyncio.ensure_future(consume_loop())
+            reclaim_task = asyncio.ensure_future(reclaim_loop())
+
+            # Make sure we surface any exceptions that occur in either task
+            consume_task.add_done_callback(check_for_exception)
+            reclaim_task.add_done_callback(check_for_exception)
+
             while True:
                 try:
                     messages = await queue.get()
@@ -617,15 +616,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 except GeneratorExit:
                     return
         finally:
-            await self.cancel_tasks()
-
-    async def cancel_tasks(self):
-        await cancel(self.consume_task, self.reclaim_task)
-        self.consume_task = None
-        self.reclaim_task = None
+            # Make sure we cleanup the tasks we created
+            await cancel(consume_task, reclaim_task)
 
     async def close(self):
-        await self.cancel_tasks()
         await super().close()
 
     async def _fetch_new_messages(
