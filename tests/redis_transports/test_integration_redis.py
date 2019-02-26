@@ -125,9 +125,9 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
         received_messages.append(event_message)
 
     listener_task = await bus.my.dummy.my_event.listen_async(listener, listener_name="test")
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.1)
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.1)
 
     await bus.client.close_async()
 
