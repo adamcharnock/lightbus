@@ -124,10 +124,12 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
         nonlocal received_messages
         received_messages.append(event_message)
 
-    await bus.my.dummy.my_event.listen_async(listener, listener_name="test")
+    listener_task = await bus.my.dummy.my_event.listen_async(listener, listener_name="test")
     await asyncio.sleep(0.01)
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
     await asyncio.sleep(0.01)
+
+    await bus.client.close_async()
 
     assert len(received_messages) == 1
     assert received_messages[0].kwargs == {"field": "Hello! 😎"}
