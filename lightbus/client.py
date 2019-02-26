@@ -751,7 +751,7 @@ class BusClient(object):
 
         def wrapper(f):
             coroutine = call_every(
-                callback=f, timedelta=td, also_run_immediately=also_run_immediately
+                callback=f, timedelta=td, also_run_immediately=also_run_immediately, bus_client=self
             )
             self.add_background_task(coroutine)
             return f
@@ -761,7 +761,10 @@ class BusClient(object):
     def schedule(self, schedule: "Job", also_run_immediately=False):
         def wrapper(f):
             coroutine = call_on_schedule(
-                callback=f, schedule=schedule, also_run_immediately=also_run_immediately
+                callback=f,
+                schedule=schedule,
+                also_run_immediately=also_run_immediately,
+                bus_client=self,
             )
             self.add_background_task(coroutine)
             return f

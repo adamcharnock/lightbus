@@ -9,9 +9,7 @@ from lightbus.utilities.async_tools import call_every, cancel, call_on_schedule
 
 @pytest.fixture()
 def call_counter():
-
     class CallCounter(object):
-
         def __init__(self):
             self.call_count = 0
 
@@ -23,7 +21,6 @@ def call_counter():
 
 @pytest.fixture()
 async def run_for():
-
     async def run_for_inner(coroutine, seconds):
         task = asyncio.ensure_future(coroutine)
         await asyncio.sleep(seconds)
@@ -36,10 +33,13 @@ async def run_for():
 
 
 @pytest.mark.asyncio
-async def test_call_every(run_for, call_counter):
+async def test_call_every(run_for, call_counter, dummy_bus):
     await run_for(
         coroutine=call_every(
-            callback=call_counter, timedelta=timedelta(seconds=0.1), also_run_immediately=False
+            callback=call_counter,
+            timedelta=timedelta(seconds=0.1),
+            also_run_immediately=False,
+            bus_client=dummy_bus.client,
         ),
         seconds=0.25,
     )
@@ -47,10 +47,13 @@ async def test_call_every(run_for, call_counter):
 
 
 @pytest.mark.asyncio
-async def test_call_every_run_immediate(run_for, call_counter):
+async def test_call_every_run_immediate(run_for, call_counter, dummy_bus):
     await run_for(
         coroutine=call_every(
-            callback=call_counter, timedelta=timedelta(seconds=0.1), also_run_immediately=True
+            callback=call_counter,
+            timedelta=timedelta(seconds=0.1),
+            also_run_immediately=True,
+            bus_client=dummy_bus.client,
         ),
         seconds=0.25,
     )
@@ -58,7 +61,7 @@ async def test_call_every_run_immediate(run_for, call_counter):
 
 
 @pytest.mark.asyncio
-async def test_call_every_async(run_for):
+async def test_call_every_async(run_for, dummy_bus):
     await_count = 0
 
     async def cb():
@@ -67,7 +70,10 @@ async def test_call_every_async(run_for):
 
     await run_for(
         coroutine=call_every(
-            callback=cb, timedelta=timedelta(seconds=0.1), also_run_immediately=False
+            callback=cb,
+            timedelta=timedelta(seconds=0.1),
+            also_run_immediately=False,
+            bus_client=dummy_bus.client,
         ),
         seconds=0.25,
     )
@@ -75,7 +81,7 @@ async def test_call_every_async(run_for):
 
 
 @pytest.mark.asyncio
-async def test_call_every_with_long_execution_time(run_for):
+async def test_call_every_with_long_execution_time(run_for, dummy_bus):
     """Execution time should get taken into account"""
     await_count = 0
 
@@ -86,7 +92,10 @@ async def test_call_every_with_long_execution_time(run_for):
 
     await run_for(
         coroutine=call_every(
-            callback=cb, timedelta=timedelta(seconds=0.1), also_run_immediately=False
+            callback=cb,
+            timedelta=timedelta(seconds=0.1),
+            also_run_immediately=False,
+            bus_client=dummy_bus.client,
         ),
         seconds=0.25,
     )
@@ -97,10 +106,13 @@ async def test_call_every_with_long_execution_time(run_for):
 
 
 @pytest.mark.asyncio
-async def test_call_on_schedule(run_for, call_counter):
+async def test_call_on_schedule(run_for, call_counter, dummy_bus):
     await run_for(
         coroutine=call_on_schedule(
-            callback=call_counter, schedule=schedule.every(0.1).seconds, also_run_immediately=False
+            callback=call_counter,
+            schedule=schedule.every(0.1).seconds,
+            also_run_immediately=False,
+            bus_client=dummy_bus.client,
         ),
         seconds=0.25,
     )
@@ -108,10 +120,13 @@ async def test_call_on_schedule(run_for, call_counter):
 
 
 @pytest.mark.asyncio
-async def test_call_on_schedule_run_immediate(run_for, call_counter):
+async def test_call_on_schedule_run_immediate(run_for, call_counter, dummy_bus):
     await run_for(
         coroutine=call_on_schedule(
-            callback=call_counter, schedule=schedule.every(0.1).seconds, also_run_immediately=True
+            callback=call_counter,
+            schedule=schedule.every(0.1).seconds,
+            also_run_immediately=True,
+            bus_client=dummy_bus.client,
         ),
         seconds=0.25,
     )
@@ -119,7 +134,7 @@ async def test_call_on_schedule_run_immediate(run_for, call_counter):
 
 
 @pytest.mark.asyncio
-async def test_call_on_schedule_async(run_for):
+async def test_call_on_schedule_async(run_for, dummy_bus):
     import schedule
 
     await_count = 0
@@ -130,7 +145,10 @@ async def test_call_on_schedule_async(run_for):
 
     await run_for(
         coroutine=call_on_schedule(
-            callback=cb, schedule=schedule.every(0.1).seconds, also_run_immediately=False
+            callback=cb,
+            schedule=schedule.every(0.1).seconds,
+            also_run_immediately=False,
+            bus_client=dummy_bus.client,
         ),
         seconds=0.25,
     )
@@ -138,7 +156,7 @@ async def test_call_on_schedule_async(run_for):
 
 
 @pytest.mark.asyncio
-async def test_call_on_schedule_with_long_execution_time(run_for):
+async def test_call_on_schedule_with_long_execution_time(run_for, dummy_bus):
     """Execution time should get taken into account"""
     import schedule
 
@@ -151,7 +169,10 @@ async def test_call_on_schedule_with_long_execution_time(run_for):
 
     await run_for(
         coroutine=call_on_schedule(
-            callback=cb, schedule=schedule.every(0.1).seconds, also_run_immediately=False
+            callback=cb,
+            schedule=schedule.every(0.1).seconds,
+            also_run_immediately=False,
+            bus_client=dummy_bus.client,
         ),
         seconds=0.25,
     )

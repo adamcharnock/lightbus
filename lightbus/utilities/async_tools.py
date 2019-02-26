@@ -11,6 +11,7 @@ import aioredis
 
 if False:
     from schedule import Job
+    from lightbus.client import BusClient
 
 from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 
@@ -149,7 +150,9 @@ async def execute_in_thread(callable, args, kwargs, bus_client):
     )
 
 
-async def call_every(*, callback, timedelta: timedelta, also_run_immediately: bool):
+async def call_every(
+    *, callback, timedelta: timedelta, also_run_immediately: bool, bus_client: "BusClient"
+):
     """Call callback every timedelta
 
     If also_run_immediately is set then the callback will be called before any waiting
@@ -163,21 +166,23 @@ async def call_every(*, callback, timedelta: timedelta, also_run_immediately: bo
     while True:
         start_time = time()
         if not first_run or also_run_immediately:
-            await execute_in_thread(callback, args=[], kwargs={})
+            await execute_in_thread(callback, args=[], kwargs={}, bus_client=bus_client)
         total_execution_time = time() - start_time
         sleep_time = max(0.0, timedelta.total_seconds() - total_execution_time)
         await asyncio.sleep(sleep_time)
         first_run = False
 
 
-async def call_on_schedule(callback, schedule: "Job", also_run_immediately: bool):
+async def call_on_schedule(
+    callback, schedule: "Job", also_run_immediately: bool, bus_client: "BusClient"
+):
     first_run = True
     while True:
         schedule._schedule_next_run()
 
         if not first_run or also_run_immediately:
             schedule.last_run = datetime.now()
-            await execute_in_thread(callback, args=[], kwargs={})
+            await execute_in_thread(callback, args=[], kwargs={}, bus_client=bus_client)
 
         td = schedule.next_run - datetime.now()
         await asyncio.sleep(td.total_seconds())

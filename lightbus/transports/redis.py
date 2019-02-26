@@ -600,6 +600,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 await queue.join()
 
         # Run the two above coroutines in their own tasks
+        await self.cancel_tasks()
         self.consume_task = asyncio.ensure_future(consume_loop())
         self.reclaim_task = asyncio.ensure_future(reclaim_loop())
 
