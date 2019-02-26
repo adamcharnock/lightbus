@@ -644,17 +644,19 @@ class BusClient(object):
     async def _execute_hook(self, name, **kwargs):
         # Hooks that need to run before plugins
         for callback in self._hook_callbacks[(name, True)]:
-            await execute_in_thread(
-                callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
-            )
+            await await_if_necessary(callback(client=self, **kwargs))
+            # await execute_in_thread(
+            #     callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
+            # )
 
         await self.plugin_registry.execute_hook(name, client=self, **kwargs)
 
         # Hooks that need to run after plugins
         for callback in self._hook_callbacks[(name, False)]:
-            await execute_in_thread(
-                callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
-            )
+            await await_if_necessary(callback(client=self, **kwargs))
+            # await execute_in_thread(
+            #     callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
+            # )
 
     def _register_hook_callback(self, name, fn, before_plugins=False):
         self._hook_callbacks[(name, bool(before_plugins))].append(fn)
