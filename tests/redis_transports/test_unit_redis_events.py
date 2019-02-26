@@ -341,7 +341,7 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
         latest_ids=[0],
     )
     # Sleep a moment to fake a short timeout
-    await asyncio.sleep(0.02)
+    await asyncio.sleep(0.1)
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
@@ -394,7 +394,7 @@ async def test_reclaim_lost_messages_ignores_non_timed_out_messages(
         latest_ids=[0],
     )
     # Sleep a moment to fake a short timeout
-    await asyncio.sleep(0.02)
+    await asyncio.sleep(0.1)
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
@@ -444,7 +444,7 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
         latest_ids=[0],
     )
     # Sleep a moment to fake a short timeout
-    await asyncio.sleep(0.02)
+    await asyncio.sleep(0.1)
 
     event_transport = RedisEventTransport(
         redis_pool=redis_pool,
