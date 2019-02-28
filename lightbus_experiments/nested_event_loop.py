@@ -15,7 +15,7 @@ class AsyncioLoggingFilter(logging.Filter):
     def filter(self, record):
         task = asyncio.Task.current_task()
 
-        record.task = f'[task {id(task)}]' if task else '[NOLOOP]'
+        record.task = f'[task {id(task)}]' if task else '[NOLOOP         ]'
         return True
 
 
@@ -88,9 +88,8 @@ class Bus(object):
         # Start a background task running to handling incoming calls on the _perform_calls queue
         self._perform_calls_task = asyncio.ensure_future(self._perform_calls())
 
-        # Housekeeping for error handling and logging
+        # Housekeeping for error handling
         self._perform_calls_task.add_done_callback(make_exception_checker())
-        self._perform_calls_task.name = 'PerformCallsTask'
 
     @run_in_main_thread()
     async def call_rpc(self, name):
