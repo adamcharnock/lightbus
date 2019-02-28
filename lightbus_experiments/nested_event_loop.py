@@ -47,7 +47,7 @@ async def execute_in_thread(fn):
 
 
 def run_in_main_thread():
-    """Decorator to ensure pass any method invocations into the main thread"""
+    """Decorator to ensure any method invocations are passed to the main thread"""
 
     def decorator(fn):
         def wrapper(*args, **kwargs):
@@ -95,6 +95,10 @@ class Bus(object):
     async def call_rpc(self, name):
         # We'd normally do all the Lightbus goodness here
         await asyncio.sleep(0.1)
+
+        # Causes deadlock because the dispatch thread is already in use
+        await self.fire_event()
+
         return "Return value"
 
     @run_in_main_thread()
