@@ -18,31 +18,29 @@ class AsyncioLoggingFilter(logging.Filter):
 
 logger = logging.getLogger(__name__)
 logger.addFilter(AsyncioLoggingFilter())
-logging.getLogger('asyncio').setLevel(logging.WARNING)
+logging.getLogger('asyncio').setLevel(logging.CRITICAL)
 
 
-logging.basicConfig(level=logging.DEBUG, format="%(msecs)f %(threadName)s %(task)s %(msg)s")
+logging.basicConfig(level=logging.INFO, format="%(msecs)f %(threadName)s %(task)s %(msg)s")
 
 thread_pool_executor = ThreadPoolExecutor(thread_name_prefix="dispatch")
 
 
-
-
-class CustomTask(asyncio.Task):
+class ThreadSerializedTask(asyncio.Task):
     _lock = threading.Lock()
 
     def _wakeup(self, *args, **kwargs):
         logger.debug("Acquire lock")
-        CustomTask._lock.acquire()
+        ThreadSerializedTask._lock.acquire()
 
         super()._wakeup(*args, **kwargs)
 
         logger.debug("Releasing lock")
-        CustomTask._lock.release()
+        ThreadSerializedTask._lock.release()
 
 
 def task_factory(loop, coro):
-    return CustomTask(coro, loop=loop)
+    return ThreadSerializedTask(coro, loop=loop)
 
 
 async def one():
@@ -56,14 +54,25 @@ async def one():
 async def two():
     await asyncio.sleep(0.01)
 
-    logger.debug("--> Two")
+    logger.info("--> Should not be interleaved with other threads")
     time.sleep(0.01)
-    logger.debug("--> Two")
+    logger.info("--> Should not be interleaved with other threads")
     time.sleep(0.01)
-    logger.debug("--> Two")
+    logger.info("--> Should not be interleaved with other threads")
+
+
+def run_loop():
+    loop = asyncio.new_event_loop()
+    loop.set_task_factory(task_factory)
+    loop.run_until_complete(one())
 
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.set_task_factory(task_factory)
-    loop.run_until_complete(one())
+
+    threads = []
+    for _ in range(0, 5):
+        thread = threading.Thread(target=run_loop)
+        thread.start()
+        threads.append(thread)
+
+    [t.join() for t in threads]
