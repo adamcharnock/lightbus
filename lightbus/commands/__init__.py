@@ -8,7 +8,7 @@ import lightbus.creation
 from lightbus.config import Config
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.logging import configure_logging
-from lightbus.utilities.async_tools import block
+from lightbus.utilities.async_tools import block, configure_event_loop
 import lightbus.commands.run
 import lightbus.commands.shell
 import lightbus.commands.dump_schema
@@ -22,6 +22,7 @@ COMMAND_PARSED_ARGS = {}
 def lightbus_entry_point():  # pragma: no cover
     sys.path.insert(0, "")
     configure_logging()
+    configure_event_loop()
     run_command_from_args()
 
 

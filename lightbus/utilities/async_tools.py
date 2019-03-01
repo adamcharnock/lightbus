@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import logging
+import threading
 from functools import partial
 from inspect import isawaitable
 from time import time
@@ -187,3 +188,26 @@ async def call_on_schedule(
         td = schedule.next_run - datetime.now()
         await asyncio.sleep(td.total_seconds())
         first_run = False
+
+
+class ThreadSerializedTask(asyncio.Task):
+    _lock = threading.Lock()
+
+    def _wakeup(self, *args, **kwargs):
+        with ThreadSerializedTask._lock:
+            super()._wakeup(*args, **kwargs)
+
+    @staticmethod
+    def factory(loop, coro):
+        return ThreadSerializedTask(coro, loop=loop)
+
+
+class LightbusEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
+    def get_event_loop(self):
+        loop = super().get_event_loop()
+        loop.set_task_factory(ThreadSerializedTask.factory)
+        return loop
+
+
+def configure_event_loop():
+    asyncio.set_event_loop_policy(LightbusEventLoopPolicy())
