@@ -64,6 +64,7 @@ class LightbusTimeout(LightbusException):
 
 class SuddenDeathException(LightbusException):
     """Used to kill an invocation for testing purposes"""
+
     pass
 
 
@@ -176,4 +177,8 @@ class ValidationError(LightbusException):
 
 
 class InvalidSchedule(LightbusException):
+    pass
+
+
+class InvalidReturnValue(LightbusException):
     pass

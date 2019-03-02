@@ -11,6 +11,8 @@ from datetime import timedelta
 from itertools import chain
 from typing import List, Tuple, Coroutine, Union
 
+import janus
+
 from lightbus.api import Api, Registry
 from lightbus.config import Config
 from lightbus.config.structure import OnError
@@ -50,6 +52,7 @@ from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.logging import log_transport_information
+from lightbus.utilities.threading_tools import run_in_main_thread
 
 if False:
     from schedule import Job
@@ -83,6 +86,7 @@ class BusClient(object):
         self._background_tasks = []
         self._hook_callbacks = defaultdict(list)
         self._exit_code = 0
+        self._call_queue = janus.Queue()
 
     async def setup_async(self, plugins: dict = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
@@ -189,34 +193,10 @@ class BusClient(object):
                 )
             )
 
-        logger.info("Executing before_server_start & on_start hooks...")
-        block(self._execute_hook("before_server_start"))
-        logger.info("Execution of before_server_start & on_start hooks was successful")
-
-        self._run_forever(consume_rpcs)
-
-        logger.info("Executing after_server_stopped & on_stop hooks...")
-        self.loop.run_until_complete(self._execute_hook("after_server_stopped"))
-        logger.info("Execution of after_server_stopped & on_stop hooks was successful")
-
-        # Close the bus (which will in turn close the transports)
-        self.close()
-
-        # See if we've set the exit code on the event loop
-        if hasattr(self.loop, "lightbus_exit_code"):
-            raise SystemExit(self.loop.lightbus_exit_code)
-
-    def _run_forever(self, consume_rpcs):
-        # Setup RPC consumption
-        consume_rpc_task = None
-        if consume_rpcs and self.api_registry.all():
-            consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
-
-        # Setup schema monitoring
-        monitor_task = asyncio.ensure_future(self.schema.monitor())
-
         self.loop.add_signal_handler(signal.SIGINT, self.loop.stop)
         self.loop.add_signal_handler(signal.SIGTERM, self.loop.stop)
+
+        server_tasks = block(self.start_server_tasks(consume_rpcs=consume_rpcs))
 
         try:
             self._actually_run_forever()
@@ -231,7 +211,39 @@ class BusClient(object):
         self.loop.remove_signal_handler(signal.SIGTERM)
 
         # Cancel the tasks we created above
-        block(cancel(consume_rpc_task, monitor_task), timeout=1)
+        block(cancel(*server_tasks))
+
+        logger.info("Executing after_server_stopped & on_stop hooks...")
+        block(self._execute_hook("after_server_stopped"))
+        logger.info("Execution of after_server_stopped & on_stop hooks was successful")
+
+        # Close the bus (which will in turn close the transports)
+        self.close()
+
+        # See if we've set the exit code on the event loop
+        if hasattr(self.loop, "lightbus_exit_code"):
+            raise SystemExit(self.loop.lightbus_exit_code)
+
+    async def start_server_tasks(self, *, consume_rpcs):
+        # Setup RPC consumption
+        consume_rpc_task = None
+        if consume_rpcs and self.api_registry.all():
+            consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
+            consume_rpc_task.add_done_callback(make_exception_checker(die=True))
+
+        # Setup schema monitoring
+        monitor_task = asyncio.ensure_future(self.schema.monitor())
+        monitor_task.add_done_callback(make_exception_checker(die=True))
+
+        # Setup consumption of perform_calls
+        perform_calls_task = asyncio.ensure_future(self._perform_calls())
+        perform_calls_task.add_done_callback(make_exception_checker(die=True))
+
+        logger.info("Executing before_server_start & on_start hooks...")
+        await self._execute_hook("before_server_start")
+        logger.info("Execution of before_server_start & on_start hooks was successful")
+
+        return consume_rpc_task, monitor_task, perform_calls_task
 
     def _actually_run_forever(self):  # pragma: no cover
         """Simply start the loop running forever
@@ -242,6 +254,7 @@ class BusClient(object):
 
     # RPCs
 
+    @run_in_main_thread()
     async def consume_rpcs(self, apis: List[Api] = None):
         if apis is None:
             apis = self.api_registry.all()
@@ -307,6 +320,7 @@ class BusClient(object):
 
             await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
+    @run_in_main_thread()
     async def call_rpc_remote(
         self, api_name: str, name: str, kwargs: dict = frozendict(), options: dict = frozendict()
     ):
@@ -426,6 +440,7 @@ class BusClient(object):
 
     # Events
 
+    @run_in_main_thread()
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         kwargs = kwargs or {}
         try:
@@ -477,15 +492,15 @@ class BusClient(object):
 
     async def listen_for_event(
         self, api_name, name, listener, listener_name: str, options: dict = None
-    ) -> asyncio.Task:
-        return await self.listen_for_events(
+    ):
+        await self.listen_for_events(
             [(api_name, name)], listener, listener_name=listener_name, options=options
         )
 
+    @run_in_main_thread()
     async def listen_for_events(
         self, events: List[Tuple[str, str]], listener, listener_name: str, options: dict = None
-    ) -> asyncio.Task:
-
+    ):
         self._sanity_check_listener(listener)
 
         for api_name, name in events:
@@ -498,7 +513,7 @@ class BusClient(object):
             options=options,
             bus_client=self,
         )
-        return event_listener.make_task()
+        event_listener.make_task()
 
     # Results
 
@@ -577,6 +592,7 @@ class BusClient(object):
         elif isinstance(message, ResultMessage):
             self.schema.validate_response(api_name, event_or_rpc_name, message.result)
 
+    @run_in_main_thread()
     def add_background_task(
         self, coroutine: Union[Coroutine, asyncio.Future], cancel_on_close=True
     ) -> asyncio.Task:
@@ -644,19 +660,19 @@ class BusClient(object):
     async def _execute_hook(self, name, **kwargs):
         # Hooks that need to run before plugins
         for callback in self._hook_callbacks[(name, True)]:
-            await await_if_necessary(callback(client=self, **kwargs))
-            # await execute_in_thread(
-            #     callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
-            # )
+            # await await_if_necessary(callback(client=self, **kwargs))
+            await execute_in_thread(
+                callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
+            )
 
         await self.plugin_registry.execute_hook(name, client=self, **kwargs)
 
         # Hooks that need to run after plugins
         for callback in self._hook_callbacks[(name, False)]:
-            await await_if_necessary(callback(client=self, **kwargs))
-            # await execute_in_thread(
-            #     callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
-            # )
+            # await await_if_necessary(callback(client=self, **kwargs))
+            await execute_in_thread(
+                callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
+            )
 
     def _register_hook_callback(self, name, fn, before_plugins=False):
         self._hook_callbacks[(name, bool(before_plugins))].append(fn)
@@ -773,12 +789,40 @@ class BusClient(object):
 
         return wrapper
 
+    # API registration
+
     def register_api(self, api: Api):
         block(self.register_api_async(api), timeout=5)
 
+    @run_in_main_thread()
     async def register_api_async(self, api: Api):
         self.api_registry.add(api)
         await self.schema.add_api(api)
+
+    # Handling bus calls from child threads
+
+    async def _perform_calls(self):
+        """Coroutine to run in background consuming incoming calls from child threads
+
+        Launched in Client.run_forever()
+        """
+        # TODO: The name 'perform_calls' is to generic, find all uses and rename to something better
+        while True:
+            # Wait for calls
+            logger.debug("Awaiting calls on the call queue")
+            fn, args, kwargs, result_queue = await self._call_queue.async_q.get()
+
+            # Execute call
+            logger.debug("Call received, executing")
+            result = await fn(*args, **kwargs)
+
+            # Acknowledge the completion
+            logger.debug("Call executed, marking as done")
+            self._call_queue.async_q.task_done()
+
+            # Put the result in the result queue
+            logger.debug("Returning result")
+            await result_queue.async_q.put(result)
 
 
 class _EventListener(object):

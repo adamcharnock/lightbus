@@ -146,9 +146,11 @@ async def execute_in_thread(callable, args, kwargs, bus_client):
 
         return wrapper
 
-    return await asyncio.get_event_loop().run_in_executor(
+    future = asyncio.get_event_loop().run_in_executor(
         executor=None, func=make_func(callable, args, kwargs)
     )
+    future.add_done_callback(make_exception_checker())
+    return await future
 
 
 async def call_every(
