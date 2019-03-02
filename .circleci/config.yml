@@ -11,22 +11,4 @@ jobs:
 
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - deps-{{ checksum "Pipfile.lock" }}
-      - run:
-          command: |
-            mkdir -p .coverage
-          environment:
-            PATH: ~/.local/bin:$PATH
-      - run:
-          command: |
-            tox -- --cov=lightbus
-
-      - save_cache:
-          key: deps-{{ checksum "Pipfile.lock" }}
-          paths:
-            - ".venv"
-            - "/usr/local/bin"
-            - "/usr/local/lib/python3.6/site-packages"
-            - "/usr/local/lib/python3.7/site-packages"
+      - run: tox -- --cov=lightbus
