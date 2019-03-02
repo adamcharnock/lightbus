@@ -27,7 +27,7 @@ jobs:
           command: |
             pipenv install --ignore-pipfile --dev
             mkdir -p .coverage
-            pytest
+            pipenv run pytest
           environment:
             PIPENV_VENV_IN_PROJECT: true
 
