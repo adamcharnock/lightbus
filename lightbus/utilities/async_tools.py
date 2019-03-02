@@ -123,18 +123,27 @@ async def await_if_necessary(value):
         return value
 
 
-async def execute_in_thread(callable, args, kwargs, bus_client):
-    """Execute the given callable in a thread, and await the result
+async def run_user_provided_callable(callable, args, kwargs, bus_client, die_on_exception=True):
+    """Run user provided code
 
-    If the callable returns an awaitable, then it will be awaited.
-    The callable may therefore be a coroutine or a regular function.
+    If the callable is blocking (i.e. a regular function) it will be
+    moved to its own thread and awaited. The purpose of this thread is to:
+
+        1. Allow other tasks to continue as normal
+        2. Allow user code to start its own event loop where needed
+
+    If an async function is provided it will be awaited as-is, and no
+    child thread will be created.
 
     The callable will be called with the given args and kwargs
     """
+    if asyncio.iscoroutinefunction(callable):
+        return await callable(*args, **kwargs)
 
     def make_func(callable, args, kwargs):
         async def coro_wrapper(result):
             await result
+            # TODO: Remove now we run all bus-related code in the main thread
             await bus_client._cleanup_thread()
 
         def wrapper():
@@ -149,7 +158,6 @@ async def execute_in_thread(callable, args, kwargs, bus_client):
     future = asyncio.get_event_loop().run_in_executor(
         executor=None, func=make_func(callable, args, kwargs)
     )
-    future.add_done_callback(make_exception_checker())
     return await future
 
 
@@ -169,7 +177,7 @@ async def call_every(
     while True:
         start_time = time()
         if not first_run or also_run_immediately:
-            await execute_in_thread(callback, args=[], kwargs={}, bus_client=bus_client)
+            await run_user_provided_callable(callback, args=[], kwargs={}, bus_client=bus_client)
         total_execution_time = time() - start_time
         sleep_time = max(0.0, timedelta.total_seconds() - total_execution_time)
         await asyncio.sleep(sleep_time)
@@ -185,7 +193,7 @@ async def call_on_schedule(
 
         if not first_run or also_run_immediately:
             schedule.last_run = datetime.now()
-            await execute_in_thread(callback, args=[], kwargs={}, bus_client=bus_client)
+            await run_user_provided_callable(callback, args=[], kwargs={}, bus_client=bus_client)
 
         td = schedule.next_run - datetime.now()
         await asyncio.sleep(td.total_seconds())

@@ -15,7 +15,7 @@ from lightbus.exceptions import (
     LightbusShutdownInProgress,
 )
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
-from lightbus.utilities.async_tools import execute_in_thread
+from lightbus.utilities.async_tools import run_user_provided_callable
 from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
 

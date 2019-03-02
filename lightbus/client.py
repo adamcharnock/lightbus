@@ -45,7 +45,7 @@ from lightbus.utilities.async_tools import (
     make_exception_checker,
     call_every,
     call_on_schedule,
-    execute_in_thread,
+    run_user_provided_callable,
 )
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
@@ -418,7 +418,9 @@ class BusClient(object):
             method = getattr(api, name)
             if self.config.api(api_name).cast_values:
                 kwargs = cast_to_signature(kwargs, method)
-            result = await execute_in_thread(method, args=[], kwargs=kwargs, bus_client=self)
+            result = await run_user_provided_callable(
+                method, args=[], kwargs=kwargs, bus_client=self
+            )
         except (CancelledError, SuddenDeathException):
             raise
         except Exception as e:
@@ -498,7 +500,7 @@ class BusClient(object):
     async def listen_for_event(
         self, api_name, name, listener, listener_name: str, options: dict = None
     ):
-        await self.listen_for_events(
+        return await self.listen_for_events(
             [(api_name, name)], listener, listener_name=listener_name, options=options
         )
 
@@ -518,7 +520,7 @@ class BusClient(object):
             options=options,
             bus_client=self,
         )
-        event_listener.make_task()
+        return event_listener.make_task()
 
     # Results
 
@@ -666,7 +668,7 @@ class BusClient(object):
         # Hooks that need to run before plugins
         for callback in self._hook_callbacks[(name, True)]:
             # await await_if_necessary(callback(client=self, **kwargs))
-            await execute_in_thread(
+            await run_user_provided_callable(
                 callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
             )
 
@@ -675,7 +677,7 @@ class BusClient(object):
         # Hooks that need to run after plugins
         for callback in self._hook_callbacks[(name, False)]:
             # await await_if_necessary(callback(client=self, **kwargs))
-            await execute_in_thread(
+            await run_user_provided_callable(
                 callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
             )
 
@@ -985,11 +987,12 @@ class _EventListener(object):
                             # Pass the event message as a positional argument,
                             # thereby allowing listeners to have flexibility in the argument names.
                             # (And therefore allowing listeners to use the `event` parameter themselves)
-                            await execute_in_thread(
+                            await run_user_provided_callable(
                                 self.listener_callable,
                                 args=[event_message],
                                 kwargs=parameters,
                                 bus_client=self,
+                                die_on_exception=False,
                             )
                         except LightbusShutdownInProgress as e:
                             logger.info("Shutdown in progress: {}".format(e))
