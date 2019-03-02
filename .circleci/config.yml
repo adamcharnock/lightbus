@@ -14,7 +14,8 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: deps-{{ checksum "Pipfile.lock" }}
+          keys:
+            - deps-{{ checksum "Pipfile.lock" }}
       - run:
           command: |
             pip install tox tox-travis coverage coveralls
@@ -24,7 +25,7 @@ jobs:
             tox -- --cov=lightbus
 
       - save_cache:
-          keys: deps-{{ checksum "Pipfile.lock" }}
+          key: deps-{{ checksum "Pipfile.lock" }}
           paths:
             - ".venv"
             - "/usr/local/bin"
