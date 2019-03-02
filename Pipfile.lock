@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "3572f9e988372e4472bf73ce4be7b5b4e8410eb8c22efb3392d6906ed613d26e"
+            "sha256": "bba7b00cdc501fbb2c69bf0c54220c0eb4d4423a0ae6686df5e2c051a350aaac"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -69,6 +69,10 @@
             ],
             "index": "pypi",
             "version": "==2.6.0"
+        },
+        "lightbus": {
+            "editable": true,
+            "path": "."
         },
         "python-dateutil": {
             "hashes": [
@@ -333,14 +337,6 @@
                 "sha256:b50191ead8c70adfa12495fba19ce6d75f2e0275c14c5a7beb653d6799b512bd"
             ],
             "version": "==0.8"
-        },
-        "importlib-resources": {
-            "hashes": [
-                "sha256:6e2783b2538bd5a14678284a3962b0660c715e5a0f10243fd5e00a4b5974f50b",
-                "sha256:d3279fd0f6f847cced9f7acc19bd3e5df54d34f93a2e7bb5f238f81545787078"
-            ],
-            "markers": "python_version < '3.7'",
-            "version": "==1.0.2"
         },
         "jinja2": {
             "hashes": [
