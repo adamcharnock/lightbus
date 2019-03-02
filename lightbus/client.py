@@ -193,20 +193,19 @@ class BusClient(object):
                 )
             )
 
-        self.loop.add_signal_handler(signal.SIGINT, self.loop.stop)
-        self.loop.add_signal_handler(signal.SIGTERM, self.loop.stop)
-
         server_tasks = block(self.start_server_tasks(consume_rpcs=consume_rpcs))
 
-        try:
-            self._actually_run_forever()
-            logger.warning("Interrupt received. Shutting down...")
-        except KeyboardInterrupt:
-            logger.warning("Keyboard interrupt. Shutting down...")
+        for signal_ in (signal.SIGINT, signal.SIGTERM):
+            self.loop.add_signal_handler(
+                signal_, lambda: asyncio.ensure_future(self.shutdown(signal_, server_tasks))
+            )
+
+        self._actually_run_forever()
 
         # The loop has stopped, so we're shutting down
 
         # Remove the signal handlers
+        # TODO: Move to loop
         self.loop.remove_signal_handler(signal.SIGINT)
         self.loop.remove_signal_handler(signal.SIGTERM)
 
@@ -251,6 +250,12 @@ class BusClient(object):
         This just makes testing easier as we can mock out this method
         """
         self.loop.run_forever()
+
+    async def shutdown(self, signal_, tasks):
+        logger.info("Shutting down...")
+        await cancel(*tasks)
+        self.loop.stop()
+        logger.info("Shutdown complete")
 
     # RPCs
 
