@@ -4,8 +4,6 @@ import threading
 
 import janus
 
-from lightbus.exceptions import InvalidReturnValue
-
 logger = logging.getLogger(__name__)
 
 

@@ -178,7 +178,3 @@ class ValidationError(LightbusException):
 
 class InvalidSchedule(LightbusException):
     pass
-
-
-class InvalidReturnValue(LightbusException):
-    pass
