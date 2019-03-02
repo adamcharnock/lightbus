@@ -23,6 +23,7 @@ coveralls = "==1.2.0"
 dataclasses = "==0.6"
 async_timeout = "==1.4.0"
 psycopg2-binary = "*"
+# Newer versions of aiopg seem to cause issues
 aiopg = "==0.15.0"
 bpython = "*"
 pyyaml = "==3.12"
