@@ -194,8 +194,9 @@ class BusClient(object):
             )
 
         server_tasks = block(self.start_server_tasks(consume_rpcs=consume_rpcs))
+        restart_signals = (signal.SIGINT, signal.SIGTERM)
 
-        for signal_ in (signal.SIGINT, signal.SIGTERM):
+        for signal_ in restart_signals:
             self.loop.add_signal_handler(
                 signal_, lambda: asyncio.ensure_future(self.shutdown(signal_, server_tasks))
             )
@@ -205,9 +206,8 @@ class BusClient(object):
         # The loop has stopped, so we're shutting down
 
         # Remove the signal handlers
-        # TODO: Move to loop
-        self.loop.remove_signal_handler(signal.SIGINT)
-        self.loop.remove_signal_handler(signal.SIGTERM)
+        for signal_ in restart_signals:
+            self.loop.remove_signal_handler(signal_)
 
         # Cancel the tasks we created above
         block(cancel(*server_tasks))
