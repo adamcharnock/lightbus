@@ -334,12 +334,14 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
     )
 
     # Claim it in the name of another consumer
-    await redis_client.xread_group(
+    result = await redis_client.xread_group(
         group_name="test_service",
         consumer_name="bad_consumer",
         streams=["my.dummy.my_event:stream"],
-        latest_ids=[0],
+        latest_ids=[">"],
     )
+    assert result, "Didn't actually manage to claim any message"
+
     # Sleep a moment to fake a short timeout
     await asyncio.sleep(0.1)
 
@@ -391,7 +393,7 @@ async def test_reclaim_lost_messages_ignores_non_timed_out_messages(
         group_name="test_service",
         consumer_name="bad_consumer",
         streams=["my.dummy.my_event:stream"],
-        latest_ids=[0],
+        latest_ids=[">"],
     )
     # Sleep a moment to fake a short timeout
     await asyncio.sleep(0.1)
@@ -441,7 +443,7 @@ async def test_reclaim_lost_messages_consume(loop, redis_client, redis_pool, dum
         group_name="test_service-test_listener",
         consumer_name="bad_consumer",
         streams=["my.dummy.my_event:stream"],
-        latest_ids=[0],
+        latest_ids=[">"],
     )
     # Sleep a moment to fake a short timeout
     await asyncio.sleep(0.1)
@@ -496,7 +498,7 @@ async def test_reclaim_pending_messages(loop, redis_client, redis_pool, dummy_ap
         group_name="test_service-test_listener",
         consumer_name="good_consumer",
         streams=["my.dummy.my_event:stream"],
-        latest_ids=[0],
+        latest_ids=[">"],
     )
 
     event_transport = RedisEventTransport(
