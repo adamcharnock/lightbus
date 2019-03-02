@@ -1,0 +1,47 @@
+version: 2
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test-3.6
+      - test-3.7
+      - test-3.8
+jobs:
+  test-3.6: &test-template
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
+      - image: postgres:9.6.2
+      - image: redis:5
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - deps-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
+      - run:
+          command: |
+            pipenv install --ignore-pipfile --dev
+            mkdir -p .coverage
+            pipenv run pytest
+          environment:
+            PIPENV_VENV_IN_PROJECT: true
+
+      - save_cache:
+          key: deps-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ".venv"
+            - "/usr/local/bin"
+            - "/usr/local/lib/python3.6/site-packages"
+            - "/usr/local/lib/python3.7/site-packages"
+
+  test-3.7:
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.7
+
+  test-3.8:
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.8-rc
