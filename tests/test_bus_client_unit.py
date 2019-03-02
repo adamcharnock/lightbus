@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import BaseEventLoop
 
 import jsonschema
 from unittest import mock
@@ -522,7 +523,9 @@ def test_add_background_task(dummy_bus: lightbus.path.BusPath, event_loop):
             await asyncio.sleep(0.001)
 
     dummy_bus.client.add_background_task(test_coroutine())
-    dummy_bus.client._run_forever(consume_rpcs=False)
+    with pytest.raises(SystemExit):
+        # SystemExit raised because test_coroutine throws an exception
+        dummy_bus.client.run_forever(consume_rpcs=False)
     dummy_bus.client.close()
 
     assert dummy_bus.client.loop.lightbus_exit_code
@@ -543,7 +546,9 @@ def test_every(dummy_bus: lightbus.path.BusPath, event_loop):
                 raise Exception("Intentional exception: stopping lightbus dummy bus from running")
             await asyncio.sleep(0.001)
 
-    dummy_bus.client._run_forever(consume_rpcs=False)
+    with pytest.raises(SystemExit):
+        # SystemExit raised because test_coroutine throws an exception
+        dummy_bus.client.run_forever(consume_rpcs=False)
     dummy_bus.client.close()
 
     assert dummy_bus.client.loop.lightbus_exit_code
@@ -566,7 +571,9 @@ def test_schedule(dummy_bus: lightbus.path.BusPath, event_loop):
                 raise Exception("Intentional exception: stopping lightbus dummy bus from running")
             await asyncio.sleep(0.001)
 
-    dummy_bus.client._run_forever(consume_rpcs=False)
+    with pytest.raises(SystemExit):
+        # SystemExit raised because test_coroutine throws an exception
+        dummy_bus.client.run_forever(consume_rpcs=False)
     dummy_bus.client.close()
 
     assert dummy_bus.client.loop.lightbus_exit_code
