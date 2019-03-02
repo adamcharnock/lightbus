@@ -25,12 +25,10 @@ jobs:
             - deps-{{ checksum "Pipfile.lock" }}
       - run:
           command: |
-            pip install --user --upgrade pip pipenv
             pipenv install --ignore-pipfile --dev
             mkdir -p .coverage
             pytest
           environment:
-            PATH: ~/.local/bin:$PATH
             PIPENV_VENV_IN_PROJECT: true
 
       - save_cache:
