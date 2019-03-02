@@ -821,7 +821,10 @@ class BusClient(object):
 
             # Execute call
             logger.debug("Call received, executing")
-            result = await fn(*args, **kwargs)
+            try:
+                result = await fn(*args, **kwargs)
+            except Exception as e:
+                result = e
 
             # Acknowledge the completion
             logger.debug("Call executed, marking as done")

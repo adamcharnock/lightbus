@@ -40,20 +40,21 @@ def run_in_main_thread():
 
             if isinstance(result, asyncio.Future):
                 # Returning futures here really deserves a nice, verbose, explanatory, warning message.
-                type_name = result.__class__.__name__
                 result = WarningProxy(
                     proxied=result,
                     message=(
-                        f"You are trying to access a {type_name} which cannot be safely used in this thread.\n\n"
-                        f"This {type_name} was returned by {fn.__module__}.{fn.__name__}() and was created within "
-                        f"thead {destination_thread} and returned back to thread {threading.current_thread()}\n\n"
-                        f"This functionality was provided by the @run_in_main_thread(), which is also the source "
-                        f"of this message\n\n"
-                        f"Reason: {type_name}s are tied to a specific event loop, and event loops are thread-specific. "
+                        f"You are trying to access a Future (or Task) which cannot be safely used in this thread.\n\n"
+                        f"This Future was returned by {fn.__module__}.{fn.__name__}() and was created within "
+                        f"thead {destination_thread} and returned back to thread {threading.current_thread()}.\n\n"
+                        f"This functionality was provided by the @run_in_main_thread decorator, which is also the "
+                        f"source of this message.\n\n"
+                        f"Reason: Futures are tied to a specific event loop, and event loops are thread-specific. "
                         f"Passing futures between threads is therefore a really bad idea, as the future will be "
                         f"useless outside of the event loop in which it was created."
                     ),
                 )
+            elif isinstance(result, Exception):
+                raise result
 
             if return_awaitable:
                 future = asyncio.Future()
@@ -78,7 +79,3 @@ class WarningProxy(object):
     def __getattr__(self, item):
         logger.warning(self.message)
         return getattr(self.proxied, item)
-
-    def __setattr__(self, key, value):
-        logger.warning(self.message)
-        setattr(self.proxied, key, value)
