@@ -16,8 +16,6 @@ jobs:
             - deps-{{ checksum "Pipfile.lock" }}
       - run:
           command: |
-            pip install --user --upgrade pip
-            pip install --user tox coverage coveralls
             mkdir -p .coverage
           environment:
             PATH: ~/.local/bin:$PATH
