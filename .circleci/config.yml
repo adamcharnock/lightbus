@@ -72,6 +72,13 @@ jobs:
       - add_ssh_keys:
           fingerprints:
             - "cf:7f:13:98:f7:41:bf:92:af:ff:52:ed:6c:35:8f:65"
+
+      - checkout
+
+      - restore_cache:
+          keys:
+            - deps-3-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
+            -
       - run:
           command: |
             pipenv install --ignore-pipfile --dev
@@ -79,3 +86,7 @@ jobs:
           environment:
             PIPENV_VENV_IN_PROJECT: true
 
+      - save_cache:
+          key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ".venv"
