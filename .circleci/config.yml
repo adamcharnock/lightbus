@@ -12,9 +12,9 @@ workflows:
   build_and_deploy_docs:
     jobs:
       - docs:
-        filters:
-          branches:
-            only: master
+          filters:
+            branches:
+              only: master
 jobs:
   test-3.6: &test-template
     docker:
