@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import inspect
 import logging
@@ -17,6 +18,16 @@ if False:
 from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 
 logger = logging.getLogger(__name__)
+
+PYTHON_VERSION = tuple(sys.version_info)
+
+
+def all_tasks():
+    if sys.version_info < (3, 7):
+        # Python 3.6 comparability
+        return asyncio.Task.all_tasks()
+    else:
+        return asyncio.all_tasks()
 
 
 def block(coroutine: Coroutine, loop=None, *, timeout=None):
