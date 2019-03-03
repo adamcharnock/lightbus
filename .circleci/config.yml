@@ -61,10 +61,6 @@ jobs:
       - image: redis:5
 
   docs:
-    branches:
-      only:
-        - master
-
     docker:
       - image: circleci/python:3.6
         environment:
