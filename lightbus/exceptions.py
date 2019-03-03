@@ -178,3 +178,7 @@ class ValidationError(LightbusException):
 
 class InvalidSchedule(LightbusException):
     pass
+
+
+class TransportsNotInstalled(LightbusException):
+    pass

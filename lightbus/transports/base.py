@@ -15,7 +15,7 @@ from typing import (
 import inspect
 
 from lightbus.api import Api
-from lightbus.exceptions import NothingToListenFor, TransportNotFound
+from lightbus.exceptions import NothingToListenFor, TransportNotFound, TransportsNotInstalled
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 from lightbus.utilities.config import make_from_config_structure, random_name
 from lightbus.utilities.importing import load_entrypoint_classes
@@ -356,6 +356,15 @@ class TransportRegistry(object):
 def get_available_transports(type_):
     loaded = load_entrypoint_classes(f"lightbus_{type_}_transports")
 
+    if not loaded:
+        raise TransportsNotInstalled(
+            f"No {type_} transports are available, which means lightbus has not been "
+            f"installed correctly. This is likely because you are working on Lightbus itself. "
+            f"In which case, within your local lightbus repo you should run "
+            f"something like 'pip install .' or 'python setup.py develop'.\n\n"
+            f"This will install the entrypoints (defined in setup.py) which point Lightbus "
+            f"to it's bundled transports."
+        )
     return {name: class_ for module_name, name, class_ in loaded}
 
 
