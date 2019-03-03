@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs:
-    codecov: codecov/codecov@1.0.2
-
 workflows:
   version: 2
   tests:
@@ -40,11 +37,9 @@ jobs:
             pipenv install --ignore-pipfile --dev
             mkdir -p .coverage
             pipenv run pytest --cov=lightbus
+            coveralls
           environment:
             PIPENV_VENV_IN_PROJECT: true
-
-      - codecov/upload:
-          file: .coverage/coverage
 
       - save_cache:
           key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
