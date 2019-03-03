@@ -43,6 +43,10 @@ async def test_create_and_destroy_redis_buses(redis_client, dummy_api, new_bus, 
         # close it
         await bus.client.close_async()
 
+    # Attempt to minimise test flakiness on Python >= 3.7, whereby
+    # not all connections will get closed.
+    await asyncio.sleep(1)
+
     info = await redis_client.info()
 
     assert int(info["stats"]["total_connections_received"]) >= 100
