@@ -1,7 +1,7 @@
 version: 2
 workflows:
   version: 2
-  test:
+  tests:
     jobs:
       - test-3.6
       - test-3.7
@@ -9,9 +9,12 @@ workflows:
     # or until we remove the need for psycopg2 in testing
     #  - test-3.8
 
-  docs:
+  build_and_deploy_docs:
     jobs:
-      - docs
+      - docs:
+        filters:
+          branches:
+            only: master
 jobs:
   test-3.6: &test-template
     docker:
