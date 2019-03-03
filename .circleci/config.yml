@@ -7,11 +7,11 @@ workflows:
   version: 2
   tests:
     jobs:
-      - test-3.6
-      - test-3.7
+      - test-36
+      - test-37
     # Disabling 3.8 until either psycopg2 has a binary for it,
     # or until we remove the need for psycopg2 in testing
-    #  - test-3.8
+    #  - test-38
 
   build_and_deploy_docs:
     jobs:
@@ -22,7 +22,7 @@ workflows:
                 - master
                 - run-in-executor
 jobs:
-  test-3.6: &test-template
+  test-36: &test-template
     docker:
       - image: circleci/python:3.6
         environment:
@@ -51,7 +51,7 @@ jobs:
           paths:
             - ".venv"
 
-  test-3.7:
+  test-37:
     <<: *test-template
     docker:
       - image: circleci/python:3.7
@@ -60,7 +60,7 @@ jobs:
       - image: postgres:9.6.2
       - image: redis:5
 
-  test-3.8:
+  test-38:
     <<: *test-template
     docker:
       - image: circleci/python:3.8-rc
