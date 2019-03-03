@@ -53,7 +53,7 @@ from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.logging import log_transport_information
-from lightbus.utilities.threading_tools import run_in_main_thread
+from lightbus.utilities.threading_tools import run_in_main_thread, assert_in_main_thread
 
 if False:
     from schedule import Job
@@ -73,6 +73,7 @@ class BusClient(object):
     All functionality in `BusPath` is provided by `BusClient`.
     """
 
+    @assert_in_main_thread()
     def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
         self.config = config
         self.api_registry = Registry()
@@ -89,6 +90,7 @@ class BusClient(object):
         self._exit_code = 0
         self._call_queue = janus.Queue()
 
+    @assert_in_main_thread()
     async def setup_async(self, plugins: dict = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
 
@@ -156,6 +158,7 @@ class BusClient(object):
     def close(self):
         block(self.close_async(), timeout=5)
 
+    @assert_in_main_thread()
     async def close_async(self):
         listener_tasks = [task for task in all_tasks() if getattr(task, "is_listener", False)]
 
@@ -170,16 +173,11 @@ class BusClient(object):
 
         await self.schema.schema_transport.close()
 
-    async def _cleanup_thread(self):
-        for transport in self.transport_registry.get_all_transports():
-            await transport.cleanup_thread()
-
-        await self.schema.schema_transport.cleanup_thread()
-
     @property
     def loop(self):
         return get_event_loop()
 
+    @assert_in_main_thread()
     def run_forever(self, *, consume_rpcs=True):
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())

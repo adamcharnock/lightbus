@@ -152,11 +152,6 @@ async def run_user_provided_callable(callable, args, kwargs, bus_client, die_on_
         return await callable(*args, **kwargs)
 
     def make_func(callable, args, kwargs):
-        async def coro_wrapper(result):
-            await result
-            # TODO: Remove now we run all bus-related code in the main thread
-            await bus_client._cleanup_thread()
-
         def wrapper():
             result = callable(*args, **kwargs)
             if inspect.isawaitable(result):

@@ -83,7 +83,6 @@ async def test_consume_rpcs_no_expiry_key(redis_client, redis_rpc_transport, dum
 
 @pytest.mark.asyncio
 async def test_consume_rpcs(redis_client, redis_rpc_transport, dummy_api):
-
     async def co_enqeue():
         await asyncio.sleep(0.01)
         await redis_client.set("rpc_expiry_key:123abc", 1)
@@ -133,7 +132,7 @@ async def test_from_config(redis_client):
         await transport_client.set("x", 1)
         assert await redis_client.get("x")
 
-    assert transport._local.redis_pool.connection.maxsize == 123
+    assert transport._redis_pool.connection.maxsize == 123
     assert isinstance(transport.serializer, BlobMessageSerializer)
     assert isinstance(transport.deserializer, BlobMessageDeserializer)
 

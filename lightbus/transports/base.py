@@ -54,13 +54,6 @@ class Transport(object, metaclass=TransportMetaclass):
         """
         pass
 
-    async def cleanup_thread(self):
-        """Perform any child thread cleanup
-
-        For example, closing connections in any thread-local storage
-        """
-        pass
-
 
 class RpcTransport(Transport):
     """Implement the sending and receiving of RPC calls"""

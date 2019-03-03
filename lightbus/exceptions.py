@@ -182,3 +182,7 @@ class InvalidSchedule(LightbusException):
 
 class TransportsNotInstalled(LightbusException):
     pass
+
+
+class CannotRunInChildThread(LightbusException):
+    pass

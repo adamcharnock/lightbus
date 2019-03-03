@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import threading
 import time
 from collections import OrderedDict
 from datetime import datetime
@@ -65,6 +64,7 @@ class RedisEventMessage(EventMessage):
 
 class RedisTransportMixin(object):
     connection_parameters: dict = {"address": "redis://localhost:6379", "maxsize": 100}
+    _redis_pool = None
 
     def set_redis_pool(
         self,
@@ -72,7 +72,7 @@ class RedisTransportMixin(object):
         url: str = None,
         connection_parameters: Mapping = frozendict(),
     ):
-        self._local = threading.local()
+        self._redis_pool = None
         self._closed = False
 
         if not redis_pool:
@@ -116,7 +116,7 @@ class RedisTransportMixin(object):
                 connection_cls=redis_pool._pool_or_conn._connection_cls,
             )
 
-            self._local.redis_pool = redis_pool
+            self._redis_pool = redis_pool
 
     async def connection_manager(self) -> Redis:
         if self._closed:
@@ -126,10 +126,10 @@ class RedisTransportMixin(object):
                 "Transport has been closed. Connection to Redis is no longer available."
             )
 
-        if not hasattr(self._local, "redis_pool"):
-            self._local.redis_pool = await aioredis.create_redis_pool(**self.connection_parameters)
+        if not self._redis_pool:
+            self._redis_pool = await aioredis.create_redis_pool(**self.connection_parameters)
         try:
-            internal_pool = self._local.redis_pool._pool_or_conn
+            internal_pool = self._redis_pool._pool_or_conn
             if hasattr(internal_pool, "size") and hasattr(internal_pool, "maxsize"):
                 if internal_pool.size == internal_pool.maxsize:
                     logging.critical(
@@ -140,29 +140,29 @@ class RedisTransportMixin(object):
                         "".format(self.connection_parameters.get("maxsize"))
                     )
 
-            return await self._local.redis_pool
+            return await self._redis_pool
         except aioredis.PoolClosedError:
             raise LightbusShutdownInProgress(
                 "Redis connection pool has been closed. Assuming shutdown in progress."
             )
 
     async def close(self):
-        if getattr(self._local, "redis_pool", None):
+        if self._redis_pool:
             await self._close_redis_pool()
         self._closed = True
 
-    async def cleanup_thread(self):
-        if getattr(self._local, "redis_pool", None):
-            await self._close_redis_pool()
-
     async def _close_redis_pool(self):
-        self._local.redis_pool.close()
-        await self._local.redis_pool.wait_closed()
-        del self._local.redis_pool
+        self._redis_pool.close()
+        await self._redis_pool.wait_closed()
+        # In Python >= 3.7 the redis connections do not actually get
+        # immediately closed following the above call to wait_closed().
+        # If you need to be sure the the connections have closed the
+        # a call to `await asyncio.sleep(0.001)` does the trick
+        del self._redis_pool
 
     def __str__(self):
         if hasattr(self._local, "redis_pool"):
-            conn = self._local.redis_pool.connection
+            conn = self._redis_pool.connection
             return f"redis://{conn.address[0]}:{conn.address[1]}/{conn.db}"
         else:
             return self.connection_parameters.get("address", "Unknown URL")

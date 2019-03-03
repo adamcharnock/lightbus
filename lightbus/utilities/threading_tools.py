@@ -4,6 +4,8 @@ import threading
 
 import janus
 
+from lightbus.exceptions import CannotRunInChildThread
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,6 +62,22 @@ def run_in_main_thread():
                 return future
             else:
                 return result
+
+        return wrapper
+
+    return decorator
+
+
+def assert_in_main_thread():
+    def decorator(fn):
+        def wrapper(*args, **kwargs):
+            # TODO: Improved error message, include function name
+            if threading.main_thread() != threading.current_thread():
+                raise CannotRunInChildThread(
+                    "This functionality cannot be used from within a child thread. "
+                    "This functionality must be called within the main thread."
+                )
+            return fn(*args, **kwargs)
 
         return wrapper
 
