@@ -75,7 +75,7 @@ jobs:
       - run:
           command: |
             pipenv install --ignore-pipfile --dev
-            mkdocs gh-deploy --force
+            pipenv run mkdocs gh-deploy --force
           environment:
             PIPENV_VENV_IN_PROJECT: true
 
