@@ -14,7 +14,9 @@ workflows:
       - docs:
           filters:
             branches:
-              only: master
+              only:
+                - master
+                - run-in-executor
 jobs:
   test-3.6: &test-template
     docker:
