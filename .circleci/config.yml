@@ -19,7 +19,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
+            - deps-3-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
       - run:
           command: |
             pipenv install --ignore-pipfile --dev
