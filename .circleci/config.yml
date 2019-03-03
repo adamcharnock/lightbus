@@ -32,9 +32,6 @@ jobs:
           key: deps-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
           paths:
             - ".venv"
-            - "/usr/local/bin"
-            - "/usr/local/lib/python3.6/site-packages"
-            - "/usr/local/lib/python3.7/site-packages"
 
   test-3.7:
     <<: *test-template
