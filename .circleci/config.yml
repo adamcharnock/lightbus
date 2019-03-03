@@ -37,7 +37,7 @@ jobs:
             pipenv install --ignore-pipfile --dev
             mkdir -p .coverage
             pipenv run pytest --cov=lightbus
-            coveralls
+            pipenv run coveralls
           environment:
             PIPENV_VENV_IN_PROJECT: true
 
