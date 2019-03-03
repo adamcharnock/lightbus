@@ -3,8 +3,14 @@ workflows:
   version: 2
   tests:
     jobs:
-      - test-3.6
-      - test-3.7
+      - test-3.6:
+          - branches:
+              branches:
+                 ignore: gh-pages
+      - test-3.7:
+          - branches:
+              branches:
+                 ignore: gh-pages
     # Disabling 3.8 until either psycopg2 has a binary for it,
     # or until we remove the need for psycopg2 in testing
     #  - test-3.8
