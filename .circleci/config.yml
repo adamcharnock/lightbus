@@ -40,8 +40,16 @@ jobs:
     <<: *test-template
     docker:
       - image: circleci/python:3.7
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
+      - image: postgres:9.6.2
+      - image: redis:5
 
   test-3.8:
     <<: *test-template
     docker:
       - image: circleci/python:3.8-rc
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
+      - image: postgres:9.6.2
+      - image: redis:5
