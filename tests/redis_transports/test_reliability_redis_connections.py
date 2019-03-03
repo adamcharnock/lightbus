@@ -25,6 +25,9 @@ async def test_redis_connections_closed(redis_client, loop, new_bus, caplog):
 
     await bus.client.close_async()
 
+    # Python >= 3.7 needs a moment to actually properly close up the connections
+    await asyncio.sleep(0.001)
+
     # Now check we still have no connections
     info = await redis_client.info()
     assert int(info["clients"]["connected_clients"]) == 1  # This connection
@@ -43,9 +46,8 @@ async def test_create_and_destroy_redis_buses(redis_client, dummy_api, new_bus, 
         # close it
         await bus.client.close_async()
 
-    # Attempt to minimise test flakiness on Python >= 3.7, whereby
-    # not all connections will get closed.
-    await asyncio.sleep(0.1)
+    # Python >= 3.7 needs a moment to actually properly close up the connections
+    await asyncio.sleep(0.001)
 
     info = await redis_client.info()
 
