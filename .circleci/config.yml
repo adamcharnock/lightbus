@@ -97,9 +97,10 @@ jobs:
           paths:
             - ".venv"
 
-    combine_coverage_reports:
+  combine_coverage_reports:
     docker:
       - image: alpine:3.8
+    steps:
       - run:
           command: |
             apk add curl
