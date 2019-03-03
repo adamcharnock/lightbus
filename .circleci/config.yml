@@ -5,7 +5,13 @@ workflows:
     jobs:
       - test-3.6
       - test-3.7
-      - test-3.8
+    # Disabling 3.8 until either psycopg2 has a binary for it,
+    # or until we remove the need for psycopg2 in testing
+    #  - test-3.8
+
+  docs:
+    jobs:
+      - docs
 jobs:
   test-3.6: &test-template
     docker:
@@ -50,3 +56,25 @@ jobs:
           PIPENV_VENV_IN_PROJECT: true
       - image: postgres:9.6.2
       - image: redis:5
+
+  docs:
+    branches:
+      only:
+        - master
+
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
+
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "cf:7f:13:98:f7:41:bf:92:af:ff:52:ed:6c:35:8f:65"
+      - run:
+          command: |
+            pipenv install --ignore-pipfile --dev
+            mkdocs gh-deploy --force
+          environment:
+            PIPENV_VENV_IN_PROJECT: true
+
