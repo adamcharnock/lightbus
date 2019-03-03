@@ -44,7 +44,7 @@ jobs:
             PIPENV_VENV_IN_PROJECT: true
 
       - codecov/upload:
-          file: .coverage/
+          file: .coverage/coverage
 
       - save_cache:
           key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
