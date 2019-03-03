@@ -9,6 +9,11 @@ workflows:
     # Disabling 3.8 until either psycopg2 has a binary for it,
     # or until we remove the need for psycopg2 in testing
     #  - test-38
+      - combine_coverage_reports:
+          requires:
+            - test-36
+            - test-37
+#            - test-38
 
   build_and_deploy_docs:
     jobs:
@@ -92,3 +97,10 @@ jobs:
           paths:
             - ".venv"
 
+    combine_coverage_reports:
+    docker:
+      - image: alpine:3.8
+      - run:
+          command: |
+            apk add curl
+            curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_BUILD_NUM&payload[status]=done"
