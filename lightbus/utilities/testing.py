@@ -48,13 +48,13 @@ class MockResult(object):
 
     def assertEventFired(self, full_event_name, *, times=None):
         fired_events = [em.canonical_name for em, options in self.event.events]
-        assert (
+        assert (  # nosec
             full_event_name in fired_events
         ), f"Event {full_event_name} was never fired. Fired events were: {set(fired_events)}"
 
         if times:
             total_times_fired = len([v for v in fired_events if v == full_event_name])
-            assert total_times_fired == times, (
+            assert total_times_fired == times, (  # nosec
                 f"Event fired the incorrect number of times. "
                 f"Expected {times}, actual {total_times_fired}"
             )

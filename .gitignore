@@ -5,6 +5,7 @@ INTEREST
 /dist
 /.cache
 /.coverage
+/coverage.xml
 /site
 /.env
 /.venv
