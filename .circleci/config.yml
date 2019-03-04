@@ -43,7 +43,6 @@ jobs:
             mkdir -p .coverage
             pipenv run pytest --cov=lightbus
             pipenv run coveralls
-            mv .coverage/coverage$CIRCLE_BUILD_NUM
           environment:
             PIPENV_VENV_IN_PROJECT: true
 
