@@ -116,9 +116,10 @@ jobs:
           at: .coverage
       - run:
           command: |
-            pipenv install coveralls coverage
+            pipenv install --skip-lock coverage codacy-coverage
             pipenv run coverage combine .coverage/coverage*
-            pipenv run coveralls
+            pipenv run coverage xml -i
+            pipenv run python-codacy-coverage -r coverage.xml
       - run:
           command: |
             curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_BUILD_NUM&payload[status]=done"
