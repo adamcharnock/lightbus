@@ -41,7 +41,6 @@ from lightbus.utilities.async_tools import (
     block,
     get_event_loop,
     cancel,
-    await_if_necessary,
     make_exception_checker,
     call_every,
     call_on_schedule,
@@ -56,6 +55,7 @@ from lightbus.utilities.logging import log_transport_information
 from lightbus.utilities.threading_tools import run_in_main_thread, assert_in_main_thread
 
 if False:
+    # pylint: disable=unused-import
     from schedule import Job
 
 __all__ = ["BusClient"]
@@ -774,7 +774,7 @@ class BusClient(object):
             )
 
         def wrapper(f):
-            coroutine = call_every(
+            coroutine = call_every(  # pylint: assignment-from-no-return
                 callback=f, timedelta=td, also_run_immediately=also_run_immediately, bus_client=self
             )
             self.add_background_task(coroutine)

@@ -12,6 +12,7 @@ from datetime import timedelta, datetime
 import aioredis
 
 if False:
+    # pylint: disable=unused-import
     from schedule import Job
     from lightbus.client import BusClient
 

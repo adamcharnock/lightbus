@@ -9,6 +9,7 @@ from lightbus.utilities.importing import import_from_string
 from .databases import DbApiConnection, DatabaseConnection
 
 if False:
+    # pylint: disable=unused-import
     from lightbus.config import Config
 
 

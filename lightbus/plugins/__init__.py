@@ -20,6 +20,7 @@ from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
 
 if False:
+    # pylint: disable=unused-import
     from lightbus.config import Config
 
 ENTRYPOINT_NAME = "lightbus_plugins"

@@ -4,6 +4,7 @@ from logging import Logger
 from lightbus.log import LightbusFormatter, LBullets, L, Bold
 
 if False:
+    # pylint: disable=unused-import
     from lightbus import RpcTransport, ResultTransport, EventTransport, SchemaTransport
 
 handler = logging.StreamHandler()
@@ -28,7 +29,6 @@ def log_transport_information(
     schema_transport: "SchemaTransport",
     logger: Logger,
 ):
-
     def stringify_transport(transport):
         if not transport:
             return "None"

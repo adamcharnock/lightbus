@@ -15,7 +15,7 @@ format. The format looks like this::
 
 """
 
-import lightbus
+import lightbus  # pylint: disable=unused-import
 from lightbus.serializers import (
     decode_bytes,
     sanity_check_metadata,
@@ -25,7 +25,6 @@ from lightbus.serializers import (
 
 
 class ByFieldMessageSerializer(MessageSerializer):
-
     def __call__(self, message: "lightbus.Message") -> dict:
         """Takes a message object and returns a serialised dictionary representation
 
@@ -38,7 +37,6 @@ class ByFieldMessageSerializer(MessageSerializer):
 
 
 class ByFieldMessageDeserializer(MessageDeserializer):
-
     def __call__(self, serialized: dict, *, native_id=None, **extra):
         """Takes a dictionary of serialised fields and returns a Message object
 

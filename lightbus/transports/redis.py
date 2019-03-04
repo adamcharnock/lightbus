@@ -36,6 +36,7 @@ from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
 
 if False:
+    # pylint: disable=unused-import
     from lightbus.config import Config
 
 logger = logging.getLogger(__name__)

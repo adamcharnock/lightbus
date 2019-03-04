@@ -4,7 +4,6 @@ import logging
 import sys
 from pathlib import Path
 
-import lightbus
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.plugins import PluginRegistry
 

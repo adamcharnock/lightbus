@@ -1,7 +1,7 @@
 import json as jsonlib
 import os
 from pathlib import Path
-from typing import TypeVar, Dict, NamedTuple
+from typing import Dict, NamedTuple
 
 import jsonschema
 import yaml as yamllib
@@ -12,6 +12,7 @@ from lightbus.utilities.casting import cast_to_hint
 from lightbus.utilities.deforming import deform_to_bus
 
 if False:
+    # pylint: disable=unused-import
     from .structure import RootConfig, BusConfig, ApiConfig
 
 

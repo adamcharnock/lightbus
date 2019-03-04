@@ -8,6 +8,7 @@ from lightbus.plugins import LightbusPlugin
 from lightbus.utilities.deforming import deform_to_bus
 
 if False:
+    # pylint: disable=unused-import
     from lightbus.config import Config
 
 

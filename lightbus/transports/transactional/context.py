@@ -31,6 +31,7 @@ except ImportError:  # pragma: no cover
     aiopg = None
 
 if False:
+    # pylint: disable=unused-import
     from lightbus.path import BusPath
 
 

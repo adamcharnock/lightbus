@@ -1,7 +1,5 @@
 import argparse
-import asyncio
 import logging
-from inspect import iscoroutine
 
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.plugins import PluginRegistry

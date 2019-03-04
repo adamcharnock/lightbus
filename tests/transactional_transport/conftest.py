@@ -17,6 +17,7 @@ from lightbus.transports.redis import StreamUse
 from lightbus.transports.transactional import DbApiConnection
 
 if False:
+    # pylint: disable=unused-import
     import aiopg
 
 PG_URL = os.environ.get("PG_URL", "postgres://postgres@localhost:5432/postgres")

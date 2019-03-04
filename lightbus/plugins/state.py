@@ -14,6 +14,7 @@ from lightbus.plugins.metrics import MetricsPlugin
 from lightbus.utilities.async_tools import cancel
 
 if False:
+    # pylint: disable=unused-import
     from lightbus import BusClient
     from lightbus.config import Config
 
