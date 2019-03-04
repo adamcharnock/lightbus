@@ -40,11 +40,11 @@ jobs:
       - run:
           command: |
             pipenv install --ignore-pipfile --dev
-            mkdir -p .coverage
+            mkdir -p .coverage .test-reports
 
       - run:
           command: |
-            pipenv run pytest --cov=lightbus
+            pipenv run pytest --cov=lightbus --junit-xml=junit.xml
 
       - run:
           command: |
@@ -54,6 +54,9 @@ jobs:
           root: /home/circleci/project/.coverage
           paths:
             - coverage*
+
+      - store_test_results:
+          path: .test-reports
 
       - save_cache:
           key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
