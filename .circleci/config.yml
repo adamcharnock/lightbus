@@ -42,7 +42,6 @@ jobs:
             pipenv install --ignore-pipfile --dev
             mkdir -p .coverage
             pipenv run pytest --cov=lightbus
-            pipenv run coveralls
             mv .coverage/coverage .coverage/coverage$CIRCLE_BUILD_NUM
             ls -la .coverage
           environment:
