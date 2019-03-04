@@ -2,13 +2,13 @@
 from datetime import datetime
 from typing import Coroutine
 
-import lightbus
 from lightbus.message import EventMessage, RpcMessage, ResultMessage
 from lightbus.plugins import LightbusPlugin
 from lightbus.utilities.deforming import deform_to_bus
 
 if False:
     # pylint: disable=unused-import
+    import lightbus
     from lightbus.config import Config
 
 

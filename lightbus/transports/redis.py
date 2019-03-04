@@ -4,17 +4,7 @@ import logging
 import time
 from collections import OrderedDict
 from datetime import datetime
-from typing import (
-    Sequence,
-    Optional,
-    Union,
-    Generator,
-    Dict,
-    Mapping,
-    List,
-    Container,
-    AsyncGenerator,
-)
+from typing import Sequence, Optional, Union, Dict, Mapping, List, Container, AsyncGenerator
 from enum import Enum
 
 import aioredis
