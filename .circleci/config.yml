@@ -41,11 +41,14 @@ jobs:
           command: |
             pipenv install --ignore-pipfile --dev
             mkdir -p .coverage
+
+      - run:
+          command: |
             pipenv run pytest --cov=lightbus
+
+      - run:
+          command: |
             mv .coverage/coverage .coverage/coverage$CIRCLE_BUILD_NUM
-            ls -la .coverage
-          environment:
-            PIPENV_VENV_IN_PROJECT: true
 
       - persist_to_workspace:
           root: /home/circleci/project/.coverage
@@ -95,8 +98,6 @@ jobs:
           command: |
             pipenv install --ignore-pipfile --dev
             pipenv run mkdocs gh-deploy --force --message="Automated build by CircleCI [ci skip]"
-          environment:
-            PIPENV_VENV_IN_PROJECT: true
 
       - save_cache:
           key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
