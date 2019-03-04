@@ -27,6 +27,7 @@ class Config(object):
     will normally have a default catch-all definition, but can be customised
     on a per-api basis.
     """
+
     _config: "RootConfig"
 
     def __init__(self, root_config: "RootConfig"):
@@ -72,7 +73,7 @@ class Config(object):
     @classmethod
     def load_yaml(cls, yaml: str):
         """Instantiate the config from a YAML string"""
-        config = yamllib.load(yaml)
+        config = yamllib.safe_load(yaml)
         if not isinstance(config, dict):
             raise UnexpectedConfigurationFormat(
                 f"The config file was loaded but it appears to be in an unexpected format. "

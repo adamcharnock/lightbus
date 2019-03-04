@@ -560,7 +560,8 @@ class BusClient(object):
         return list(self._listeners.keys())
 
     def _validate(self, message: Message, direction: str, api_name=None, procedure_name=None):
-        assert direction in ("incoming", "outgoing")
+        if direction not in ("incoming", "outgoing"):
+            raise AssertionError("Invalid direction specified")
 
         # Result messages do not carry the api or procedure name, so allow them to be
         # specified manually
@@ -682,7 +683,8 @@ class BusClient(object):
         self._hook_callbacks[(name, bool(before_plugins))].append(fn)
 
     def _make_hook_decorator(self, name, before_plugins=False, callback=None):
-        assert not callback or callable(callback), "The provided callback is not callable"
+        if callback and not callable(callback):
+            raise AssertionError("The provided callback is not callable")
         if callback:
             self._register_hook_callback(name, callback, before_plugins)
         else:

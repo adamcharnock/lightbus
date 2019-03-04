@@ -67,7 +67,6 @@ class DatabaseConnection(object):
 
 
 class DbApiConnection(DatabaseConnection):
-
     async def migrate(self):
         # TODO: smarter version handling
         # TODO: cleanup old entries after x time
@@ -131,9 +130,7 @@ class DbApiConnection(DatabaseConnection):
         await self.execute("ROLLBACK -- DbApiConnection.rollback_transaction()")
 
     async def is_event_duplicate(self, message: EventMessage, listener_name: str) -> bool:
-        sql = (
-            "SELECT EXISTS(SELECT 1 FROM lightbus_processed_events WHERE message_id = %s AND listener_name = %s)"
-        )
+        sql = "SELECT EXISTS(SELECT 1 FROM lightbus_processed_events WHERE message_id = %s AND listener_name = %s)"
         await self.execute(sql, [message.id, listener_name])
         result = await self.fetchall()
         return result[0][0]
@@ -171,7 +168,7 @@ class DbApiConnection(DatabaseConnection):
 
             # Select a single event from the outbox, ignoring any locked events, and
             # locking the event we select.
-            sql = "SELECT message, options FROM lightbus_event_outbox {} LIMIT 1 FOR UPDATE SKIP LOCKED".format(
+            sql = "SELECT message, options FROM lightbus_event_outbox {} LIMIT 1 FOR UPDATE SKIP LOCKED".format(  # nosec
                 where
             )
             await self.execute(sql, args)

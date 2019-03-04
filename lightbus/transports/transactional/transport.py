@@ -133,9 +133,10 @@ class TransactionalEventTransport(EventTransport):
         self._clear_connection()
 
     def _clear_connection(self):
-        assert (
-            self.connection
-        ), "Connection not set. Perhaps you need an lightbus_set_database() context?"
+        if not self.connection:
+            raise AssertionError(
+                "Connection not set. Perhaps you need an lightbus_set_database() context?"
+            )
         self.connection = None
         self.cursor = None
         self.database = None

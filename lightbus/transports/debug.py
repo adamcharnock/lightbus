@@ -26,7 +26,7 @@ class DebugRpcTransport(RpcTransport):
             RpcMessage(
                 api_name="my_company.auth",
                 procedure_name="check_password",
-                kwargs=dict(username="admin", password="secret"),
+                kwargs=dict(username="admin", password="secret"),  # nosec
             )
         ]
 

@@ -1,6 +1,6 @@
 import inspect
 import logging
-import random
+import secrets
 import string
 
 from typing import Type, NamedTuple  # noqa
@@ -43,9 +43,9 @@ def make_from_config_structure(class_name, from_config_method, extra_parameters=
 
     globals_ = globals().copy()
     globals_.update(vars)
-    exec(code, globals_)
+    exec(code, globals_)  # nosec
     return globals_[f"{class_name}Config"]
 
 
 def random_name(length: int) -> str:
-    return "".join(random.choice(string.ascii_lowercase) for _ in range(length))
+    return "".join(secrets.choice(string.ascii_lowercase) for _ in range(length))

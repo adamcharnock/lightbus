@@ -416,7 +416,8 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         return result_message
 
     def _parse_return_path(self, return_path: str) -> str:
-        assert return_path.startswith("redis+key://")
+        if not return_path.startswith("redis+key://"):
+            raise AssertionError(f"Invalid return path specified: {return_path}")
         return return_path[12:]
 
 
