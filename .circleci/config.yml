@@ -43,8 +43,14 @@ jobs:
             mkdir -p .coverage
             pipenv run pytest --cov=lightbus
             pipenv run coveralls
+            mv .coverage/coverage$CIRCLE_BUILD_NUM
           environment:
             PIPENV_VENV_IN_PROJECT: true
+
+      - persist_to_workspace:
+          root: .coverage
+          paths:
+            - coverage$CIRCLE_BUILD_NUM
 
       - save_cache:
           key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
@@ -99,8 +105,20 @@ jobs:
 
   combine_coverage_reports:
     docker:
-      - image: alpine:3.8
+      - image: circleci/python:3.6
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
+
     steps:
+      - checkout
+      - attach_workspace:
+          at: .coverage
+      - run:
+          command: |
+            pipenv install coveralls coverage
+            pipenv run coverage combine .coverage/coverage*
+            pipenv run coveralls
+      -
       - run:
           command: |
             apk add curl
