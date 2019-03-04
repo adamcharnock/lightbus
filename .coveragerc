@@ -2,6 +2,7 @@
 source =
     lightbus/
     /lightbus/lightbus
+    /home/circleci/project/lightbus
 
 [run]
 data_file = .coverage/coverage
