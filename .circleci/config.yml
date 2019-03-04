@@ -118,7 +118,6 @@ jobs:
             pipenv install coveralls coverage
             pipenv run coverage combine .coverage/coverage*
             pipenv run coveralls
-      -
       - run:
           command: |
             apk add curl
