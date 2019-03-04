@@ -49,9 +49,9 @@ jobs:
             PIPENV_VENV_IN_PROJECT: true
 
       - persist_to_workspace:
-          root: .coverage
+          root: /home/circleci/project/.coverage
           paths:
-            - coverage$CIRCLE_BUILD_NUM
+            - coverage*
 
       - save_cache:
           key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
