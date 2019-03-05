@@ -4,11 +4,13 @@ from datetime import timedelta
 import pytest
 import schedule
 
+from lightbus.exceptions import CannotBlockHere
 from lightbus.utilities.async_tools import (
     call_every,
     cancel,
     call_on_schedule,
     run_user_provided_callable,
+    block,
 )
 
 pytestmark = pytest.mark.unit
@@ -24,6 +26,25 @@ def call_counter():
             self.call_count += 1
 
     return CallCounter()
+
+
+@pytest.mark.asyncio
+async def test_block_within_event_loop():
+    # Should give an error
+    async def co():
+        pass
+
+    with pytest.raises(CannotBlockHere):
+        block(co())
+
+
+def test_block_outside_event_loop():
+    # Should not raise an error
+    async def co():
+        return 1
+
+    resuult = block(co())
+    assert resuult == 1
 
 
 @pytest.fixture()
