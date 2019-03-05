@@ -13,6 +13,7 @@ __all__ = ["Api", "Event"]
 
 
 class Registry(object):
+    # TODO: Rename to ApiRegistry
     def __init__(self):
         self._apis: Dict[str, Api] = dict()
 
@@ -55,7 +56,7 @@ class Registry(object):
         return [api for api in self._apis.values() if api.meta.internal]
 
     def all(self):
-        return self._apis.values()
+        return list(self._apis.values())
 
     def names(self):
         return list(self._apis.keys())
