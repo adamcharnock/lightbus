@@ -213,7 +213,7 @@ class LightbusFormatter(logging.Formatter):  # pragma: no cover
         return formatted_prefix
 
 
-class L(object):
+class L(object):  # pragma: no cover
     style = ""
 
     def __init__(self, log_message, *values):
@@ -243,12 +243,11 @@ class L(object):
             return str(self.log_message).format(*keys)
 
 
-class Bold(L):
+class Bold(L):  # pragma: no cover
     style = escape_codes["bold"]
 
 
-class LBullets(L):
-
+class LBullets(L):  # pragma: no cover
     def __init__(self, log_message, *values, items, bullet="∙", indent=4):
         super().__init__(log_message, *values)
         self.items = items
