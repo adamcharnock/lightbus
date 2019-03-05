@@ -152,18 +152,8 @@ async def run_user_provided_callable(callable, args, kwargs, bus_client, die_on_
     if asyncio.iscoroutinefunction(callable):
         return await callable(*args, **kwargs)
 
-    def make_func(callable, args, kwargs):
-        def wrapper():
-            result = callable(*args, **kwargs)
-            if inspect.isawaitable(result):
-                loop = asyncio.new_event_loop()
-                result = loop.run_until_complete(result)
-            return result
-
-        return wrapper
-
     future = asyncio.get_event_loop().run_in_executor(
-        executor=None, func=make_func(callable, args, kwargs)
+        executor=None, func=lambda: callable(*args, **kwargs)
     )
     return await future
 

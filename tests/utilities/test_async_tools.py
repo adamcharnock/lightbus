@@ -4,7 +4,12 @@ from datetime import timedelta
 import pytest
 import schedule
 
-from lightbus.utilities.async_tools import call_every, cancel, call_on_schedule
+from lightbus.utilities.async_tools import (
+    call_every,
+    cancel,
+    call_on_schedule,
+    run_user_provided_callable,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -179,3 +184,27 @@ async def test_call_on_schedule_with_long_execution_time(run_for, dummy_bus):
         seconds=0.25,
     )
     assert await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_run_user_provided_callable_regular_function(dummy_bus, mocker):
+    called = False
+
+    def call_me(a, b):
+        nonlocal called
+        called = True
+
+    await run_user_provided_callable(call_me, args=[1], kwargs={"b": 2}, bus_client=dummy_bus)
+    assert called
+
+
+@pytest.mark.asyncio
+async def test_run_user_provided_callable_async_function(dummy_bus, mocker):
+    called = False
+
+    async def call_me(a, b):
+        nonlocal called
+        called = True
+
+    await run_user_provided_callable(call_me, args=[1], kwargs={"b": 2}, bus_client=dummy_bus)
+    assert called
