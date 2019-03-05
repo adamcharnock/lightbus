@@ -1,7 +1,6 @@
 import logging
 import threading
-from asyncio import AbstractEventLoop
-from typing import List, Tuple, Generator, Type, AsyncGenerator
+from typing import List, Tuple, Type, AsyncGenerator
 
 from lightbus.exceptions import DuplicateMessage, LightbusException
 from lightbus.transports.base import get_transport, EventTransport, EventMessage

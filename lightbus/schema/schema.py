@@ -47,7 +47,7 @@ class Schema(object):
 
     def __init__(
         self,
-        schema_transport: "SchemaTransport",
+        schema_transport: SchemaTransport,
         max_age_seconds: Optional[int] = 60,
         human_readable: bool = True,
     ):

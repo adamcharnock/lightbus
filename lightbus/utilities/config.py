@@ -3,7 +3,7 @@ import logging
 import secrets
 import string
 
-from typing import Type, NamedTuple  # noqa
+from typing import Type, NamedTuple  # pylint: disable=unused-import
 
 import itertools
 

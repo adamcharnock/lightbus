@@ -24,6 +24,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         self.setup_logging(args.log_level or "warning", config)
 
         try:
+            # pylint: disable=unused-import
             import bpython
             from bpython.curtsies import main as bpython_main
         except ImportError:  # pragma: no cover

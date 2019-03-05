@@ -150,7 +150,6 @@ def _mapping_to_instance(
     # Iterate through each key/type-hint pairing in the destination type
     for key, hint in hints.items():
         value = mapping.get(key)
-        default = get_property_default(destination_type, key)
 
         if key not in mapping:
             # This attribute has not been provided by in the mapping. Skip it

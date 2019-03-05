@@ -10,15 +10,17 @@ from lightbus.exceptions import (
     ApisMustUseTransactionalTransport,
 )
 from lightbus.transports.transactional.transport import TransactionalEventTransport
-from lightbus.utilities.async_tools import block, get_event_loop
+from lightbus.utilities.async_tools import block
 
 try:
+    # pylint: disable=unused-import
     import django
 except ImportError:  # pragma: no cover
     django = None
 
 
 try:
+    # pylint: disable=unused-import
     import psycopg2
     import psycopg2.extensions
 except ImportError:  # pragma: no cover
@@ -26,6 +28,7 @@ except ImportError:  # pragma: no cover
 
 
 try:
+    # pylint: disable=unused-import
     import aiopg
 except ImportError:  # pragma: no cover
     aiopg = None

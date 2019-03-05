@@ -25,7 +25,7 @@ class DirectRpcTransport(RpcTransport):  # pragma: no cover
         logger.debug("Sending result for message {}".format(rpc_message))
         await self.result_transport.send_result(
             rpc_message=rpc_message,
-            result_message=ResultMessage(result=result),
+            result_message=ResultMessage(result=result, rpc_message_id=rpc_message.id),
             return_path=rpc_message.return_path,
         )
         logger.info(
