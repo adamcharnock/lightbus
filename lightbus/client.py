@@ -665,7 +665,6 @@ class BusClient(object):
     async def _execute_hook(self, name, **kwargs):
         # Hooks that need to run before plugins
         for callback in self._hook_callbacks[(name, True)]:
-            # await await_if_necessary(callback(client=self, **kwargs))
             await run_user_provided_callable(
                 callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
             )
@@ -674,7 +673,6 @@ class BusClient(object):
 
         # Hooks that need to run after plugins
         for callback in self._hook_callbacks[(name, False)]:
-            # await await_if_necessary(callback(client=self, **kwargs))
             await run_user_provided_callable(
                 callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
             )

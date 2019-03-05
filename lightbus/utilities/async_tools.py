@@ -128,13 +128,6 @@ def make_exception_checker(die=True):
     return partial(check_for_exception, die=die)
 
 
-async def await_if_necessary(value):
-    if isawaitable(value):
-        return await value
-    else:
-        return value
-
-
 async def run_user_provided_callable(callable, args, kwargs, bus_client, die_on_exception=True):
     """Run user provided code
 
