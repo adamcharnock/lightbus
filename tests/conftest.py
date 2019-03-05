@@ -31,13 +31,19 @@ from lightbus.commands import COMMAND_PARSED_ARGS
 from lightbus.path import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import PluginRegistry
-from lightbus.utilities.async_tools import cancel
+from lightbus.utilities.async_tools import cancel, configure_event_loop
 
 TCPAddress = namedtuple("TCPAddress", "host port")
 
 RedisServer = namedtuple("RedisServer", "name tcp_address unixsocket version")
 
 logger = logging.getLogger(__file__)
+
+
+def pytest_sessionstart(session):
+    # Set custom lightbus policy on event loop
+    configure_event_loop()
+
 
 # Public fixtures
 
