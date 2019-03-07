@@ -152,7 +152,7 @@ class RedisTransportMixin(object):
         del self._redis_pool
 
     def __str__(self):
-        if hasattr(self._local, "redis_pool"):
+        if self._redis_pool:
             conn = self._redis_pool.connection
             return f"redis://{conn.address[0]}:{conn.address[1]}/{conn.db}"
         else:
