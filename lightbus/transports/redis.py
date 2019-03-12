@@ -261,7 +261,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
                 await asyncio.sleep(self.consumption_restart_delay)
 
     async def _consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
-        # Get the name of each stream
+        # Get the name of each list queue
         queue_keys = ["{}:rpc_queue".format(api.meta.name) for api in apis]
 
         logger.debug(
