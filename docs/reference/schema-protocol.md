@@ -1,0 +1,3 @@
+# Schema protocol (Redis)
+
+TBA

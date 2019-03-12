@@ -55,7 +55,7 @@ pages:
     - APIs: explanation/apis.md
     - Remote prcedure calls: explanation/rpcs.md
     - Events: explanation/events.md
-    - Marshelling: explanation/marshelling.md
+    - Marshelling: explanation/marshalling.md
     - Transports: explanation/transports.md
     - Configuration*: explanation/configuration.md
     - Schema*: explanation/schema.md
@@ -74,6 +74,9 @@ pages:
     - Command line use*: reference/command-line-use.md
     - Debugging*: reference/debugging.md
     - Plugins*: reference/plugins.md
+    - RPC Prococol (Redis): reference/rpc-protocol.md
+    - Event Prococol (Redis)*: reference/event-protocol.md
+    - Schema Prococol (Redis)*: reference/schema-protocol.md
 
 # Extensions
 markdown_extensions:

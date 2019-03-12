@@ -1,0 +1,3 @@
+# Event protocol (Redis)
+
+TBA
