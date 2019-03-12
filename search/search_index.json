@@ -416,22 +416,22 @@
             "title": "Parameter values"
         },
         {
-            "location": "/explanation/marshelling/",
+            "location": "/explanation/marshalling/",
             "text": "Lightbus has four stages of data marshalling:\n\n\n\n\nEncode / Decode\n\n\nSerialize / Deserialize\n\n\nValidation\n\n\nDeform / Cast\n\n\n\n\nInbound flow\n\u00b6\n\n\nMessages arriving from the bus go through the following stages\nin order to prepare the data for use:\n\n\n\n\nDecode:\n Decode the incoming data (JSON decoding by default)\n\n\nDeserialise:\n Convert decoded data into a \nMessage\n object\n\n\nValidate:\n Validate the incoming message against the JSON schema\n   available on the bus.\n\n\nCast:\n Best effort casting of parameters/results based on\n   the locally available type hinting\n   (\ndisable with \ncast_values\n)).\n\n\n\n\nOutbound flow\n\u00b6\n\n\nThis is the reverse of the inbound flow. Messages being\nsent will go through the following process in order to\nprepare the data for transmission on bus:\n\n\n\n\nDeform:\n Lightbus handles \nNamedTuples\n, \ndataclasses\n\n   and \nother classes\n by converting\n   them into dictionaries. Other common types such as\n   datetimes, Decimals etc are converted into strings.\n   Internally this is referred to as the \ndeform\n process and is\n   the inverse of the \ncast\n process.\n\n\nValidate:\n Validate the outgoing message against the JSON schema\n   available on the bus.\n\n\nSerialize:\n Structures the data in a way suitable for the\n  transport.\n\n\nEncode:\n Converts the data to a form suitable for transmission.\n  This typically means stringifying it, for which lightbus\n  uses JSON encoding by default.\n\n\n\n\nAbout casting\n\u00b6\n\n\nCasting is separate from validation, although both rely on type hints.\nWhereas validation uses a shared\nbus-wide schema to check data validity, casting uses type hints\navailable in the \nlocal codebase\n to marshall event and RPC parameters\ninto a format useful to the service's developer.",
             "title": "Marshelling"
         },
         {
-            "location": "/explanation/marshelling/#inbound-flow",
+            "location": "/explanation/marshalling/#inbound-flow",
             "text": "Messages arriving from the bus go through the following stages\nin order to prepare the data for use:   Decode:  Decode the incoming data (JSON decoding by default)  Deserialise:  Convert decoded data into a  Message  object  Validate:  Validate the incoming message against the JSON schema\n   available on the bus.  Cast:  Best effort casting of parameters/results based on\n   the locally available type hinting\n   ( disable with  cast_values )).",
             "title": "Inbound flow"
         },
         {
-            "location": "/explanation/marshelling/#outbound-flow",
+            "location": "/explanation/marshalling/#outbound-flow",
             "text": "This is the reverse of the inbound flow. Messages being\nsent will go through the following process in order to\nprepare the data for transmission on bus:   Deform:  Lightbus handles  NamedTuples ,  dataclasses \n   and  other classes  by converting\n   them into dictionaries. Other common types such as\n   datetimes, Decimals etc are converted into strings.\n   Internally this is referred to as the  deform  process and is\n   the inverse of the  cast  process.  Validate:  Validate the outgoing message against the JSON schema\n   available on the bus.  Serialize:  Structures the data in a way suitable for the\n  transport.  Encode:  Converts the data to a form suitable for transmission.\n  This typically means stringifying it, for which lightbus\n  uses JSON encoding by default.",
             "title": "Outbound flow"
         },
         {
-            "location": "/explanation/marshelling/#about-casting",
+            "location": "/explanation/marshalling/#about-casting",
             "text": "Casting is separate from validation, although both rely on type hints.\nWhereas validation uses a shared\nbus-wide schema to check data validity, casting uses type hints\navailable in the  local codebase  to marshall event and RPC parameters\ninto a format useful to the service's developer.",
             "title": "About casting"
         },
@@ -814,6 +814,96 @@
             "location": "/reference/plugins/",
             "text": "TBA",
             "title": "Plugins*"
+        },
+        {
+            "location": "/reference/rpc-protocol/",
+            "text": "RPC protocol (Redis)\n\u00b6\n\n\nHere we document the specific interactions between Lightbus and Redis. \nThe concrete implementation of this is provided by the \nRedisRpcTransport\n and \n\nRedisResultTransport\n classes. Before reading you should be familiar with Lightbus' \ndata marshalling\n.\n\n\nThis documentation may be useful when debugging, developing third-party client libraries, \nor simply for general interest and review. \nYou do not need to be aware of this \nprotocol in order to use Lightbus\n.\n\n\nSending RPC Calls (client)\n\u00b6\n\n\nThe following Redis commands will send a remote procedure call:\n\n\nRPUSH \"{api_name}:rpc_queue\" \"{blob_serialized_message}\"\nSET \"rpc_expiry_key:{rpc_call_message_id}\"\nEXPIRE \"rpc_expiry_key:{rpc_call_message_id}\" {rpc_timeout_seconds:5}\n\n\n\n\n\nSee \nmessage serialisation & encoding\n for the format of \n\n{blob_serialized_message}\n.\n\n\nThe return path\n\u00b6\n\n\nEach RPC message must specify a \nreturn_path\n in its metadata. This states how the client \nexpects to receive the result of the RPC. Both the client and the server must be able to \ncomprehend and act up the provided return path, otherwise results will fail to be communicated.\n\n\nAssuming you are using the built-in Redis RPC result transport, the return path \nshould be in the following format:\n\n\nredis+key://{api_name}.{rpc_name}:result:{rpc_call_message_id}\n\n\n\n\n\nThe server will place the RPC result into a Redis key. The value following \n\nredis+key://\n will be used as the key name.\n\n\nReceiving RPC Results (client)\n\u00b6\n\n\nThe following Redis commands will block and await the result of an RPC call:\n\n\nBLPOP \"{api_name}.{rpc_name}:result:{rpc_call_message_id}\"\n\n\n\n\n\nThis simply waits from a value to appear within the key specified by the \nreturn_path\n\nin the sent RPC message.\n\n\nSee \nmessage serialisation & encoding\n for the format of \nthe returned RPC result.\n\n\nConsuming incoming RPC calls (server)\n\u00b6\n\n\nRPCs are consumed as follows:\n\n\n# Blocks until a RPC message is received\nBLPOP \"{api_name}:rpc_queue\"\n\nDEL \"rpc_expiry_key:{rpc_call_message_id}\"\n# If DEL returns 1 (key deleted) then execute the RPC\n# If DEL returns 0 (key did not exist) then ignore the RPC\n\n# Parse blob-serialised RPC message, Execute RPC, get result\n\nLPUSH {redis_key_specific_in_return_path} {blob_serialized_result}\nEXPIRE {redis_key_specific_in_return_path} {result_ttl_seconds}\n\n\n\n\n\nMessage serialisation & encoding\n\u00b6\n\n\nAbove we have often referred to \n{blob_serialized_message}\n \nor \n{blob_serialized_result}\n. These are JSON blobs of data \nin a specific format.\n\n\nSerialisation\n\u00b6\n\n\nSee also: \ndata marshalling\n\n\nWithin the Redis RPC transports all messages are serialised into a single \nvalue. This value is referred to as a 'blob'. This serialisation is \nformed by the \nBlobMessageSerializer\n and \nBlobMessageDeserializer\n classes.\n\n\nRPC Message\n\u00b6\n\n\nThis is an outgoing RPC message. I.e. a request that an RPC be executed and a response be\nreturned.\n\n\n{\n\n    \n\"metadata\"\n:\n \n{\n\n        \n# Unique base64-encoded UUID\n\n        \n\"id\"\n:\n \n\"KrXz5EUXEem2gazeSAARIg==\"\n,\n\n        \n# Fully qualified API name\n\n        \n\"api_name\"\n:\n \n\"my_company.auth\"\n,\n\n        \n# The name of the remote procedure call\n\n        \n\"procedure_name\"\n:\n \n\"check_password\"\n,\n\n        \n# How and where should the result be sent\n\n        \n\"return_path\"\n:\n \n\"redis+key://my_company.auth.check_password:result:KrXz5EUXEem2gazeSAARIg==\"\n,\n\n    \n},\n\n\n    \n# Key/value arguments potentiually needed to execute the remote procedure call\n\n    \n\"kwargs\"\n:\n \n{\n\n        \n\"username\"\n:\n \n\"adam\"\n,\n\n        \n\"password\"\n:\n \n\"secret\"\n,\n\n        \n...\n\n    \n}\n\n\n}\n\n\n\n\n\nResult Message\n\u00b6\n\n\nThis is the response message indicating an RPC has been \n(successfully or unsuccessfully) executed.\n\n\n{\n\n    \n\"metadata\"\n:\n \n{\n\n        \n# The newly randomly generated ID of this RPC result message.\n\n        \n# (base64-encoded UUID)\n\n        \n\"id\"\n:\n \n\"L4iXaEUgEemnBazeSAARIg==\"\n,\n\n        \n# The ID of the received RPC call message\n\n        \n\"rpc_message_id\"\n:\n \n\"KrXz5EUXEem2gazeSAARIg==\"\n,\n\n        \n# String representation of any error which occurred\n\n        \n\"error\"\n:\n \n\"\"\n,\n\n        \n# Error stack trace. Only used in event of error, may be omitted otherwise\n\n        \n\"trace\"\n:\n \n\"\n{error_stack_trace}\n\"\n,\n\n    \n},\n\n\n    \n# The result as returned by the executed RPC\n\n    \n\"result\"\n:\n \n...\n\n\n}\n\n\n\n\n\nCustomisation\n\u00b6\n\n\nThis blob serialization format is customisable within the Lightbus configuration. \nYou are welcome to use something custom here, but be aware that:\n\n\n\n\nA single API must have a single format for all RPC messages\n\n\nAll clients accessing the bus must be configured to use the same custom format\n\n\n\n\nEncoding\n\u00b6\n\n\nSee also: \ndata marshalling\n\n\nThe message must be encoded as a string once it has been serialised to \nthe above blob structure. The default implementation is to use JSON \nas this encoding.\n\n\nThis encoding is customisable within the Lightbus configuration. You are welcome to use \nsomething custom here, but be aware that:\n\n\n\n\nA single API must have a single encoding for all RPC messages\n\n\nAll clients accessing the bus must be configured to use the same custom encoding\n\n\n\n\nData validation\n\u00b6\n\n\nValidation of parameters and results can optionally be performed using the schema \navailable through the \nschema protocol\n.\n\n\nData deformation & casting\n\u00b6\n\n\nThe Lightbus client provides Python-specific functionality to streamline the \nprocess of moving between Python data structures and interoperable JSON data \nstructures.\n\n\nThe level of functionality required in this regard is not specified here, and \nis left up to individual library developers.",
+            "title": "RPC Prococol (Redis)"
+        },
+        {
+            "location": "/reference/rpc-protocol/#rpc-protocol-redis",
+            "text": "Here we document the specific interactions between Lightbus and Redis. \nThe concrete implementation of this is provided by the  RedisRpcTransport  and  RedisResultTransport  classes. Before reading you should be familiar with Lightbus'  data marshalling .  This documentation may be useful when debugging, developing third-party client libraries, \nor simply for general interest and review.  You do not need to be aware of this \nprotocol in order to use Lightbus .",
+            "title": "RPC protocol (Redis)"
+        },
+        {
+            "location": "/reference/rpc-protocol/#sending-rpc-calls-client",
+            "text": "The following Redis commands will send a remote procedure call:  RPUSH \"{api_name}:rpc_queue\" \"{blob_serialized_message}\"\nSET \"rpc_expiry_key:{rpc_call_message_id}\"\nEXPIRE \"rpc_expiry_key:{rpc_call_message_id}\" {rpc_timeout_seconds:5}  See  message serialisation & encoding  for the format of  {blob_serialized_message} .",
+            "title": "Sending RPC Calls (client)"
+        },
+        {
+            "location": "/reference/rpc-protocol/#the-return-path",
+            "text": "Each RPC message must specify a  return_path  in its metadata. This states how the client \nexpects to receive the result of the RPC. Both the client and the server must be able to \ncomprehend and act up the provided return path, otherwise results will fail to be communicated.  Assuming you are using the built-in Redis RPC result transport, the return path \nshould be in the following format:  redis+key://{api_name}.{rpc_name}:result:{rpc_call_message_id}  The server will place the RPC result into a Redis key. The value following  redis+key://  will be used as the key name.",
+            "title": "The return path"
+        },
+        {
+            "location": "/reference/rpc-protocol/#receiving-rpc-results-client",
+            "text": "The following Redis commands will block and await the result of an RPC call:  BLPOP \"{api_name}.{rpc_name}:result:{rpc_call_message_id}\"  This simply waits from a value to appear within the key specified by the  return_path \nin the sent RPC message.  See  message serialisation & encoding  for the format of \nthe returned RPC result.",
+            "title": "Receiving RPC Results (client)"
+        },
+        {
+            "location": "/reference/rpc-protocol/#consuming-incoming-rpc-calls-server",
+            "text": "RPCs are consumed as follows:  # Blocks until a RPC message is received\nBLPOP \"{api_name}:rpc_queue\"\n\nDEL \"rpc_expiry_key:{rpc_call_message_id}\"\n# If DEL returns 1 (key deleted) then execute the RPC\n# If DEL returns 0 (key did not exist) then ignore the RPC\n\n# Parse blob-serialised RPC message, Execute RPC, get result\n\nLPUSH {redis_key_specific_in_return_path} {blob_serialized_result}\nEXPIRE {redis_key_specific_in_return_path} {result_ttl_seconds}",
+            "title": "Consuming incoming RPC calls (server)"
+        },
+        {
+            "location": "/reference/rpc-protocol/#message-serialisation-encoding",
+            "text": "Above we have often referred to  {blob_serialized_message}  \nor  {blob_serialized_result} . These are JSON blobs of data \nin a specific format.",
+            "title": "Message serialisation &amp; encoding"
+        },
+        {
+            "location": "/reference/rpc-protocol/#serialisation",
+            "text": "See also:  data marshalling  Within the Redis RPC transports all messages are serialised into a single \nvalue. This value is referred to as a 'blob'. This serialisation is \nformed by the  BlobMessageSerializer  and  BlobMessageDeserializer  classes.",
+            "title": "Serialisation"
+        },
+        {
+            "location": "/reference/rpc-protocol/#rpc-message",
+            "text": "This is an outgoing RPC message. I.e. a request that an RPC be executed and a response be\nreturned.  { \n     \"metadata\" :   { \n         # Unique base64-encoded UUID \n         \"id\" :   \"KrXz5EUXEem2gazeSAARIg==\" , \n         # Fully qualified API name \n         \"api_name\" :   \"my_company.auth\" , \n         # The name of the remote procedure call \n         \"procedure_name\" :   \"check_password\" , \n         # How and where should the result be sent \n         \"return_path\" :   \"redis+key://my_company.auth.check_password:result:KrXz5EUXEem2gazeSAARIg==\" , \n     }, \n\n     # Key/value arguments potentiually needed to execute the remote procedure call \n     \"kwargs\" :   { \n         \"username\" :   \"adam\" , \n         \"password\" :   \"secret\" , \n         ... \n     }  }",
+            "title": "RPC Message"
+        },
+        {
+            "location": "/reference/rpc-protocol/#result-message",
+            "text": "This is the response message indicating an RPC has been \n(successfully or unsuccessfully) executed.  { \n     \"metadata\" :   { \n         # The newly randomly generated ID of this RPC result message. \n         # (base64-encoded UUID) \n         \"id\" :   \"L4iXaEUgEemnBazeSAARIg==\" , \n         # The ID of the received RPC call message \n         \"rpc_message_id\" :   \"KrXz5EUXEem2gazeSAARIg==\" , \n         # String representation of any error which occurred \n         \"error\" :   \"\" , \n         # Error stack trace. Only used in event of error, may be omitted otherwise \n         \"trace\" :   \" {error_stack_trace} \" , \n     }, \n\n     # The result as returned by the executed RPC \n     \"result\" :   ...  }",
+            "title": "Result Message"
+        },
+        {
+            "location": "/reference/rpc-protocol/#customisation",
+            "text": "This blob serialization format is customisable within the Lightbus configuration. \nYou are welcome to use something custom here, but be aware that:   A single API must have a single format for all RPC messages  All clients accessing the bus must be configured to use the same custom format",
+            "title": "Customisation"
+        },
+        {
+            "location": "/reference/rpc-protocol/#encoding",
+            "text": "See also:  data marshalling  The message must be encoded as a string once it has been serialised to \nthe above blob structure. The default implementation is to use JSON \nas this encoding.  This encoding is customisable within the Lightbus configuration. You are welcome to use \nsomething custom here, but be aware that:   A single API must have a single encoding for all RPC messages  All clients accessing the bus must be configured to use the same custom encoding",
+            "title": "Encoding"
+        },
+        {
+            "location": "/reference/rpc-protocol/#data-validation",
+            "text": "Validation of parameters and results can optionally be performed using the schema \navailable through the  schema protocol .",
+            "title": "Data validation"
+        },
+        {
+            "location": "/reference/rpc-protocol/#data-deformation-casting",
+            "text": "The Lightbus client provides Python-specific functionality to streamline the \nprocess of moving between Python data structures and interoperable JSON data \nstructures.  The level of functionality required in this regard is not specified here, and \nis left up to individual library developers.",
+            "title": "Data deformation &amp; casting"
+        },
+        {
+            "location": "/reference/event-protocol/",
+            "text": "Event protocol (Redis)\n\u00b6\n\n\nTBA",
+            "title": "Event Prococol (Redis)*"
+        },
+        {
+            "location": "/reference/event-protocol/#event-protocol-redis",
+            "text": "TBA",
+            "title": "Event protocol (Redis)"
+        },
+        {
+            "location": "/reference/schema-protocol/",
+            "text": "Schema protocol (Redis)\n\u00b6\n\n\nTBA",
+            "title": "Schema Prococol (Redis)*"
+        },
+        {
+            "location": "/reference/schema-protocol/#schema-protocol-redis",
+            "text": "TBA",
+            "title": "Schema protocol (Redis)"
         }
     ]
 }
