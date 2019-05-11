@@ -24,15 +24,10 @@ def run_in_main_thread():
             bus = args[0]
 
             if not bus.is_worker:
-                # Calls will only be picked up by the destination thread if we are
-                # running within a worker, as we rely on the BusClient._perform_calls()
-                # coroutine running in the background
-                raise CannotRunInChildThread(
-                    f"This functionality cannot be called from within child thread "
-                    f"{threading.current_thread().name}. "
-                    f"Call this functionality from within {destination_thread.name}. "
-                    f"This limitation does not apply for code run within a worker (i.e. 'lightbus run')."
-                )
+                # Allow cross-thread calls if this process is a client
+                # rather than a worker. This relies on users understanding
+                # that lightbus is not thead-safe.
+                return fn(*args, **kwargs)
 
             # We'll provide a queue as the return path for results
             result_queue = janus.Queue()
