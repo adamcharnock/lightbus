@@ -89,6 +89,7 @@ class BusClient(object):
         self._hook_callbacks = defaultdict(list)
         self._exit_code = 0
         self._call_queue = janus.Queue()
+        self._is_worker = False
 
     @assert_in_main_thread()
     async def setup_async(self, plugins: dict = None):
@@ -176,6 +177,15 @@ class BusClient(object):
     @property
     def loop(self):
         return get_event_loop()
+
+    @property
+    def is_worker(self):
+        """Is this client running within a lightbus worker?
+
+         This will be the case within a 'lightbus run' command, but not
+         when the client is being used as a simple client.
+         """
+        return self._is_worker
 
     @assert_in_main_thread()
     def run_forever(self, *, consume_rpcs=True):

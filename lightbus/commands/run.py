@@ -45,6 +45,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         self.setup_logging(override=getattr(args, "log_level", None), config=config)
 
         bus_module, bus = self.import_bus(args)
+        bus.client._is_worker = True
 
         # TODO: Move to lightbus.create()?
         if args.schema:

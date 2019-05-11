@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 
 import jsonschema
 import pytest
@@ -12,7 +13,7 @@ from lightbus.path import BusPath
 from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
 from lightbus.transports.redis import StreamUse
-from lightbus.utilities.async_tools import cancel
+from lightbus.utilities.async_tools import cancel, block
 
 pytestmark = pytest.mark.integration
 
@@ -48,7 +49,9 @@ async def test_bus_fixture(bus: lightbus.path.BusPath):
 
 
 @pytest.mark.asyncio
-async def test_rpc(bus: lightbus.path.BusPath, dummy_api):
+@pytest.mark.timeout(5)
+@pytest.mark.also_run_in_child_thread
+async def test_rpc(bus: lightbus.path.BusPath, dummy_api, thread):
     """Full rpc call integration test"""
     await bus.client.register_api_async(dummy_api)
 

@@ -6,7 +6,9 @@ will is still required to organise the setup code below.
 
 """
 import asyncio
+import threading
 from pathlib import Path
+from queue import Queue
 from random import randint
 from urllib.parse import urlparse
 
@@ -383,3 +385,38 @@ def make_test_bus_module(mocker):
 @pytest.fixture()
 def plugin_registry():
     return PluginRegistry()
+
+
+def pytest_generate_tests(metafunc):
+    if hasattr(metafunc.function, "also_run_in_child_thread"):
+        metafunc.parametrize("thread", ["main", "child"], ids=("main_thread", "child_thread"))
+
+
+def pytest_runtest_call(item):
+    if hasattr(item.function, "also_run_in_child_thread"):
+        if item.callspec.params.get("thread") == "child":
+            exec_queue = Queue()
+
+            def wrapper():
+                try:
+                    item.runtest()
+                except Exception:
+                    # Store trace info to allow postmortem debugging
+                    type, value, tb = sys.exc_info()
+                    exec_queue.put((type, value, tb))
+                    tb = tb.tb_next  # Skip *this* frame
+                    sys.last_type = type
+                    sys.last_value = value
+                    sys.last_traceback = tb
+                    del type, value, tb  # Get rid of these in this frame
+                    raise
+                else:
+                    exec_queue.put(None)
+
+            t = threading.Thread(target=wrapper)
+            t.start()
+            t.join()
+
+            exec_info = exec_queue.get()
+            if exec_info:
+                raise exec_info[1]
