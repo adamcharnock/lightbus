@@ -6,6 +6,7 @@ from collections import OrderedDict
 from datetime import datetime
 from typing import Sequence, Optional, Union, Dict, Mapping, List, Container, AsyncGenerator
 from enum import Enum
+import threading
 
 import aioredis
 from aioredis import Redis, ReplyError, ConnectionClosedError
@@ -119,8 +120,11 @@ class RedisTransportMixin(object):
 
         if not self._redis_pool:
             self._redis_pool = await aioredis.create_redis_pool(**self.connection_parameters)
+
         try:
             internal_pool = self._redis_pool._pool_or_conn
+            if threading.current_thread() == threading.main_thread():
+                raise Exception()
             if hasattr(internal_pool, "size") and hasattr(internal_pool, "maxsize"):
                 if internal_pool.size == internal_pool.maxsize:
                     logging.critical(
@@ -558,7 +562,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         async def consume_loop():
             # Regular event consuming. See _fetch_new_messages()
-
             while True:
                 try:
                     async for messages in self._fetch_new_messages(

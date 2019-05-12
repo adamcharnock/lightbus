@@ -11,31 +11,32 @@ logger = logging.getLogger(__name__)
 
 def run_in_bus_thread():
     """Decorator to ensure any method invocations are passed to the main thread"""
-    destination_thread = threading.current_thread()
 
     def decorator(fn):
         return_awaitable = asyncio.iscoroutinefunction(fn)
 
         def wrapper(*args, **kwargs):
-            if destination_thread == threading.current_thread():
-                return fn(*args, **kwargs)
-
             # Assume the first arg is the 'self', i.e. the bus client
-            bus = args[0]
+            bus_client = args[0]
+
+            bus_thread = bus_client._bus_thread
+
+            if threading.current_thread() == bus_thread:
+                return fn(*args, **kwargs)
 
             # We'll provide a queue as the return path for results
             result_queue = janus.Queue()
 
             # Enqueue the function, it's arguments, and our return path queue
             logger.debug(f"Adding callable {fn.__module__}.{fn.__name__} to queue")
-            bus._call_queue.sync_q.put((fn, args, kwargs, result_queue))
+            bus_client._call_queue.sync_q.put((fn, args, kwargs, result_queue))
 
             # Wait for a return value on the result queue
             logger.debug("Awaiting execution completion")
             result = result_queue.sync_q.get()
 
             # Cleanup
-            bus._call_queue.sync_q.join()  # Needed?
+            bus_client._call_queue.sync_q.join()  # Needed?
             result_queue.close()
 
             if isinstance(result, asyncio.Future):
@@ -45,7 +46,7 @@ def run_in_bus_thread():
                     message=(
                         f"You are trying to access a Future (or Task) which cannot be safely used in this thread.\n\n"
                         f"This Future was returned by {fn.__module__}.{fn.__name__}() and was created within "
-                        f"thead {destination_thread} and returned back to thread {threading.current_thread()}.\n\n"
+                        f"thead {bus_thread} and returned back to thread {threading.current_thread()}.\n\n"
                         f"This functionality was provided by the @run_in_bus_thread decorator, which is also the "
                         f"source of this message.\n\n"
                         f"Reason: Futures are tied to a specific event loop, and event loops are thread-specific. "

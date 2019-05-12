@@ -213,8 +213,17 @@ class BusClient(object):
     def loop(self):
         return get_event_loop()
 
-    @run_in_bus_thread()
     def run_forever(self, *, consume_rpcs=True):
+        stop_args = self.start_server()
+
+        self._actually_run_forever()
+
+        # The loop has stopped, so we're shutting down
+
+        self.stop_server(*stop_args)
+
+    @run_in_bus_thread()
+    async def start_server(self, consume_rpcs=True):
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())
 
@@ -226,37 +235,6 @@ class BusClient(object):
                 )
             )
 
-        server_tasks = block(self.start_server_tasks(consume_rpcs=consume_rpcs))
-        restart_signals = (signal.SIGINT, signal.SIGTERM)
-
-        for signal_ in restart_signals:
-            self.loop.add_signal_handler(
-                signal_, lambda: asyncio.ensure_future(self.shutdown(signal_, server_tasks))
-            )
-
-        self._actually_run_forever()
-
-        # The loop has stopped, so we're shutting down
-
-        # Remove the signal handlers
-        for signal_ in restart_signals:
-            self.loop.remove_signal_handler(signal_)
-
-        # Cancel the tasks we created above
-        block(cancel(*server_tasks))
-
-        logger.info("Executing after_server_stopped & on_stop hooks...")
-        block(self._execute_hook("after_server_stopped"))
-        logger.info("Execution of after_server_stopped & on_stop hooks was successful")
-
-        # Close the bus (which will in turn close the transports)
-        self.close()
-
-        # See if we've set the exit code on the event loop
-        if hasattr(self.loop, "lightbus_exit_code"):
-            raise SystemExit(self.loop.lightbus_exit_code)
-
-    async def start_server_tasks(self, *, consume_rpcs):
         # Setup RPC consumption
         consume_rpc_task = None
         if consume_rpcs and self.api_registry.all():
@@ -271,7 +249,36 @@ class BusClient(object):
         await self._execute_hook("before_server_start")
         logger.info("Execution of before_server_start & on_start hooks was successful")
 
-        return consume_rpc_task, monitor_task
+        server_tasks = [consume_rpc_task, monitor_task]
+
+        restart_signals = (signal.SIGINT, signal.SIGTERM)
+
+        for signal_ in restart_signals:
+            self.loop.add_signal_handler(
+                signal_, lambda: asyncio.ensure_future(self.shutdown(signal_, server_tasks))
+            )
+
+        return restart_signals, restart_signals
+
+    @run_in_bus_thread()
+    async def stop_server(self, server_tasks, restart_signals):
+        # Remove the signal handlers
+        for signal_ in restart_signals:
+            self.loop.remove_signal_handler(signal_)
+
+        # Cancel the tasks we created above
+        await cancel(*server_tasks)
+
+        logger.info("Executing after_server_stopped & on_stop hooks...")
+        await self._execute_hook("after_server_stopped")
+        logger.info("Execution of after_server_stopped & on_stop hooks was successful")
+
+        # Close the bus (which will in turn close the transports)
+        self.close()
+
+        # See if we've set the exit code on the event loop
+        if hasattr(self.loop, "lightbus_exit_code"):
+            raise SystemExit(self.loop.lightbus_exit_code)
 
     def _actually_run_forever(self):  # pragma: no cover
         """Simply start the loop running forever
@@ -554,12 +561,14 @@ class BusClient(object):
 
     # Results
 
+    @run_in_bus_thread()
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
         return await result_transport.send_result(
             rpc_message, result_message, rpc_message.return_path
         )
 
+    @run_in_bus_thread()
     async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict):
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
         return await result_transport.receive_result(rpc_message, return_path, options)
