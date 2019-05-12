@@ -74,14 +74,17 @@ def run_in_main_thread():
     return decorator
 
 
-def assert_in_main_thread():
+def assert_in_bus_thread():
     def decorator(fn):
         def wrapper(*args, **kwargs):
-            # TODO: Improved error message, include function name
-            if threading.main_thread() != threading.current_thread():
+            # Assume the first arg is the 'self', i.e. the bus client
+            bus = args[0]
+
+            if threading.current_thread() != bus._bus_thread:
                 raise CannotRunInChildThread(
-                    "This functionality cannot be used from within a child thread. "
-                    "This functionality must be called within the main thread."
+                    f"This function ({fn.__module__}.{fn.__name__}) may only be called from "
+                    f"within the bus client's home thread ({bus._bus_thread.name}). The function "
+                    f"as actually called from {threading.current_thread().name}."
                 )
             return fn(*args, **kwargs)
 

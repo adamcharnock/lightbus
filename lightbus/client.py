@@ -4,6 +4,7 @@ import functools
 import inspect
 import logging
 import signal
+import threading
 import time
 from asyncio import CancelledError
 from collections import defaultdict
@@ -52,7 +53,7 @@ from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.logging import log_transport_information
-from lightbus.utilities.threading_tools import run_in_main_thread, assert_in_main_thread
+from lightbus.utilities.threading_tools import run_in_main_thread, assert_in_bus_thread
 
 if False:
     # pylint: disable=unused-import
@@ -73,7 +74,6 @@ class BusClient(object):
     All functionality in `BusPath` is provided by `BusClient`.
     """
 
-    @assert_in_main_thread()
     def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
         self.config = config
         self.api_registry = Registry()
@@ -90,8 +90,9 @@ class BusClient(object):
         self._exit_code = 0
         self._call_queue = janus.Queue()
         self._is_worker = False
+        self._bus_thread = threading.current_thread()
 
-    @assert_in_main_thread()
+    @assert_in_bus_thread()
     async def setup_async(self, plugins: dict = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
 
@@ -159,7 +160,7 @@ class BusClient(object):
     def close(self):
         block(self.close_async(), timeout=5)
 
-    @assert_in_main_thread()
+    @assert_in_bus_thread()
     async def close_async(self):
         listener_tasks = [task for task in all_tasks() if getattr(task, "is_listener", False)]
 
@@ -187,7 +188,7 @@ class BusClient(object):
          """
         return self._is_worker
 
-    @assert_in_main_thread()
+    @assert_in_bus_thread()
     def run_forever(self, *, consume_rpcs=True):
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())
