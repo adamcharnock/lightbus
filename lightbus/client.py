@@ -83,27 +83,30 @@ class BusClient(object):
         self._exit_code = 0
         self.config = config
         self.transport_registry = transport_registry
+        self.api_registry = Registry()
+        self.plugin_registry = PluginRegistry()
+        self.schema = None
+        # Set by worker()
+        self._call_queue = None
 
         BusClient._TOTAL_LIGHTBUS_THREADS += 1
 
         self._bus_thread_ready = threading.Event()
         self._bus_thread = threading.Thread(
-            name=f"LightbusThread{BusClient._TOTAL_LIGHTBUS_THREADS}", target=self.__init_thread__
+            name=f"LightbusThread{BusClient._TOTAL_LIGHTBUS_THREADS}", target=self.worker
         )
         logger.debug(f"Starting bus thread {self._bus_thread.name}. Will wait until it is ready")
         self._bus_thread.start()
         self._bus_thread_ready.wait()
-        logger.debug(f"Bus thread {self._bus_thread.name} ready")
+        logger.debug(f"Waiting over, bus thread {self._bus_thread.name} is now ready")
 
-    def __init_thread__(self):
+    def worker(self):
         logger.debug(f"Bus thread {self._bus_thread.name} initialising")
 
         # Start a new event loop for this new thread
         asyncio.set_event_loop(asyncio.new_event_loop())
 
         self._call_queue = janus.Queue()
-        self.api_registry = Registry()
-        self.plugin_registry = PluginRegistry()
         self.transport_registry = self.transport_registry or TransportRegistry().load_config(
             self.config
         )
@@ -119,8 +122,9 @@ class BusClient(object):
 
         self._bus_thread_ready.set()
 
-        # TODO: TEMPORARY, SHOULD ONLY RUN FOR CLIENT
         asyncio.get_event_loop().run_forever()
+
+        block(cancel(perform_calls_task))
 
     @run_in_bus_thread()
     async def setup_async(self, plugins: dict = None):
@@ -434,6 +438,7 @@ class BusClient(object):
 
         return result_message.result
 
+    @run_in_bus_thread()
     async def call_rpc_local(self, api_name: str, name: str, kwargs: dict = frozendict()):
         api = self.api_registry.get(api_name)
         self._validate_name(api_name, "rpc", name)
