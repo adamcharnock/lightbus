@@ -53,7 +53,7 @@ from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.logging import log_transport_information
-from lightbus.utilities.threading_tools import run_in_main_thread, assert_in_bus_thread
+from lightbus.utilities.threading_tools import run_in_bus_thread, assert_in_bus_thread
 
 if False:
     # pylint: disable=unused-import
@@ -74,25 +74,55 @@ class BusClient(object):
     All functionality in `BusPath` is provided by `BusClient`.
     """
 
+    _TOTAL_LIGHTBUS_THREADS = 0
+
     def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
+        self._listeners = {}
+        self._background_tasks = []
+        self._hook_callbacks = defaultdict(list)
+        self._exit_code = 0
         self.config = config
+        self.transport_registry = transport_registry
+
+        BusClient._TOTAL_LIGHTBUS_THREADS += 1
+
+        self._bus_thread_ready = threading.Event()
+        self._bus_thread = threading.Thread(
+            name=f"LightbusThread{BusClient._TOTAL_LIGHTBUS_THREADS}", target=self.__init_thread__
+        )
+        logger.debug(f"Starting bus thread {self._bus_thread.name}. Will wait until it is ready")
+        self._bus_thread.start()
+        self._bus_thread_ready.wait()
+        logger.debug(f"Bus thread {self._bus_thread.name} ready")
+
+    def __init_thread__(self):
+        logger.debug(f"Bus thread {self._bus_thread.name} initialising")
+
+        # Start a new event loop for this new thread
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
+        self._call_queue = janus.Queue()
         self.api_registry = Registry()
         self.plugin_registry = PluginRegistry()
-        self.transport_registry = transport_registry or TransportRegistry().load_config(config)
+        self.transport_registry = self.transport_registry or TransportRegistry().load_config(
+            self.config
+        )
         self.schema = Schema(
             schema_transport=self.transport_registry.get_schema_transport("default"),
             max_age_seconds=self.config.bus().schema.ttl,
             human_readable=self.config.bus().schema.human_readable,
         )
-        self._listeners = {}
-        self._background_tasks = []
-        self._hook_callbacks = defaultdict(list)
-        self._exit_code = 0
-        self._call_queue = janus.Queue()
-        self._is_worker = False
-        self._bus_thread = threading.current_thread()
 
-    @assert_in_bus_thread()
+        # TODO: Cleanup on bus close
+        perform_calls_task = asyncio.ensure_future(self._perform_calls())
+        perform_calls_task.add_done_callback(make_exception_checker(die=True))
+
+        self._bus_thread_ready.set()
+
+        # TODO: TEMPORARY, SHOULD ONLY RUN FOR CLIENT
+        asyncio.get_event_loop().run_forever()
+
+    @run_in_bus_thread()
     async def setup_async(self, plugins: dict = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
 
@@ -160,7 +190,7 @@ class BusClient(object):
     def close(self):
         block(self.close_async(), timeout=5)
 
-    @assert_in_bus_thread()
+    @run_in_bus_thread()
     async def close_async(self):
         listener_tasks = [task for task in all_tasks() if getattr(task, "is_listener", False)]
 
@@ -179,16 +209,7 @@ class BusClient(object):
     def loop(self):
         return get_event_loop()
 
-    @property
-    def is_worker(self):
-        """Is this client running within a lightbus worker?
-
-         This will be the case within a 'lightbus run' command, but not
-         when the client is being used as a simple client.
-         """
-        return self._is_worker
-
-    @assert_in_bus_thread()
+    @run_in_bus_thread()
     def run_forever(self, *, consume_rpcs=True):
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())
@@ -242,15 +263,11 @@ class BusClient(object):
         monitor_task = asyncio.ensure_future(self.schema.monitor())
         monitor_task.add_done_callback(make_exception_checker(die=True))
 
-        # Setup consumption of perform_calls
-        perform_calls_task = asyncio.ensure_future(self._perform_calls())
-        perform_calls_task.add_done_callback(make_exception_checker(die=True))
-
         logger.info("Executing before_server_start & on_start hooks...")
         await self._execute_hook("before_server_start")
         logger.info("Execution of before_server_start & on_start hooks was successful")
 
-        return consume_rpc_task, monitor_task, perform_calls_task
+        return consume_rpc_task, monitor_task
 
     def _actually_run_forever(self):  # pragma: no cover
         """Simply start the loop running forever
@@ -267,7 +284,7 @@ class BusClient(object):
 
     # RPCs
 
-    @run_in_main_thread()
+    @run_in_bus_thread()
     async def consume_rpcs(self, apis: List[Api] = None):
         if apis is None:
             apis = self.api_registry.all()
@@ -333,7 +350,7 @@ class BusClient(object):
 
             await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
-    @run_in_main_thread()
+    @run_in_bus_thread()
     async def call_rpc_remote(
         self, api_name: str, name: str, kwargs: dict = frozendict(), options: dict = frozendict()
     ):
@@ -455,7 +472,7 @@ class BusClient(object):
 
     # Events
 
-    @run_in_main_thread()
+    @run_in_bus_thread()
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         kwargs = kwargs or {}
         try:
@@ -512,7 +529,7 @@ class BusClient(object):
             [(api_name, name)], listener, listener_name=listener_name, options=options
         )
 
-    @run_in_main_thread()
+    @run_in_bus_thread()
     async def listen_for_events(
         self, events: List[Tuple[str, str]], listener, listener_name: str, options: dict = None
     ):
@@ -608,7 +625,7 @@ class BusClient(object):
         elif isinstance(message, ResultMessage):
             self.schema.validate_response(api_name, event_or_rpc_name, message.result)
 
-    @run_in_main_thread()
+    @run_in_bus_thread()
     def add_background_task(
         self, coroutine: Union[Coroutine, asyncio.Future], cancel_on_close=True
     ) -> asyncio.Task:
@@ -809,7 +826,7 @@ class BusClient(object):
     def register_api(self, api: Api):
         block(self.register_api_async(api), timeout=5)
 
-    @run_in_main_thread()
+    @run_in_bus_thread()
     async def register_api_async(self, api: Api):
         self.api_registry.add(api)
         await self.schema.add_api(api)

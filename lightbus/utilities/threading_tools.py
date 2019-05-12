@@ -9,7 +9,7 @@ from lightbus.exceptions import CannotRunInChildThread
 logger = logging.getLogger(__name__)
 
 
-def run_in_main_thread():
+def run_in_bus_thread():
     """Decorator to ensure any method invocations are passed to the main thread"""
     destination_thread = threading.current_thread()
 
@@ -23,17 +23,11 @@ def run_in_main_thread():
             # Assume the first arg is the 'self', i.e. the bus client
             bus = args[0]
 
-            if not bus.is_worker:
-                # Allow cross-thread calls if this process is a client
-                # rather than a worker. This relies on users understanding
-                # that lightbus is not thead-safe.
-                return fn(*args, **kwargs)
-
             # We'll provide a queue as the return path for results
             result_queue = janus.Queue()
 
             # Enqueue the function, it's arguments, and our return path queue
-            logger.debug("Adding callable to queue")
+            logger.debug(f"Adding callable {fn.__module__}.{fn.__name__} to queue")
             bus._call_queue.sync_q.put((fn, args, kwargs, result_queue))
 
             # Wait for a return value on the result queue
@@ -52,7 +46,7 @@ def run_in_main_thread():
                         f"You are trying to access a Future (or Task) which cannot be safely used in this thread.\n\n"
                         f"This Future was returned by {fn.__module__}.{fn.__name__}() and was created within "
                         f"thead {destination_thread} and returned back to thread {threading.current_thread()}.\n\n"
-                        f"This functionality was provided by the @run_in_main_thread decorator, which is also the "
+                        f"This functionality was provided by the @run_in_bus_thread decorator, which is also the "
                         f"source of this message.\n\n"
                         f"Reason: Futures are tied to a specific event loop, and event loops are thread-specific. "
                         f"Passing futures between threads is therefore a really bad idea, as the future will be "
