@@ -61,6 +61,7 @@ def issubclass_safe(value, type_):
 
 
 def parse_hint(hint: Type) -> Tuple[Type, Optional[List]]:
+    # TODO: Cleanup this logic (especially if/when python 3.6 support is dropped)
     if sys.version_info >= (3, 7):
         if hasattr(hint, "__origin__"):
             # Python 3.7, and this is a type hint (eg typing.Union)
