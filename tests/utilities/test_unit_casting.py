@@ -123,6 +123,23 @@ class DataclassWithMappingToCustomObject(object):
     a: Mapping[str, CustomClassWithMagicMethod]
 
 
+# @dataclass
+# class LedgerRecord(object):
+#     uuid: UUID
+#     message: str
+#     timestamp: datetime
+#     user: Optional[UUID]
+#     actions: Dict[str, _url]
+#     entities: List[Tuple[_verb, LedgerEntity]] = tuple()
+
+_verb = str
+
+
+@dataclass
+class NamedTupleWithMappingToNestedTuple(object):
+    a: List[Tuple[_verb, int]] = tuple()
+
+
 @pytest.mark.parametrize(
     "test_input,hint,expected",
     [
@@ -175,6 +192,11 @@ class DataclassWithMappingToCustomObject(object):
         (["1", 2], Set[int], {1, 2}),
         (["1", 2], Tuple, ("1", 2)),
         (["1", "a", "2"], Tuple[int, str, int], (1, "a", 2)),
+        (
+            {"a": [["a", "1"], ["b", 2]]},
+            NamedTupleWithMappingToNestedTuple,
+            NamedTupleWithMappingToNestedTuple(a=[("a", 1), ("b", 2)]),
+        ),
         ("a", ExampleEnum, ExampleEnum.foo),
         (
             {"a": {"z": 1}, "b": {"z": 1}, "c": {"z": 1}},
@@ -237,6 +259,7 @@ class DataclassWithMappingToCustomObject(object):
         "set_generic_typed",
         "tuple_generic_untyped",
         "tuple_generic_typed",
+        "tuple_generic_nested_typed",
         "enum",
         "nametuple_with_mapping",
         "dataclass_with_mapping",
