@@ -75,7 +75,7 @@ def parse_hint(hint: Type) -> Tuple[Type, Optional[List]]:
             subs_tree = hint._subs_tree()
             if isinstance(subs_tree, Sequence):
                 # Type hint has sub types (e.g. Sequence[str])
-                return subs_tree[0], subs_tree[1:]
+                return subs_tree[0], hint.__args__
             else:
                 # Type hint has no sub types (e.g. Sequence)
                 return hint, None
