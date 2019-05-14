@@ -1,6 +1,6 @@
 import inspect
 import sys
-from typing import Optional, Type, Union, Tuple, List, Sequence
+from typing import Optional, Type, Union, Tuple, List, Sequence, TypeVar
 
 
 def type_is_namedtuple(t) -> bool:
@@ -64,7 +64,10 @@ def parse_hint(hint: Type) -> Tuple[Type, Optional[List]]:
     if sys.version_info >= (3, 7):
         if hasattr(hint, "__origin__"):
             # Python 3.7, and this is a type hint (eg typing.Union)
-            return hint.__origin__, hint.__args__
+            # Filter out TypeVars such as KT & VT_co (they generally
+            # indicate that no explicit hint was given)
+            hint_args = [a for a in hint.__args__ if not isinstance(a, TypeVar)]
+            return hint.__origin__, hint_args or None
         else:
             # Python 3.7, but this is something other than a type hint
             # (e.g. an int or datetime)
