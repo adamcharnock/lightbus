@@ -30,6 +30,7 @@ import lightbus
 import lightbus.creation
 from lightbus import BusClient
 from lightbus.commands import COMMAND_PARSED_ARGS
+from lightbus.exceptions import BusAlreadyClosed
 from lightbus.path import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import PluginRegistry
@@ -181,7 +182,10 @@ def dummy_bus(loop):
         plugins=[],
     )
     yield dummy_bus
-    dummy_bus.client.close()
+    try:
+        dummy_bus.client.close()
+    except BusAlreadyClosed:
+        pass
 
 
 @pytest.yield_fixture

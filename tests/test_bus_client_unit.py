@@ -421,7 +421,7 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
 
 
 @pytest.mark.asyncio
-async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, loop, caplog):
+async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, caplog):
     dummy_bus.client.config.api("default").on_error = OnError.SHUTDOWN
 
     class SomeException(Exception):
@@ -430,23 +430,21 @@ async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, 
     def listener(*args, **kwargs):
         raise SomeException()
 
-    task = await dummy_bus.client.listen_for_events(
-        events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
-    )
+    with mock.patch.object(dummy_bus.client, "_handle_error_in_worker_thread") as m:
+        # Start the listener
+        task = await dummy_bus.client.listen_for_events(
+            events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
+        )
 
-    # Don't let the event loop be stopped as it is needed to run the tests!
-    with mock.patch.object(loop, "stop") as m:
-        # Dummy event transport fires events every 0.1 seconds
-        await asyncio.sleep(0.15)
+        # Wait until the bus closes (due to the error the handler above raises
+        for _ in range(1, 300):
+            if dummy_bus.client._closed:
+                break
+            await asyncio.sleep(0.01)
+
+        # Check the bus actually decided to quit
+        # (we don't let it actually quit because that breaks the tests)
         assert m.called
-
-    assert loop.lightbus_exit_code
-    del loop.lightbus_exit_code  # Delete to stop lightbus actually quitting
-
-    # Close the bus to force tasks to be cleaned up
-    # (This would have happened normally when the event loop was stopped,
-    # but we prevented that my mocking stop() above)
-    await dummy_bus.client.close_async()
 
     log_levels = {r.levelname for r in caplog.records}
     # Ensure the error was logged

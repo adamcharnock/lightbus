@@ -186,3 +186,11 @@ class TransportsNotInstalled(LightbusException):
 
 class CannotRunInChildThread(LightbusException):
     pass
+
+
+class LightbusExit(LightbusException):
+    pass
+
+
+class BusAlreadyClosed(LightbusException):
+    pass

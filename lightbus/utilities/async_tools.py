@@ -3,6 +3,7 @@ import asyncio
 import inspect
 import logging
 import threading
+from contextlib import contextmanager
 from functools import partial
 from inspect import isawaitable
 from time import time
@@ -107,9 +108,22 @@ def check_for_exception(fut: asyncio.Future, die=True):
 
     task.add_done_callback(check_for_exception)
     """
-    try:
+    with exception_handling_context(die):
         if fut.exception():
             fut.result()
+
+
+def make_exception_checker(die=True):
+    """Creates a callback handler (i.e. check_for_exception())
+    which will be called with the given arguments"""
+    return partial(check_for_exception, die=die)
+
+
+@contextmanager
+def exception_handling_context(die=True):
+    """Handle exceptions in user code"""
+    try:
+        yield
     except (asyncio.CancelledError, LightbusShutdownInProgress):
         return
     except Exception as e:
@@ -117,15 +131,9 @@ def check_for_exception(fut: asyncio.Future, die=True):
         # listener setup will never be logged
         logger.exception(e)
         if die:
-            loop = fut._loop
+            loop = asyncio.get_event_loop()
             loop.lightbus_exit_code = 1
             loop.stop()
-
-
-def make_exception_checker(die=True):
-    """Creates a callback handler (i.e. check_for_exception())
-    which will be called with the given arguments"""
-    return partial(check_for_exception, die=die)
 
 
 async def run_user_provided_callable(callable, args, kwargs, bus_client, die_on_exception=True):
@@ -145,9 +153,10 @@ async def run_user_provided_callable(callable, args, kwargs, bus_client, die_on_
     if asyncio.iscoroutinefunction(callable):
         return await callable(*args, **kwargs)
 
-    future = asyncio.get_event_loop().run_in_executor(
-        executor=None, func=lambda: callable(*args, **kwargs)
-    )
+    with exception_handling_context():
+        future = asyncio.get_event_loop().run_in_executor(
+            executor=None, func=lambda: callable(*args, **kwargs)
+        )
     return await future
 
 

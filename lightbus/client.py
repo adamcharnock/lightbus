@@ -3,6 +3,7 @@ import contextlib
 import functools
 import inspect
 import logging
+import os
 import signal
 import threading
 import time
@@ -29,6 +30,8 @@ from lightbus.exceptions import (
     InvalidName,
     LightbusShutdownInProgress,
     InvalidSchedule,
+    LightbusExit,
+    BusAlreadyClosed,
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
@@ -88,6 +91,11 @@ class BusClient(object):
         self.schema = None
         # Set by worker()
         self._call_queue = None
+        self._closed = False
+
+        # Setting up bus thread
+        # (we use a lambda to allow for testing/mocking of _handle_error_in_worker_thread() )
+        signal.signal(signal.SIGUSR1, lambda *a: self._handle_error_in_worker_thread())
 
         BusClient._TOTAL_LIGHTBUS_THREADS += 1
 
@@ -99,6 +107,11 @@ class BusClient(object):
         self._bus_thread.start()
         self._bus_thread_ready.wait()
         logger.debug(f"Waiting over, bus thread {self._bus_thread.name} is now ready")
+
+    def _handle_error_in_worker_thread(self):
+        # We work on the assumption that the worker thread will have already
+        # closed itself down at this point (ie. cancelled its tasks, closed the bus)
+        raise SystemExit(1)
 
     def worker(self):
         logger.debug(f"Bus thread {self._bus_thread.name} initialising")
@@ -124,7 +137,15 @@ class BusClient(object):
 
         asyncio.get_event_loop().run_forever()
 
+        # Cleanup
         block(cancel(perform_calls_task))
+
+        self.close()
+
+        if hasattr(self.loop, "lightbus_exit_code"):
+            # Send the signal for the main thread to close down.
+            # See BusClient._handle_error_in_worker_thread()
+            os.kill(os.getpid(), signal.SIGUSR1)
 
     @run_in_bus_thread()
     async def setup_async(self, plugins: dict = None):
@@ -192,10 +213,16 @@ class BusClient(object):
         block(self.setup_async(plugins), timeout=5)
 
     def close(self):
+        if self._closed:
+            raise BusAlreadyClosed()
+
         block(self.close_async(), timeout=5)
 
     @run_in_bus_thread()
     async def close_async(self):
+        if self._closed:
+            raise BusAlreadyClosed()
+
         listener_tasks = [task for task in all_tasks() if getattr(task, "is_listener", False)]
 
         for task in chain(listener_tasks, self._background_tasks):
@@ -208,6 +235,7 @@ class BusClient(object):
             await transport.close()
 
         await self.schema.schema_transport.close()
+        self._closed = True
 
     @property
     def loop(self):
@@ -852,14 +880,14 @@ class BusClient(object):
 
         Launched in Client.run_forever()
         """
-        # TODO: The name 'perform_calls' is to generic, find all uses and rename to something better
+        # TODO: The name 'perform_calls' is too generic, find all uses and rename to something better
         while True:
             # Wait for calls
             logger.debug("Awaiting calls on the call queue")
             fn, args, kwargs, result_queue = await self._call_queue.async_q.get()
 
             # Execute call
-            logger.debug("Call received, executing")
+            logger.debug(f"Call to {fn.__name__} received, executing")
             try:
                 result = await fn(*args, **kwargs)
             except Exception as e:
@@ -870,7 +898,7 @@ class BusClient(object):
             self._call_queue.async_q.task_done()
 
             # Put the result in the result queue
-            logger.debug("Returning result")
+            logger.debug(f"Returning result {result}")
             await result_queue.async_q.put(result)
 
 
