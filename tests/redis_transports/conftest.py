@@ -6,6 +6,22 @@ from aioredis import create_redis_pool
 
 import lightbus
 import lightbus.creation
+from lightbus import (
+    RedisRpcTransport,
+    RedisSchemaTransport,
+    RedisResultTransport,
+    RedisEventTransport,
+)
+from lightbus.config.structure import (
+    RootConfig,
+    ApiConfig,
+    RpcTransportSelector,
+    ResultTransportSelector,
+    EventTransportSelector,
+    SchemaTransportSelector,
+    SchemaConfig,
+    BusConfig,
+)
 from lightbus.path import BusPath
 from lightbus.transports.redis import StreamUse
 
@@ -41,15 +57,26 @@ async def redis_schema_transport(new_redis_pool, loop):
 
 
 @pytest.yield_fixture
-def bus(
-    loop, redis_rpc_transport, redis_result_transport, redis_event_transport, redis_schema_transport
-):
+def bus(loop, redis_server_url):
+    # fmt: off
     bus = lightbus.creation.create(
-        rpc_transport=redis_rpc_transport,
-        result_transport=redis_result_transport,
-        event_transport=redis_event_transport,
-        schema_transport=redis_schema_transport,
+        config=RootConfig(
+            apis={
+                'default': ApiConfig(
+                    rpc_transport=RpcTransportSelector(redis=RedisRpcTransport.Config(url=redis_server_url)),
+                    result_transport=ResultTransportSelector(redis=RedisResultTransport.Config(url=redis_server_url)),
+                    event_transport=EventTransportSelector(redis=RedisEventTransport.Config(url=redis_server_url)),
+                )
+            },
+            bus=BusConfig(
+                schema=SchemaConfig(
+                    transport=SchemaTransportSelector(redis=RedisSchemaTransport.Config(url=redis_server_url)),
+                )
+            )
+        ),
+        plugins=[],
     )
+    # fmt: on
     yield bus
     bus.client.close()
 

@@ -30,6 +30,16 @@ import lightbus
 import lightbus.creation
 from lightbus import BusClient
 from lightbus.commands import COMMAND_PARSED_ARGS
+from lightbus.config.structure import (
+    RootConfig,
+    ApiConfig,
+    EventTransportSelector,
+    RpcTransportSelector,
+    ResultTransportSelector,
+    SchemaTransportSelector,
+    BusConfig,
+    SchemaConfig,
+)
 from lightbus.exceptions import BusAlreadyClosed
 from lightbus.path import BusPath
 from lightbus.message import EventMessage
@@ -174,13 +184,29 @@ def _closable(loop):
 
 @pytest.yield_fixture
 def dummy_bus(loop):
+    # fmt: off
     dummy_bus = lightbus.creation.create(
         rpc_transport=lightbus.DebugRpcTransport(),
         result_transport=lightbus.DebugResultTransport(),
         event_transport=lightbus.DebugEventTransport(),
         schema_transport=lightbus.DebugSchemaTransport(),
+        config=RootConfig(
+            apis={
+                'default': ApiConfig(
+                    rpc_transport=RpcTransportSelector(debug={}),
+                    result_transport=ResultTransportSelector(debug={}),
+                    event_transport=EventTransportSelector(debug={}),
+                )
+            },
+            bus=BusConfig(
+                schema=SchemaConfig(
+                    transport=SchemaTransportSelector(debug={}),
+                )
+            )
+        ),
         plugins=[],
     )
+    # fmt: on
     yield dummy_bus
     try:
         dummy_bus.client.close()

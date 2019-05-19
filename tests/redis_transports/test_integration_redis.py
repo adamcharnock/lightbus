@@ -55,18 +55,10 @@ async def test_rpc(bus: lightbus.path.BusPath, dummy_api, thread):
     """Full rpc call integration test"""
     await bus.client.register_api_async(dummy_api)
 
-    async def co_call_rpc():
-        await asyncio.sleep(0.1)
-        return await bus.my.dummy.my_proc.call_async(field="Hello! 😎")
+    await bus.client.consume_rpcs(apis=[dummy_api])
 
-    async def co_consume_rpcs():
-        return await bus.client.consume_rpcs(apis=[dummy_api])
-
-    (call_task,), (consume_task,) = await asyncio.wait(
-        [co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED
-    )
-    consume_task.cancel()
-    assert call_task.result() == "value: Hello! 😎"
+    result = await bus.my.dummy.my_proc.call_async(field="Hello! 😎")
+    assert result == "value: Hello! 😎"
 
 
 @pytest.mark.asyncio

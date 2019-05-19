@@ -123,8 +123,6 @@ class RedisTransportMixin(object):
 
         try:
             internal_pool = self._redis_pool._pool_or_conn
-            if threading.current_thread() == threading.main_thread():
-                raise Exception()
             if hasattr(internal_pool, "size") and hasattr(internal_pool, "maxsize"):
                 if internal_pool.size == internal_pool.maxsize:
                     logging.critical(

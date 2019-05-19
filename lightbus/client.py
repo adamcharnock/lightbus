@@ -323,7 +323,7 @@ class BusClient(object):
 
     # RPCs
 
-    @run_in_bus_thread()
+    @run_in_bus_thread(do_await=False)
     async def consume_rpcs(self, apis: List[Api] = None):
         if apis is None:
             apis = self.api_registry.all()
@@ -884,12 +884,14 @@ class BusClient(object):
         while True:
             # Wait for calls
             logger.debug("Awaiting calls on the call queue")
-            fn, args, kwargs, result_queue = await self._call_queue.async_q.get()
+            fn, args, kwargs, result_queue, do_await = await self._call_queue.async_q.get()
 
             # Execute call
             logger.debug(f"Call to {fn.__name__} received, executing")
             try:
-                result = await fn(*args, **kwargs)
+                result = fn(*args, **kwargs)
+                if do_await:
+                    result = await result
             except Exception as e:
                 result = e
 

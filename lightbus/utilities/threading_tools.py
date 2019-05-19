@@ -9,7 +9,7 @@ from lightbus.exceptions import CannotRunInChildThread
 logger = logging.getLogger(__name__)
 
 
-def run_in_bus_thread():
+def run_in_bus_thread(do_await=True):
     """Decorator to ensure any method invocations are passed to the main thread"""
 
     def decorator(fn):
@@ -29,7 +29,7 @@ def run_in_bus_thread():
 
             # Enqueue the function, it's arguments, and our return path queue
             logger.debug(f"Adding callable {fn.__module__}.{fn.__name__} to queue")
-            bus_client._call_queue.sync_q.put((fn, args, kwargs, result_queue))
+            bus_client._call_queue.sync_q.put((fn, args, kwargs, result_queue, do_await))
 
             # Wait for a return value on the result queue
             logger.debug("Awaiting execution completion")
