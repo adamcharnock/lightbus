@@ -9,7 +9,7 @@ from lightbus.exceptions import CannotRunInChildThread
 logger = logging.getLogger(__name__)
 
 
-def run_in_bus_thread(do_await=True):
+def run_in_bus_thread(bus_client=None):
     """Decorator to ensure any method invocations are passed to the main thread"""
 
     def decorator(fn):
@@ -17,9 +17,16 @@ def run_in_bus_thread(do_await=True):
 
         def wrapper(*args, **kwargs):
             # Assume the first arg is the 'self', i.e. the bus client
-            bus_client = args[0]
+            bus_client_ = bus_client or args[0]
 
-            bus_thread = bus_client._bus_thread
+            bus_thread = bus_client_._bus_thread
+
+            if not bus_thread:
+                # TODO: Improve exception
+                raise Exception("Bus thread does not exist yet")
+            if not bus_thread.is_alive():
+                # TODO: Improve exception
+                raise Exception(f"Bus thread {bus_thread} is not alive")
 
             if threading.current_thread() == bus_thread:
                 return fn(*args, **kwargs)
@@ -29,18 +36,19 @@ def run_in_bus_thread(do_await=True):
 
             # Enqueue the function, it's arguments, and our return path queue
             logger.debug(f"Adding callable {fn.__module__}.{fn.__name__} to queue")
-            bus_client._call_queue.sync_q.put((fn, args, kwargs, result_queue, do_await))
+            bus_client_._call_queue.sync_q.put((fn, args, kwargs, result_queue))
 
             # Wait for a return value on the result queue
             logger.debug("Awaiting execution completion")
             result = result_queue.sync_q.get()
 
             # Cleanup
-            bus_client._call_queue.sync_q.join()  # Needed?
+            bus_client_._call_queue.sync_q.join()  # Needed?
             result_queue.close()
 
             if isinstance(result, asyncio.Future):
-                # Returning futures here really deserves a nice, verbose, explanatory, warning message.
+                # Wrap any returned futures in a WarningProxy, which will show a nice
+                # verbose warning should the user try to use the future
                 result = WarningProxy(
                     proxied=result,
                     message=(
@@ -99,3 +107,28 @@ class WarningProxy(object):
     def __getattr__(self, item):
         logger.warning(self.message)
         return getattr(self.proxied, item)
+
+    def __await__(self):
+        return self.__getattr__("__await__")()
+
+
+class BusThreadProxy(object):
+    def __init__(self, proxied, bus_client):
+        self._proxied = proxied
+        self._bus_client = bus_client
+
+    def __repr__(self):
+        return f"<BusThreadProxy: {super().__repr__()}>"
+
+    def __getattr__(self, item):
+        value = getattr(self._proxied, item)
+        if threading.current_thread() == self._bus_client._bus_thread:
+            return value
+
+        if callable(value):
+            return run_in_bus_thread(bus_client=self._bus_client)(value)
+        else:
+            return value
+
+    def __contains__(self, item):
+        return self.__getattr__("__contains__")(item)

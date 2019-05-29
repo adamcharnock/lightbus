@@ -22,6 +22,7 @@ from lightbus.config.structure import (
     SchemaConfig,
     BusConfig,
 )
+from lightbus.exceptions import BusAlreadyClosed
 from lightbus.path import BusPath
 from lightbus.transports.redis import StreamUse
 
@@ -83,7 +84,11 @@ def bus(loop, redis_server_url):
     )
     # fmt: on
     yield bus
-    bus.client.close()
+
+    try:
+        bus.client.close()
+    except BusAlreadyClosed:
+        pass
 
 
 @pytest.fixture(name="fire_dummy_events")

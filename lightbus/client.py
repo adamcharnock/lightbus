@@ -57,7 +57,11 @@ from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.logging import log_transport_information
-from lightbus.utilities.threading_tools import run_in_bus_thread, assert_in_bus_thread
+from lightbus.utilities.threading_tools import (
+    run_in_bus_thread,
+    assert_in_bus_thread,
+    BusThreadProxy,
+)
 
 if False:
     # pylint: disable=unused-import
@@ -125,11 +129,12 @@ class BusClient(object):
         self.transport_registry = self.transport_registry or TransportRegistry().load_config(
             self.config
         )
-        self.schema = Schema(
+        schema = Schema(
             schema_transport=self.transport_registry.get_schema_transport("default"),
             max_age_seconds=self.config.bus().schema.ttl,
             human_readable=self.config.bus().schema.human_readable,
         )
+        self.schema = BusThreadProxy(proxied=schema, bus_client=self)
 
         # TODO: Cleanup on bus close
         perform_calls_task = asyncio.ensure_future(self._perform_calls())
@@ -230,20 +235,24 @@ class BusClient(object):
         if self._closed:
             raise BusAlreadyClosed()
 
-        listener_tasks = [task for task in all_tasks() if getattr(task, "is_listener", False)]
+        try:
+            listener_tasks = [task for task in all_tasks() if getattr(task, "is_listener", False)]
 
-        for task in chain(listener_tasks, self._background_tasks):
-            try:
-                await cancel(task)
-            except Exception as e:
-                logger.exception(e)
+            for task in chain(listener_tasks, self._background_tasks):
+                try:
+                    await cancel(task)
+                except Exception as e:
+                    logger.exception(e)
 
-        for transport in self.transport_registry.get_all_transports():
-            await transport.close()
+            for transport in self.transport_registry.get_all_transports():
+                await transport.close()
 
-        await self.schema.schema_transport.close()
-        self._closed = True
-        self.loop.stop()
+            await self.schema.schema_transport.close()
+            self._closed = True
+        finally:
+            # Whatever happens, make sure we stop the event loop otherwise the
+            # bus thread will keep running and prevent the process for exiting
+            self.loop.stop()
 
     @property
     def loop(self):
@@ -591,7 +600,7 @@ class BusClient(object):
     @run_in_bus_thread()
     async def listen_for_events(
         self, events: List[Tuple[str, str]], listener, listener_name: str, options: dict = None
-    ) -> asyncio.Task:
+    ):
         self._sanity_check_listener(listener)
 
         for api_name, name in events:
@@ -604,7 +613,7 @@ class BusClient(object):
             options=options,
             bus_client=self,
         )
-        return event_listener.make_task()
+        event_listener.make_task()
 
     # Results
 
@@ -903,13 +912,13 @@ class BusClient(object):
         while True:
             # Wait for calls
             logger.debug("Awaiting calls on the call queue")
-            fn, args, kwargs, result_queue, do_await = await self._call_queue.async_q.get()
+            fn, args, kwargs, result_queue = await self._call_queue.async_q.get()
 
             # Execute call
             logger.debug(f"Call to {fn.__name__} received, executing")
             try:
                 result = fn(*args, **kwargs)
-                if do_await:
+                if inspect.isawaitable(result):
                     result = await result
             except Exception as e:
                 result = e
