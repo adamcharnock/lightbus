@@ -8,6 +8,10 @@ from lightbus.message import RpcMessage, EventMessage, ResultMessage
 from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
 
+if False:
+    # pylint: disable=unused-import
+    from lightbus.config import Config
+
 T = TypeVar("T")
 logger = logging.getLogger(__name__)
 
@@ -24,7 +28,7 @@ class TransportMetaclass(type):
 
 class Transport(object, metaclass=TransportMetaclass):
     @classmethod
-    def from_config(cls: Type[T], *config) -> T:
+    def from_config(cls: Type[T], config: "Config") -> T:
         return cls()
 
     async def open(self):
