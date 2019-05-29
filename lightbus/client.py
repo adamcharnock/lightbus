@@ -706,7 +706,7 @@ class BusClient(object):
     @run_in_bus_thread()
     def add_background_task(
         self, coroutine: Union[Coroutine, asyncio.Future], cancel_on_close=True
-    ) -> asyncio.Task:
+    ):
         """Run a coroutine in the background
 
         The provided coroutine will be run in the background once
@@ -723,7 +723,6 @@ class BusClient(object):
         if cancel_on_close:
             # Store task for closing later
             self._background_tasks.append(task)
-        return task
 
     # Utilities
 
