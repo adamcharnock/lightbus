@@ -144,10 +144,17 @@ class BusClient(object):
 
         asyncio.get_event_loop().run_forever()
 
+        logging.debug(f"Event loop stopped in bus thread {self._bus_thread.name}. Closing down.")
+
         # Cleanup
         block(cancel(perform_calls_task))
 
+        # Close the call queue
+        self._call_queue.close()
+        block(self._call_queue.wait_closed())
+
         try:
+            # Close the bus
             self.close()
         except BusAlreadyClosed:
             # In the case of a normal shutdown the bus will already be marked as
@@ -248,6 +255,7 @@ class BusClient(object):
                 await transport.close()
 
             await self.schema.schema_transport.close()
+
             self._closed = True
         finally:
             # Whatever happens, make sure we stop the event loop otherwise the
