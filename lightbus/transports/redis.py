@@ -140,9 +140,9 @@ class RedisTransportMixin(object):
             )
 
     async def close(self):
+        self._closed = True
         if self._redis_pool:
             await self._close_redis_pool()
-        self._closed = True
 
     async def _close_redis_pool(self):
         self._redis_pool.close()
@@ -251,6 +251,10 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
     async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         while True:
+            if self._closed:
+                # Triggered during shutdown
+                raise TransportIsClosed("Transport is closed. Cannot consume RPCs")
+
             try:
                 return await self._consume_rpcs(apis)
             except (ConnectionClosedError, ConnectionResetError):
@@ -611,9 +615,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         finally:
             # Make sure we cleanup the tasks we created
             await cancel(consume_task, reclaim_task)
-
-    async def close(self):
-        await super().close()
 
     async def _fetch_new_messages(
         self, streams, consumer_group, expected_events, forever

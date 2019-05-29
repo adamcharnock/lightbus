@@ -32,6 +32,7 @@ from lightbus.exceptions import (
     InvalidSchedule,
     LightbusExit,
     BusAlreadyClosed,
+    TransportIsClosed,
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
@@ -141,7 +142,12 @@ class BusClient(object):
         # Cleanup
         block(cancel(perform_calls_task))
 
-        self.close()
+        try:
+            self.close()
+        except BusAlreadyClosed:
+            # In the case of a normal shutdown the bus will already be marked as
+            # closed by the time we get here.
+            pass
 
         if hasattr(self.loop, "lightbus_exit_code"):
             # Send the signal for the main thread to close down.
@@ -237,6 +243,7 @@ class BusClient(object):
 
         await self.schema.schema_transport.close()
         self._closed = True
+        self.loop.stop()
 
     @property
     def loop(self):
@@ -362,7 +369,11 @@ class BusClient(object):
         self, rpc_transport: RpcTransport, apis: List[Api] = None
     ):
         while True:
-            rpc_messages = await rpc_transport.consume_rpcs(apis)
+            try:
+                rpc_messages = await rpc_transport.consume_rpcs(apis)
+            except TransportIsClosed:
+                return
+
             for rpc_message in rpc_messages:
                 self._validate(rpc_message, "incoming")
 
