@@ -138,22 +138,14 @@ async def test_ids(bus: lightbus.path.BusPath, dummy_api, mocker):
     """Ensure the id comes back correctly"""
     await bus.client.register_api_async(dummy_api)
 
-    async def co_call_rpc():
-        await asyncio.sleep(0.1)
-        return await bus.my.dummy.my_proc.call_async(field="foo")
-
-    async def co_consume_rpcs():
-        return await bus.client.consume_rpcs(apis=[dummy_api])
-
     mocker.spy(bus.client, "send_result")
 
-    (call_task,), (consume_task,) = await asyncio.wait(
-        [co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED
-    )
+    await bus.client.consume_rpcs(apis=[dummy_api])
+    await bus.my.dummy.my_proc.call_async(field="foo")
+
     _, kw = bus.client.send_result.call_args
     rpc_message = kw["rpc_message"]
     result_message = kw["result_message"]
-    consume_task.cancel()
 
     assert rpc_message.id
     assert result_message.rpc_message_id

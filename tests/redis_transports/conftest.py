@@ -65,7 +65,12 @@ def bus(loop, redis_server_url):
                 'default': ApiConfig(
                     rpc_transport=RpcTransportSelector(redis=RedisRpcTransport.Config(url=redis_server_url)),
                     result_transport=ResultTransportSelector(redis=RedisResultTransport.Config(url=redis_server_url)),
-                    event_transport=EventTransportSelector(redis=RedisEventTransport.Config(url=redis_server_url)),
+                    event_transport=EventTransportSelector(redis=RedisEventTransport.Config(
+                        url=redis_server_url,
+                        stream_use=StreamUse.PER_EVENT,
+                        service_name="test_service",
+                        consumer_name="test_consumer",
+                    )),
                 )
             },
             bus=BusConfig(
