@@ -45,6 +45,9 @@ setup(
             "debug = lightbus:DebugResultTransport",
             "direct = lightbus:DirectResultTransport",
         ],
-        "lightbus_schema_transports": ["redis = lightbus:RedisSchemaTransport"],
+        "lightbus_schema_transports": [
+            "redis = lightbus:RedisSchemaTransport",
+            "debug = lightbus:DebugSchemaTransport",
+        ],
     },
 )

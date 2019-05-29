@@ -28,7 +28,13 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import lightbus
 import lightbus.creation
-from lightbus import BusClient
+from lightbus import (
+    BusClient,
+    RedisSchemaTransport,
+    DebugRpcTransport,
+    DebugResultTransport,
+    DebugEventTransport,
+)
 from lightbus.commands import COMMAND_PARSED_ARGS
 from lightbus.config.structure import (
     RootConfig,
@@ -183,24 +189,20 @@ def _closable(loop):
 
 
 @pytest.yield_fixture
-def dummy_bus(loop):
+def dummy_bus(loop, redis_server_url):
     # fmt: off
     dummy_bus = lightbus.creation.create(
-        rpc_transport=lightbus.DebugRpcTransport(),
-        result_transport=lightbus.DebugResultTransport(),
-        event_transport=lightbus.DebugEventTransport(),
-        schema_transport=lightbus.DebugSchemaTransport(),
         config=RootConfig(
             apis={
                 'default': ApiConfig(
-                    rpc_transport=RpcTransportSelector(debug={}),
-                    result_transport=ResultTransportSelector(debug={}),
-                    event_transport=EventTransportSelector(debug={}),
+                    rpc_transport=RpcTransportSelector(debug=DebugRpcTransport.Config()),
+                    result_transport=ResultTransportSelector(debug=DebugResultTransport.Config()),
+                    event_transport=EventTransportSelector(debug=DebugEventTransport.Config()),
                 )
             },
             bus=BusConfig(
                 schema=SchemaConfig(
-                    transport=SchemaTransportSelector(debug={}),
+                    transport=SchemaTransportSelector(redis=RedisSchemaTransport.Config(url=redis_server_url)),
                 )
             )
         ),
