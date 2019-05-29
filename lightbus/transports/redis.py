@@ -223,7 +223,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         expiry_key = f"rpc_expiry_key:{rpc_message.id}"
         logger.debug(
             LBullets(
-                L("Enqueuing message {} in Redis stream {}", Bold(rpc_message), Bold(queue_key)),
+                L("Enqueuing message {} in Redis list {}", Bold(rpc_message), Bold(queue_key)),
                 items=dict(**rpc_message.get_metadata(), kwargs=rpc_message.get_kwargs()),
             )
         )

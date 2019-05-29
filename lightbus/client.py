@@ -80,8 +80,9 @@ class BusClient(object):
     _TOTAL_LIGHTBUS_THREADS = 0
 
     def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
-        self._listeners = {}
-        self._background_tasks = []
+        self._listeners = {}  # event listeners
+        self._consumers = []  # RPC consumers
+        self._background_tasks = []  # Other background tasks added by user
         self._hook_callbacks = defaultdict(list)
         self._exit_code = 0
         self.config = config
@@ -323,8 +324,15 @@ class BusClient(object):
 
     # RPCs
 
-    @run_in_bus_thread(do_await=False)
+    @run_in_bus_thread()
     async def consume_rpcs(self, apis: List[Api] = None):
+        # TODO: Should return a background task like listen_for_events() does, and
+        # that task should be cleaned up automatically (like the listeners). Or, to
+        # look at it another way, it should be possible start RPCs being consumed without
+        # having access to the event loop. The current style of using asyncio.ensure_future(bus.client.consume_rpcs())
+        # requires the event loop, but that loop is now internal to the bus.
+        # So to put it another way, no client functionality should rely on the caller being
+        # able to background a coroutine.
         if apis is None:
             apis = self.api_registry.all()
 
@@ -334,60 +342,60 @@ class BusClient(object):
                 "or the API registry is empty."
             )
 
-        while True:
-            # Not all APIs will necessarily be served by the same transport, so group them
-            # accordingly
-            api_names = [api.meta.name for api in apis]
-            api_names_by_transport = self.transport_registry.get_rpc_transports(api_names)
+        # Not all APIs will necessarily be served by the same transport, so group them
+        # accordingly
+        api_names = [api.meta.name for api in apis]
+        api_names_by_transport = self.transport_registry.get_rpc_transports(api_names)
 
-            coroutines = []
-            for rpc_transport, transport_api_names in api_names_by_transport:
-                transport_apis = list(map(self.api_registry.get, transport_api_names))
-                coroutines.append(
-                    self._consume_rpcs_with_transport(
-                        rpc_transport=rpc_transport, apis=transport_apis
-                    )
-                )
+        coroutines = []
+        for rpc_transport, transport_api_names in api_names_by_transport:
+            transport_apis = list(map(self.api_registry.get, transport_api_names))
+            coroutines.append(
+                self._consume_rpcs_with_transport(rpc_transport=rpc_transport, apis=transport_apis)
+            )
 
-            await asyncio.gather(*coroutines)
+        task = asyncio.ensure_future(asyncio.gather(*coroutines))
+        task.add_done_callback(make_exception_checker(die=True))
+        self._consumers.append(task)
 
     async def _consume_rpcs_with_transport(
         self, rpc_transport: RpcTransport, apis: List[Api] = None
     ):
-        rpc_messages = await rpc_transport.consume_rpcs(apis)
-        for rpc_message in rpc_messages:
-            self._validate(rpc_message, "incoming")
+        while True:
+            rpc_messages = await rpc_transport.consume_rpcs(apis)
+            for rpc_message in rpc_messages:
+                self._validate(rpc_message, "incoming")
 
-            await self._execute_hook("before_rpc_execution", rpc_message=rpc_message)
-            try:
-                result = await self.call_rpc_local(
-                    api_name=rpc_message.api_name,
-                    name=rpc_message.procedure_name,
-                    kwargs=rpc_message.kwargs,
+                await self._execute_hook("before_rpc_execution", rpc_message=rpc_message)
+                try:
+                    result = await self.call_rpc_local(
+                        api_name=rpc_message.api_name,
+                        name=rpc_message.procedure_name,
+                        kwargs=rpc_message.kwargs,
+                    )
+                except SuddenDeathException:
+                    # Used to simulate message failure for testing
+                    return
+                except CancelledError:
+                    raise
+                except Exception as e:
+                    result = e
+                else:
+                    result = deform_to_bus(result)
+
+                result_message = ResultMessage(result=result, rpc_message_id=rpc_message.id)
+                await self._execute_hook(
+                    "after_rpc_execution", rpc_message=rpc_message, result_message=result_message
                 )
-            except SuddenDeathException:
-                # Used to simulate message failure for testing
-                return
-            except CancelledError:
-                raise
-            except Exception as e:
-                result = e
-            else:
-                result = deform_to_bus(result)
 
-            result_message = ResultMessage(result=result, rpc_message_id=rpc_message.id)
-            await self._execute_hook(
-                "after_rpc_execution", rpc_message=rpc_message, result_message=result_message
-            )
+                self._validate(
+                    result_message,
+                    "outgoing",
+                    api_name=rpc_message.api_name,
+                    procedure_name=rpc_message.procedure_name,
+                )
 
-            self._validate(
-                result_message,
-                "outgoing",
-                api_name=rpc_message.api_name,
-                procedure_name=rpc_message.procedure_name,
-            )
-
-            await self.send_result(rpc_message=rpc_message, result_message=result_message)
+                await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
     @run_in_bus_thread()
     async def call_rpc_remote(
@@ -572,7 +580,7 @@ class BusClient(object):
     @run_in_bus_thread()
     async def listen_for_events(
         self, events: List[Tuple[str, str]], listener, listener_name: str, options: dict = None
-    ):
+    ) -> asyncio.Task:
         self._sanity_check_listener(listener)
 
         for api_name, name in events:
