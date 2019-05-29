@@ -128,10 +128,6 @@ class ApisMustUseSameTransport(LightbusException):
     pass
 
 
-class ApisMustUseTransactionalTransport(LightbusException):
-    pass
-
-
 class OnlyAvailableOnRootNode(LightbusException):
     pass
 
