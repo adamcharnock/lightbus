@@ -249,16 +249,17 @@ class BusClient(object):
         """Close the bus client
 
         This will cancel all tasks and close all transports/connections
+        """
+        block(self.close_async(_stop_worker=_stop_worker))
 
-        Note that this is subtly different to calling close_async() as this
-        synchronous version will also stop the bus clients internal bus loop,
-        thereby stopping the bus worker thread.
+    async def close_async(self, _stop_worker=True):
+        """Async version of close()
         """
         try:
             if self._closed:
                 raise BusAlreadyClosed()
 
-            block(self.close_async(), timeout=5)
+            await self._close_async_inner()
         finally:
             # Whatever happens, make sure we stop the event loop otherwise the
             # bus thread will keep running and prevent the process for exiting
@@ -266,9 +267,8 @@ class BusClient(object):
                 self._shutdown_worker()
 
     @run_in_bus_thread()
-    async def close_async(self):
-        """Async version of close()
-        """
+    async def _close_async_inner(self):
+        """Handle all aspects of the closing which need to run within the bus worker thread"""
         if self._closed:
             raise BusAlreadyClosed()
 
@@ -919,9 +919,7 @@ class BusClient(object):
     # Handling bus calls from child threads
 
     async def _perform_calls(self):
-        """Coroutine to run in background consuming incoming calls from child threads
-
-        Launched in Client.run_forever()
+        """Coroutine to run in background consuming incoming calls from other threads
         """
         # TODO: The name 'perform_calls' is too generic, find all uses and rename to something better
         while True:

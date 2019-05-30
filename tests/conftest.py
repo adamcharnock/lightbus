@@ -458,3 +458,14 @@ def pytest_runtest_call(item):
             exec_info = exec_queue.get()
             if exec_info:
                 raise exec_info[1]
+
+
+@pytest.fixture(autouse=True)
+def check_for_dangling_threads():
+    """Have any threads been abandoned?"""
+    threads_before = set(threading.enumerate())
+    yield
+    threads_after = set(threading.enumerate())
+    dangling_threads = threads_after - threads_before
+    names = [t.name for t in dangling_threads if "ThreadPoolExecutor" not in t.name]
+    assert not names, f"Some threads were left dangling: {', '.join(names)}"
