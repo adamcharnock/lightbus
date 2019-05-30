@@ -26,7 +26,7 @@ def run_in_bus_thread(bus_client=None):
                 raise Exception("Bus thread does not exist yet")
             if not bus_thread.is_alive():
                 # TODO: Improve exception
-                raise Exception(f"Bus thread {bus_thread} is not alive")
+                raise Exception(f"Bus thread {bus_thread.name} is not alive")
 
             if threading.current_thread() == bus_thread:
                 return fn(*args, **kwargs)
@@ -35,12 +35,16 @@ def run_in_bus_thread(bus_client=None):
             result_queue = janus.Queue()
 
             # Enqueue the function, it's arguments, and our return path queue
-            logger.debug(f"Adding callable {fn.__module__}.{fn.__name__} to queue")
+            logger.debug(
+                f"Adding callable {fn.__module__}.{fn.__name__} to queue in thread {bus_thread.name}"
+            )
             bus_client_._call_queue.sync_q.put((fn, args, kwargs, result_queue))
 
             # Wait for a return value on the result queue
             logger.debug("Awaiting execution completion")
             result = result_queue.sync_q.get()
+
+            logger.debug("Execution completed")
 
             # Cleanup
             bus_client_._call_queue.sync_q.join()  # Needed?
