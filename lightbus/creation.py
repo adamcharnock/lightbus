@@ -2,7 +2,7 @@
 
 import os
 import sys
-from typing import Union, Optional, Mapping
+from typing import Union, Optional, Mapping, Type
 
 from lightbus import BusClient
 from lightbus.config.structure import RootConfig
@@ -28,8 +28,8 @@ async def create_async(
     config_file: str = None,
     service_name: str = None,
     process_name: str = None,
-    client_class=BusClient,
-    node_class=BusPath,
+    client_class: Type[BusClient] = BusClient,
+    node_class: Type[BusPath] = BusPath,
     plugins=None,
     flask: bool = False,
     **kwargs,
@@ -55,7 +55,7 @@ async def create_async(
         config_file (str): The path to a config file to load (should end in .json or .yaml)
         service_name (str): The name of this service - will be used when creating event consumer groups
         process_name (str): The unique name of this process - used when retrieving unprocessed events following a crash
-        client_class (BusClient): The class from which the bus client will be instantiated
+        client_class (Type[BusClient]): The class from which the bus client will be instantiated
         node_class (BusPath): The class from which the bus path will be instantiated
         plugins (list): A list of plugin instances to load
         flask (bool): Are we using flask? If so we will make sure we don't start lightbus in the reloader process
@@ -90,7 +90,9 @@ async def create_async(
     elif isinstance(config, RootConfig):
         config = Config(config)
 
-    transport_registry = TransportRegistry().load_config(config)
+    transport_registry = kwargs.pop("transport_registry", None) or TransportRegistry().load_config(
+        config
+    )
 
     client = client_class(transport_registry=transport_registry, config=config, **kwargs)
     await client.setup_async(plugins=plugins)

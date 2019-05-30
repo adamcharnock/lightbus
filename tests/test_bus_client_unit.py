@@ -20,6 +20,7 @@ from lightbus.exceptions import (
     InvalidName,
     ValidationError,
 )
+from lightbus.transports.base import TransportRegistry
 
 pytestmark = pytest.mark.unit
 
@@ -346,10 +347,14 @@ def test_setup_transports_opened(mocker):
 
     m = mocker.patch.object(rpc_transport, "open", autospec=True, return_value=dummy_coroutine())
 
-    lightbus.creation.create(
-        rpc_transport=rpc_transport, schema_transport=lightbus.DebugSchemaTransport(), plugins=[]
-    )
-    assert m.call_count == 1
+    transport_registry = TransportRegistry().load_config(Config.load_dict({}))
+    transport_registry.set_rpc_transport("default", rpc_transport)
+
+    bus = lightbus.creation.create(transport_registry=transport_registry, plugins=[])
+    try:
+        assert m.call_count == 1
+    finally:
+        bus.client.close()
 
 
 def test_run_forever(dummy_bus: lightbus.path.BusPath, mocker, dummy_api):
