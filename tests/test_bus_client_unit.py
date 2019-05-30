@@ -19,8 +19,10 @@ from lightbus.exceptions import (
     TransportNotFound,
     InvalidName,
     ValidationError,
+    SuddenDeathException,
 )
 from lightbus.transports.base import TransportRegistry
+from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.unit
 
@@ -132,11 +134,24 @@ async def test_consume_rpcs_with_transport_error(
     await dummy_bus.client.register_api_async(dummy_api)
 
     mocker.patch.object(dummy_bus.client, "call_rpc_local", return_value=co(TestException()))
-    send_result = mocker.patch.object(dummy_bus.client, "send_result", return_value=co())
+    fut = asyncio.Future()
+    fut.set_result(None)
+    send_result = mocker.patch.object(dummy_bus.client, "send_result", return_value=fut)
 
-    await dummy_bus.client._consume_rpcs_with_transport(
-        rpc_transport=dummy_bus.client.transport_registry.get_rpc_transport("default"), apis=[]
+    task = asyncio.ensure_future(
+        dummy_bus.client._consume_rpcs_with_transport(
+            rpc_transport=dummy_bus.client.transport_registry.get_rpc_transport("default"), apis=[]
+        )
     )
+
+    # Wait for the consumer to send the result
+    for _ in range(0, 10):
+        if send_result.called:
+            break
+        await asyncio.sleep(0.1)
+    await cancel(task)
+
+    assert send_result.called
     result_kwargs = send_result.call_args[1]
     assert result_kwargs["result_message"].error
     assert result_kwargs["result_message"].result
