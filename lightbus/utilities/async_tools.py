@@ -35,7 +35,8 @@ def all_tasks():
 def block(coroutine: Coroutine, loop=None, *, timeout=None):
     loop = loop or get_event_loop()
     if loop.is_running():
-        coroutine.close()
+        if hasattr(coroutine, "close"):
+            coroutine.close()
         raise CannotBlockHere(
             "It appears you have tried to use a blocking API method "
             "from within an event loop. Unfortunately this is unsupported. "
