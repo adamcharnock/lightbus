@@ -58,8 +58,8 @@ async def redis_schema_transport(new_redis_pool, loop):
 
 
 @pytest.yield_fixture
-async def bus(loop, redis_server_url):
-    bus = await new_bus(loop, redis_server_url)()
+async def bus(new_bus):
+    bus = await new_bus()
 
     yield bus
 
