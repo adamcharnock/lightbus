@@ -21,23 +21,27 @@ def run_in_bus_thread(bus_client=None):
 
             bus_thread = bus_client_._bus_thread
 
-            if not bus_thread:
-                # TODO: Improve exception
-                raise Exception("Bus thread does not exist yet")
-            if not bus_thread.is_alive():
-                # TODO: Improve exception
-                raise Exception(f"Bus thread {bus_thread.name} is not alive")
-
             if threading.current_thread() == bus_thread:
                 return fn(*args, **kwargs)
+
+            logger.debug(
+                f"Proxying call for {fn.__module__}.{fn.__name__} to bus thread {bus_thread.name}."
+            )
+
+            if not bus_client_._bus_thread_ready.is_set():
+                # TODO: Improve exception
+                raise Exception(
+                    f"The worker thread {bus_thread.name} is not ready to accept calls. Either it "
+                    f"has not yet started, or it has been shutdown. "
+                    f"The called function was {fn.__module__}.{fn.__name__}. "
+                    f"Turning on debug logging (using --log-level=debug) will give you a better idea of what is "
+                    f"going on."
+                )
 
             # We'll provide a queue as the return path for results
             result_queue = janus.Queue()
 
             # Enqueue the function, it's arguments, and our return path queue
-            logger.debug(
-                f"Adding callable {fn.__module__}.{fn.__name__} to queue in thread {bus_thread.name}"
-            )
             bus_client_._call_queue.sync_q.put((fn, args, kwargs, result_queue))
 
             # Wait for a return value on the result queue

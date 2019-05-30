@@ -146,6 +146,7 @@ class BusClient(object):
         asyncio.get_event_loop().run_forever()
 
         logging.debug(f"Event loop stopped in bus thread {self._bus_thread.name}. Closing down.")
+        self._bus_thread_ready.clear()
 
         # Cleanup
         block(cancel(perform_calls_task))
@@ -299,9 +300,6 @@ class BusClient(object):
         # The loop has stopped, so we're shutting down
         self.stop_server()
 
-        # Shutdown the worker too
-        self._shutdown_worker()
-
         if self._exit_code:
             raise SystemExit(self._exit_code)
 
@@ -343,8 +341,8 @@ class BusClient(object):
         await self._execute_hook("after_server_stopped")
         logger.info("Execution of after_server_stopped & on_stop hooks was successful")
 
-        # Close the bus (which will in turn close the transports)
-        await self.close_async()
+        # Close the bus (which will in turn close the transports),
+        await self.close_async(_stop_worker=False)
 
         # See if we've set the exit code on the event loop
         if hasattr(self.loop, "lightbus_exit_code"):
