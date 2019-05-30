@@ -432,7 +432,7 @@ async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, 
 
     with mock.patch.object(dummy_bus.client, "_handle_error_in_worker_thread") as m:
         # Start the listener
-        task = await dummy_bus.client.listen_for_events(
+        await dummy_bus.client.listen_for_events(
             events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
         )
 
@@ -461,7 +461,7 @@ async def test_exception_in_listener_stop_listener(dummy_bus: lightbus.path.BusP
     def listener(*args, **kwargs):
         raise SomeException()
 
-    task = await dummy_bus.client.listen_for_events(
+    await dummy_bus.client.listen_for_events(
         events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
     )
 
@@ -471,9 +471,6 @@ async def test_exception_in_listener_stop_listener(dummy_bus: lightbus.path.BusP
         # Dummy event transport fires events every 0.1 seconds
         await asyncio.sleep(0.15)
         assert not m.called
-
-    # Listener task has stopped
-    assert task.done()
 
     log_levels = {r.levelname for r in caplog.records}
     # Ensure the error was logged
@@ -490,7 +487,7 @@ async def test_exception_in_listener_ignore(dummy_bus: lightbus.path.BusPath, lo
     def listener(*args, **kwargs):
         raise SomeException()
 
-    task = await dummy_bus.client.listen_for_events(
+    await dummy_bus.client.listen_for_events(
         events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
     )
 
@@ -500,9 +497,6 @@ async def test_exception_in_listener_ignore(dummy_bus: lightbus.path.BusPath, lo
         # Dummy event transport fires events every 0.1 seconds
         await asyncio.sleep(0.15)
         assert not m.called
-
-    # Listener task is still running
-    assert not task.done()
 
     log_levels = {r.levelname for r in caplog.records}
     # Ensure the error was logged
@@ -545,10 +539,8 @@ def test_every(dummy_bus: lightbus.path.BusPath, event_loop):
     with pytest.raises(SystemExit):
         # SystemExit raised because test_coroutine throws an exception
         dummy_bus.client.run_forever(consume_rpcs=False)
-    dummy_bus.client.close()
 
-    assert dummy_bus.client.loop.lightbus_exit_code
-    del dummy_bus.client.loop.lightbus_exit_code  # Delete to stop lightbus actually quitting
+    assert dummy_bus.client._exit_code
 
     assert calls == 5
 
@@ -570,9 +562,7 @@ def test_schedule(dummy_bus: lightbus.path.BusPath, event_loop):
     with pytest.raises(SystemExit):
         # SystemExit raised because test_coroutine throws an exception
         dummy_bus.client.run_forever(consume_rpcs=False)
-    dummy_bus.client.close()
 
-    assert dummy_bus.client.loop.lightbus_exit_code
-    del dummy_bus.client.loop.lightbus_exit_code  # Delete to stop lightbus actually quitting
+    assert dummy_bus.client._exit_code
 
     assert calls == 5

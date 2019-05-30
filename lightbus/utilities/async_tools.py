@@ -130,14 +130,16 @@ def exception_handling_context(die=True):
     except Exception as e:
         # Must log the exception here, otherwise exceptions that occur during
         # listener setup will never be logged
+        logger.debug(f"Exception occurred in exception handling context. die is {die}")
         logger.exception(e)
         if die:
+            logger.debug("Stopping event loop and setting exit code")
             loop = asyncio.get_event_loop()
             loop.lightbus_exit_code = 1
             loop.stop()
 
 
-async def run_user_provided_callable(callable, args, kwargs, bus_client, die_on_exception=True):
+async def run_user_provided_callable(callable, args, kwargs, die_on_exception=True):
     """Run user provided code
 
     If the callable is blocking (i.e. a regular function) it will be
@@ -154,16 +156,14 @@ async def run_user_provided_callable(callable, args, kwargs, bus_client, die_on_
     if asyncio.iscoroutinefunction(callable):
         return await callable(*args, **kwargs)
 
-    with exception_handling_context():
+    with exception_handling_context(die=die_on_exception):
         future = asyncio.get_event_loop().run_in_executor(
             executor=None, func=lambda: callable(*args, **kwargs)
         )
     return await future
 
 
-async def call_every(
-    *, callback, timedelta: timedelta, also_run_immediately: bool, bus_client: "BusClient"
-):
+async def call_every(*, callback, timedelta: timedelta, also_run_immediately: bool):
     """Call callback every timedelta
 
     If also_run_immediately is set then the callback will be called before any waiting
@@ -177,23 +177,21 @@ async def call_every(
     while True:
         start_time = time()
         if not first_run or also_run_immediately:
-            await run_user_provided_callable(callback, args=[], kwargs={}, bus_client=bus_client)
+            await run_user_provided_callable(callback, args=[], kwargs={})
         total_execution_time = time() - start_time
         sleep_time = max(0.0, timedelta.total_seconds() - total_execution_time)
         await asyncio.sleep(sleep_time)
         first_run = False
 
 
-async def call_on_schedule(
-    callback, schedule: "Job", also_run_immediately: bool, bus_client: "BusClient"
-):
+async def call_on_schedule(callback, schedule: "Job", also_run_immediately: bool):
     first_run = True
     while True:
         schedule._schedule_next_run()
 
         if not first_run or also_run_immediately:
             schedule.last_run = datetime.now()
-            await run_user_provided_callable(callback, args=[], kwargs={}, bus_client=bus_client)
+            await run_user_provided_callable(callback, args=[], kwargs={})
 
         td = schedule.next_run - datetime.now()
         await asyncio.sleep(td.total_seconds())

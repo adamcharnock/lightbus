@@ -536,9 +536,7 @@ class BusClient(object):
             method = getattr(api, name)
             if self.config.api(api_name).cast_values:
                 kwargs = cast_to_signature(kwargs, method)
-            result = await run_user_provided_callable(
-                method, args=[], kwargs=kwargs, bus_client=self
-            )
+            result = await run_user_provided_callable(method, args=[], kwargs=kwargs)
         except (CancelledError, SuddenDeathException):
             raise
         except Exception as e:
@@ -787,17 +785,13 @@ class BusClient(object):
     async def _execute_hook(self, name, **kwargs):
         # Hooks that need to run before plugins
         for callback in self._hook_callbacks[(name, True)]:
-            await run_user_provided_callable(
-                callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
-            )
+            await run_user_provided_callable(callback, args=[], kwargs=dict(client=self, **kwargs))
 
         await self.plugin_registry.execute_hook(name, client=self, **kwargs)
 
         # Hooks that need to run after plugins
         for callback in self._hook_callbacks[(name, False)]:
-            await run_user_provided_callable(
-                callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
-            )
+            await run_user_provided_callable(callback, args=[], kwargs=dict(client=self, **kwargs))
 
     def _register_hook_callback(self, name, fn, before_plugins=False):
         self._hook_callbacks[(name, bool(before_plugins))].append(fn)
@@ -895,7 +889,7 @@ class BusClient(object):
 
         def wrapper(f):
             coroutine = call_every(  # pylint: assignment-from-no-return
-                callback=f, timedelta=td, also_run_immediately=also_run_immediately, bus_client=self
+                callback=f, timedelta=td, also_run_immediately=also_run_immediately
             )
             self.add_background_task(coroutine)
             return f
@@ -905,10 +899,7 @@ class BusClient(object):
     def schedule(self, schedule: "Job", also_run_immediately=False):
         def wrapper(f):
             coroutine = call_on_schedule(
-                callback=f,
-                schedule=schedule,
-                also_run_immediately=also_run_immediately,
-                bus_client=self,
+                callback=f, schedule=schedule, also_run_immediately=also_run_immediately
             )
             self.add_background_task(coroutine)
             return f
@@ -1115,7 +1106,6 @@ class _EventListener(object):
                                 self.listener_callable,
                                 args=[event_message],
                                 kwargs=parameters,
-                                bus_client=self,
                                 die_on_exception=False,
                             )
                         except LightbusShutdownInProgress as e:
