@@ -55,9 +55,6 @@ def test_rpc_calls(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dumm
 async def test_rpc_execution(
     called_hooks, dummy_bus: BusPath, loop, mocker, add_base_plugin, dummy_api
 ):
-    class StopIt(Exception):
-        pass
-
     add_base_plugin()
     await dummy_bus.client.register_api_async(dummy_api)
 
@@ -67,15 +64,15 @@ async def test_rpc_execution(
                 RpcMessage(api_name="my.dummy", procedure_name="my_proc", kwargs={"field": 123})
             ]
         else:
-            raise StopIt()
+            await asyncio.sleep(1)
+            return []
 
     rpc_transport = dummy_bus.client.transport_registry.get_rpc_transport("default")
     m = mocker.patch.object(rpc_transport, "consume_rpcs", side_effect=dummy_transport_consume_rpcs)
 
-    try:
-        await dummy_bus.client.consume_rpcs()
-    except StopIt:  # Gross. Need to escape the infinite loop in client.consume_rpcs() somehow
-        pass
+    await dummy_bus.client.consume_rpcs()
+    # Give the bus worker a moment to execute the hooks
+    await asyncio.sleep(0.01)
 
     assert called_hooks() == ["before_rpc_execution", "after_rpc_execution"]
 
@@ -92,7 +89,7 @@ async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_
     add_base_plugin()
     await dummy_bus.client.register_api_async(dummy_api)
 
-    task = await dummy_bus.client.listen_for_event(
+    await dummy_bus.client.listen_for_event(
         "my.dummy", "my_event", lambda *a, **kw: None, listener_name="test"
     )
     await asyncio.sleep(0.1)
@@ -105,8 +102,3 @@ async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_
     await asyncio.sleep(0.1)
 
     assert called_hooks() == ["before_event_execution", "after_event_execution"]
-    task.cancel()
-    try:
-        await task
-    except asyncio.CancelledError:
-        pass

@@ -168,6 +168,18 @@ class BusClient(object):
             self._exit_code = self.loop.lightbus_exit_code
             os.kill(os.getpid(), signal.SIGUSR1)
 
+    def _shutdown_worker(self):
+        if not self._bus_thread.isAlive():
+            # Already shutdown, move along
+            return
+
+        shutdown_worker = run_in_bus_thread(self)(lambda: self.loop.stop())
+        shutdown_worker()
+
+        if threading.current_thread() != self._bus_thread:
+            logger.debug("Waiting for the bus worker thread to finish")
+            self._bus_thread.join()
+
     @run_in_bus_thread()
     async def setup_async(self, plugins: dict = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
@@ -251,14 +263,12 @@ class BusClient(object):
             # Whatever happens, make sure we stop the event loop otherwise the
             # bus thread will keep running and prevent the process for exiting
             if _stop_worker:
-                logger.debug("Stopping bus client internal event loop")
-                self.loop.stop()
-                if threading.current_thread() != self._bus_thread:
-                    logger.debug("Waiting for the bus worker thread to finish")
-                    self._bus_thread.join()
+                self._shutdown_worker()
 
     @run_in_bus_thread()
     async def close_async(self):
+        """Async version of close()
+        """
         if self._closed:
             raise BusAlreadyClosed()
 
@@ -288,6 +298,9 @@ class BusClient(object):
 
         # The loop has stopped, so we're shutting down
         self.stop_server()
+
+        # Shutdown the worker too
+        self._shutdown_worker()
 
         if self._exit_code:
             raise SystemExit(self._exit_code)
