@@ -23,7 +23,7 @@ __all__ = ["create", "create_async", "load_config", "import_bus_module", "get_bu
 
 
 async def create_async(
-    config: Union[dict, Config] = None,
+    config: Union[dict, RootConfig] = None,
     *,
     config_file: str = None,
     service_name: str = None,
