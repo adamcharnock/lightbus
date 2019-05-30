@@ -1,5 +1,7 @@
 import argparse
+import asyncio
 import logging
+import signal
 
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.plugins import PluginRegistry
@@ -55,9 +57,20 @@ class Command(LogLevelMixin, BusImportMixin, object):
                 source = args.schema
             bus.schema.load_local(source)
 
-        block(plugin_registry.execute_hook("receive_args", args=args), timeout=5)
+        # Handle incoming signals
+        restart_signals = (signal.SIGINT, signal.SIGTERM)
+        for signal_ in restart_signals:
+            asyncio.get_event_loop().add_signal_handler(
+                signal_, lambda: asyncio.ensure_future(bus.client.shutdown())
+            )
 
-        if args.events_only:
-            bus.client.run_forever(consume_rpcs=False)
-        else:
-            bus.client.run_forever()
+        try:
+            block(plugin_registry.execute_hook("receive_args", args=args), timeout=5)
+            if args.events_only:
+                bus.client.run_forever(consume_rpcs=False)
+            else:
+                bus.client.run_forever()
+        finally:
+            # Cleanup signal handlers
+            for signal_ in restart_signals:
+                asyncio.get_event_loop().remove_signal_handler(signal_)

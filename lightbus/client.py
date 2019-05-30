@@ -98,6 +98,7 @@ class BusClient(object):
         # Set by worker()
         self._call_queue = None
         self._closed = False
+        self._server_tasks = []
 
         # Setting up bus thread
         # (we use a lambda to allow for testing/mocking of _handle_error_in_worker_thread() )
@@ -117,7 +118,7 @@ class BusClient(object):
     def _handle_error_in_worker_thread(self):
         # We work on the assumption that the worker thread will have already
         # closed itself down at this point (ie. cancelled its tasks, closed the bus)
-        raise SystemExit(1)
+        raise SystemExit(self._exit_code)
 
     def worker(self):
         logger.debug(f"Bus thread {self._bus_thread.name} initialising")
@@ -164,6 +165,7 @@ class BusClient(object):
         if hasattr(self.loop, "lightbus_exit_code"):
             # Send the signal for the main thread to close down.
             # See BusClient._handle_error_in_worker_thread()
+            self._exit_code = self.loop.lightbus_exit_code
             os.kill(os.getpid(), signal.SIGUSR1)
 
     @run_in_bus_thread()
@@ -231,49 +233,64 @@ class BusClient(object):
     def setup(self, plugins: dict = None):
         block(self.setup_async(plugins), timeout=5)
 
-    def close(self):
-        if self._closed:
-            raise BusAlreadyClosed()
+    def close(self, _stop_worker=True):
+        """Close the bus client
 
-        block(self.close_async(), timeout=5)
+        This will cancel all tasks and close all transports/connections
+
+        Note that this is subtly different to calling close_async() as this
+        synchronous version will also stop the bus clients internal bus loop,
+        thereby stopping the bus worker thread.
+        """
+        try:
+            if self._closed:
+                raise BusAlreadyClosed()
+
+            block(self.close_async(), timeout=5)
+        finally:
+            # Whatever happens, make sure we stop the event loop otherwise the
+            # bus thread will keep running and prevent the process for exiting
+            if _stop_worker:
+                logger.debug("Stopping bus client internal event loop")
+                self.loop.stop()
+                if threading.current_thread() != self._bus_thread:
+                    logger.debug("Waiting for the bus worker thread to finish")
+                    self._bus_thread.join()
 
     @run_in_bus_thread()
     async def close_async(self):
         if self._closed:
             raise BusAlreadyClosed()
 
-        try:
-            listener_tasks = [task for task in all_tasks() if getattr(task, "is_listener", False)]
+        listener_tasks = [task for task in all_tasks() if getattr(task, "is_listener", False)]
 
-            for task in chain(listener_tasks, self._background_tasks):
-                try:
-                    await cancel(task)
-                except Exception as e:
-                    logger.exception(e)
+        for task in chain(listener_tasks, self._background_tasks):
+            try:
+                await cancel(task)
+            except Exception as e:
+                logger.exception(e)
 
-            for transport in self.transport_registry.get_all_transports():
-                await transport.close()
+        for transport in self.transport_registry.get_all_transports():
+            await transport.close()
 
-            await self.schema.schema_transport.close()
+        await self.schema.schema_transport.close()
 
-            self._closed = True
-        finally:
-            # Whatever happens, make sure we stop the event loop otherwise the
-            # bus thread will keep running and prevent the process for exiting
-            self.loop.stop()
+        self._closed = True
 
     @property
     def loop(self):
         return get_event_loop()
 
     def run_forever(self, *, consume_rpcs=True):
-        stop_args = self.start_server()
+        self.start_server()
 
         self._actually_run_forever()
 
         # The loop has stopped, so we're shutting down
+        self.stop_server()
 
-        self.stop_server(*stop_args)
+        if self._exit_code:
+            raise SystemExit(self._exit_code)
 
     @run_in_bus_thread()
     async def start_server(self, consume_rpcs=True):
@@ -302,36 +319,23 @@ class BusClient(object):
         await self._execute_hook("before_server_start")
         logger.info("Execution of before_server_start & on_start hooks was successful")
 
-        server_tasks = [consume_rpc_task, monitor_task]
-
-        restart_signals = (signal.SIGINT, signal.SIGTERM)
-
-        for signal_ in restart_signals:
-            self.loop.add_signal_handler(
-                signal_, lambda: asyncio.ensure_future(self.shutdown(signal_, server_tasks))
-            )
-
-        return restart_signals, restart_signals
+        self._server_tasks = [consume_rpc_task, monitor_task]
 
     @run_in_bus_thread()
-    async def stop_server(self, server_tasks, restart_signals):
-        # Remove the signal handlers
-        for signal_ in restart_signals:
-            self.loop.remove_signal_handler(signal_)
-
+    async def stop_server(self):
         # Cancel the tasks we created above
-        await cancel(*server_tasks)
+        await cancel(*self._server_tasks)
 
         logger.info("Executing after_server_stopped & on_stop hooks...")
         await self._execute_hook("after_server_stopped")
         logger.info("Execution of after_server_stopped & on_stop hooks was successful")
 
         # Close the bus (which will in turn close the transports)
-        self.close()
+        await self.close_async()
 
         # See if we've set the exit code on the event loop
         if hasattr(self.loop, "lightbus_exit_code"):
-            raise SystemExit(self.loop.lightbus_exit_code)
+            self._exit_code = self.loop.lightbus_exit_code
 
     def _actually_run_forever(self):  # pragma: no cover
         """Simply start the loop running forever

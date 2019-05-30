@@ -374,6 +374,7 @@ def set_env():
 
 @pytest.yield_fixture
 def make_test_bus_module(mocker):
+    """Create a python module on disk which contains a bus, and put it on the python path"""
     created_modules = []
 
     # Prevent setup from being called, as it'll try to
@@ -408,7 +409,12 @@ def make_test_bus_module(mocker):
         if module_name in sys.modules:
             module = sys.modules[module_name]
             if hasattr(module, "bus") and isinstance(module.bus, BusPath):
-                module.bus.client.close()
+                try:
+                    module.bus.client.close()
+                except BusAlreadyClosed:
+                    # Tests may choose the close the bus of their own volition,
+                    # so don't worry about it here
+                    pass
             sys.modules.pop(module_name)
 
         sys.path.remove(str(directory))

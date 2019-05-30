@@ -524,10 +524,8 @@ def test_add_background_task(dummy_bus: lightbus.path.BusPath, event_loop):
     with pytest.raises(SystemExit):
         # SystemExit raised because test_coroutine throws an exception
         dummy_bus.client.run_forever(consume_rpcs=False)
-    dummy_bus.client.close()
 
-    assert dummy_bus.client.loop.lightbus_exit_code
-    del dummy_bus.client.loop.lightbus_exit_code  # Delete to stop lightbus actually quitting
+    assert dummy_bus.client._exit_code
 
     assert calls == 5
 
