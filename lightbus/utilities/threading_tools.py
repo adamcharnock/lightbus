@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import queue
 import threading
 
 import janus
@@ -39,16 +40,15 @@ def run_in_bus_thread(bus_client=None):
                 )
 
             # We'll provide a queue as the return path for results
-            result_queue = janus.Queue()
+            result_queue = queue.Queue()
 
             # Enqueue the function, it's arguments, and our return path queue
             bus_client_._call_queue.sync_q.put((fn, args, kwargs, result_queue))
 
             # Wait for a return value on the result queue
             logger.debug("Awaiting execution completion")
-            result = result_queue.sync_q.get()
-            result_queue.sync_q.task_done()
-            result_queue.close()
+            result = result_queue.get()
+            result_queue.task_done()
 
             logger.debug("Execution completed")
 

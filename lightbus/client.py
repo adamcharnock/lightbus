@@ -964,7 +964,7 @@ class BusClient(object):
 
             # Put the result in the result queue
             logger.debug(f"Returning result {result}")
-            await result_queue.async_q.put(result)
+            result_queue.put(result)
 
 
 class _EventListener(object):
