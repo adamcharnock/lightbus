@@ -208,31 +208,21 @@ async def test_call_rpc_local_empty_name(dummy_bus: lightbus.path.BusPath, dummy
 
 
 @pytest.mark.asyncio
-async def test_no_transport():
+async def test_no_transport(dummy_bus):
     # No transports configured for any relevant api
-    config = Config.load_dict(
-        {"apis": {"default": {"event_transport": {"redis": {}}}}}, set_defaults=False
-    )
-    client = lightbus.BusClient(config=config)
+    dummy_bus.client.transport_registry._registry = {}
     with pytest.raises(TransportNotFound):
-        await client.call_rpc_remote("my_api", "test", kwargs={}, options={})
+        await dummy_bus.client.call_rpc_remote("my_api", "test", kwargs={}, options={})
 
 
 @pytest.mark.asyncio
-async def test_no_transport_type():
+async def test_no_transport_type(dummy_bus):
     # Transports configured, but the wrong type of transport
-    config = Config.load_dict(
-        {
-            "apis": {
-                "default": {"event_transport": {"redis": {}}},
-                "my_api": {"event_transport": {"redis": {}}},
-            }
-        },
-        set_defaults=False,
-    )
-    client = lightbus.BusClient(config=config)
+    # No transports configured for any relevant api
+    registry_entry = dummy_bus.client.transport_registry._registry["default"]
+    dummy_bus.client.transport_registry._registry = {"default": registry_entry._replace(rpc=None)}
     with pytest.raises(TransportNotFound):
-        await client.call_rpc_remote("my_api", "test", kwargs={}, options={})
+        await dummy_bus.client.call_rpc_remote("my_api", "test", kwargs={}, options={})
 
 
 # Validation
