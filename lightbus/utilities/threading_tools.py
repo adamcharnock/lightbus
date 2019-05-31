@@ -47,12 +47,13 @@ def run_in_bus_thread(bus_client=None):
             # Wait for a return value on the result queue
             logger.debug("Awaiting execution completion")
             result = result_queue.sync_q.get()
+            result_queue.sync_q.task_done()
+            result_queue.close()
 
             logger.debug("Execution completed")
 
             # Cleanup
             bus_client_._call_queue.sync_q.join()  # Needed?
-            result_queue.close()
 
             if isinstance(result, asyncio.Future):
                 # Wrap any returned futures in a WarningProxy, which will show a nice

@@ -95,10 +95,12 @@ class BusClient(object):
         self.api_registry = Registry()
         self.plugin_registry = PluginRegistry()
         self.schema = None
+
         # Set by worker()
         self._call_queue = None
         self._closed = False
         self._server_tasks = []
+        self._shutdown_queue = None
 
         # Setting up bus thread
         # (we use a lambda to allow for testing/mocking of _handle_error_in_worker_thread() )
@@ -127,6 +129,7 @@ class BusClient(object):
         asyncio.set_event_loop(asyncio.new_event_loop())
 
         self._call_queue = janus.Queue()
+        self._shutdown_queue = janus.Queue()
         self.transport_registry = self.transport_registry or TransportRegistry().load_config(
             self.config
         )
@@ -137,7 +140,14 @@ class BusClient(object):
         )
         self.schema = BusThreadProxy(proxied=schema, bus_client=self)
 
-        # TODO: Cleanup on bus close
+        async def shutdown_monitor():
+            await self._shutdown_queue.async_q.get()
+            self.loop.stop()
+            self._shutdown_queue.async_q.task_done()
+
+        shutdown_monitor_task = asyncio.ensure_future(shutdown_monitor())
+        shutdown_monitor_task.add_done_callback(make_exception_checker(die=True))
+
         perform_calls_task = asyncio.ensure_future(self._perform_calls())
         perform_calls_task.add_done_callback(make_exception_checker(die=True))
 
@@ -148,12 +158,15 @@ class BusClient(object):
         logging.debug(f"Event loop stopped in bus thread {self._bus_thread.name}. Closing down.")
         self._bus_thread_ready.clear()
 
-        # Cleanup
-        block(cancel(perform_calls_task))
+        block(cancel(perform_calls_task, shutdown_monitor_task))
 
         # Close the call queue
         self._call_queue.close()
         block(self._call_queue.wait_closed())
+
+        # Close the shutdown queue
+        self._shutdown_queue.close()
+        block(self._shutdown_queue.wait_closed())
 
         try:
             # Close the bus
@@ -174,12 +187,20 @@ class BusClient(object):
             # Already shutdown, move along
             return
 
-        shutdown_worker = run_in_bus_thread(self)(lambda: self.loop.stop())
-        shutdown_worker()
+        try:
+            self._shutdown_queue.sync_q.put(None)
+        except RuntimeError:
+            pass
+
+        self._shutdown_queue.sync_q.join()
 
         if threading.current_thread() != self._bus_thread:
             logger.debug("Waiting for the bus worker thread to finish")
-            self._bus_thread.join()
+            for _ in range(0, 1000):
+                if self._bus_thread.isAlive():
+                    time.sleep(0.005)
+                else:
+                    self._bus_thread.join()
 
     @run_in_bus_thread()
     async def setup_async(self, plugins: dict = None):
@@ -251,6 +272,7 @@ class BusClient(object):
 
         This will cancel all tasks and close all transports/connections
         """
+
         block(self.close_async(_stop_worker=_stop_worker))
 
     async def close_async(self, _stop_worker=True):
@@ -931,12 +953,14 @@ class BusClient(object):
                 result = fn(*args, **kwargs)
                 if inspect.isawaitable(result):
                     result = await result
+            except CancelledError as e:
+                raise
             except Exception as e:
                 result = e
-
-            # Acknowledge the completion
-            logger.debug("Call executed, marking as done")
-            self._call_queue.async_q.task_done()
+            finally:
+                # Acknowledge the completion
+                logger.debug("Call executed, marking as done")
+                self._call_queue.async_q.task_done()
 
             # Put the result in the result queue
             logger.debug(f"Returning result {result}")
