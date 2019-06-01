@@ -5,7 +5,7 @@ import threading
 
 import janus
 
-from lightbus.exceptions import CannotRunInChildThread
+from lightbus.exceptions import MustRunInBusThread, MustNotRunInBusThread
 
 logger = logging.getLogger(__name__)
 
@@ -93,10 +93,28 @@ def assert_in_bus_thread():
             bus = args[0]
 
             if threading.current_thread() != bus._bus_thread:
-                raise CannotRunInChildThread(
+                raise MustRunInBusThread(
                     f"This function ({fn.__module__}.{fn.__name__}) may only be called from "
-                    f"within the bus client's home thread ({bus._bus_thread.name}). The function "
-                    f"as actually called from {threading.current_thread().name}."
+                    f"within the bus client's worker thread ({bus._bus_thread.name}). The function "
+                    f"was called within {threading.current_thread().name}."
+                )
+            return fn(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def assert_not_in_bus_thread():
+    def decorator(fn):
+        def wrapper(*args, **kwargs):
+            # Assume the first arg is the 'self', i.e. the bus client
+            bus = args[0]
+
+            if threading.current_thread() == bus._bus_thread:
+                raise MustNotRunInBusThread(
+                    f"This function ({fn.__module__}.{fn.__name__}) may NOT be called from "
+                    f"within the bus client's worker thread ({bus._bus_thread.name})."
                 )
             return fn(*args, **kwargs)
 

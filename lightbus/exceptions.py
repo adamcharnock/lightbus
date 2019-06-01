@@ -180,7 +180,11 @@ class TransportsNotInstalled(LightbusException):
     pass
 
 
-class CannotRunInChildThread(LightbusException):
+class MustRunInBusThread(LightbusException):
+    pass
+
+
+class MustNotRunInBusThread(LightbusException):
     pass
 
 

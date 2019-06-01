@@ -61,6 +61,7 @@ from lightbus.utilities.threading_tools import (
     run_in_bus_thread,
     assert_in_bus_thread,
     BusThreadProxy,
+    assert_not_in_bus_thread,
 )
 
 if False:
@@ -155,7 +156,9 @@ class BusClient(object):
 
         asyncio.get_event_loop().run_forever()
 
-        logging.debug(f"Event loop stopped in bus thread {self._bus_thread.name}. Closing down.")
+        logging.debug(
+            f"Event loop stopped in bus worker thread {self._bus_thread.name}. Closing down."
+        )
         self._bus_thread_ready.clear()
 
         block(cancel(perform_calls_task, shutdown_monitor_task))
@@ -168,21 +171,15 @@ class BusClient(object):
         self._shutdown_queue.close()
         block(self._shutdown_queue.wait_closed())
 
-        try:
-            # Close the bus
-            self.close()
-        except BusAlreadyClosed:
-            # In the case of a normal shutdown the bus will already be marked as
-            # closed by the time we get here.
-            pass
-
         if hasattr(self.loop, "lightbus_exit_code"):
             # Send the signal for the main thread to close down.
             # See BusClient._handle_error_in_worker_thread()
             self._exit_code = self.loop.lightbus_exit_code
             os.kill(os.getpid(), signal.SIGUSR1)
 
+    @assert_not_in_bus_thread()
     def _shutdown_worker(self):
+        logger.debug(f"Sending shutdown message to bus thread {self._bus_thread.name}")
         if not self._bus_thread.isAlive():
             # Already shutdown, move along
             return
@@ -192,15 +189,20 @@ class BusClient(object):
         except RuntimeError:
             pass
 
-        self._shutdown_queue.sync_q.join()
+    @assert_not_in_bus_thread()
+    async def wait_for_shutdown(self):
+        logger.debug("Waiting for thread to finish")
+        for _ in range(0, 50):
+            if self._bus_thread.isAlive():
+                await asyncio.sleep(0.1)
+            else:
+                self._bus_thread.join()
 
-        if threading.current_thread() != self._bus_thread:
-            logger.debug("Waiting for the bus worker thread to finish")
-            for _ in range(0, 1000):
-                if self._bus_thread.isAlive():
-                    time.sleep(0.005)
-                else:
-                    self._bus_thread.join()
+        if self._bus_thread.isAlive():
+            logger.error("Worker thread failed to shutdown in a timely fashion")
+            # TODO: Kill painfully?
+        else:
+            logger.debug("Worker thread shutdown cleanly")
 
     @run_in_bus_thread()
     async def setup_async(self, plugins: dict = None):
@@ -267,6 +269,7 @@ class BusClient(object):
     def setup(self, plugins: dict = None):
         block(self.setup_async(plugins), timeout=5)
 
+    @assert_not_in_bus_thread()
     def close(self, _stop_worker=True):
         """Close the bus client
 
@@ -275,6 +278,7 @@ class BusClient(object):
 
         block(self.close_async(_stop_worker=_stop_worker))
 
+    @assert_not_in_bus_thread()
     async def close_async(self, _stop_worker=True):
         """Async version of close()
         """
@@ -318,12 +322,22 @@ class BusClient(object):
         self.start_server()
 
         self._actually_run_forever()
+        logger.debug("Main thread event loop was stopped")
+
+        logger.debug("Closing bus")
+        self.close(_stop_worker=False)
 
         # The loop has stopped, so we're shutting down
+        logger.debug("Stopping server")
         self.stop_server()
 
-        if self._exit_code:
-            raise SystemExit(self._exit_code)
+        logger.debug("Shutting down worker")
+        self._shutdown_worker()
+
+        logger.debug("Waiting for worker to shutdown")
+        block(self.wait_for_shutdown())
+
+        return self._exit_code
 
     @run_in_bus_thread()
     async def start_server(self, consume_rpcs=True):
@@ -363,9 +377,6 @@ class BusClient(object):
         await self._execute_hook("after_server_stopped")
         logger.info("Execution of after_server_stopped & on_stop hooks was successful")
 
-        # Close the bus (which will in turn close the transports),
-        await self.close_async(_stop_worker=False)
-
         # See if we've set the exit code on the event loop
         if hasattr(self.loop, "lightbus_exit_code"):
             self._exit_code = self.loop.lightbus_exit_code
@@ -376,12 +387,6 @@ class BusClient(object):
         This just makes testing easier as we can mock out this method
         """
         self.loop.run_forever()
-
-    async def shutdown(self, signal_, tasks):
-        logger.info("Shutting down...")
-        await cancel(*tasks)
-        self.loop.stop()
-        logger.info("Shutdown complete")
 
     # RPCs
 

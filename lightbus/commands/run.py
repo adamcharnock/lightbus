@@ -57,11 +57,21 @@ class Command(LogLevelMixin, BusImportMixin, object):
                 source = args.schema
             bus.schema.load_local(source)
 
-        # Handle incoming signals
         restart_signals = (signal.SIGINT, signal.SIGTERM)
+
+        # Handle incoming signals
+        async def signal_handler():
+            # Stop handling signals now. If we receive the signal again
+            # let the process quit naturally
+            for signal_ in restart_signals:
+                asyncio.get_event_loop().remove_signal_handler(signal_)
+
+            logger.debug("Caught signal. Stopping main thread event loop")
+            asyncio.get_event_loop().stop()
+
         for signal_ in restart_signals:
             asyncio.get_event_loop().add_signal_handler(
-                signal_, lambda: asyncio.ensure_future(bus.client.shutdown())
+                signal_, lambda: asyncio.ensure_future(signal_handler())
             )
 
         try:
@@ -70,6 +80,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
                 bus.client.run_forever(consume_rpcs=False)
             else:
                 bus.client.run_forever()
+
         finally:
             # Cleanup signal handlers
             for signal_ in restart_signals:
