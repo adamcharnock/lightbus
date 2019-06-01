@@ -324,15 +324,14 @@ class BusClient(object):
         self._actually_run_forever()
         logger.debug("Main thread event loop was stopped")
 
-        logger.debug("Closing bus")
-        self.close(_stop_worker=False)
-
-        # The loop has stopped, so we're shutting down
+        # Stopping the server requires access to the worker,
+        # so do this first
         logger.debug("Stopping server")
         self.stop_server()
 
-        logger.debug("Shutting down worker")
-        self._shutdown_worker()
+        # Here we close connections and shutdown the worker thread
+        logger.debug("Closing bus")
+        self.close()
 
         logger.debug("Waiting for worker to shutdown")
         block(self.wait_for_shutdown())
