@@ -431,7 +431,9 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
 
 
 @pytest.mark.asyncio
-async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, caplog):
+async def test_exception_in_listener_shutdown(
+    dummy_bus: lightbus.path.BusPath, caplog, sigusr1_mock
+):
     dummy_bus.client.config.api("default").on_error = OnError.SHUTDOWN
 
     class SomeException(Exception):
@@ -440,21 +442,19 @@ async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, 
     def listener(*args, **kwargs):
         raise SomeException()
 
-    with mock.patch.object(dummy_bus.client, "_handle_error_in_worker_thread") as m:
-        # Start the listener
-        await dummy_bus.client.listen_for_events(
-            events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
-        )
+    # Start the listener
+    await dummy_bus.client.listen_for_events(
+        events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
+    )
 
-        # Wait until the bus closes (due to the error the handler above raises
-        for _ in range(1, 300):
-            if dummy_bus.client._closed:
-                break
-            await asyncio.sleep(0.01)
+    # Wait until the bus closes (due to the error the handler above raises
+    for _ in range(1, 300):
+        if dummy_bus.client._closed:
+            break
+        await asyncio.sleep(0.01)
 
-        # Check the bus actually decided to quit
-        # (we don't let it actually quit because that breaks the tests)
-        assert m.called
+    # Check the bus actually decided to quit
+    assert sigusr1_mock.called
 
     log_levels = {r.levelname for r in caplog.records}
     # Ensure the error was logged

@@ -194,3 +194,7 @@ class LightbusExit(LightbusException):
 
 class BusAlreadyClosed(LightbusException):
     pass
+
+
+class LightbusServerMustStartInMainThread(LightbusException):
+    pass

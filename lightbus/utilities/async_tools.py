@@ -121,7 +121,7 @@ def make_exception_checker(die=True):
 
 
 @contextmanager
-def exception_handling_context(die=True):
+def exception_handling_context(bus: BusPath, die=True):
     """Handle exceptions in user code"""
     try:
         yield
@@ -134,6 +134,7 @@ def exception_handling_context(die=True):
         logger.exception(e)
         if die:
             logger.debug("Stopping event loop and setting exit code")
+            # TODO: This is not how to shut things down
             loop = asyncio.get_event_loop()
             loop.lightbus_exit_code = 1
             loop.stop()

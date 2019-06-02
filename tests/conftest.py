@@ -6,6 +6,7 @@ will is still required to organise the setup code below.
 
 """
 import asyncio
+import signal
 import threading
 from pathlib import Path
 from queue import Queue
@@ -279,6 +280,13 @@ def consume_rpcs_fixture():
     return consume_rpcs
 
 
+@pytest.fixture(autouse=True)
+def sigusr1_mock(mocker):
+    import os
+
+    return mocker.patch.object(os, "kill", autospec=True)
+
+
 # Internal stuff #
 
 
@@ -469,3 +477,12 @@ def check_for_dangling_threads():
     dangling_threads = threads_after - threads_before
     names = [t.name for t in dangling_threads if "ThreadPoolExecutor" not in t.name]
     assert not names, f"Some threads were left dangling: {', '.join(names)}"
+
+
+@pytest.fixture(autouse=True)
+def check_for_un_cleaned_up_signals():
+    """Has the usr1 signal been cleaned up?"""
+    yield
+    if signal.getsignal(signal.SIGUSR1) != signal.SIG_DFL:
+        signal.signal(signal.SIGUSR1, signal.SIG_DFL)
+        assert False, "USR1 signal not cleaned up"

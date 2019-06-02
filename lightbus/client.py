@@ -33,6 +33,7 @@ from lightbus.exceptions import (
     LightbusExit,
     BusAlreadyClosed,
     TransportIsClosed,
+    LightbusServerMustStartInMainThread,
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
@@ -103,10 +104,6 @@ class BusClient(object):
         self._server_tasks = []
         self._shutdown_queue = None
 
-        # Setting up bus thread
-        # (we use a lambda to allow for testing/mocking of _handle_error_in_worker_thread() )
-        signal.signal(signal.SIGUSR1, lambda *a: self._handle_error_in_worker_thread())
-
         BusClient._TOTAL_LIGHTBUS_THREADS += 1
 
         self._bus_thread_ready = threading.Event()
@@ -121,9 +118,34 @@ class BusClient(object):
     def _handle_error_in_worker_thread(self):
         # We work on the assumption that the worker thread will have already
         # closed itself down at this point (ie. cancelled its tasks, closed the bus)
+        logger.debug("Signal received from worker thread, exiting")
         raise SystemExit(self._exit_code)
 
     def worker(self):
+        """
+
+
+        A note about error handling in the worker thread:
+
+        There are two scenarios in which the worker thread my encounter an error.
+
+            1. The bus is being used as a client. A bus method is called by the client code,
+               and this call raises an exception. This exception is propagated to the client
+               code for it to deal with.1
+            2. The bus is being used as a server and has various coroutines running at any one
+               time. In this case, if a coroutine encounters an error then it should cause the
+               lightbus server to exit.
+
+        In response to either of these cases the bus needs to shut itself down. Therefore,
+        the worker needs to keep on running for a while in order to handle the various shutdown tasks.
+
+        In case 1 above, we assume the developer will take responsibility for closing the bus
+        correctly when they are done with it.
+
+        In case 2 above, the worker needs to signal the main lightbus run process to tell it to being the
+        shutdown procedure
+
+        """
         logger.debug(f"Bus thread {self._bus_thread.name} initialising")
 
         # Start a new event loop for this new thread
@@ -161,21 +183,34 @@ class BusClient(object):
         )
         self._bus_thread_ready.clear()
 
+        try:
+            # Close _close_async_inner() because, we are in the worker thead.
+            # The worker thread is closing down right now so no need to worry about
+            # stopping it as close() would do.
+            block(self._close_async_inner())
+        except BusAlreadyClosed:
+            # In the case of a clean shutdown the bus will already be closed.
+            pass
+
+        logger.debug("Canceling server tasks")
         block(cancel(perform_calls_task, shutdown_monitor_task))
 
-        # Close the call queue
+        logger.debug("Closing the call queue")
         self._call_queue.close()
         block(self._call_queue.wait_closed())
 
-        # Close the shutdown queue
+        logger.debug("Closing the shutdown queue")
         self._shutdown_queue.close()
         block(self._shutdown_queue.wait_closed())
 
         if hasattr(self.loop, "lightbus_exit_code"):
+            logger.debug("Signaling main thread to shutdown")
             # Send the signal for the main thread to close down.
             # See BusClient._handle_error_in_worker_thread()
             self._exit_code = self.loop.lightbus_exit_code
             os.kill(os.getpid(), signal.SIGUSR1)
+
+        logger.debug("Worker shutdown complete")
 
     @assert_not_in_bus_thread()
     def _shutdown_worker(self):
@@ -275,7 +310,8 @@ class BusClient(object):
 
         This will cancel all tasks and close all transports/connections
         """
-
+        if self._closed:
+            raise BusAlreadyClosed()
         block(self.close_async(_stop_worker=_stop_worker))
 
     @assert_not_in_bus_thread()
@@ -292,6 +328,7 @@ class BusClient(object):
             # bus thread will keep running and prevent the process for exiting
             if _stop_worker:
                 self._shutdown_worker()
+                await self.wait_for_shutdown()
 
     @run_in_bus_thread()
     async def _close_async_inner(self):
@@ -338,8 +375,25 @@ class BusClient(object):
 
         return self._exit_code
 
+    @assert_not_in_bus_thread()
+    def start_server(self, consume_rpcs=True):
+        """Server startup procedure
+
+        Must be called from within the main thread
+        """
+
+        if threading.current_thread() != threading.main_thread():
+            # Main thread is required in order to register our signal handler
+            raise LightbusServerMustStartInMainThread(
+                f"The Lightbus server must be started within the main thead, not {threading.current_thread()}"
+            )
+
+        signal.signal(signal.SIGUSR1, lambda *a: self._handle_error_in_worker_thread())
+
+        block(self._start_server_inner())
+
     @run_in_bus_thread()
-    async def start_server(self, consume_rpcs=True):
+    async def _start_server_inner(self, consume_rpcs=True):
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())
 
