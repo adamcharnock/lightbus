@@ -9,7 +9,7 @@ from enum import Enum
 import threading
 
 import aioredis
-from aioredis import Redis, ReplyError, ConnectionClosedError
+from aioredis import Redis, ReplyError, ConnectionClosedError, PipelineError
 from aioredis.pool import ConnectionsPool
 from aioredis.util import decode
 
@@ -183,6 +183,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         connection_parameters: Mapping = frozendict(maxsize=100),
         batch_size=10,
         rpc_timeout=5,
+        rpc_retry_delay=1,
         consumption_restart_delay=5,
     ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
@@ -191,6 +192,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         self.deserializer = deserializer
         self.batch_size = batch_size
         self.rpc_timeout = rpc_timeout
+        self.rpc_retry_delay = rpc_retry_delay
         self.consumption_restart_delay = consumption_restart_delay
 
     @classmethod
@@ -203,6 +205,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         serializer: str = "lightbus.serializers.BlobMessageSerializer",
         deserializer: str = "lightbus.serializers.BlobMessageDeserializer",
         rpc_timeout: int = 5,
+        rpc_retry_delay: int = 1,
         consumption_restart_delay: int = 5,
     ):
         serializer = import_from_string(serializer)()
@@ -228,17 +231,17 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             )
         )
 
-        with await self.connection_manager() as redis:
-            start_time = time.time()
-            p = redis.pipeline()
-            p.rpush(key=queue_key, value=self.serializer(rpc_message))
-            p.set(expiry_key, 1)
-            # TODO: Ditch this somehow. We kind of need the ApiConfig here, but a transports can be
-            #       used for multiple APIs. So we could pass it in for each use of the transports,
-            #       but even then it doesn't work for the event listening. This is because an event listener
-            #       can span multiple APIs
-            p.expire(expiry_key, timeout=self.rpc_timeout)
-            await p.execute()
+        start_time = time.time()
+        for try_number in range(3, 0, -1):
+            last_try = try_number == 1
+            try:
+                await self._call_rpc(rpc_message, queue_key, expiry_key)
+                return
+            except (PipelineError, ConnectionClosedError, ConnectionResetError):
+                if not last_try:
+                    await asyncio.sleep(self.rpc_retry_delay)
+                else:
+                    raise
 
         logger.debug(
             L(
@@ -248,6 +251,18 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
                 Bold(queue_key),
             )
         )
+
+    async def _call_rpc(self, rpc_message: RpcMessage, queue_key, expiry_key):
+        with await self.connection_manager() as redis:
+            p = redis.pipeline()
+            p.rpush(key=queue_key, value=self.serializer(rpc_message))
+            p.set(expiry_key, 1)
+            # TODO: Ditch this somehow. We kind of need the ApiConfig here, but a transports can be
+            #       used for multiple APIs. So we could pass it in for each use of the transports,
+            #       but even then it doesn't work for the event listening. This is because an event listener
+            #       can span multiple APIs
+            p.expire(expiry_key, timeout=self.rpc_timeout)
+            await p.execute()
 
     async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         while True:
