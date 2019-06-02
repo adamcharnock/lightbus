@@ -448,7 +448,7 @@ async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, 
     )
 
     # Check we have something in the shutdown queue
-    asyncio.wait_for(dummy_bus.client._server_shutdown_queue.async_q.get(), timeout=5)
+    await asyncio.wait_for(dummy_bus.client._server_shutdown_queue.async_q.get(), timeout=5)
 
     # Note that this hasn't actually shut the bus down, we'll text that in test_server_shutdown
 
