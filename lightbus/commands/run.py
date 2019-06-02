@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import logging
 import signal
+import sys
 
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.plugins import PluginRegistry
@@ -67,7 +68,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
                 asyncio.get_event_loop().remove_signal_handler(signal_)
 
             logger.debug("Caught signal. Stopping main thread event loop")
-            asyncio.get_event_loop().stop()
+            bus.client.shutdown_server()
 
         for signal_ in restart_signals:
             asyncio.get_event_loop().add_signal_handler(
@@ -85,3 +86,6 @@ class Command(LogLevelMixin, BusImportMixin, object):
             # Cleanup signal handlers
             for signal_ in restart_signals:
                 asyncio.get_event_loop().remove_signal_handler(signal_)
+
+        if bus.client.exit_code:
+            sys.exit(bus.client.exit_code)

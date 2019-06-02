@@ -61,10 +61,13 @@ async def run_for():
 
 
 @pytest.mark.asyncio
-async def test_call_every(run_for, call_counter):
+async def test_call_every(run_for, call_counter, dummy_bus):
     await run_for(
         coroutine=call_every(
-            callback=call_counter, timedelta=timedelta(seconds=0.1), also_run_immediately=False
+            callback=call_counter,
+            timedelta=timedelta(seconds=0.1),
+            also_run_immediately=False,
+            bus_client=dummy_bus.bus,
         ),
         seconds=0.25,
     )
@@ -72,10 +75,13 @@ async def test_call_every(run_for, call_counter):
 
 
 @pytest.mark.asyncio
-async def test_call_every_run_immediate(run_for, call_counter):
+async def test_call_every_run_immediate(run_for, call_counter, dummy_bus):
     await run_for(
         coroutine=call_every(
-            callback=call_counter, timedelta=timedelta(seconds=0.1), also_run_immediately=True
+            callback=call_counter,
+            timedelta=timedelta(seconds=0.1),
+            also_run_immediately=True,
+            bus_client=dummy_bus.busdummy_bus,
         ),
         seconds=0.25,
     )
@@ -83,7 +89,7 @@ async def test_call_every_run_immediate(run_for, call_counter):
 
 
 @pytest.mark.asyncio
-async def test_call_every_async(run_for):
+async def test_call_every_async(run_for, dummy_bus):
     await_count = 0
 
     async def cb():
@@ -92,7 +98,10 @@ async def test_call_every_async(run_for):
 
     await run_for(
         coroutine=call_every(
-            callback=cb, timedelta=timedelta(seconds=0.1), also_run_immediately=False
+            callback=cb,
+            timedelta=timedelta(seconds=0.1),
+            also_run_immediately=False,
+            bus_client=dummy_bus.busdummy_bus,
         ),
         seconds=0.25,
     )
@@ -100,7 +109,7 @@ async def test_call_every_async(run_for):
 
 
 @pytest.mark.asyncio
-async def test_call_every_with_long_execution_time(run_for):
+async def test_call_every_with_long_execution_time(run_for, dummy_bus):
     """Execution time should get taken into account"""
     await_count = 0
 
@@ -111,7 +120,10 @@ async def test_call_every_with_long_execution_time(run_for):
 
     await run_for(
         coroutine=call_every(
-            callback=cb, timedelta=timedelta(seconds=0.1), also_run_immediately=False
+            callback=cb,
+            timedelta=timedelta(seconds=0.1),
+            also_run_immediately=False,
+            bus_client=dummy_bus.busdummy_bus,
         ),
         seconds=0.25,
     )
@@ -122,10 +134,13 @@ async def test_call_every_with_long_execution_time(run_for):
 
 
 @pytest.mark.asyncio
-async def test_call_on_schedule(run_for, call_counter):
+async def test_call_on_schedule(run_for, call_counter, dummy_bus):
     await run_for(
         coroutine=call_on_schedule(
-            callback=call_counter, schedule=schedule.every(0.1).seconds, also_run_immediately=False
+            callback=call_counter,
+            schedule=schedule.every(0.1).seconds,
+            also_run_immediately=False,
+            bus_client=dummy_bus.client,
         ),
         seconds=0.25,
     )
@@ -133,10 +148,13 @@ async def test_call_on_schedule(run_for, call_counter):
 
 
 @pytest.mark.asyncio
-async def test_call_on_schedule_run_immediate(run_for, call_counter):
+async def test_call_on_schedule_run_immediate(run_for, call_counter, dummy_bus):
     await run_for(
         coroutine=call_on_schedule(
-            callback=call_counter, schedule=schedule.every(0.1).seconds, also_run_immediately=True
+            callback=call_counter,
+            schedule=schedule.every(0.1).seconds,
+            also_run_immediately=True,
+            bus_client=dummy_bus.client,
         ),
         seconds=0.25,
     )
@@ -144,7 +162,7 @@ async def test_call_on_schedule_run_immediate(run_for, call_counter):
 
 
 @pytest.mark.asyncio
-async def test_call_on_schedule_async(run_for):
+async def test_call_on_schedule_async(run_for, dummy_bus):
     import schedule
 
     await_count = 0
@@ -155,7 +173,10 @@ async def test_call_on_schedule_async(run_for):
 
     await run_for(
         coroutine=call_on_schedule(
-            callback=cb, schedule=schedule.every(0.1).seconds, also_run_immediately=False
+            callback=cb,
+            schedule=schedule.every(0.1).seconds,
+            also_run_immediately=False,
+            bus_client=dummy_bus.client,
         ),
         seconds=0.25,
     )
@@ -163,7 +184,7 @@ async def test_call_on_schedule_async(run_for):
 
 
 @pytest.mark.asyncio
-async def test_call_on_schedule_with_long_execution_time(run_for):
+async def test_call_on_schedule_with_long_execution_time(run_for, dummy_bus):
     """Execution time should get taken into account"""
     import schedule
 
@@ -176,7 +197,10 @@ async def test_call_on_schedule_with_long_execution_time(run_for):
 
     await run_for(
         coroutine=call_on_schedule(
-            callback=cb, schedule=schedule.every(0.1).seconds, also_run_immediately=False
+            callback=cb,
+            schedule=schedule.every(0.1).seconds,
+            also_run_immediately=False,
+            bus_client=dummy_bus.client,
         ),
         seconds=0.25,
     )
@@ -184,24 +208,28 @@ async def test_call_on_schedule_with_long_execution_time(run_for):
 
 
 @pytest.mark.asyncio
-async def test_run_user_provided_callable_regular_function():
+async def test_run_user_provided_callable_regular_function(dummy_bus):
     called = False
 
     def call_me(a, b):
         nonlocal called
         called = True
 
-    await run_user_provided_callable(call_me, args=[1], kwargs={"b": 2})
+    await run_user_provided_callable(
+        call_me, args=[1], kwargs={"b": 2}, bus_client=dummy_bus.client
+    )
     assert called
 
 
 @pytest.mark.asyncio
-async def test_run_user_provided_callable_async_function():
+async def test_run_user_provided_callable_async_function(dummy_bus):
     called = False
 
     async def call_me(a, b):
         nonlocal called
         called = True
 
-    await run_user_provided_callable(call_me, args=[1], kwargs={"b": 2})
+    await run_user_provided_callable(
+        call_me, args=[1], kwargs={"b": 2}, bus_client=dummy_bus.client
+    )
     assert called

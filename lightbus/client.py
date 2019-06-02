@@ -5,6 +5,7 @@ import inspect
 import logging
 import os
 import signal
+import sys
 import threading
 import time
 from asyncio import CancelledError
@@ -91,18 +92,20 @@ class BusClient(object):
         self._consumers = []  # RPC consumers
         self._background_tasks = []  # Other background tasks added by user
         self._hook_callbacks = defaultdict(list)
-        self._exit_code = 0
         self.config = config
         self.transport_registry = transport_registry
         self.api_registry = Registry()
         self.plugin_registry = PluginRegistry()
         self.schema = None
+        self._server_shutdown_queue: janus.Queue = None
+        self._shutdown_monitor_task = None
+        self.exit_code = 0
 
         # Set by worker()
         self._call_queue = None
         self._closed = False
         self._server_tasks = []
-        self._shutdown_queue = None
+        self._worker_shutdown_queue = None
 
         BusClient._TOTAL_LIGHTBUS_THREADS += 1
 
@@ -114,12 +117,6 @@ class BusClient(object):
         self._bus_thread.start()
         self._bus_thread_ready.wait()
         logger.debug(f"Waiting over, bus thread {self._bus_thread.name} is now ready")
-
-    def _handle_error_in_worker_thread(self):
-        # We work on the assumption that the worker thread will have already
-        # closed itself down at this point (ie. cancelled its tasks, closed the bus)
-        logger.debug("Signal received from worker thread, exiting")
-        raise SystemExit(self._exit_code)
 
     def worker(self):
         """
@@ -142,7 +139,7 @@ class BusClient(object):
         In case 1 above, we assume the developer will take responsibility for closing the bus
         correctly when they are done with it.
 
-        In case 2 above, the worker needs to signal the main lightbus run process to tell it to being the
+        In case 2 above, the worker needs to signal the main lightbus run process to tell it to begin the
         shutdown procedure
 
         """
@@ -152,7 +149,7 @@ class BusClient(object):
         asyncio.set_event_loop(asyncio.new_event_loop())
 
         self._call_queue = janus.Queue()
-        self._shutdown_queue = janus.Queue()
+        self._worker_shutdown_queue = janus.Queue()
         self.transport_registry = self.transport_registry or TransportRegistry().load_config(
             self.config
         )
@@ -163,16 +160,16 @@ class BusClient(object):
         )
         self.schema = BusThreadProxy(proxied=schema, bus_client=self)
 
-        async def shutdown_monitor():
-            await self._shutdown_queue.async_q.get()
+        async def worker_shutdown_monitor():
+            await self._worker_shutdown_queue.async_q.get()
             self.loop.stop()
-            self._shutdown_queue.async_q.task_done()
+            self._worker_shutdown_queue.async_q.task_done()
 
-        shutdown_monitor_task = asyncio.ensure_future(shutdown_monitor())
-        shutdown_monitor_task.add_done_callback(make_exception_checker(die=True))
+        shutdown_monitor_task = asyncio.ensure_future(worker_shutdown_monitor())
+        shutdown_monitor_task.add_done_callback(make_exception_checker(self, die=True))
 
         perform_calls_task = asyncio.ensure_future(self._perform_calls())
-        perform_calls_task.add_done_callback(make_exception_checker(die=True))
+        perform_calls_task.add_done_callback(make_exception_checker(self, die=True))
 
         self._bus_thread_ready.set()
 
@@ -192,23 +189,16 @@ class BusClient(object):
             # In the case of a clean shutdown the bus will already be closed.
             pass
 
-        logger.debug("Canceling server tasks")
+        logger.debug("Canceling worker tasks")
         block(cancel(perform_calls_task, shutdown_monitor_task))
 
         logger.debug("Closing the call queue")
         self._call_queue.close()
         block(self._call_queue.wait_closed())
 
-        logger.debug("Closing the shutdown queue")
-        self._shutdown_queue.close()
-        block(self._shutdown_queue.wait_closed())
-
-        if hasattr(self.loop, "lightbus_exit_code"):
-            logger.debug("Signaling main thread to shutdown")
-            # Send the signal for the main thread to close down.
-            # See BusClient._handle_error_in_worker_thread()
-            self._exit_code = self.loop.lightbus_exit_code
-            os.kill(os.getpid(), signal.SIGUSR1)
+        logger.debug("Closing the worker shutdown queue")
+        self._worker_shutdown_queue.close()
+        block(self._worker_shutdown_queue.wait_closed())
 
         logger.debug("Worker shutdown complete")
 
@@ -220,12 +210,12 @@ class BusClient(object):
             return
 
         try:
-            self._shutdown_queue.sync_q.put(None)
+            self._worker_shutdown_queue.sync_q.put(None)
         except RuntimeError:
             pass
 
     @assert_not_in_bus_thread()
-    async def wait_for_shutdown(self):
+    async def _wait_for_worker_shutdown(self):
         logger.debug("Waiting for thread to finish")
         for _ in range(0, 50):
             if self._bus_thread.isAlive():
@@ -328,7 +318,7 @@ class BusClient(object):
             # bus thread will keep running and prevent the process for exiting
             if _stop_worker:
                 self._shutdown_worker()
-                await self.wait_for_shutdown()
+                await self._wait_for_worker_shutdown()
 
     @run_in_bus_thread()
     async def _close_async_inner(self):
@@ -370,10 +360,8 @@ class BusClient(object):
         logger.debug("Closing bus")
         self.close()
 
-        logger.debug("Waiting for worker to shutdown")
-        block(self.wait_for_shutdown())
-
-        return self._exit_code
+    def shutdown_server(self, exit_code):
+        self._server_shutdown_queue.sync_q.put(exit_code)
 
     @assert_not_in_bus_thread()
     def start_server(self, consume_rpcs=True):
@@ -381,14 +369,21 @@ class BusClient(object):
 
         Must be called from within the main thread
         """
+        # Ensure an event loop exists
+        get_event_loop()
 
-        if threading.current_thread() != threading.main_thread():
-            # Main thread is required in order to register our signal handler
-            raise LightbusServerMustStartInMainThread(
-                f"The Lightbus server must be started within the main thead, not {threading.current_thread()}"
-            )
+        self._server_shutdown_queue = janus.Queue()
+        self._server_tasks = set()
 
-        signal.signal(signal.SIGUSR1, lambda *a: self._handle_error_in_worker_thread())
+        async def server_shutdown_monitor():
+            exit_code = await self._server_shutdown_queue.async_q.get()
+            self.exit_code = exit_code
+            self.loop.stop()
+            self._server_shutdown_queue.async_q.task_done()
+
+        shutdown_monitor_task = asyncio.ensure_future(server_shutdown_monitor())
+        shutdown_monitor_task.add_done_callback(make_exception_checker(self, die=True))
+        self._shutdown_monitor_task = shutdown_monitor_task
 
         block(self._start_server_inner())
 
@@ -409,11 +404,11 @@ class BusClient(object):
         consume_rpc_task = None
         if consume_rpcs and self.api_registry.all():
             consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
-            consume_rpc_task.add_done_callback(make_exception_checker(die=True))
+            consume_rpc_task.add_done_callback(make_exception_checker(self, die=True))
 
         # Setup schema monitoring
         monitor_task = asyncio.ensure_future(self.schema.monitor())
-        monitor_task.add_done_callback(make_exception_checker(die=True))
+        monitor_task.add_done_callback(make_exception_checker(self, die=True))
 
         logger.info("Executing before_server_start & on_start hooks...")
         await self._execute_hook("before_server_start")
@@ -421,18 +416,19 @@ class BusClient(object):
 
         self._server_tasks = [consume_rpc_task, monitor_task]
 
+    @assert_not_in_bus_thread()
+    def stop_server(self):
+        block(cancel(self._shutdown_monitor_task))
+        block(self._stop_server_inner())
+
     @run_in_bus_thread()
-    async def stop_server(self):
+    async def _stop_server_inner(self):
         # Cancel the tasks we created above
         await cancel(*self._server_tasks)
 
         logger.info("Executing after_server_stopped & on_stop hooks...")
         await self._execute_hook("after_server_stopped")
         logger.info("Execution of after_server_stopped & on_stop hooks was successful")
-
-        # See if we've set the exit code on the event loop
-        if hasattr(self.loop, "lightbus_exit_code"):
-            self._exit_code = self.loop.lightbus_exit_code
 
     def _actually_run_forever(self):  # pragma: no cover
         """Simply start the loop running forever
@@ -474,7 +470,7 @@ class BusClient(object):
             )
 
         task = asyncio.ensure_future(asyncio.gather(*coroutines))
-        task.add_done_callback(make_exception_checker(die=True))
+        task.add_done_callback(make_exception_checker(self, die=True))
         self._consumers.append(task)
 
     async def _consume_rpcs_with_transport(
@@ -614,7 +610,9 @@ class BusClient(object):
             method = getattr(api, name)
             if self.config.api(api_name).cast_values:
                 kwargs = cast_to_signature(kwargs, method)
-            result = await run_user_provided_callable(method, args=[], kwargs=kwargs)
+            result = await run_user_provided_callable(
+                method, args=[], kwargs=kwargs, bus_client=self
+            )
         except (CancelledError, SuddenDeathException):
             raise
         except Exception as e:
@@ -812,7 +810,7 @@ class BusClient(object):
         See lightbus.utilities.async_tools.check_for_exception() for details.
         """
         task = asyncio.ensure_future(coroutine)
-        task.add_done_callback(make_exception_checker(die=True))
+        task.add_done_callback(make_exception_checker(self, die=True))
         if cancel_on_close:
             # Store task for closing later
             self._background_tasks.append(task)
@@ -863,13 +861,17 @@ class BusClient(object):
     async def _execute_hook(self, name, **kwargs):
         # Hooks that need to run before plugins
         for callback in self._hook_callbacks[(name, True)]:
-            await run_user_provided_callable(callback, args=[], kwargs=dict(client=self, **kwargs))
+            await run_user_provided_callable(
+                callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
+            )
 
         await self.plugin_registry.execute_hook(name, client=self, **kwargs)
 
         # Hooks that need to run after plugins
         for callback in self._hook_callbacks[(name, False)]:
-            await run_user_provided_callable(callback, args=[], kwargs=dict(client=self, **kwargs))
+            await run_user_provided_callable(
+                callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
+            )
 
     def _register_hook_callback(self, name, fn, before_plugins=False):
         self._hook_callbacks[(name, bool(before_plugins))].append(fn)
@@ -967,7 +969,7 @@ class BusClient(object):
 
         def wrapper(f):
             coroutine = call_every(  # pylint: assignment-from-no-return
-                callback=f, timedelta=td, also_run_immediately=also_run_immediately
+                callback=f, timedelta=td, also_run_immediately=also_run_immediately, bus_client=self
             )
             self.add_background_task(coroutine)
             return f
@@ -977,7 +979,10 @@ class BusClient(object):
     def schedule(self, schedule: "Job", also_run_immediately=False):
         def wrapper(f):
             coroutine = call_on_schedule(
-                callback=f, schedule=schedule, also_run_immediately=also_run_immediately
+                callback=f,
+                schedule=schedule,
+                also_run_immediately=also_run_immediately,
+                bus_client=self,
             )
             self.add_background_task(coroutine)
             return f
@@ -1123,7 +1128,7 @@ class _EventListener(object):
 
         listener_task = asyncio.gather(*tasks)
 
-        exception_checker = make_exception_checker(die=self.die_on_error)
+        exception_checker = make_exception_checker(self.bus_client, die=self.die_on_error)
         listener_task.add_done_callback(exception_checker)
 
         # Setting is_listener lets Client.close() know that it should mop up this
@@ -1184,6 +1189,7 @@ class _EventListener(object):
                                 self.listener_callable,
                                 args=[event_message],
                                 kwargs=parameters,
+                                bus_client=self.bus_client,
                                 die_on_exception=False,
                             )
                         except LightbusShutdownInProgress as e:

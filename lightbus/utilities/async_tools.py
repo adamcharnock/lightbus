@@ -16,6 +16,7 @@ if False:
     # pylint: disable=unused-import
     from schedule import Job
     from lightbus.client import BusClient
+    from lightbus.path import BusPath
 
 from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 
@@ -102,26 +103,26 @@ async def cancel(*tasks):
         raise ex
 
 
-def check_for_exception(fut: asyncio.Future, die=True):
+def check_for_exception(fut: asyncio.Future, bus_client: "BusClient", die=True):
     """Check for exceptions in returned future
 
     To be used as a callback, eg:
 
     task.add_done_callback(check_for_exception)
     """
-    with exception_handling_context(die):
+    with exception_handling_context(bus_client, die):
         if fut.exception():
             fut.result()
 
 
-def make_exception_checker(die=True):
+def make_exception_checker(bus_client: "BusClient", die=True):
     """Creates a callback handler (i.e. check_for_exception())
     which will be called with the given arguments"""
-    return partial(check_for_exception, die=die)
+    return partial(check_for_exception, die=die, bus_client=bus_client)
 
 
 @contextmanager
-def exception_handling_context(bus: BusPath, die=True):
+def exception_handling_context(bus_client: "BusClient", die=True):
     """Handle exceptions in user code"""
     try:
         yield
@@ -134,13 +135,12 @@ def exception_handling_context(bus: BusPath, die=True):
         logger.exception(e)
         if die:
             logger.debug("Stopping event loop and setting exit code")
-            # TODO: This is not how to shut things down
-            loop = asyncio.get_event_loop()
-            loop.lightbus_exit_code = 1
-            loop.stop()
+            bus_client.shutdown_server(exit_code=1)
 
 
-async def run_user_provided_callable(callable, args, kwargs, die_on_exception=True):
+async def run_user_provided_callable(
+    callable, args, kwargs, bus_client: "BusClient", die_on_exception=True
+):
     """Run user provided code
 
     If the callable is blocking (i.e. a regular function) it will be
@@ -157,14 +157,16 @@ async def run_user_provided_callable(callable, args, kwargs, die_on_exception=Tr
     if asyncio.iscoroutinefunction(callable):
         return await callable(*args, **kwargs)
 
-    with exception_handling_context(die=die_on_exception):
+    with exception_handling_context(bus_client, die=die_on_exception):
         future = asyncio.get_event_loop().run_in_executor(
             executor=None, func=lambda: callable(*args, **kwargs)
         )
     return await future
 
 
-async def call_every(*, callback, timedelta: timedelta, also_run_immediately: bool):
+async def call_every(
+    *, callback, timedelta: timedelta, also_run_immediately: bool, bus_client: "BusClient"
+):
     """Call callback every timedelta
 
     If also_run_immediately is set then the callback will be called before any waiting
@@ -178,21 +180,23 @@ async def call_every(*, callback, timedelta: timedelta, also_run_immediately: bo
     while True:
         start_time = time()
         if not first_run or also_run_immediately:
-            await run_user_provided_callable(callback, args=[], kwargs={})
+            await run_user_provided_callable(callback, args=[], kwargs={}, bus_client=bus_client)
         total_execution_time = time() - start_time
         sleep_time = max(0.0, timedelta.total_seconds() - total_execution_time)
         await asyncio.sleep(sleep_time)
         first_run = False
 
 
-async def call_on_schedule(callback, schedule: "Job", also_run_immediately: bool):
+async def call_on_schedule(
+    callback, schedule: "Job", also_run_immediately: bool, bus_client: "BusClient"
+):
     first_run = True
     while True:
         schedule._schedule_next_run()
 
         if not first_run or also_run_immediately:
             schedule.last_run = datetime.now()
-            await run_user_provided_callable(callback, args=[], kwargs={})
+            await run_user_provided_callable(callback, args=[], kwargs={}, bus_client=bus_client)
 
         td = schedule.next_run - datetime.now()
         await asyncio.sleep(td.total_seconds())

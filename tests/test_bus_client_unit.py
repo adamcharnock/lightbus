@@ -1,6 +1,8 @@
 import asyncio
+import threading
 from asyncio import BaseEventLoop
 
+import janus
 import jsonschema
 from unittest import mock
 import pytest
@@ -431,34 +433,24 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
 
 
 @pytest.mark.asyncio
-async def test_exception_in_listener_shutdown(
-    dummy_bus: lightbus.path.BusPath, caplog, sigusr1_mock
-):
+async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, caplog):
     dummy_bus.client.config.api("default").on_error = OnError.SHUTDOWN
 
-    class SomeException(Exception):
-        pass
+    # This is normally only set on server startup, so set it here so it can be used
+    dummy_bus.client._server_shutdown_queue = janus.Queue()
 
     def listener(*args, **kwargs):
-        raise SomeException()
+        raise Exception()
 
     # Start the listener
     await dummy_bus.client.listen_for_events(
         events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
     )
 
-    # Wait until the bus closes (due to the error the handler above raises
-    for _ in range(1, 300):
-        if dummy_bus.client._closed:
-            break
-        await asyncio.sleep(0.01)
+    # Check we have something in the shutdown queue
+    asyncio.wait_for(dummy_bus.client._server_shutdown_queue.async_q.get(), timeout=5)
 
-    # Check the bus actually decided to quit
-    assert sigusr1_mock.called
-
-    log_levels = {r.levelname for r in caplog.records}
-    # Ensure the error was logged
-    assert "ERROR" in log_levels
+    # Note that this hasn't actually shut the bus down, we'll text that in test_server_shutdown
 
 
 @pytest.mark.asyncio
@@ -525,11 +517,10 @@ def test_add_background_task(dummy_bus: lightbus.path.BusPath, event_loop):
             await asyncio.sleep(0.001)
 
     dummy_bus.client.add_background_task(test_coroutine())
-    with pytest.raises(SystemExit):
-        # SystemExit raised because test_coroutine throws an exception
-        dummy_bus.client.run_forever(consume_rpcs=False)
 
-    assert dummy_bus.client._exit_code
+    dummy_bus.client.run_forever(consume_rpcs=False)
+
+    assert dummy_bus.client.exit_code
 
     assert calls == 5
 
@@ -546,11 +537,10 @@ def test_every(dummy_bus: lightbus.path.BusPath, event_loop):
                 raise Exception("Intentional exception: stopping lightbus dummy bus from running")
             await asyncio.sleep(0.001)
 
-    with pytest.raises(SystemExit):
-        # SystemExit raised because test_coroutine throws an exception
-        dummy_bus.client.run_forever(consume_rpcs=False)
+    # SystemExit raised because test_coroutine throws an exception
+    dummy_bus.client.run_forever(consume_rpcs=False)
 
-    assert dummy_bus.client._exit_code
+    assert dummy_bus.client.exit_code
 
     assert calls == 5
 
@@ -560,6 +550,7 @@ def test_schedule(dummy_bus: lightbus.path.BusPath, event_loop):
 
     calls = 0
 
+    # TODO: This kind of 'throw exception to stop bus' hackery in the tests can be cleaned up
     @dummy_bus.client.schedule(schedule.every(0.001).seconds)
     async def test_coroutine():
         nonlocal calls
@@ -569,10 +560,24 @@ def test_schedule(dummy_bus: lightbus.path.BusPath, event_loop):
                 raise Exception("Intentional exception: stopping lightbus dummy bus from running")
             await asyncio.sleep(0.001)
 
-    with pytest.raises(SystemExit):
-        # SystemExit raised because test_coroutine throws an exception
-        dummy_bus.client.run_forever(consume_rpcs=False)
+    dummy_bus.client.run_forever(consume_rpcs=False)
 
-    assert dummy_bus.client._exit_code
+    assert dummy_bus.client.exit_code
 
     assert calls == 5
+
+
+@pytest.mark.asyncio
+async def test_server_shutdown(dummy_bus: lightbus.path.BusPath, caplog):
+    thread = threading.Thread(target=dummy_bus.client.run_forever, name="TestLightbusServerThread")
+    thread.start()
+
+    await asyncio.sleep(0.1)
+    dummy_bus.client.shutdown_server(exit_code=1)
+    await asyncio.sleep(1)
+
+    assert (
+        not dummy_bus.client._bus_thread.isAlive()
+    ), "Bus worker thread is still running but should have stopped"
+    # Make sure will pull out any exceptions
+    dummy_bus.client._bus_thread.join()
