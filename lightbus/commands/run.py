@@ -68,7 +68,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
                 asyncio.get_event_loop().remove_signal_handler(signal_)
 
             logger.debug("Caught signal. Stopping main thread event loop")
-            bus.client.shutdown_server()
+            bus.client.shutdown_server(exit_code=0)
 
         for signal_ in restart_signals:
             asyncio.get_event_loop().add_signal_handler(
