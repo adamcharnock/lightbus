@@ -30,7 +30,7 @@ async def test_call_rpc(redis_rpc_transport, redis_client):
         kwargs={"field": "value"},
         return_path="abc",
     )
-    await redis_rpc_transport.call_rpc(rpc_message, options={})
+    await redis_rpc_transport.call_rpc(rpc_message, options={}, bus_client=None)
     assert set(await redis_client.keys("*")) == {b"my.api:rpc_queue", b"rpc_expiry_key:123abc"}
 
     messages = await redis_client.lrange("my.api:rpc_queue", start=0, stop=100)
@@ -75,7 +75,7 @@ async def test_consume_rpcs_no_expiry_key(redis_client, redis_rpc_transport, dum
         )
 
     async def co_consume():
-        return await redis_rpc_transport.consume_rpcs(apis=[dummy_api])
+        return await redis_rpc_transport.consume_rpcs(apis=[dummy_api], bus_client=None)
 
     enqueue_result, messages = await asyncio.gather(co_enqeue(), co_consume())
     assert not messages
@@ -102,7 +102,7 @@ async def test_consume_rpcs(redis_client, redis_rpc_transport, dummy_api):
         )
 
     async def co_consume():
-        return await redis_rpc_transport.consume_rpcs(apis=[dummy_api])
+        return await redis_rpc_transport.consume_rpcs(apis=[dummy_api], bus_client=None)
 
     enqueue_result, messages = await asyncio.gather(co_enqeue(), co_consume())
     message = messages[0]
@@ -147,7 +147,7 @@ async def test_consume_rpcs_only_once(redis_client, dummy_api, redis_pool):
 
     async def co_consume(transport):
         nonlocal message_count
-        messages = await transport.consume_rpcs(apis=[dummy_api])
+        messages = await transport.consume_rpcs(apis=[dummy_api], bus_client=None)
         message_count += len(messages)
 
     consumer1 = asyncio.ensure_future(co_consume(transport1))
@@ -191,7 +191,7 @@ async def test_reconnect_upon_call_rpc(redis_rpc_transport, redis_client):
         kwargs={"field": "value"},
         return_path="abc",
     )
-    await redis_rpc_transport.call_rpc(rpc_message, options={})
+    await redis_rpc_transport.call_rpc(rpc_message, options={}, bus_client=None)
     assert set(await redis_client.keys("*")) == {b"my.api:rpc_queue", b"rpc_expiry_key:123abc"}
 
     messages = await redis_client.lrange("my.api:rpc_queue", start=0, stop=100)
@@ -226,7 +226,7 @@ async def test_reconnect_upon_consume_rpcs(loop, redis_client, redis_rpc_transpo
     async def co_consume():
         nonlocal total_messages
         while True:
-            messages = await redis_rpc_transport.consume_rpcs(apis=[dummy_api])
+            messages = await redis_rpc_transport.consume_rpcs(apis=[dummy_api], bus_client=None)
             total_messages += len(messages)
 
     enque_task = asyncio.ensure_future(co_enqeue())

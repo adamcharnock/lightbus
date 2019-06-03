@@ -9,6 +9,7 @@ from typing import List, Dict, Tuple
 
 from lightbus import RpcTransport, EventTransport, SchemaTransport, ResultTransport, EventMessage
 from lightbus.path import BusPath
+from lightbus.client import BusClient
 from lightbus.transports.base import TransportRegistry
 
 _registry: Dict[str, List] = {}
@@ -118,10 +119,10 @@ class TestRpcTransport(RpcTransport):
     def __init__(self):
         self.rpcs = []
 
-    async def call_rpc(self, rpc_message, options: dict):
+    async def call_rpc(self, rpc_message, options: dict, bus_client: "BusClient"):
         self.rpcs.append((rpc_message, options))
 
-    async def consume_rpcs(self, apis):
+    async def consume_rpcs(self, apis, bus_client: "BusClient"):
         raise NotImplementedError("Not yet supported by mocks")
 
 
@@ -129,10 +130,10 @@ class TestResultTransport(ResultTransport):
     def get_return_path(self, rpc_message):
         return "test://"
 
-    async def send_result(self, rpc_message, result_message, return_path):
+    async def send_result(self, rpc_message, result_message, return_path, bus_client: "BusClient"):
         raise NotImplementedError("Not yet supported by mocks")
 
-    async def receive_result(self, rpc_message, return_path, options):
+    async def receive_result(self, rpc_message, return_path, options, bus_client: "BusClient"):
         raise NotImplementedError("Not yet supported by mocks")
 
 
@@ -140,10 +141,16 @@ class TestEventTransport(EventTransport):
     def __init__(self):
         self.events = []
 
-    async def send_event(self, event_message, options):
+    async def send_event(self, event_message, options, bus_client: "BusClient"):
         self.events.append((event_message, options))
 
-    def consume(self, listen_for: List[Tuple[str, str]], listener_name: str, **kwargs):
+    def consume(
+        self,
+        listen_for: List[Tuple[str, str]],
+        listener_name: str,
+        bus_client: "BusClient",
+        **kwargs,
+    ):
         """Consume RPC events for the given API"""
         raise NotImplementedError("Not yet supported by mocks")
 

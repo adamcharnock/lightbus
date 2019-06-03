@@ -441,13 +441,6 @@ class BusClient(object):
 
     @run_in_bus_thread()
     async def consume_rpcs(self, apis: List[Api] = None):
-        # TODO: Should return a background task like listen_for_events() does, and
-        # that task should be cleaned up automatically (like the listeners). Or, to
-        # look at it another way, it should be possible start RPCs being consumed without
-        # having access to the event loop. The current style of using asyncio.ensure_future(bus.client.consume_rpcs())
-        # requires the event loop, but that loop is now internal to the bus.
-        # So to put it another way, no client functionality should rely on the caller being
-        # able to background a coroutine.
         if apis is None:
             apis = self.api_registry.all()
 
@@ -478,7 +471,7 @@ class BusClient(object):
     ):
         while True:
             try:
-                rpc_messages = await rpc_transport.consume_rpcs(apis)
+                rpc_messages = await rpc_transport.consume_rpcs(apis, bus_client=self)
             except TransportIsClosed:
                 return
 
@@ -544,7 +537,7 @@ class BusClient(object):
 
         future = asyncio.gather(
             self.receive_result(rpc_message, return_path, options=options),
-            rpc_transport.call_rpc(rpc_message, options=options),
+            rpc_transport.call_rpc(rpc_message, options=options, bus_client=self),
         )
 
         await self._execute_hook("before_rpc_call", rpc_message=rpc_message)
@@ -686,7 +679,7 @@ class BusClient(object):
         event_transport = self.transport_registry.get_event_transport(api_name)
         await self._execute_hook("before_event_sent", event_message=event_message)
         logger.info(L("📤  Sending event {}.{}".format(Bold(api_name), Bold(name))))
-        await event_transport.send_event(event_message, options=options)
+        await event_transport.send_event(event_message, options=options, bus_client=self)
         await self._execute_hook("after_event_sent", event_message=event_message)
 
     async def listen_for_event(
@@ -720,13 +713,15 @@ class BusClient(object):
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
         return await result_transport.send_result(
-            rpc_message, result_message, rpc_message.return_path
+            rpc_message, result_message, rpc_message.return_path, bus_client=self
         )
 
     @run_in_bus_thread()
     async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict):
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
-        return await result_transport.receive_result(rpc_message, return_path, options)
+        return await result_transport.receive_result(
+            rpc_message, return_path, options, bus_client=self
+        )
 
     @contextlib.contextmanager
     def _register_listener(self, events: List[Tuple[str, str]]):
@@ -1147,7 +1142,7 @@ class _EventListener(object):
         # event_transport.consume() returns an asynchronous generator
         # which will provide us with messages
         consumer = event_transport.consume(
-            listen_for=events, listener_name=self.listener_name, **self.options
+            listen_for=events, listener_name=self.listener_name, bus_client=self, **self.options
         )
 
         try:
@@ -1217,7 +1212,7 @@ class _EventListener(object):
                                 raise
 
                         # Acknowledge the successfully processed message
-                        await event_transport.acknowledge(event_message)
+                        await event_transport.acknowledge(event_message, bus_client=self.bus_client)
 
                         await self.bus_client._execute_hook(
                             "after_event_execution", event_message=event_message

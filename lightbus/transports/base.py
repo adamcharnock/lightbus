@@ -11,6 +11,7 @@ from lightbus.utilities.importing import load_entrypoint_classes
 if False:
     # pylint: disable=unused-import
     from lightbus.config import Config
+    from lightbus.client import BusClient
 
 T = TypeVar("T")
 logger = logging.getLogger(__name__)
@@ -50,12 +51,14 @@ class Transport(object, metaclass=TransportMetaclass):
 class RpcTransport(Transport):
     """Implement the sending and receiving of RPC calls"""
 
-    async def call_rpc(self, rpc_message: RpcMessage, options: dict):
+    async def call_rpc(self, rpc_message: RpcMessage, options: dict, bus_client: "BusClient"):
         """Publish a call to a remote procedure"""
         RpcTransport.from_config()
         raise NotImplementedError()
 
-    async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
+    async def consume_rpcs(
+        self, apis: Sequence[Api], bus_client: "BusClient"
+    ) -> Sequence[RpcMessage]:
         """Consume RPC calls for the given API"""
         raise NotImplementedError()
 
@@ -69,7 +72,11 @@ class ResultTransport(Transport):
         raise NotImplementedError()
 
     async def send_result(
-        self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: str
+        self,
+        rpc_message: RpcMessage,
+        result_message: ResultMessage,
+        return_path: str,
+        bus_client: "BusClient",
     ):
         """Send a result back to the caller
 
@@ -82,7 +89,7 @@ class ResultTransport(Transport):
         raise NotImplementedError()
 
     async def receive_result(
-        self, rpc_message: RpcMessage, return_path: str, options: dict
+        self, rpc_message: RpcMessage, return_path: str, options: dict, bus_client: "BusClient"
     ) -> ResultMessage:
         """Receive the result for the given message
 
@@ -99,12 +106,16 @@ class EventTransport(Transport):
     """ Implement the sending/consumption of events over a given transport.
     """
 
-    async def send_event(self, event_message: EventMessage, options: dict):
+    async def send_event(self, event_message: EventMessage, options: dict, bus_client: "BusClient"):
         """Publish an event"""
         raise NotImplementedError()
 
     async def consume(
-        self, listen_for: List[Tuple[str, str]], listener_name: str, **kwargs
+        self,
+        listen_for: List[Tuple[str, str]],
+        listener_name: str,
+        bus_client: "BusClient",
+        **kwargs,
     ) -> AsyncGenerator[List[EventMessage], None]:
         """Consume messages for the given APIs
 
@@ -124,7 +135,7 @@ class EventTransport(Transport):
             f"Event transport {self.__class__.__name__} does not support listening for events"
         )
 
-    async def acknowledge(self, *event_messages):
+    async def acknowledge(self, *event_messages, bus_client: "BusClient"):
         """Acknowledge that one or more events were successfully processed"""
         pass
 
