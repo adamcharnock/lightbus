@@ -282,12 +282,35 @@ def test_cast_to_hit(test_input, hint, expected, caplog):
     "test_input,hint,expected",
     [
         ("a", int, "a"),
+        ("a", float, "a"),
+        (True, list, True),
+        (True, tuple, True),
+        (True, dict, True),
+        (True, set, True),
+        (True, datetime, True),
         # Custom classes not supported, so the hint is ignored
         ("a", CustomClass, "a"),
         (["1", 2], SupportsRound, ["1", 2]),
         ("x", ExampleEnum, "x"),
+        (True, List[int], True),
+        (True, Set[int], True),
+        (True, Tuple[int, str, int], True),
     ],
-    ids=["str_int", "custom_class", "unsupported_generic", "enum_bad_value"],
+    ids=[
+        "str_int",
+        "str_float",
+        "bool_list",
+        "bool_tuple",
+        "bool_dict",
+        "bool_set",
+        "bool_datetime",
+        "custom_class",
+        "unsupported_generic",
+        "enum_bad_value",
+        "list_generic_typed_weird_input",
+        "set_generic_typed_weird_input",
+        "tuple_generic_nested_typed_weird_input",
+    ],
 )
 def test_cast_to_annotation_with_warnings(test_input, hint, expected, caplog):
     with caplog.at_level(logging.WARNING, logger=""):
