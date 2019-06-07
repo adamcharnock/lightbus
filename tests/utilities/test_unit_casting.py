@@ -292,6 +292,9 @@ def test_cast_to_hit(test_input, hint, expected, caplog):
         ("a", CustomClass, "a"),
         (["1", 2], SupportsRound, ["1", 2]),
         ("x", ExampleEnum, "x"),
+        (True, List[int], True),
+        (True, Set[int], True),
+        (True, Tuple[int, str, int], True),
     ],
     ids=[
         "str_int",
@@ -304,6 +307,9 @@ def test_cast_to_hit(test_input, hint, expected, caplog):
         "custom_class",
         "unsupported_generic",
         "enum_bad_value",
+        "list_generic_typed_weird_input",
+        "set_generic_typed_weird_input",
+        "tuple_generic_nested_typed_weird_input",
     ],
 )
 def test_cast_to_annotation_with_warnings(test_input, hint, expected, caplog):

@@ -80,23 +80,19 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
         return cast_or_warning(lambda v: dateutil.parser.parse(v).date(), value)
     elif is_class and issubclass_safe(hint_type, list):
         # Lists
-        if hint_args:
-            return [cast_to_hint(i, hint_args[0]) for i in value]
-        else:
-            return cast_or_warning(list, value)
+        if hint_args and hasattr(value, "__iter__"):
+            value = [cast_to_hint(i, hint_args[0]) for i in value]
+        return cast_or_warning(list, value)
     elif is_class and issubclass_safe(hint_type, tuple):
         # Tuples
-        if hint_args:
-            return tuple(cast_to_hint(h, hint_args[i]) for i, h in enumerate(value))
-        else:
-            return cast_or_warning(tuple, value)
+        if hint_args and hasattr(value, "__iter__"):
+            value = [cast_to_hint(h, hint_args[i]) for i, h in enumerate(value)]
+        return cast_or_warning(tuple, value)
     elif is_class and issubclass_safe(hint_type, set):
         # Sets
-        # TODO: Casting non-iterables
-        if hint_args:
-            return set(cast_to_hint(i, hint_args[0]) for i in value)
-        else:
-            return cast_or_warning(set, value)
+        if hint_args and hasattr(value, "__iter__"):
+            value = [cast_to_hint(i, hint_args[0]) for i in value]
+        return cast_or_warning(set, value)
     elif (
         inspect.isclass(hint)
         and hasattr(hint, "__annotations__")
