@@ -577,7 +577,7 @@ async def test_server_shutdown(dummy_bus: lightbus.path.BusPath, caplog):
     await asyncio.sleep(1)
 
     assert (
-        not dummy_bus.client._bus_thread.isAlive()
+        not dummy_bus.client.worker._worker_thread.isAlive()
     ), "Bus worker thread is still running but should have stopped"
     # Make sure will pull out any exceptions
-    dummy_bus.client._bus_thread.join()
+    dummy_bus.client.worker._worker_thread.join()

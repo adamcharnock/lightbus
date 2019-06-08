@@ -17,6 +17,12 @@ from typing import List, Tuple, Coroutine, Union
 import janus
 
 from lightbus.api import Api, Registry
+from lightbus.client_worker import (
+    ClientWorker,
+    run_in_worker_thread,
+    assert_not_in_worker_thread,
+    WorkerProxy,
+)
 from lightbus.config import Config
 from lightbus.config.structure import OnError
 from lightbus.exceptions import (
@@ -59,12 +65,6 @@ from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.logging import log_transport_information
-from lightbus.utilities.threading_tools import (
-    run_in_bus_thread,
-    assert_in_bus_thread,
-    BusThreadProxy,
-    assert_not_in_bus_thread,
-)
 
 if False:
     # pylint: disable=unused-import
@@ -85,8 +85,6 @@ class BusClient(object):
     All functionality in `BusPath` is provided by `BusClient`.
     """
 
-    _TOTAL_LIGHTBUS_THREADS = 0
-
     def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
         self._listeners = {}  # event listeners
         self._consumers = []  # RPC consumers
@@ -100,56 +98,15 @@ class BusClient(object):
         self._server_shutdown_queue: janus.Queue = None
         self._shutdown_monitor_task = None
         self.exit_code = 0
-
-        # Set by worker()
-        self._call_queue = None
         self._closed = False
         self._server_tasks = []
-        self._worker_shutdown_queue = None
+        self.worker = ClientWorker()
 
-        BusClient._TOTAL_LIGHTBUS_THREADS += 1
+        self.worker.start(bus_client=self, after_shutdown=self._handle_worker_shutdown)
+        self.__init_worker___()
 
-        self._bus_thread_ready = threading.Event()
-        self._bus_thread = threading.Thread(
-            name=f"LightbusThread{BusClient._TOTAL_LIGHTBUS_THREADS}", target=self.worker
-        )
-        logger.debug(f"Starting bus thread {self._bus_thread.name}. Will wait until it is ready")
-        self._bus_thread.start()
-        self._bus_thread_ready.wait()
-        logger.debug(f"Waiting over, bus thread {self._bus_thread.name} is now ready")
-
-    def worker(self):
-        """
-
-
-        A note about error handling in the worker thread:
-
-        There are two scenarios in which the worker thread my encounter an error.
-
-            1. The bus is being used as a client. A bus method is called by the client code,
-               and this call raises an exception. This exception is propagated to the client
-               code for it to deal with.1
-            2. The bus is being used as a server and has various coroutines running at any one
-               time. In this case, if a coroutine encounters an error then it should cause the
-               lightbus server to exit.
-
-        In response to either of these cases the bus needs to shut itself down. Therefore,
-        the worker needs to keep on running for a while in order to handle the various shutdown tasks.
-
-        In case 1 above, we assume the developer will take responsibility for closing the bus
-        correctly when they are done with it.
-
-        In case 2 above, the worker needs to signal the main lightbus run process to tell it to begin the
-        shutdown procedure
-
-        """
-        logger.debug(f"Bus thread {self._bus_thread.name} initialising")
-
-        # Start a new event loop for this new thread
-        asyncio.set_event_loop(asyncio.new_event_loop())
-
-        self._call_queue = janus.Queue()
-        self._worker_shutdown_queue = janus.Queue()
+    @run_in_worker_thread()
+    def __init_worker___(self):
         self.transport_registry = self.transport_registry or TransportRegistry().load_config(
             self.config
         )
@@ -158,78 +115,20 @@ class BusClient(object):
             max_age_seconds=self.config.bus().schema.ttl,
             human_readable=self.config.bus().schema.human_readable,
         )
-        self.schema = BusThreadProxy(proxied=schema, bus_client=self)
+        self.schema = WorkerProxy(proxied=schema, worker=self.worker)
 
-        async def worker_shutdown_monitor():
-            await self._worker_shutdown_queue.async_q.get()
-            self.loop.stop()
-            self._worker_shutdown_queue.async_q.task_done()
-
-        shutdown_monitor_task = asyncio.ensure_future(worker_shutdown_monitor())
-        shutdown_monitor_task.add_done_callback(make_exception_checker(self, die=True))
-
-        perform_calls_task = asyncio.ensure_future(self._perform_calls())
-        perform_calls_task.add_done_callback(make_exception_checker(self, die=True))
-
-        self._bus_thread_ready.set()
-
-        asyncio.get_event_loop().run_forever()
-
-        logging.debug(
-            f"Event loop stopped in bus worker thread {self._bus_thread.name}. Closing down."
-        )
-        self._bus_thread_ready.clear()
+    def _handle_worker_shutdown(self):
+        # This method will be called within the worker thead, but after the worker
+        # thread's event loop has stopped
 
         try:
             # Close _close_async_inner() because, we are in the worker thead.
-            # The worker thread is closing down right now so no need to worry about
-            # stopping it as close() would do.
             block(self._close_async_inner())
         except BusAlreadyClosed:
             # In the case of a clean shutdown the bus will already be closed.
             pass
 
-        logger.debug("Canceling worker tasks")
-        block(cancel(perform_calls_task, shutdown_monitor_task))
-
-        logger.debug("Closing the call queue")
-        self._call_queue.close()
-        block(self._call_queue.wait_closed())
-
-        logger.debug("Closing the worker shutdown queue")
-        self._worker_shutdown_queue.close()
-        block(self._worker_shutdown_queue.wait_closed())
-
-        logger.debug("Worker shutdown complete")
-
-    @assert_not_in_bus_thread()
-    def _shutdown_worker(self):
-        logger.debug(f"Sending shutdown message to bus thread {self._bus_thread.name}")
-        if not self._bus_thread.isAlive():
-            # Already shutdown, move along
-            return
-
-        try:
-            self._worker_shutdown_queue.sync_q.put(None)
-        except RuntimeError:
-            pass
-
-    @assert_not_in_bus_thread()
-    async def _wait_for_worker_shutdown(self):
-        logger.debug("Waiting for thread to finish")
-        for _ in range(0, 50):
-            if self._bus_thread.isAlive():
-                await asyncio.sleep(0.1)
-            else:
-                self._bus_thread.join()
-
-        if self._bus_thread.isAlive():
-            logger.error("Worker thread failed to shutdown in a timely fashion")
-            # TODO: Kill painfully?
-        else:
-            logger.debug("Worker thread shutdown cleanly")
-
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     async def setup_async(self, plugins: dict = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
 
@@ -294,7 +193,7 @@ class BusClient(object):
     def setup(self, plugins: dict = None):
         block(self.setup_async(plugins), timeout=5)
 
-    @assert_not_in_bus_thread()
+    @assert_not_in_worker_thread()
     def close(self, _stop_worker=True):
         """Close the bus client
 
@@ -304,7 +203,7 @@ class BusClient(object):
             raise BusAlreadyClosed()
         block(self.close_async(_stop_worker=_stop_worker))
 
-    @assert_not_in_bus_thread()
+    @assert_not_in_worker_thread()
     async def close_async(self, _stop_worker=True):
         """Async version of close()
         """
@@ -317,10 +216,10 @@ class BusClient(object):
             # Whatever happens, make sure we stop the event loop otherwise the
             # bus thread will keep running and prevent the process for exiting
             if _stop_worker:
-                self._shutdown_worker()
-                await self._wait_for_worker_shutdown()
+                self.worker.shutdown()
+                await self.worker.wait_for_shutdown()
 
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     async def _close_async_inner(self):
         """Handle all aspects of the closing which need to run within the bus worker thread"""
         if self._closed:
@@ -363,7 +262,7 @@ class BusClient(object):
     def shutdown_server(self, exit_code):
         self._server_shutdown_queue.sync_q.put(exit_code)
 
-    @assert_not_in_bus_thread()
+    @assert_not_in_worker_thread()
     def start_server(self, consume_rpcs=True):
         """Server startup procedure
 
@@ -387,7 +286,7 @@ class BusClient(object):
 
         block(self._start_server_inner())
 
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     async def _start_server_inner(self, consume_rpcs=True):
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())
@@ -416,12 +315,12 @@ class BusClient(object):
 
         self._server_tasks = [consume_rpc_task, monitor_task]
 
-    @assert_not_in_bus_thread()
+    @assert_not_in_worker_thread()
     def stop_server(self):
         block(cancel(self._shutdown_monitor_task))
         block(self._stop_server_inner())
 
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     async def _stop_server_inner(self):
         # Cancel the tasks we created above
         await cancel(*self._server_tasks)
@@ -439,7 +338,7 @@ class BusClient(object):
 
     # RPCs
 
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     async def consume_rpcs(self, apis: List[Api] = None):
         if apis is None:
             apis = self.api_registry.all()
@@ -509,7 +408,7 @@ class BusClient(object):
 
                 await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     async def call_rpc_remote(
         self, api_name: str, name: str, kwargs: dict = frozendict(), options: dict = frozendict()
     ):
@@ -593,7 +492,7 @@ class BusClient(object):
 
         return result_message.result
 
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     async def call_rpc_local(self, api_name: str, name: str, kwargs: dict = frozendict()):
         api = self.api_registry.get(api_name)
         self._validate_name(api_name, "rpc", name)
@@ -632,7 +531,7 @@ class BusClient(object):
 
     # Events
 
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         kwargs = kwargs or {}
         try:
@@ -689,7 +588,7 @@ class BusClient(object):
             [(api_name, name)], listener, listener_name=listener_name, options=options
         )
 
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     async def listen_for_events(
         self, events: List[Tuple[str, str]], listener, listener_name: str, options: dict = None
     ):
@@ -709,14 +608,14 @@ class BusClient(object):
 
     # Results
 
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
         return await result_transport.send_result(
             rpc_message, result_message, rpc_message.return_path, bus_client=self
         )
 
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict):
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
         return await result_transport.receive_result(
@@ -789,7 +688,7 @@ class BusClient(object):
         elif isinstance(message, ResultMessage):
             self.schema.validate_response(api_name, event_or_rpc_name, message.result)
 
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     def add_background_task(
         self, coroutine: Union[Coroutine, asyncio.Future], cancel_on_close=True
     ):
@@ -989,40 +888,10 @@ class BusClient(object):
     def register_api(self, api: Api):
         block(self.register_api_async(api), timeout=5)
 
-    @run_in_bus_thread()
+    @run_in_worker_thread()
     async def register_api_async(self, api: Api):
         self.api_registry.add(api)
         await self.schema.add_api(api)
-
-    # Handling bus calls from child threads
-
-    async def _perform_calls(self):
-        """Coroutine to run in background consuming incoming calls from other threads
-        """
-        # TODO: The name 'perform_calls' is too generic, find all uses and rename to something better
-        while True:
-            # Wait for calls
-            logger.debug("Awaiting calls on the call queue")
-            fn, args, kwargs, result_queue = await self._call_queue.async_q.get()
-
-            # Execute call
-            logger.debug(f"Call to {fn.__name__} received, executing")
-            try:
-                result = fn(*args, **kwargs)
-                if inspect.isawaitable(result):
-                    result = await result
-            except CancelledError as e:
-                raise
-            except Exception as e:
-                result = e
-            finally:
-                # Acknowledge the completion
-                logger.debug("Call executed, marking as done")
-                self._call_queue.async_q.task_done()
-
-            # Put the result in the result queue
-            logger.debug(f"Returning result {result}")
-            result_queue.put(result)
 
 
 class _EventListener(object):

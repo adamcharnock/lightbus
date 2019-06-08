@@ -7,13 +7,13 @@ import pytest
 from lightbus import BusPath
 from lightbus.exceptions import UnknownApi
 from lightbus.utilities.async_tools import block, cancel
-from lightbus.utilities.threading_tools import run_in_bus_thread
+from lightbus.client_worker import run_in_worker_thread
 
 pytestmark = pytest.mark.integration
 
 
 @pytest.mark.asyncio
-async def test_run_in_bus_thread_in_child_thread(dummy_bus: BusPath, mocker):
+async def test_run_in_worker_thread_in_child_thread(dummy_bus: BusPath, mocker):
     def in_thread():
         dummy_bus.foo.bar.listen(lambda x: None, listener_name="foo")
 
@@ -25,7 +25,7 @@ async def test_run_in_bus_thread_in_child_thread(dummy_bus: BusPath, mocker):
 
 
 @pytest.mark.asyncio
-async def test_run_in_bus_thread_lightbus_error(dummy_bus: BusPath, mocker):
+async def test_run_in_worker_thread_lightbus_error(dummy_bus: BusPath, mocker):
     def in_thread():
         # API not known, so lightbus will raise an error
         dummy_bus.foo.bar.fire()
@@ -39,13 +39,13 @@ async def test_run_in_bus_thread_lightbus_error(dummy_bus: BusPath, mocker):
 
 
 @pytest.mark.asyncio
-async def test_run_in_bus_thread_warning_regarding_using_returned_future(
+async def test_run_in_worker_thread_warning_regarding_using_returned_future(
     dummy_bus: BusPath, mocker, caplog
 ):
     async def co():
         return asyncio.Future()
 
-    decorated_fn = run_in_bus_thread(dummy_bus.client)(co)
+    decorated_fn = run_in_worker_thread(dummy_bus.client)(co)
     fut = await decorated_fn()
     fut.done()  # Attribute access triggers warning
 
