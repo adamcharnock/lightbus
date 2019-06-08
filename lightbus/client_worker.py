@@ -33,7 +33,7 @@ def run_in_worker_thread(worker=None):
         def wrapper(*args, **kwargs):
             worker_ = worker or _get_worker_from_function_args(*args, **kwargs)
 
-            worker_thread = worker_._worker_thread
+            worker_thread = worker_._thread
             if threading.current_thread() == worker_thread:
                 return fn(*args, **kwargs)
 
@@ -103,10 +103,10 @@ def assert_in_worker_thread():
         def wrapper(*args, **kwargs):
             worker = _get_worker_from_function_args(*args, **kwargs)
 
-            if threading.current_thread() != worker._worker_thread:
+            if threading.current_thread() != worker._thread:
                 raise MustRunInBusThread(
                     f"This function ({fn.__module__}.{fn.__name__}) may only be called from "
-                    f"within the bus client's worker thread ({worker._worker_thread.name}). The function "
+                    f"within the bus client's worker thread ({worker._thread.name}). The function "
                     f"was called within {threading.current_thread().name}."
                 )
             return fn(*args, **kwargs)
@@ -121,10 +121,10 @@ def assert_not_in_worker_thread():
         def wrapper(*args, **kwargs):
             worker = _get_worker_from_function_args(*args, **kwargs)
 
-            if threading.current_thread() == worker._worker_thread:
+            if threading.current_thread() == worker._thread:
                 raise MustNotRunInBusThread(
                     f"This function ({fn.__module__}.{fn.__name__}) may NOT be called from "
-                    f"within the bus client's worker thread ({worker._worker_thread.name})."
+                    f"within the bus client's worker thread ({worker._thread.name})."
                 )
             return fn(*args, **kwargs)
 
@@ -161,7 +161,7 @@ class WorkerProxy(object):
 
     def __getattr__(self, item):
         value = getattr(self._proxied, item)
-        if threading.current_thread() == self._worker._worker_thread:
+        if threading.current_thread() == self._worker._thread:
             return value
 
         if callable(value):
@@ -180,7 +180,7 @@ class ClientWorker(object):
     def __init__(self):
         self._call_queue = None
         self._worker_shutdown_queue = None
-        self._worker_thread = None
+        self._thread = None
         self._ready = threading.Event()
 
     def start(self, bus_client, after_shutdown: Callable = None):
@@ -188,19 +188,19 @@ class ClientWorker(object):
         with self._lock:
             ClientWorker._TOTAL_WORKERS += 1
 
-        self._worker_thread = threading.Thread(
+        self._thread = threading.Thread(
             name=f"LightbusThread{ClientWorker._TOTAL_WORKERS}",
             target=partial(self.worker, bus_client=bus_client, after_shutdown=after_shutdown),
         )
-        logger.debug(f"Starting bus thread {self._worker_thread.name}. Will wait until it is ready")
-        self._worker_thread.start()
+        logger.debug(f"Starting bus thread {self._thread.name}. Will wait until it is ready")
+        self._thread.start()
         self._ready.wait()
-        logger.debug(f"Waiting over, bus thread {self._worker_thread.name} is now ready")
+        logger.debug(f"Waiting over, bus thread {self._thread.name} is now ready")
 
     @assert_not_in_worker_thread()
     def shutdown(self):
-        logger.debug(f"Sending shutdown message to bus thread {self._worker_thread.name}")
-        if not self._worker_thread.isAlive():
+        logger.debug(f"Sending shutdown message to bus thread {self._thread.name}")
+        if not self._thread.isAlive():
             # Already shutdown, move along
             return
 
@@ -213,12 +213,12 @@ class ClientWorker(object):
     async def wait_for_shutdown(self):
         logger.debug("Waiting for thread to finish")
         for _ in range(0, 50):
-            if self._worker_thread.isAlive():
+            if self._thread.isAlive():
                 await asyncio.sleep(0.1)
             else:
-                self._worker_thread.join()
+                self._thread.join()
 
-        if self._worker_thread.isAlive():
+        if self._thread.isAlive():
             logger.error("Worker thread failed to shutdown in a timely fashion")
             # TODO: Kill painfully?
         else:
@@ -249,7 +249,7 @@ class ClientWorker(object):
         shutdown procedure
 
         """
-        logger.debug(f"Bus thread {self._worker_thread.name} initialising")
+        logger.debug(f"Bus thread {self._thread.name} initialising")
 
         # Start a new event loop for this new thread
         asyncio.set_event_loop(asyncio.new_event_loop())
@@ -272,9 +272,7 @@ class ClientWorker(object):
 
         asyncio.get_event_loop().run_forever()
 
-        logging.debug(
-            f"Event loop stopped in bus worker thread {self._worker_thread.name}. Closing down."
-        )
+        logging.debug(f"Event loop stopped in bus worker thread {self._thread.name}. Closing down.")
         self._ready.clear()
 
         if after_shutdown:
