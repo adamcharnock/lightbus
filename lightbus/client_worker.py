@@ -32,7 +32,6 @@ def run_in_worker_thread(worker=None):
 
         def wrapper(*args, **kwargs):
             worker_ = worker or _get_worker_from_function_args(*args, **kwargs)
-
             worker_thread = worker_._thread
             if threading.current_thread() == worker_thread:
                 return fn(*args, **kwargs)
@@ -191,6 +190,7 @@ class ClientWorker(object):
         self._thread = threading.Thread(
             name=f"LightbusThread{ClientWorker._TOTAL_WORKERS}",
             target=partial(self.worker, bus_client=bus_client, after_shutdown=after_shutdown),
+            daemon=True,
         )
         logger.debug(f"Starting bus thread {self._thread.name}. Will wait until it is ready")
         self._thread.start()
