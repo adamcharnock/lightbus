@@ -2,9 +2,10 @@
 
 import os
 import sys
-from typing import Union, Optional, Mapping
+from typing import Union, Optional, Mapping, Type
 
 from lightbus import BusClient
+from lightbus.config.structure import RootConfig
 from lightbus.log import LBullets, L, Bold
 from lightbus.path import BusPath
 from lightbus.client import logger
@@ -22,17 +23,13 @@ __all__ = ["create", "create_async", "load_config", "import_bus_module", "get_bu
 
 
 async def create_async(
-    config: Union[dict, Config] = None,
+    config: Union[dict, RootConfig] = None,
     *,
     config_file: str = None,
     service_name: str = None,
     process_name: str = None,
-    rpc_transport: Optional["RpcTransport"] = None,
-    result_transport: Optional["ResultTransport"] = None,
-    event_transport: Optional["EventTransport"] = None,
-    schema_transport: Optional["SchemaTransport"] = None,
-    client_class=BusClient,
-    node_class=BusPath,
+    client_class: Type[BusClient] = BusClient,
+    node_class: Type[BusPath] = BusPath,
     plugins=None,
     flask: bool = False,
     **kwargs,
@@ -58,11 +55,7 @@ async def create_async(
         config_file (str): The path to a config file to load (should end in .json or .yaml)
         service_name (str): The name of this service - will be used when creating event consumer groups
         process_name (str): The unique name of this process - used when retrieving unprocessed events following a crash
-        rpc_transport (RpcTransport): The RPC transport instance to use, defaults to Redis
-        result_transport (ResultTransport): The result transport instance to use, defaults to Redis
-        event_transport (EventTransport): The event transport instance to use, defaults to Redis
-        schema_transport (SchemaTransport): The schema transport instance to use, defaults to Redis
-        client_class (BusClient): The class from which the bus client will be instantiated
+        client_class (Type[BusClient]): The class from which the bus client will be instantiated
         node_class (BusPath): The class from which the bus path will be instantiated
         plugins (list): A list of plugin instances to load
         flask (bool): Are we using flask? If so we will make sure we don't start lightbus in the reloader process
@@ -94,21 +87,12 @@ async def create_async(
 
     if isinstance(config, Mapping):
         config = Config.load_dict(config or {})
+    elif isinstance(config, RootConfig):
+        config = Config(config)
 
-    transport_registry = TransportRegistry().load_config(config)
-
-    # Set transports if specified
-    if rpc_transport:
-        transport_registry.set_rpc_transport("default", rpc_transport)
-
-    if result_transport:
-        transport_registry.set_result_transport("default", result_transport)
-
-    if event_transport:
-        transport_registry.set_event_transport("default", event_transport)
-
-    if schema_transport:
-        transport_registry.set_schema_transport(schema_transport)
+    transport_registry = kwargs.pop("transport_registry", None) or TransportRegistry().load_config(
+        config
+    )
 
     client = client_class(transport_registry=transport_registry, config=config, **kwargs)
     await client.setup_async(plugins=plugins)

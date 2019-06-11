@@ -1,5 +1,8 @@
 import argparse
+import asyncio
 import logging
+import signal
+import sys
 
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.plugins import PluginRegistry
@@ -55,9 +58,34 @@ class Command(LogLevelMixin, BusImportMixin, object):
                 source = args.schema
             bus.schema.load_local(source)
 
-        block(plugin_registry.execute_hook("receive_args", args=args), timeout=5)
+        restart_signals = (signal.SIGINT, signal.SIGTERM)
 
-        if args.events_only:
-            bus.client.run_forever(consume_rpcs=False)
-        else:
-            bus.client.run_forever()
+        # Handle incoming signals
+        async def signal_handler():
+            # Stop handling signals now. If we receive the signal again
+            # let the process quit naturally
+            for signal_ in restart_signals:
+                asyncio.get_event_loop().remove_signal_handler(signal_)
+
+            logger.debug("Caught signal. Stopping main thread event loop")
+            bus.client.shutdown_server(exit_code=0)
+
+        for signal_ in restart_signals:
+            asyncio.get_event_loop().add_signal_handler(
+                signal_, lambda: asyncio.ensure_future(signal_handler())
+            )
+
+        try:
+            block(plugin_registry.execute_hook("receive_args", args=args), timeout=5)
+            if args.events_only:
+                bus.client.run_forever(consume_rpcs=False)
+            else:
+                bus.client.run_forever()
+
+        finally:
+            # Cleanup signal handlers
+            for signal_ in restart_signals:
+                asyncio.get_event_loop().remove_signal_handler(signal_)
+
+        if bus.client.exit_code:
+            sys.exit(bus.client.exit_code)

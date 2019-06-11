@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 
 import jsonschema
 import pytest
@@ -12,7 +13,7 @@ from lightbus.path import BusPath
 from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
 from lightbus.transports.redis import StreamUse
-from lightbus.utilities.async_tools import cancel
+from lightbus.utilities.async_tools import cancel, block
 
 pytestmark = pytest.mark.integration
 
@@ -20,50 +21,16 @@ stream_use_test_data = [StreamUse.PER_EVENT, StreamUse.PER_API]
 
 
 @pytest.mark.asyncio
-async def test_bus_fixture(bus: lightbus.path.BusPath):
-    """Just sanity check the fixture"""
-    rpc_transport = bus.client.transport_registry.get_rpc_transport("default")
-    result_transport = bus.client.transport_registry.get_result_transport("default")
-    event_transport = bus.client.transport_registry.get_event_transport("default")
-
-    connection_manager_rpc = await rpc_transport.connection_manager()
-    connection_manager_result = await result_transport.connection_manager()
-    connection_manager_event = await event_transport.connection_manager()
-
-    with await connection_manager_rpc as redis_rpc, await connection_manager_result as redis_result, await connection_manager_event as redis_event:
-
-        # Each transport should have its own connection
-        assert redis_rpc is not redis_result
-        assert redis_result is not redis_event
-        assert redis_rpc is not redis_event
-
-        # Check they are all looking at the same redis instance
-        await redis_rpc.set("X", 1)
-        assert await redis_result.get("X")
-        assert await redis_rpc.get("X")
-
-        info = await redis_rpc.info()
-        # transports: rpc, result, event, schema
-        assert int(info["clients"]["connected_clients"]) == 4
-
-
-@pytest.mark.asyncio
-async def test_rpc(bus: lightbus.path.BusPath, dummy_api):
+@pytest.mark.timeout(5)
+@pytest.mark.also_run_in_child_thread
+async def test_rpc(bus: lightbus.path.BusPath, dummy_api, thread):
     """Full rpc call integration test"""
     await bus.client.register_api_async(dummy_api)
 
-    async def co_call_rpc():
-        await asyncio.sleep(0.1)
-        return await bus.my.dummy.my_proc.call_async(field="Hello! 😎")
+    await bus.client.consume_rpcs(apis=[dummy_api])
 
-    async def co_consume_rpcs():
-        return await bus.client.consume_rpcs(apis=[dummy_api])
-
-    (call_task,), (consume_task,) = await asyncio.wait(
-        [co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED
-    )
-    consume_task.cancel()
-    assert call_task.result() == "value: Hello! 😎"
+    result = await bus.my.dummy.my_proc.call_async(field="Hello! 😎")
+    assert result == "value: Hello! 😎"
 
 
 @pytest.mark.asyncio
@@ -71,20 +38,10 @@ async def test_rpc_timeout(bus: lightbus.path.BusPath, dummy_api):
     """Full rpc call integration test"""
     await bus.client.register_api_async(dummy_api)
 
-    async def co_call_rpc():
-        await asyncio.sleep(0.1)
-        return await bus.my.dummy.sudden_death.call_async(n=0)
-
-    async def co_consume_rpcs():
-        return await bus.client.consume_rpcs(apis=[dummy_api])
-
-    (call_task,), (consume_task,) = await asyncio.wait(
-        [co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED
-    )
-    consume_task.cancel()
+    await bus.client.consume_rpcs(apis=[dummy_api])
 
     with pytest.raises(LightbusTimeout):
-        call_task.result()
+        await bus.my.dummy.sudden_death.call_async(n=0)
 
 
 @pytest.mark.asyncio
@@ -92,22 +49,9 @@ async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
     """Test what happens when the remote procedure throws an error"""
     await bus.client.register_api_async(dummy_api)
 
-    async def co_call_rpc():
-        await asyncio.sleep(0.1)
-        return await bus.my.dummy.general_error.call_async()
-
-    async def co_consume_rpcs():
-        return await bus.client.consume_rpcs(apis=[dummy_api])
-
-    (call_task,), (consume_task,) = await asyncio.wait(
-        [co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED
-    )
-
-    consume_task.cancel()
-    call_task.cancel()
-
+    await bus.client.consume_rpcs(apis=[dummy_api])
     with pytest.raises(LightbusServerError):
-        await call_task.result()
+        await bus.my.dummy.general_error.call_async()
 
 
 @pytest.mark.asyncio
@@ -129,8 +73,6 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
     await asyncio.sleep(0.1)
 
-    await bus.client.close_async()
-
     assert len(received_messages) == 1
     assert received_messages[0].kwargs == {"field": "Hello! 😎"}
     assert received_messages[0].api_name == "my.dummy"
@@ -143,22 +85,14 @@ async def test_ids(bus: lightbus.path.BusPath, dummy_api, mocker):
     """Ensure the id comes back correctly"""
     await bus.client.register_api_async(dummy_api)
 
-    async def co_call_rpc():
-        await asyncio.sleep(0.1)
-        return await bus.my.dummy.my_proc.call_async(field="foo")
-
-    async def co_consume_rpcs():
-        return await bus.client.consume_rpcs(apis=[dummy_api])
-
     mocker.spy(bus.client, "send_result")
 
-    (call_task,), (consume_task,) = await asyncio.wait(
-        [co_call_rpc(), co_consume_rpcs()], return_when=asyncio.FIRST_COMPLETED
-    )
+    await bus.client.consume_rpcs(apis=[dummy_api])
+    await bus.my.dummy.my_proc.call_async(field="foo")
+
     _, kw = bus.client.send_result.call_args
     rpc_message = kw["rpc_message"]
     result_message = kw["result_message"]
-    consume_task.cancel()
 
     assert rpc_message.id
     assert result_message.rpc_message_id
@@ -226,7 +160,9 @@ async def test_multiple_rpc_transports(loop, redis_server_url, redis_server_b_ur
 
 
 @pytest.mark.asyncio
-async def test_multiple_event_transports(loop, redis_server_url, redis_server_b_url):
+async def test_multiple_event_transports(
+    loop, redis_server_url, redis_server_b_url, create_redis_client
+):
     """Configure a bus with two redis transports and ensure they write to the correct redis servers"""
     redis_url_a = redis_server_url
     redis_url_b = redis_server_b_url
@@ -260,20 +196,14 @@ async def test_multiple_event_transports(loop, redis_server_url, redis_server_b_
     await bus.api_a.event_a.fire_async()
     await bus.api_b.event_b.fire_async()
 
-    connection_manager_a = bus.client.transport_registry.get_event_transport(
-        "api_a"
-    ).connection_manager
-    connection_manager_b = bus.client.transport_registry.get_event_transport(
-        "api_b"
-    ).connection_manager
+    redis_a = await create_redis_client(address=redis_server_url)
+    redis_b = await create_redis_client(address=redis_server_b_url)
 
-    with await connection_manager_a() as redis:
-        assert await redis.xrange("api_a.event_a:stream")
-        assert await redis.xrange("api_b.event_b:stream") == []
+    assert await redis_a.xrange("api_a.event_a:stream")
+    assert await redis_a.xrange("api_b.event_b:stream") == []
 
-    with await connection_manager_b() as redis:
-        assert await redis.xrange("api_a.event_a:stream") == []
-        assert await redis.xrange("api_b.event_b:stream")
+    assert await redis_b.xrange("api_a.event_a:stream") == []
+    assert await redis_b.xrange("api_b.event_b:stream")
 
     await bus.client.close_async()
 

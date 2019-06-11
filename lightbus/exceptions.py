@@ -128,10 +128,6 @@ class ApisMustUseSameTransport(LightbusException):
     pass
 
 
-class ApisMustUseTransactionalTransport(LightbusException):
-    pass
-
-
 class OnlyAvailableOnRootNode(LightbusException):
     pass
 
@@ -184,5 +180,21 @@ class TransportsNotInstalled(LightbusException):
     pass
 
 
-class CannotRunInChildThread(LightbusException):
+class MustRunInBusThread(LightbusException):
+    pass
+
+
+class MustNotRunInBusThread(LightbusException):
+    pass
+
+
+class LightbusExit(LightbusException):
+    pass
+
+
+class BusAlreadyClosed(LightbusException):
+    pass
+
+
+class LightbusServerMustStartInMainThread(LightbusException):
     pass

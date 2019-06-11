@@ -135,4 +135,5 @@ class MetricsPlugin(LightbusPlugin):
         return event_transport.send_event(
             EventMessage(api_name="internal.metrics", event_name=event_name_, kwargs=kwargs),
             options={},
+            bus_client=client,
         )

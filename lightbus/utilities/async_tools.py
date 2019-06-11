@@ -3,6 +3,7 @@ import asyncio
 import inspect
 import logging
 import threading
+from contextlib import contextmanager
 from functools import partial
 from inspect import isawaitable
 from time import time
@@ -15,6 +16,7 @@ if False:
     # pylint: disable=unused-import
     from schedule import Job
     from lightbus.client import BusClient
+    from lightbus.path import BusPath
 
 from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 
@@ -34,7 +36,8 @@ def all_tasks():
 def block(coroutine: Coroutine, loop=None, *, timeout=None):
     loop = loop or get_event_loop()
     if loop.is_running():
-        coroutine.close()
+        if hasattr(coroutine, "close"):
+            coroutine.close()
         raise CannotBlockHere(
             "It appears you have tried to use a blocking API method "
             "from within an event loop. Unfortunately this is unsupported. "
@@ -100,35 +103,44 @@ async def cancel(*tasks):
         raise ex
 
 
-def check_for_exception(fut: asyncio.Future, die=True):
+def check_for_exception(fut: asyncio.Future, bus_client: "BusClient", die=True):
     """Check for exceptions in returned future
 
     To be used as a callback, eg:
 
     task.add_done_callback(check_for_exception)
     """
-    try:
+    with exception_handling_context(bus_client, die):
         if fut.exception():
             fut.result()
+
+
+def make_exception_checker(bus_client: "BusClient", die=True):
+    """Creates a callback handler (i.e. check_for_exception())
+    which will be called with the given arguments"""
+    return partial(check_for_exception, die=die, bus_client=bus_client)
+
+
+@contextmanager
+def exception_handling_context(bus_client: "BusClient", die=True):
+    """Handle exceptions in user code"""
+    try:
+        yield
     except (asyncio.CancelledError, LightbusShutdownInProgress):
         return
     except Exception as e:
         # Must log the exception here, otherwise exceptions that occur during
         # listener setup will never be logged
+        logger.debug(f"Exception occurred in exception handling context. die is {die}")
         logger.exception(e)
         if die:
-            loop = fut._loop
-            loop.lightbus_exit_code = 1
-            loop.stop()
+            logger.debug("Stopping event loop and setting exit code")
+            bus_client.shutdown_server(exit_code=1)
 
 
-def make_exception_checker(die=True):
-    """Creates a callback handler (i.e. check_for_exception())
-    which will be called with the given arguments"""
-    return partial(check_for_exception, die=die)
-
-
-async def run_user_provided_callable(callable, args, kwargs, bus_client, die_on_exception=True):
+async def run_user_provided_callable(
+    callable, args, kwargs, bus_client: "BusClient", die_on_exception=True
+):
     """Run user provided code
 
     If the callable is blocking (i.e. a regular function) it will be
@@ -145,9 +157,10 @@ async def run_user_provided_callable(callable, args, kwargs, bus_client, die_on_
     if asyncio.iscoroutinefunction(callable):
         return await callable(*args, **kwargs)
 
-    future = asyncio.get_event_loop().run_in_executor(
-        executor=None, func=lambda: callable(*args, **kwargs)
-    )
+    with exception_handling_context(bus_client, die=die_on_exception):
+        future = asyncio.get_event_loop().run_in_executor(
+            executor=None, func=lambda: callable(*args, **kwargs)
+        )
     return await future
 
 

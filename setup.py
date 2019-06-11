@@ -33,7 +33,6 @@ setup(
             "redis = lightbus:RedisEventTransport",
             "debug = lightbus:DebugEventTransport",
             "direct = lightbus:DirectEventTransport",
-            "transactional = lightbus:TransactionalEventTransport",
         ],
         "lightbus_rpc_transports": [
             "redis = lightbus:RedisRpcTransport",
@@ -45,6 +44,9 @@ setup(
             "debug = lightbus:DebugResultTransport",
             "direct = lightbus:DirectResultTransport",
         ],
-        "lightbus_schema_transports": ["redis = lightbus:RedisSchemaTransport"],
+        "lightbus_schema_transports": [
+            "redis = lightbus:RedisSchemaTransport",
+            "debug = lightbus:DebugSchemaTransport",
+        ],
     },
 )

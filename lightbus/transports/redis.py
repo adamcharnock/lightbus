@@ -6,9 +6,10 @@ from collections import OrderedDict
 from datetime import datetime
 from typing import Sequence, Optional, Union, Dict, Mapping, List, Container, AsyncGenerator
 from enum import Enum
+import threading
 
 import aioredis
-from aioredis import Redis, ReplyError, ConnectionClosedError
+from aioredis import Redis, ReplyError, ConnectionClosedError, PipelineError
 from aioredis.pool import ConnectionsPool
 from aioredis.util import decode
 
@@ -20,7 +21,7 @@ from lightbus.schema.encoder import json_encode
 from lightbus.serializers.blob import BlobMessageSerializer, BlobMessageDeserializer
 from lightbus.serializers.by_field import ByFieldMessageSerializer, ByFieldMessageDeserializer
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport, SchemaTransport
-from lightbus.utilities.async_tools import cancel, check_for_exception
+from lightbus.utilities.async_tools import cancel, check_for_exception, make_exception_checker
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
@@ -28,6 +29,7 @@ from lightbus.utilities.importing import import_from_string
 if False:
     # pylint: disable=unused-import
     from lightbus.config import Config
+    from lightbus.client import BusClient
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +121,7 @@ class RedisTransportMixin(object):
 
         if not self._redis_pool:
             self._redis_pool = await aioredis.create_redis_pool(**self.connection_parameters)
+
         try:
             internal_pool = self._redis_pool._pool_or_conn
             if hasattr(internal_pool, "size") and hasattr(internal_pool, "maxsize"):
@@ -138,9 +141,9 @@ class RedisTransportMixin(object):
             )
 
     async def close(self):
+        self._closed = True
         if self._redis_pool:
             await self._close_redis_pool()
-        self._closed = True
 
     async def _close_redis_pool(self):
         self._redis_pool.close()
@@ -181,6 +184,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         connection_parameters: Mapping = frozendict(maxsize=100),
         batch_size=10,
         rpc_timeout=5,
+        rpc_retry_delay=1,
         consumption_restart_delay=5,
     ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
@@ -189,6 +193,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         self.deserializer = deserializer
         self.batch_size = batch_size
         self.rpc_timeout = rpc_timeout
+        self.rpc_retry_delay = rpc_retry_delay
         self.consumption_restart_delay = consumption_restart_delay
 
     @classmethod
@@ -201,6 +206,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         serializer: str = "lightbus.serializers.BlobMessageSerializer",
         deserializer: str = "lightbus.serializers.BlobMessageDeserializer",
         rpc_timeout: int = 5,
+        rpc_retry_delay: int = 1,
         consumption_restart_delay: int = 5,
     ):
         serializer = import_from_string(serializer)()
@@ -216,27 +222,27 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             consumption_restart_delay=consumption_restart_delay,
         )
 
-    async def call_rpc(self, rpc_message: RpcMessage, options: dict):
+    async def call_rpc(self, rpc_message: RpcMessage, options: dict, bus_client: "BusClient"):
         queue_key = f"{rpc_message.api_name}:rpc_queue"
         expiry_key = f"rpc_expiry_key:{rpc_message.id}"
         logger.debug(
             LBullets(
-                L("Enqueuing message {} in Redis stream {}", Bold(rpc_message), Bold(queue_key)),
+                L("Enqueuing message {} in Redis list {}", Bold(rpc_message), Bold(queue_key)),
                 items=dict(**rpc_message.get_metadata(), kwargs=rpc_message.get_kwargs()),
             )
         )
 
-        with await self.connection_manager() as redis:
-            start_time = time.time()
-            p = redis.pipeline()
-            p.rpush(key=queue_key, value=self.serializer(rpc_message))
-            p.set(expiry_key, 1)
-            # TODO: Ditch this somehow. We kind of need the ApiConfig here, but a transports can be
-            #       used for multiple APIs. So we could pass it in for each use of the transports,
-            #       but even then it doesn't work for the event listening. This is because an event listener
-            #       can span multiple APIs
-            p.expire(expiry_key, timeout=self.rpc_timeout)
-            await p.execute()
+        start_time = time.time()
+        for try_number in range(3, 0, -1):
+            last_try = try_number == 1
+            try:
+                await self._call_rpc(rpc_message, queue_key, expiry_key)
+                return
+            except (PipelineError, ConnectionClosedError, ConnectionResetError):
+                if not last_try:
+                    await asyncio.sleep(self.rpc_retry_delay)
+                else:
+                    raise
 
         logger.debug(
             L(
@@ -247,8 +253,26 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             )
         )
 
-    async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
+    async def _call_rpc(self, rpc_message: RpcMessage, queue_key, expiry_key):
+        with await self.connection_manager() as redis:
+            p = redis.pipeline()
+            p.rpush(key=queue_key, value=self.serializer(rpc_message))
+            p.set(expiry_key, 1)
+            # TODO: Ditch this somehow. We kind of need the ApiConfig here, but a transports can be
+            #       used for multiple APIs. So we could pass it in for each use of the transports,
+            #       but even then it doesn't work for the event listening. This is because an event listener
+            #       can span multiple APIs
+            p.expire(expiry_key, timeout=self.rpc_timeout)
+            await p.execute()
+
+    async def consume_rpcs(
+        self, apis: Sequence[Api], bus_client: "BusClient"
+    ) -> Sequence[RpcMessage]:
         while True:
+            if self._closed:
+                # Triggered during shutdown
+                raise TransportIsClosed("Transport is closed. Cannot consume RPCs")
+
             try:
                 return await self._consume_rpcs(apis)
             except (ConnectionClosedError, ConnectionResetError):
@@ -348,7 +372,11 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         )
 
     async def send_result(
-        self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: str
+        self,
+        rpc_message: RpcMessage,
+        result_message: ResultMessage,
+        return_path: str,
+        bus_client: "BusClient",
     ):
         logger.debug(
             L(
@@ -376,7 +404,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         )
 
     async def receive_result(
-        self, rpc_message: RpcMessage, return_path: str, options: dict
+        self, rpc_message: RpcMessage, return_path: str, options: dict, bus_client: "BusClient"
     ) -> ResultMessage:
         logger.debug(L("Awaiting Redis result for RPC message: {}", Bold(rpc_message)))
         redis_key = self._parse_return_path(return_path)
@@ -482,7 +510,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             consumption_restart_delay=consumption_restart_delay,
         )
 
-    async def send_event(self, event_message: EventMessage, options: dict):
+    async def send_event(self, event_message: EventMessage, options: dict, bus_client: "BusClient"):
         """Publish an event"""
         stream = self._get_stream_names(
             listen_for=[(event_message.api_name, event_message.event_name)]
@@ -523,6 +551,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self,
         listen_for,
         listener_name: str,
+        bus_client: "BusClient",
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,
     ) -> AsyncGenerator[List[RedisEventMessage], None]:
@@ -558,7 +587,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         async def consume_loop():
             # Regular event consuming. See _fetch_new_messages()
-
             while True:
                 try:
                     async for messages in self._fetch_new_messages(
@@ -597,8 +625,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             reclaim_task = asyncio.ensure_future(reclaim_loop())
 
             # Make sure we surface any exceptions that occur in either task
-            consume_task.add_done_callback(check_for_exception)
-            reclaim_task.add_done_callback(check_for_exception)
+            consume_task.add_done_callback(make_exception_checker(bus_client))
+            reclaim_task.add_done_callback(make_exception_checker(bus_client))
 
             while True:
                 try:
@@ -610,9 +638,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         finally:
             # Make sure we cleanup the tasks we created
             await cancel(consume_task, reclaim_task)
-
-    async def close(self):
-        await super().close()
 
     async def _fetch_new_messages(
         self, streams, consumer_group, expected_events, forever
@@ -797,7 +822,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     if event_messages:
                         yield event_messages
 
-    async def acknowledge(self, *event_messages: RedisEventMessage):
+    async def acknowledge(self, *event_messages: RedisEventMessage, bus_client: "BusClient"):
         with await self.connection_manager() as redis:
             p = redis.pipeline()
             for event_message in event_messages:

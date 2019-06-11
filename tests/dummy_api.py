@@ -1,7 +1,10 @@
+import logging
 from random import random
 
 from lightbus import Api, Event, Parameter
 from lightbus.exceptions import SuddenDeathException
+
+logger = logging.getLogger(__name__)
 
 
 class DummyApi(Api):
@@ -16,8 +19,9 @@ class DummyApi(Api):
     def sudden_death(self, n):
         raise SuddenDeathException()
 
-    def random_death(self, n, death_probability=0.5):
-        if random() < float(death_probability):
+    def random_death(self, n, death_every=2):
+        if n % death_every == 0:
+            logger.warning(f"Triggering SuddenDeathException. n={n}")
             raise SuddenDeathException()
         return n
 

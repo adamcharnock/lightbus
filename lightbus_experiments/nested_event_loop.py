@@ -92,7 +92,7 @@ class Bus(object):
         self._perform_calls_task.add_done_callback(make_exception_checker())
 
     @run_in_main_thread()
-    async def call_rpc(self, name):
+    async def call_rpc(self, name, bus_client: "BusClient"):
         # We'd normally do all the Lightbus goodness here
         await asyncio.sleep(0.1)
 

@@ -67,7 +67,7 @@ async def test_call_every(run_for, call_counter, dummy_bus):
             callback=call_counter,
             timedelta=timedelta(seconds=0.1),
             also_run_immediately=False,
-            bus_client=dummy_bus.client,
+            bus_client=dummy_bus.bus,
         ),
         seconds=0.25,
     )
@@ -81,7 +81,7 @@ async def test_call_every_run_immediate(run_for, call_counter, dummy_bus):
             callback=call_counter,
             timedelta=timedelta(seconds=0.1),
             also_run_immediately=True,
-            bus_client=dummy_bus.client,
+            bus_client=dummy_bus.busdummy_bus,
         ),
         seconds=0.25,
     )
@@ -101,7 +101,7 @@ async def test_call_every_async(run_for, dummy_bus):
             callback=cb,
             timedelta=timedelta(seconds=0.1),
             also_run_immediately=False,
-            bus_client=dummy_bus.client,
+            bus_client=dummy_bus.busdummy_bus,
         ),
         seconds=0.25,
     )
@@ -123,7 +123,7 @@ async def test_call_every_with_long_execution_time(run_for, dummy_bus):
             callback=cb,
             timedelta=timedelta(seconds=0.1),
             also_run_immediately=False,
-            bus_client=dummy_bus.client,
+            bus_client=dummy_bus.busdummy_bus,
         ),
         seconds=0.25,
     )
@@ -208,24 +208,28 @@ async def test_call_on_schedule_with_long_execution_time(run_for, dummy_bus):
 
 
 @pytest.mark.asyncio
-async def test_run_user_provided_callable_regular_function(dummy_bus, mocker):
+async def test_run_user_provided_callable_regular_function(dummy_bus):
     called = False
 
     def call_me(a, b):
         nonlocal called
         called = True
 
-    await run_user_provided_callable(call_me, args=[1], kwargs={"b": 2}, bus_client=dummy_bus)
+    await run_user_provided_callable(
+        call_me, args=[1], kwargs={"b": 2}, bus_client=dummy_bus.client
+    )
     assert called
 
 
 @pytest.mark.asyncio
-async def test_run_user_provided_callable_async_function(dummy_bus, mocker):
+async def test_run_user_provided_callable_async_function(dummy_bus):
     called = False
 
     async def call_me(a, b):
         nonlocal called
         called = True
 
-    await run_user_provided_callable(call_me, args=[1], kwargs={"b": 2}, bus_client=dummy_bus)
+    await run_user_provided_callable(
+        call_me, args=[1], kwargs={"b": 2}, bus_client=dummy_bus.client
+    )
     assert called
