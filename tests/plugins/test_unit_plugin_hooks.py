@@ -101,4 +101,6 @@ async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_
     await event_transport.send_event(event_message, options={}, bus_client=None)
     await asyncio.sleep(0.1)
 
-    assert called_hooks() == ["before_event_execution", "after_event_execution"]
+    # There is a chance of events firing twice (because the dummy_bus keeps firing events),
+    # so cast to the lists to sets first before comparing
+    assert set(called_hooks()) == {"before_event_execution", "after_event_execution"}
