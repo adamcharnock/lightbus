@@ -200,7 +200,7 @@ class ClientWorker(object):
     @assert_not_in_worker_thread()
     def shutdown(self):
         logger.debug(f"Sending shutdown message to bus thread {self._thread.name}")
-        if not self._thread.isAlive():
+        if not self._thread.is_alive():
             # Already shutdown, move along
             return
 
@@ -213,12 +213,12 @@ class ClientWorker(object):
     async def wait_for_shutdown(self):
         logger.debug("Waiting for thread to finish")
         for _ in range(0, 50):
-            if self._thread.isAlive():
+            if self._thread.is_alive():
                 await asyncio.sleep(0.1)
             else:
                 self._thread.join()
 
-        if self._thread.isAlive():
+        if self._thread.is_alive():
             logger.error("Worker thread failed to shutdown in a timely fashion")
             # TODO: Kill painfully?
         else:
