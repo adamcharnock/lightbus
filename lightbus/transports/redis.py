@@ -1037,7 +1037,7 @@ def redis_stream_id_add_one(message_id):
     There is no chance of missing events with this method.
     """
     milliseconds, n = map(int, message_id.split("-"))
-    return "{:13d}-{}".format(milliseconds, n + 1)
+    return f"{milliseconds:013d}-{n + 1}"
 
 
 def normalise_since_value(since):
@@ -1046,7 +1046,7 @@ def normalise_since_value(since):
         return "$"
     elif hasattr(since, "timestamp"):  # datetime
         # Create message ID: "<milliseconds-timestamp>-<sequence-number>"
-        return "{}-0".format(round(since.timestamp() * 1000))
+        return f"{round(since.timestamp() * 1000):013d}-0"
     else:
         return since
 
@@ -1064,7 +1064,9 @@ def redis_steam_id_to_datetime(message_id):
 
 def datetime_to_redis_steam_id(dt: datetime) -> str:
     timestamp = round(dt.timestamp() * 1000)
-    return f"{timestamp}-0"
+    # We ignore microseconds here as using them in the sequence
+    # number would make the the sequence number non sequential
+    return f"{timestamp:013d}-0"
 
 
 class InvalidRedisPool(LightbusException):
