@@ -4,7 +4,7 @@ import logging
 import time
 from collections import OrderedDict
 from datetime import datetime
-from typing import Sequence, Optional, Union, Dict, Mapping, List, Container, AsyncGenerator
+from typing import Sequence, Optional, Union, Dict, Mapping, List, Container, AsyncGenerator, Tuple
 from enum import Enum
 import threading
 
@@ -48,11 +48,22 @@ class StreamUse(Enum):
 
 
 class RedisEventMessage(EventMessage):
-    def __init__(self, *, stream: str, native_id: str, consumer_group: str, **kwargs):
+    def __init__(self, *, stream: str, native_id: str, consumer_group: Optional[str], **kwargs):
         super(RedisEventMessage, self).__init__(**kwargs)
         self.stream = stream
         self.native_id = native_id
         self.consumer_group = consumer_group
+
+    @property
+    def datetime(self):
+        return redis_steam_id_to_datetime(self.native_id)
+
+    def get_metadata(self) -> dict:
+        metadata = super().get_metadata()
+        metadata["stream"] = self.stream
+        metadata["native_id"] = self.native_id
+        metadata["consumer_group"] = self.consumer_group
+        return metadata
 
 
 class RedisTransportMixin(object):
@@ -448,6 +459,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         service_name: str,
         consumer_name: str,
         url=None,
+        # TODO: serializer & deserializer should be on parent class
         serializer=ByFieldMessageSerializer(),
         deserializer=ByFieldMessageDeserializer(RedisEventMessage),
         connection_parameters: Mapping = frozendict(maxsize=100),
@@ -549,7 +561,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
     async def consume(
         self,
-        listen_for,
+        listen_for: List[Tuple[str, str]],
         listener_name: str,
         bus_client: "BusClient",
         since: Union[Since, Sequence[Since]] = "$",
@@ -836,6 +848,31 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             )
             await p.execute()
 
+    async def history(self, api_name, event_name, start: datetime = None, stop: datetime = None):
+        # TODO: Test
+        # TODO: Add to base event transport
+        redis_start = datetime_to_redis_steam_id(start) if start else "-"
+        redis_stop = datetime_to_redis_steam_id(stop) if stop else "+"
+
+        stream_name = self._get_stream_names([(api_name, event_name)])[0]
+        batch_size = 1000
+
+        with await self.connection_manager() as redis:
+            messages = await redis.xrange(stream_name, redis_start, redis_stop, count=batch_size)
+            if not messages:
+                return
+            for message_id, fields in messages:
+                message_id = decode(message_id, "utf8")
+                event_message = self._fields_to_message(
+                    fields,
+                    expected_event_names={event_name},
+                    stream=stream_name,
+                    native_id=message_id,
+                    consumer_group=None,
+                )
+                if event_message:
+                    yield event_message
+
     async def _create_consumer_groups(self, streams, redis, consumer_group):
         for stream, since in streams.items():
             if not await redis.exists(stream):
@@ -855,7 +892,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         expected_event_names: Container[str],
         stream: str,
         native_id: str,
-        consumer_group: str,
+        consumer_group: Optional[str],
     ) -> Optional[RedisEventMessage]:
         if tuple(fields.items()) == ((b"", b""),):
             return None
@@ -992,6 +1029,11 @@ def redis_steam_id_to_datetime(message_id):
     microseconds = (milliseconds % 1000 * 1000) + seq
     dt = datetime.utcfromtimestamp(milliseconds // 1000).replace(microsecond=microseconds)
     return dt
+
+
+def datetime_to_redis_steam_id(dt: datetime) -> str:
+    timestamp = round(datetime.now().timestamp() * 1000)
+    return f"{timestamp}-0"
 
 
 class InvalidRedisPool(LightbusException):
