@@ -567,6 +567,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,
     ) -> AsyncGenerator[List[RedisEventMessage], None]:
+        # TODO: Cleanup consumer groups
         self._sanity_check_listen_for(listen_for)
 
         consumer_group = f"{self.service_name}-{listener_name}"
@@ -689,6 +690,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             event_messages = []
             for stream, message_id, fields in pending_messages:
                 message_id = decode(message_id, "utf8")
+                stream = decode(stream, "utf8")
                 event_message = self._fields_to_message(
                     fields,
                     expected_events,
@@ -736,6 +738,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 event_messages = []
                 for stream, message_id, fields in stream_messages:
                     message_id = decode(message_id, "utf8")
+                    stream = decode(stream, "utf8")
                     event_message = self._fields_to_message(
                         fields,
                         expected_events,
