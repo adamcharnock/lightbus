@@ -7,7 +7,7 @@ from lightbus.schema.encoder import json_encode
 
 
 def decode_bytes(b: Union[str, bytes]):
-    return b if isinstance(b, str) else b.decode("utf8")
+    return b.decode("utf8") if isinstance(b, bytes) else b
 
 
 def sanity_check_metadata(message_class, metadata):
@@ -35,7 +35,6 @@ SerialisedData = TypeVar("SerialisedData")
 
 
 class MessageSerializer(object):
-
     def __init__(self, encoder=json_encode):
         self.encoder = encoder
 
@@ -44,7 +43,6 @@ class MessageSerializer(object):
 
 
 class MessageDeserializer(object):
-
     def __init__(self, message_class: Type["lightbus.Message"], decoder=json.loads):
         if not inspect.isclass(message_class):
             raise InvalidSerializerConfiguration(

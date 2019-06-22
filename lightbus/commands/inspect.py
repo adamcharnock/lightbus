@@ -2,15 +2,20 @@ import argparse
 import json
 import logging
 import re
+from hashlib import sha1
 
 import sys
 from fnmatch import fnmatch
+from pathlib import Path
+from typing import Optional
 
 from lightbus import EventMessage, Api, BusPath, EventTransport
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
 from lightbus_vendored.jsonpath import jsonpath
+
+CACHE_PATH = Path("~/.lightbus/inspect_cache").expanduser()
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +62,11 @@ class Command(LogLevelMixin, BusImportMixin, object):
             "-v",
             help=("Find events with the specified version number. Can be prefixed by <, >, <=, >="),
             metavar="VERSION_NUMBER",
+            type=int,
         )
         parser_shell.add_argument(
             "--format",
-            "-f",
+            "-F",
             help=("Formatting style. One of pretty, json"),
             metavar="FORMAT",
             default="json",
@@ -70,13 +76,15 @@ class Command(LogLevelMixin, BusImportMixin, object):
             "-c",
             help=("Search the local cache only"),
             metavar="EVENT_NAME",
-            default=True,
+            default=False,
+            type=bool,
         )
         parser_shell.add_argument(
             "--follow",
             "-f",
             help=("Continually listen for new events matching the search criteria"),
             default=True,
+            type=bool,
         )
 
         self.setup_import_parameter(parser_shell)
@@ -95,11 +103,63 @@ class Command(LogLevelMixin, BusImportMixin, object):
 
     async def search_in_api(self, args, api: Api, bus: BusPath):
         transport = bus.client.transport_registry.get_event_transport(api.meta.name)
-        async for message in transport.history(
-            api_name=api.meta.name, event_name=args.event or "*"
-        ):
+        async for message in self.get_messages(args, api, args.event, transport):
             if self.match_message(args, message):
                 self.output(args, transport, message)
+
+    async def get_messages(
+        self, args, api: Api, event_name: Optional[str], transport: EventTransport
+    ):
+        CACHE_PATH.mkdir(parents=True, exist_ok=True)
+        event_name = event_name or "*"
+
+        # Construct the cache file name
+        file_name_hash = sha1((api.meta.name + "\0" + event_name).encode("utf8")).hexdigest()[:8]
+        file_name_api = re.sub("[^a-zA-Z0-9_]", "_", api.meta.name)
+        file_name_event = event_name.replace("*", "all")
+
+        cache_file_name = f"{file_name_hash}-{file_name_api}-{file_name_event}.json"
+        cache_file = CACHE_PATH / cache_file_name
+
+        logger.debug(f"Loading from cache file {cache_file}. Exists: {cache_file.exists()}")
+
+        # Sanity check
+        if not cache_file.exists() and args.cache_only:
+            sys.stdout.write(
+                f"No cache file exists for {api.meta.name}.{event_name}, but --cache-only was specified\n"
+            )
+            exit(1)
+
+        # Start by reading from cache
+        start = None
+        if cache_file.exists():
+            with cache_file.open() as f:
+                for line in f:
+                    event_message = transport.deserializer(json.loads(line))
+
+                    if not args.cache_only:
+                        if not hasattr(event_message, "datetime"):
+                            # Messages do not provide a datetime, stop loading from the cache as
+                            # this is required
+                            logger.warning(
+                                "Event transport does not provided message date times. Will not load from cache."
+                            )
+                            break
+                        start = event_message.datetime
+
+                    yield event_message
+
+        if args.cache_only:
+            return
+
+        # Now get messages from the transport, writing to the cache as we go
+        with cache_file.open("a") as f:
+            async for event_message in transport.history(
+                api_name=api.meta.name, event_name=args.event or "*", start=start
+            ):
+                f.write(json.dumps(transport.serializer(event_message)))
+                f.write("\n")
+                yield event_message
 
     def wildcard_match(self, pattern: str, s: str) -> bool:
         return fnmatch(s, pattern)
@@ -108,7 +168,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         """Does the given version match the given pattern"""
         match = re.match(r"(<|>|<=|>=|!=|=)(\d+)", pattern)
         if not match:
-            sys.stdout.write("Invalid version")
+            sys.stdout.write("Invalid version\n")
             exit(1)
 
         comparator, version_ = match.groups()
@@ -116,7 +176,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         try:
             version_ = int(version_)
         except TypeError:
-            sys.stdout.write("Invalid version")
+            sys.stdout.write("Invalid version\n")
             exit(1)
 
         return self.compare(comparator, left_value=version, right_value=version_)
@@ -125,7 +185,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         """Does the given data match the given jsonpath query"""
         match = re.match(r"(.+?)(<|>|<=|>=|!=|=)(.+)", query)
         if not match:
-            sys.stdout.write("Invalid json query")
+            sys.stdout.write("Invalid json query\n")
             exit(1)
 
         query, comparator, value = match.groups()
@@ -186,7 +246,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
             print("\n")
 
         else:
-            sys.stdout.write(f"Unknown output format '{args.format}'")
+            sys.stdout.write(f"Unknown output format '{args.format}'\n")
             exit(1)
 
     def compare(self, comparator: str, left_value, right_value):
@@ -201,7 +261,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         }
 
         if comparator not in lookup:
-            sys.stdout.write(f"Unknown comparator '{comparator}'")
+            sys.stdout.write(f"Unknown comparator '{comparator}'\n")
             exit(1)
 
         return lookup[comparator]()
