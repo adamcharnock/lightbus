@@ -16,19 +16,6 @@ logger = logging.getLogger(__name__)
 
 
 class Command(LogLevelMixin, BusImportMixin, object):
-    """
-    Planning
-
-       * --json foo.bar=123,moo.cow=456
-       * --id=x
-       * --native-id=x
-       * --api-name=foo.*
-       * --event-name=my_event*
-       * --follow
-       * --cache-only
-
-    """
-
     def setup(self, parser, subparsers):
         parser_shell = subparsers.add_parser(
             "inspect",
@@ -85,6 +72,12 @@ class Command(LogLevelMixin, BusImportMixin, object):
             metavar="EVENT_NAME",
             default=True,
         )
+        parser_shell.add_argument(
+            "--follow",
+            "-f",
+            help=("Continually listen for new events matching the search criteria"),
+            default=True,
+        )
 
         self.setup_import_parameter(parser_shell)
         parser_shell.set_defaults(func=self.handle)
@@ -112,6 +105,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         return fnmatch(s, pattern)
 
     def version_match(self, pattern: str, version: int) -> bool:
+        """Does the given version match the given pattern"""
         match = re.match(r"(<|>|<=|>=|!=|=)(\d+)", pattern)
         if not match:
             sys.stdout.write("Invalid version")
@@ -128,6 +122,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         return self.compare(comparator, left_value=version, right_value=version_)
 
     def json_match(self, query: str, data: dict) -> bool:
+        """Does the given data match the given jsonpath query"""
         match = re.match(r"(.+?)(<|>|<=|>=|!=|=)(.+)", query)
         if not match:
             sys.stdout.write("Invalid json query")
@@ -146,6 +141,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         return False
 
     def match_message(self, args, message: EventMessage) -> bool:
+        """Does a message match the given search criteria?"""
         if args.id and args.id != message.id:
             return False
 
@@ -164,9 +160,12 @@ class Command(LogLevelMixin, BusImportMixin, object):
         return True
 
     def output(self, args, transport: EventTransport, message: EventMessage):
+        """Print out the given message"""
+
         serialized = transport.serializer(message)
         if args.format == "json":
             print(json.dumps(serialized))
+
         elif args.format == "pretty":
             print(Colors.BGreen, end="")
             print(f" {message.api_name}.{message.event_name} ".center(80, "="))
@@ -185,11 +184,13 @@ class Command(LogLevelMixin, BusImportMixin, object):
                 print(f"    {str(k).ljust(20)}: {v}")
 
             print("\n")
+
         else:
             sys.stdout.write(f"Unknown output format '{args.format}'")
             exit(1)
 
     def compare(self, comparator: str, left_value, right_value):
+        """Utility for performing arbitrary comparisons"""
         lookup = {
             "=": lambda: left_value == right_value,
             "!=": lambda: left_value != right_value,
@@ -198,9 +199,11 @@ class Command(LogLevelMixin, BusImportMixin, object):
             "<=": lambda: left_value <= right_value,
             ">=": lambda: left_value >= right_value,
         }
+
         if comparator not in lookup:
             sys.stdout.write(f"Unknown comparator '{comparator}'")
             exit(1)
+
         return lookup[comparator]()
 
 
