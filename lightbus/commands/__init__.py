@@ -13,6 +13,7 @@ import lightbus.commands.run
 import lightbus.commands.shell
 import lightbus.commands.dump_schema
 import lightbus.commands.dump_config_schema
+import lightbus.commands.inspect
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,7 @@ def parse_args(args=None):
     lightbus.commands.dump_schema.Command().setup(parser, subparsers)
     lightbus.commands.dump_schema.Command().setup(parser, subparsers)
     lightbus.commands.dump_config_schema.Command().setup(parser, subparsers)
+    lightbus.commands.inspect.Command().setup(parser, subparsers)
 
     # Create a temporary plugin registry in order to run the before_parse_args hook
     plugin_registry = PluginRegistry()

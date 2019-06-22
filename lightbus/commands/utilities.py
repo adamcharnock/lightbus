@@ -1,7 +1,9 @@
 import logging
 
+from typing import Tuple, Any
+
 import lightbus.creation
-from lightbus import configure_logging
+from lightbus import configure_logging, BusPath
 import lightbus.client
 from lightbus.config import Config
 from lightbus.exceptions import NoBusFoundInBusModule
@@ -23,7 +25,7 @@ class BusImportMixin(object):
             ),
         )
 
-    def import_bus(self, args):
+    def import_bus(self, args) -> Tuple[Any, BusPath]:
         bus_module = lightbus.creation.import_bus_module(args.bus_module_name)
         try:
             return bus_module, bus_module.bus
