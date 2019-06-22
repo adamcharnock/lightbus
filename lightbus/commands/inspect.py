@@ -14,6 +14,8 @@ from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
 from lightbus_vendored.jsonpath import jsonpath
+from lightbus.utilities.config import random_name
+
 
 CACHE_PATH = Path("~/.lightbus/inspect_cache").expanduser()
 
@@ -70,21 +72,16 @@ class Command(LogLevelMixin, BusImportMixin, object):
             help=("Formatting style. One of pretty, json"),
             metavar="FORMAT",
             default="json",
+            choices=("pretty", "json"),
         )
         parser_shell.add_argument(
-            "--cache-only",
-            "-c",
-            help=("Search the local cache only"),
-            metavar="EVENT_NAME",
-            default=False,
-            type=bool,
+            "--cache-only", "-c", help=("Search the local cache only"), action="store_true"
         )
         parser_shell.add_argument(
             "--follow",
             "-f",
             help=("Continually listen for new events matching the search criteria"),
-            default=True,
-            type=bool,
+            action="store_true",
         )
 
         self.setup_import_parameter(parser_shell)
@@ -94,21 +91,24 @@ class Command(LogLevelMixin, BusImportMixin, object):
         self.setup_logging(args.log_level or "warning", config)
         bus_module, bus = self.import_bus(args)
 
-        for api in bus.client.api_registry.public():
-            if not args.api or self.wildcard_match(args.api, api.meta.name):
-                logger.debug(f"Inspecting {api.meta.name}")
-                block(self.search_in_api(args, api, bus))
-            else:
-                logger.debug(f"API {api.meta.name} did not match {args.api}. Skipping")
+        try:
+            for api in bus.client.api_registry.public():
+                if not args.api or self.wildcard_match(args.api, api.meta.name):
+                    logger.debug(f"Inspecting {api.meta.name}")
+                    block(self.search_in_api(args, api, bus))
+                else:
+                    logger.debug(f"API {api.meta.name} did not match {args.api}. Skipping")
+        except KeyboardInterrupt:
+            logger.info("Stopped by user")
 
     async def search_in_api(self, args, api: Api, bus: BusPath):
         transport = bus.client.transport_registry.get_event_transport(api.meta.name)
-        async for message in self.get_messages(args, api, args.event, transport):
+        async for message in self.get_messages(args, api, args.event, transport, bus):
             if self.match_message(args, message):
                 self.output(args, transport, message)
 
     async def get_messages(
-        self, args, api: Api, event_name: Optional[str], transport: EventTransport
+        self, args, api: Api, event_name: Optional[str], transport: EventTransport, bus: BusPath
     ):
         CACHE_PATH.mkdir(parents=True, exist_ok=True)
         event_name = event_name or "*"
@@ -152,14 +152,35 @@ class Command(LogLevelMixin, BusImportMixin, object):
         if args.cache_only:
             return
 
+        def _write_to_cache(f, event_message):
+            logger.debug(f"Writing message {event_message.id} to cache")
+            f.write(json.dumps(transport.serializer(event_message)))
+            f.write("\n")
+            f.flush()
+
         # Now get messages from the transport, writing to the cache as we go
+        since = None
         with cache_file.open("a") as f:
             async for event_message in transport.history(
-                api_name=api.meta.name, event_name=args.event or "*", start=start
+                api_name=api.meta.name, event_name=event_name, start=start
             ):
-                f.write(json.dumps(transport.serializer(event_message)))
-                f.write("\n")
+                _write_to_cache(f, event_message)
                 yield event_message
+                if not hasattr(event_message, "datetime"):
+                    since = event_message.datetime
+
+            # Now start following the messages (if requested)
+            if args.follow:
+                listener_name = f"inspect_command_{random_name(length=8)}"
+                consumer = transport.consume(
+                    listen_for=[(api.meta.name, event_name)],
+                    listener_name=listener_name,
+                    bus_client=bus.client,
+                )
+                async for event_messages in consumer:
+                    for event_message in event_messages:
+                        _write_to_cache(f, event_message)
+                        yield event_message
 
     def wildcard_match(self, pattern: str, s: str) -> bool:
         return fnmatch(s, pattern)
