@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import re
+from asyncio import sleep
 from hashlib import sha1
 
 import sys
@@ -14,7 +15,6 @@ from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
 from lightbus_vendored.jsonpath import jsonpath
-from lightbus.utilities.config import random_name
 
 
 CACHE_PATH = Path("~/.lightbus/inspect_cache").expanduser()
@@ -83,16 +83,25 @@ class Command(LogLevelMixin, BusImportMixin, object):
             help=("Continually listen for new events matching the search criteria"),
             action="store_true",
         )
+        parser_shell.add_argument(
+            "--internal", "-I", help="Include internal APIs", action="store_true"
+        )
 
         self.setup_import_parameter(parser_shell)
         parser_shell.set_defaults(func=self.handle)
 
     def handle(self, args, config, plugin_registry: PluginRegistry):
+        """Entrypoint for the inspect command"""
         self.setup_logging(args.log_level or "warning", config)
         bus_module, bus = self.import_bus(args)
 
+        if args.internal or args.api:
+            apis = bus.client.api_registry.all()
+        else:
+            apis = bus.client.api_registry.public()
+
         try:
-            for api in bus.client.api_registry.public():
+            for api in apis:
                 if not args.api or self.wildcard_match(args.api, api.meta.name):
                     logger.debug(f"Inspecting {api.meta.name}")
                     block(self.search_in_api(args, api, bus))
@@ -103,6 +112,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
 
     async def search_in_api(self, args, api: Api, bus: BusPath):
         transport = bus.client.transport_registry.get_event_transport(api.meta.name)
+        # TODO: --follow will only work for a single API. Use bus.client.listen, not transport.consume.
         async for message in self.get_messages(args, api, args.event, transport, bus):
             if self.match_message(args, message):
                 self.output(args, transport, message)
@@ -110,6 +120,14 @@ class Command(LogLevelMixin, BusImportMixin, object):
     async def get_messages(
         self, args, api: Api, event_name: Optional[str], transport: EventTransport, bus: BusPath
     ):
+        """Yields messages from various sources
+
+        Messages are returned from sources in this order:
+
+         - Any on-disk cache
+         - Reading history from the event transport
+
+        """
         CACHE_PATH.mkdir(parents=True, exist_ok=True)
         event_name = event_name or "*"
 
@@ -142,7 +160,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
                             # Messages do not provide a datetime, stop loading from the cache as
                             # this is required
                             logger.warning(
-                                "Event transport does not provided message date times. Will not load from cache."
+                                "Event transport does not provided message datetimes. Will not load from cache."
                             )
                             break
                         start = event_message.datetime
@@ -159,28 +177,35 @@ class Command(LogLevelMixin, BusImportMixin, object):
             f.flush()
 
         # Now get messages from the transport, writing to the cache as we go
-        since = None
-        with cache_file.open("a") as f:
-            async for event_message in transport.history(
-                api_name=api.meta.name, event_name=event_name, start=start
-            ):
-                _write_to_cache(f, event_message)
-                yield event_message
-                if not hasattr(event_message, "datetime"):
-                    since = event_message.datetime
+        allow_following = True
+        while True:
+            with cache_file.open("a") as f:
+                async for event_message in transport.history(
+                    api_name=api.meta.name,
+                    event_name=event_name,
+                    start=start,
+                    start_inclusive=False,
+                ):
+                    _write_to_cache(f, event_message)
+                    yield event_message
+                    if hasattr(event_message, "datetime"):
+                        start = event_message.datetime
+                    else:
+                        # Following requires the datetime property on event messages
+                        allow_following = False
 
-            # Now start following the messages (if requested)
             if args.follow:
-                listener_name = f"inspect_command_{random_name(length=8)}"
-                consumer = transport.consume(
-                    listen_for=[(api.meta.name, event_name)],
-                    listener_name=listener_name,
-                    bus_client=bus.client,
-                )
-                async for event_messages in consumer:
-                    for event_message in event_messages:
-                        _write_to_cache(f, event_message)
-                        yield event_message
+                if allow_following:
+                    # We want to keep waiting for new messages, so wait a second then do it again
+                    await sleep(1)
+                else:
+                    logger.warning(
+                        "Event transport does not provided message datetimes. Following not supported."
+                    )
+                    break
+            else:
+                # No waiting for new messages, so break out of the while loop
+                break
 
     def wildcard_match(self, pattern: str, s: str) -> bool:
         return fnmatch(s, pattern)

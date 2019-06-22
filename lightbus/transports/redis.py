@@ -1,12 +1,12 @@
 import asyncio
+import calendar
 import json
 import logging
 import time
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Sequence, Optional, Union, Dict, Mapping, List, Container, AsyncGenerator, Tuple
 from enum import Enum
-import threading
 
 import aioredis
 from aioredis import Redis, ReplyError, ConnectionClosedError, PipelineError
@@ -851,14 +851,29 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             )
             await p.execute()
 
-    async def history(self, api_name, event_name, start: datetime = None, stop: datetime = None):
+    async def history(
+        self,
+        api_name,
+        event_name,
+        start: datetime = None,
+        stop: datetime = None,
+        start_inclusive: bool = True,
+    ):
         # TODO: Test
         # TODO: Add to base event transport
         redis_start = datetime_to_redis_steam_id(start) if start else "-"
         redis_stop = datetime_to_redis_steam_id(stop) if stop else "+"
 
+        if start and not start_inclusive:
+            redis_start = redis_stream_id_add_one(redis_start)
+
         stream_name = self._get_stream_names([(api_name, event_name)])[0]
         batch_size = 1000
+
+        logger.debug(
+            f"Getting history for stream {stream_name} from {redis_start} ({start}) "
+            f"to {redis_stop} ({stop}) in batches of {batch_size}"
+        )
 
         with await self.connection_manager() as redis:
             messages = await redis.xrange(stream_name, redis_start, redis_stop, count=batch_size)
@@ -999,7 +1014,7 @@ def redis_stream_id_subtract_one(message_id):
 
     This is useful when we need to xread() events inclusive of the given ID,
     rather than exclusive of the given ID (which is the sensible default).
-    Only use when one can tolerate the slim risk of grabbing extra events.
+    Only use when one can tolerate an exceptionally slim risk of grabbing extra events.
     """
     milliseconds, n = map(int, message_id.split("-"))
     if n > 0:
@@ -1012,6 +1027,17 @@ def redis_stream_id_subtract_one(message_id):
         # from this is neither possible, desirable or useful.
         return message_id
     return "{:13d}-{}".format(milliseconds, n)
+
+
+def redis_stream_id_add_one(message_id):
+    """Add one to the message ID
+
+    This is useful when we need to xrange() events exclusive of the given ID,
+    rather than inclusive of the given ID (which is the sensible default).
+    There is no chance of missing events with this method.
+    """
+    milliseconds, n = map(int, message_id.split("-"))
+    return "{:13d}-{}".format(milliseconds, n + 1)
 
 
 def normalise_since_value(since):
@@ -1030,12 +1056,14 @@ def redis_steam_id_to_datetime(message_id):
     milliseconds, seq = map(int, message_id.split("-"))
     # Treat the sequence value as additional microseconds to ensure correct sequencing
     microseconds = (milliseconds % 1000 * 1000) + seq
-    dt = datetime.utcfromtimestamp(milliseconds // 1000).replace(microsecond=microseconds)
+    dt = datetime.utcfromtimestamp(milliseconds // 1000).replace(
+        microsecond=microseconds, tzinfo=timezone.utc
+    )
     return dt
 
 
 def datetime_to_redis_steam_id(dt: datetime) -> str:
-    timestamp = round(datetime.now().timestamp() * 1000)
+    timestamp = round(dt.timestamp() * 1000)
     return f"{timestamp}-0"
 
 
