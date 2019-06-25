@@ -1,4 +1,8 @@
 import os
+import signal
+import subprocess
+import sys
+import time
 from tempfile import NamedTemporaryFile
 
 import pytest
@@ -44,100 +48,107 @@ async def redis_config_file(loop, redis_server_url, redis_client):
         await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
 
 
-def test_commands_run_cli(mocker, redis_config_file, make_test_bus_module):
-    test_bus_module = make_test_bus_module()
-    # Mock logging, otherwise it interferes with other tests.
-    mocker.patch.object(LogLevelMixin, "setup_logging")
-    m = mocker.patch.object(BusClient, "_actually_run_forever")
+@pytest.yield_fixture()
+def run_lightbus_command(make_test_bus_module, redis_config_file):
+    processes = []
 
-    args = ["--config", redis_config_file, "run", "--bus", test_bus_module]
+    def inner(
+        cmd: str,
+        *args: str,
+        env: dict = None,
+        bus_module_code: str = None,
+        config_path: str = None,
+        full_args: list = None,
+    ):
+        env = env or {}
 
-    run_command_from_args(args)
+        # Create a bus module and tell lightbus where to find it
+        env.setdefault("LIGHTBUS_MODULE", make_test_bus_module(code=bus_module_code))
+        # Set the python path so we can load the bus module we've just create
+        env.setdefault("PYTHONPATH", ":".join(sys.path))
 
-    assert m.called
+        # Set the PATH so the 'lightbus' command can be found
+        env.setdefault("PATH", os.environ.get("PATH", ""))
+
+        config_path = config_path or redis_config_file
+        full_args = full_args or [
+            "lightbus",
+            "--config",
+            config_path,
+            "--log-level",
+            "debug",
+            cmd,
+            *args,
+        ]
+
+        p = subprocess.Popen(full_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+        processes.append((cmd, full_args, env, p))
+
+        # Let it startup
+        time.sleep(1)
+
+        return p
+
+    yield inner
+
+    # Cleanup
+    for cmd, full_args, env, p in processes:
+        os.kill(p.pid, signal.SIGINT)
+        p.wait(timeout=1)
+
+        print(f"Cleaning up command 'lightbus {cmd}'")
+        print(f"     Command: {' '.join(full_args)}")
+        print(f"     Environment:")
+        for k, v in env.items():
+            print(f"         {k.ljust(20)}: {v}")
+
+        print(f"---- 'lightbus {cmd}' stdout ----", flush=True)
+        print(p.stdout.read().decode("utf8"), flush=True)
+
+        print(f"---- 'lightbus {cmd}' stderr ----", flush=True)
+        print(p.stderr.read().decode("utf8"), flush=True)
+        assert p.returncode == 0, f"Child process running 'lightbus {cmd}' exited abnormally"
 
 
-def test_commands_run_env(
-    mocker, redis_config_file, set_env, make_test_bus_module, plugin_registry
-):
-    test_bus_module = make_test_bus_module()
-    # Mock logging, otherwise it interferes with other tests.
-    mocker.patch.object(LogLevelMixin, "setup_logging")
-    run_forever_mock = mocker.patch.object(BusClient, "_actually_run_forever")
-
-    async def dummy_coroutine(*args, **kwargs):
-        pass
-
-    args = commands.parse_args(args=["run"])
-    with set_env(LIGHTBUS_CONFIG=redis_config_file, LIGHTBUS_MODULE=test_bus_module):
-        execute_hook_mock = mocker.patch.object(
-            plugin_registry, "execute_hook", side_effect=dummy_coroutine
-        )
-        lightbus.commands.run.Command().handle(
-            args, config=Config(RootConfig()), plugin_registry=plugin_registry
-        )
-
-    assert run_forever_mock.called
-    assert execute_hook_mock.called
+def test_commands_run_cli(run_lightbus_command, make_test_bus_module):
+    run_lightbus_command("run", "--bus", make_test_bus_module(), env={"LIGHTBUS_MODULE": ""})
 
 
-def test_commands_shell(redis_config_file, make_test_bus_module, mocker):
-    # Mock logging, otherwise it interferes with other tests.
-    mocker.patch.object(LogLevelMixin, "setup_logging")
-
-    test_bus_module = make_test_bus_module()
-    # Prevent the shell mainloop from kicking off
-    args = ["--config", redis_config_file, "shell", "--bus", test_bus_module]
-    run_command_from_args(args, fake_it=True)
+def test_commands_run_env(run_lightbus_command, redis_config_file, make_test_bus_module):
+    run_lightbus_command(
+        "run", env={"LIGHTBUS_MODULE": make_test_bus_module(), "LIGHTBUS_CONFIG": redis_config_file}
+    )
 
 
-def test_commands_dump_schema(redis_config_file, make_test_bus_module, mocker):
-    test_bus_module = make_test_bus_module()
-    # Mock logging, otherwise it interferes with other tests.
-    mocker.patch.object(LogLevelMixin, "setup_logging")
+def test_commands_shell():
+    run_lightbus_command("shell")
 
-    args = [
-        "--config",
-        redis_config_file,
-        "dumpschema",
-        "--bus",
-        test_bus_module,
-        "--schema",
-        "/tmp/test_commands_dump_schema.json",
-    ]
+
+def test_commands_dump_schema(run_lightbus_command):
     try:
         os.remove("/tmp/test_commands_dump_schema.json")
     except FileNotFoundError:
         pass
 
-    run_command_from_args(args)
+    run_lightbus_command("dumpschema", "--schema", "/tmp/test_commands_dump_schema.json")
+    time.sleep(1)
 
     with open("/tmp/test_commands_dump_schema.json", "r") as f:
         assert len(f.read()) > 0
     os.remove("/tmp/test_commands_dump_schema.json")
 
 
-def test_commands_dump_config_schema(redis_config_file, dummy_api, make_test_bus_module, mocker):
-    test_bus_module = make_test_bus_module()
-    # Mock logging, otherwise it interferes with other tests.
-    mocker.patch.object(LogLevelMixin, "setup_logging")
-
-    args = [
-        "--config",
-        redis_config_file,
-        "dumpconfigschema",
-        "--bus",
-        test_bus_module,
-        "--schema",
-        "/tmp/test_commands_dump_config_schema.json",
-    ]
+def test_commands_dump_config_schema(run_lightbus_command):
     try:
         os.remove("/tmp/test_commands_dump_config_schema.json")
     except FileNotFoundError:
         pass
 
-    run_command_from_args(args)
+    run_lightbus_command(
+        "dumpconfigschema", "--schema", "/tmp/test_commands_dump_config_schema.json"
+    )
+    time.sleep(1)
 
     with open("/tmp/test_commands_dump_config_schema.json", "r") as f:
-        assert len(f.read()) > 100
+        assert len(f.read()) > 0
     os.remove("/tmp/test_commands_dump_config_schema.json")
