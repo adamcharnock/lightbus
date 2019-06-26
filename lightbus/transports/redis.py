@@ -858,7 +858,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         start: datetime = None,
         stop: datetime = None,
         start_inclusive: bool = True,
-    ):
+    ) -> AsyncGenerator[EventMessage, None]:
         # TODO: Test
         # TODO: Add to base event transport
         redis_start = datetime_to_redis_steam_id(start) if start else "-"

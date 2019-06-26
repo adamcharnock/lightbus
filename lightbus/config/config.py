@@ -93,6 +93,7 @@ class Config(object):
         if set_defaults:
             config = set_default_config(config)
         validate_config(config)
+
         return cls(root_config=cast_to_hint(config, RootConfig))
 
     def __getattr__(self, item):

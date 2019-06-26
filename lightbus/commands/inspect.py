@@ -100,6 +100,12 @@ class Command(LogLevelMixin, BusImportMixin, object):
         else:
             apis = bus.client.api_registry.public()
 
+        if args.api and args.api not in {a.meta.name for a in apis}:
+            sys.stderr.write(
+                f"Specified API was not found locally or within the schema on the bus. Cannot continue.\n"
+            )
+            exit(1)
+
         try:
             for api in apis:
                 if not args.api or self.wildcard_match(args.api, api.meta.name):
@@ -143,7 +149,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
 
         # Sanity check
         if not cache_file.exists() and args.cache_only:
-            sys.stdout.write(
+            sys.stderr.write(
                 f"No cache file exists for {api.meta.name}.{event_name}, but --cache-only was specified\n"
             )
             exit(1)
@@ -214,7 +220,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         """Does the given version match the given pattern"""
         match = re.match(r"(<|>|<=|>=|!=|=)(\d+)", pattern)
         if not match:
-            sys.stdout.write("Invalid version\n")
+            sys.stderr.write("Invalid version\n")
             exit(1)
 
         comparator, version_ = match.groups()
@@ -222,7 +228,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         try:
             version_ = int(version_)
         except TypeError:
-            sys.stdout.write("Invalid version\n")
+            sys.stderr.write("Invalid version\n")
             exit(1)
 
         return self.compare(comparator, left_value=version, right_value=version_)
@@ -231,7 +237,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         """Does the given data match the given jsonpath query"""
         match = re.match(r"(.+?)(<|>|<=|>=|!=|=)(.+)", query)
         if not match:
-            sys.stdout.write("Invalid json query\n")
+            sys.stderr.write("Invalid json query\n")
             exit(1)
 
         query, comparator, value = match.groups()
@@ -292,7 +298,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
             print("\n")
 
         else:
-            sys.stdout.write(f"Unknown output format '{args.format}'\n")
+            sys.stderr.write(f"Unknown output format '{args.format}'\n")
             exit(1)
 
     def compare(self, comparator: str, left_value, right_value):
@@ -307,7 +313,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         }
 
         if comparator not in lookup:
-            sys.stdout.write(f"Unknown comparator '{comparator}'\n")
+            sys.stderr.write(f"Unknown comparator '{comparator}'\n")
             exit(1)
 
         return lookup[comparator]()

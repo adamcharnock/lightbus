@@ -1,19 +1,16 @@
+import json
+import logging
 import os
 import signal
 import subprocess
 import sys
 import time
+from subprocess import Popen
 from tempfile import NamedTemporaryFile
 
 import pytest
 
-import lightbus.commands.run
-from lightbus import commands, BusClient
-from lightbus.commands import run_command_from_args
-from lightbus.commands.utilities import LogLevelMixin
-from lightbus.config import Config
-from lightbus.config.structure import RootConfig
-from lightbus.plugins import PluginRegistry
+logger = logging.getLogger(__name__)
 
 pytestmark = pytest.mark.unit
 
@@ -37,6 +34,36 @@ bus:
         url: {redis_url}
 """
 
+DEBUG_BUS_CONFIG = """
+apis:
+  default:
+    event_transport:
+      debug: {}
+    rpc_transport:
+      debug: {}
+    result_transport:
+      debug: {}
+bus:
+  schema:
+    transport:
+      debug: {}
+"""
+
+BUS_MODULE = """
+import lightbus
+
+bus = lightbus.create()
+
+class DummyApi(lightbus.Api):
+    my_event = lightbus.Event()
+
+    class Meta:
+        name = "my.dummy"
+
+
+bus.client.register_api(DummyApi())
+"""
+
 
 @pytest.yield_fixture()
 async def redis_config_file(loop, redis_server_url, redis_client):
@@ -46,6 +73,14 @@ async def redis_config_file(loop, redis_server_url, redis_client):
         f.flush()
         yield f.name
         await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
+
+
+@pytest.yield_fixture()
+def debug_config_file():
+    with NamedTemporaryFile() as f:
+        f.write(DEBUG_BUS_CONFIG.encode("utf8"))
+        f.flush()
+        yield f.name
 
 
 @pytest.yield_fixture()
@@ -81,6 +116,8 @@ def run_lightbus_command(make_test_bus_module, redis_config_file):
             *args,
         ]
 
+        logger.debug(f"Running: {' '.join(full_args)}. Environment: {env}")
+
         p = subprocess.Popen(full_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
         processes.append((cmd, full_args, env, p))
 
@@ -93,7 +130,12 @@ def run_lightbus_command(make_test_bus_module, redis_config_file):
 
     # Cleanup
     for cmd, full_args, env, p in processes:
-        os.kill(p.pid, signal.SIGINT)
+        try:
+            os.kill(p.pid, signal.SIGINT)
+        except ProcessLookupError:
+            # Process already gone
+            pass
+
         p.wait(timeout=1)
 
         print(f"Cleaning up command 'lightbus {cmd}'")
@@ -152,3 +194,26 @@ def test_commands_dump_config_schema(run_lightbus_command):
     with open("/tmp/test_commands_dump_config_schema.json", "r") as f:
         assert len(f.read()) > 0
     os.remove("/tmp/test_commands_dump_config_schema.json")
+
+
+def test_commands_inspect_simple(run_lightbus_command, debug_config_file):
+    process: Popen = run_lightbus_command(
+        "inspect", "--api", "my.dummy", config_path=debug_config_file, bus_module_code=BUS_MODULE
+    )
+
+    lines = process.stdout.readlines()
+    assert lines
+    for line in lines:
+        event = json.loads(line)
+        assert event["name"]
+
+
+def test_commands_inspect_watch(run_lightbus_command, debug_config_file):
+    process: Popen = run_lightbus_command(
+        "inspect", config_path=debug_config_file, bus_module_code=BUS_MODULE
+    )
+
+    for _ in range(0, 5):
+        assert process.poll() is None, "Inspect process unexpectedly died"
+        output = process.stdout.readlines()
+        pass

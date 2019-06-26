@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from itertools import chain
 from typing import Sequence, Tuple, List, Dict, NamedTuple, TypeVar, Type, Set, AsyncGenerator
 
@@ -138,6 +139,19 @@ class EventTransport(Transport):
     async def acknowledge(self, *event_messages, bus_client: "BusClient"):
         """Acknowledge that one or more events were successfully processed"""
         pass
+
+    async def history(
+        self,
+        api_name,
+        event_name,
+        start: datetime = None,
+        stop: datetime = None,
+        start_inclusive: bool = True,
+    ) -> AsyncGenerator[EventMessage, None]:
+        """Return EventMessages for the given api/event names during the (optionally) given date range"""
+        raise NotImplementedError(
+            f"Event transport {self.__class__.__name__} does not support event history."
+        )
 
     def _sanity_check_listen_for(self, listen_for):
         """Utility method to sanity check the `listen_for` parameter.

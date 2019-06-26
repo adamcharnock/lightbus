@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import datetime
 from typing import Sequence, Tuple, Any, Generator, List, Dict, AsyncGenerator
 
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport, SchemaTransport
@@ -85,6 +86,16 @@ class DebugEventTransport(EventTransport):
         while True:
             await asyncio.sleep(0.1)
             yield [self._get_fake_message()]
+
+    async def history(
+        self,
+        api_name,
+        event_name,
+        start: datetime = None,
+        stop: datetime = None,
+        start_inclusive: bool = True,
+    ) -> AsyncGenerator[EventMessage, None]:
+        yield self._get_fake_message()
 
     def _get_fake_message(self):
         return EventMessage(

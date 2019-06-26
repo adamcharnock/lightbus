@@ -111,7 +111,7 @@ class BusClient(object):
             self.config
         )
         schema = Schema(
-            schema_transport=self.transport_registry.get_schema_transport("default"),
+            schema_transport=self.transport_registry.get_schema_transport(),
             max_age_seconds=self.config.bus().schema.ttl,
             human_readable=self.config.bus().schema.human_readable,
         )
