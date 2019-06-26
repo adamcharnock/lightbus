@@ -62,6 +62,7 @@ class DebugEventTransport(EventTransport):
         self._task = None
         self._reload = False
         self._events = set()
+        super().__init__()
 
     async def send_event(self, event_message: EventMessage, options: dict, bus_client: "BusClient"):
         """Publish an event"""
@@ -98,9 +99,11 @@ class DebugEventTransport(EventTransport):
         yield self._get_fake_message()
 
     def _get_fake_message(self):
-        return EventMessage(
+        message = EventMessage(
             api_name="my_company.auth", event_name="user_registered", kwargs={"example": "value"}
         )
+        setattr(message, "datetime", datetime.now())
+        return message
 
 
 class DebugSchemaTransport(SchemaTransport):

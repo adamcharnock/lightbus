@@ -6,6 +6,7 @@ from typing import Sequence, Tuple, List, Dict, NamedTuple, TypeVar, Type, Set, 
 from lightbus.api import Api
 from lightbus.exceptions import NothingToListenFor, TransportNotFound, TransportsNotInstalled
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
+from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeserializer
 from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
 
@@ -106,6 +107,14 @@ class ResultTransport(Transport):
 class EventTransport(Transport):
     """ Implement the sending/consumption of events over a given transport.
     """
+
+    def __init__(
+        self,
+        serializer=ByFieldMessageSerializer(),
+        deserializer=ByFieldMessageDeserializer(EventMessage),
+    ):
+        self.serializer = serializer
+        self.deserializer = deserializer
 
     async def send_event(self, event_message: EventMessage, options: dict, bus_client: "BusClient"):
         """Publish an event"""

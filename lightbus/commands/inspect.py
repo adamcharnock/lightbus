@@ -166,7 +166,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
                             # Messages do not provide a datetime, stop loading from the cache as
                             # this is required
                             logger.warning(
-                                "Event transport does not provided message datetimes. Will not load from cache."
+                                "Event transport does not provide message datetimes. Will not load from cache."
                             )
                             break
                         start = event_message.datetime
@@ -206,7 +206,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
                     await sleep(1)
                 else:
                     logger.warning(
-                        "Event transport does not provided message datetimes. Following not supported."
+                        "Event transport does not provide message datetimes. Following not supported."
                     )
                     break
             else:
@@ -276,7 +276,9 @@ class Command(LogLevelMixin, BusImportMixin, object):
 
         serialized = transport.serializer(message)
         if args.format == "json":
-            print(json.dumps(serialized))
+            sys.stdout.write(json.dumps(serialized))
+            sys.stdout.write("\n")
+            sys.stdout.flush()
 
         elif args.format == "pretty":
             print(Colors.BGreen, end="")

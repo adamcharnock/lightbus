@@ -200,20 +200,28 @@ def test_commands_inspect_simple(run_lightbus_command, debug_config_file):
     process: Popen = run_lightbus_command(
         "inspect", "--api", "my.dummy", config_path=debug_config_file, bus_module_code=BUS_MODULE
     )
+    time.sleep(1)
 
     lines = process.stdout.readlines()
     assert lines
     for line in lines:
         event = json.loads(line)
-        assert event["name"]
+        assert event["event_name"]
 
 
-def test_commands_inspect_watch(run_lightbus_command, debug_config_file):
+def test_commands_inspect_follow(run_lightbus_command, debug_config_file):
     process: Popen = run_lightbus_command(
-        "inspect", config_path=debug_config_file, bus_module_code=BUS_MODULE
+        "inspect", "--follow", config_path=debug_config_file, bus_module_code=BUS_MODULE
     )
+    # Let it run a few seconds and it should keep popping out messages
+    time.sleep(3)
 
-    for _ in range(0, 5):
-        assert process.poll() is None, "Inspect process unexpectedly died"
-        output = process.stdout.readlines()
-        pass
+    # Should still be running
+    assert process.poll() is None, "Inspect process unexpectedly died"
+    os.kill(process.pid, signal.SIGINT)
+
+    lines = process.stdout.readlines()
+    assert len(lines) > 2
+    for line in lines:
+        event = json.loads(line)
+        assert event["event_name"]

@@ -459,7 +459,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         service_name: str,
         consumer_name: str,
         url=None,
-        # TODO: serializer & deserializer should be on parent class
         serializer=ByFieldMessageSerializer(),
         deserializer=ByFieldMessageDeserializer(RedisEventMessage),
         connection_parameters: Mapping = frozendict(maxsize=100),
@@ -471,8 +470,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         consumption_restart_delay: int = 5,
     ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
-        self.serializer = serializer
-        self.deserializer = deserializer
         self.batch_size = batch_size
         self.reclaim_batch_size = reclaim_batch_size if reclaim_batch_size else batch_size * 10
         self.service_name = service_name
@@ -481,6 +478,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self.max_stream_length = max_stream_length
         self.stream_use = stream_use
         self.consumption_restart_delay = consumption_restart_delay
+        super().__init__(serializer=serializer, deserializer=deserializer)
 
     @classmethod
     def from_config(
@@ -860,7 +858,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         start_inclusive: bool = True,
     ) -> AsyncGenerator[EventMessage, None]:
         # TODO: Test
-        # TODO: Add to base event transport
         redis_start = datetime_to_redis_steam_id(start) if start else "-"
         redis_stop = datetime_to_redis_steam_id(stop) if stop else "+"
 

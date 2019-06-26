@@ -25,8 +25,11 @@ from lightbus.schema.hints_to_schema import (
     make_rpc_parameter_schema,
     make_event_parameter_schema,
 )
-from lightbus.transports.base import SchemaTransport
 from lightbus.utilities.io import make_file_safe_api_name
+
+if False:
+    # pylint: disable=unused-import
+    from lightbus.transports.base import SchemaTransport
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +50,7 @@ class Schema(object):
 
     def __init__(
         self,
-        schema_transport: SchemaTransport,
+        schema_transport: "SchemaTransport",
         max_age_seconds: Optional[int] = 60,
         human_readable: bool = True,
     ):
