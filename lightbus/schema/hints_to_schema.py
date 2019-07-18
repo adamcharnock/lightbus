@@ -226,7 +226,10 @@ def python_type_to_json_schemas(type_):
         # Custom class
         return [make_custom_object_schema(type_)]
     else:
-        logger.warning("Could not convert python type to json schema type: {}".format(type_))
+        logger.warning(
+            f"Could not convert python type to json schema type: {type_}. If it is a class, "
+            f"ensure it's class-level variables have type hints."
+        )
         return [{}]
 
 

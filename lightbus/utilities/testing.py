@@ -7,7 +7,15 @@ from unittest.mock import patch
 
 from typing import List, Dict, Tuple
 
-from lightbus import RpcTransport, EventTransport, SchemaTransport, ResultTransport, EventMessage
+from lightbus import (
+    RpcTransport,
+    EventTransport,
+    SchemaTransport,
+    ResultTransport,
+    EventMessage,
+    RpcMessage,
+    ResultMessage,
+)
 from lightbus.path import BusPath
 from lightbus.client import BusClient
 from lightbus.transports.base import TransportRegistry
@@ -41,6 +49,8 @@ def crash_at(hook_name):
 
 
 class MockResult(object):
+    # We use camel case method names here for consistency with unittest
+
     def __init__(self, rpc_transport, result_transport, event_transport, schema_transport):
         self.rpc: TestRpcTransport = rpc_transport
         self.result: TestResultTransport = result_transport
@@ -48,17 +58,22 @@ class MockResult(object):
         self.schema: TestSchemaTransport = schema_transport
 
     def assertEventFired(self, full_event_name, *, times=None):
-        fired_events = [em.canonical_name for em, options in self.event.events]
+        event_names_fired = self.eventNamesFired
         assert (  # nosec
-            full_event_name in fired_events
-        ), f"Event {full_event_name} was never fired. Fired events were: {set(fired_events)}"
+            full_event_name in event_names_fired
+        ), f"Event {full_event_name} was never fired. Fired events were: {set(event_names_fired)}"
 
         if times:
-            total_times_fired = len([v for v in fired_events if v == full_event_name])
+            total_times_fired = len([v for v in event_names_fired if v == full_event_name])
             assert total_times_fired == times, (  # nosec
                 f"Event fired the incorrect number of times. "
                 f"Expected {times}, actual {total_times_fired}"
             )
+
+    def assertEventNotFired(self, full_event_name):
+        assert (
+            full_event_name not in self.eventNamesFired
+        ), f"Event {full_event_name} was unexpectedly fired"
 
     def getEventMessages(self, full_event_name=None):
         if full_event_name is None:
@@ -66,8 +81,39 @@ class MockResult(object):
         else:
             return [m for m, _ in self.event.events if m.canonical_name == full_event_name]
 
+    def assertRpcCalled(self, full_rpc_name, *, times=None):
+        rpc_names_fired = self.rpcNamesFired
+        assert (
+            full_rpc_name in rpc_names_fired
+        ), f"RPC {full_rpc_name} was never called. Called RPCs were: {set(rpc_names_fired)}"
+
+        if times:
+            total_times_called = len([v for v in rpc_names_fired if v == full_rpc_name])
+            assert total_times_called == times, (  # nosec
+                f"RPC {full_rpc_name} called the incorrect number of times. "
+                f"Expected {times}, actual {total_times_called}"
+            )
+
+    def assertRpcNotCalled(self, full_rpc_name):
+        assert (
+            full_rpc_name not in self.rpcNamesFired
+        ), f"Event {full_rpc_name} was unexpectedly fired"
+
+    def mockRpcCall(self, full_rpc_name, result=None, **rpc_result_message_kwargs):
+        self.result.add_mock_response(
+            full_rpc_name, dict(result=result, **rpc_result_message_kwargs)
+        )
+
+    @property
+    def eventNamesFired(self):
+        return [em.canonical_name for em, options in self.event.events]
+
+    @property
+    def rpcNamesFired(self):
+        return [rm.canonical_name for rm, options in self.rpc.rpcs]
+
     def __repr__(self):
-        return f"<MockResult: events: {len(self.event.events)}>"
+        return f"<MockResult: events: {len(self.event.events)}, rpcs: {len(self.rpc.rpcs)}>"
 
 
 class BusMocker(ContextDecorator):
@@ -117,7 +163,7 @@ bus_mocker = BusMocker
 
 class TestRpcTransport(RpcTransport):
     def __init__(self):
-        self.rpcs = []
+        self.rpcs: List[Tuple[RpcMessage, dict]] = []
 
     async def call_rpc(self, rpc_message, options: dict, bus_client: "BusClient"):
         self.rpcs.append((rpc_message, options))
@@ -127,6 +173,9 @@ class TestRpcTransport(RpcTransport):
 
 
 class TestResultTransport(ResultTransport):
+    def __init__(self):
+        self.mock_responses = {}
+
     def get_return_path(self, rpc_message):
         return "test://"
 
@@ -134,7 +183,16 @@ class TestResultTransport(ResultTransport):
         raise NotImplementedError("Not yet supported by mocks")
 
     async def receive_result(self, rpc_message, return_path, options, bus_client: "BusClient"):
-        raise NotImplementedError("Not yet supported by mocks")
+        assert rpc_message.canonical_name in self.mock_responses, (
+            f"RPC {rpc_message.canonical_name} unexpectedly called. "
+            f"Perhaps you need to use mockRpcCall() to ensure the mocker expects this call."
+        )
+        kwargs = self.mock_responses[rpc_message.canonical_name]
+        return ResultMessage(**kwargs)
+
+    def add_mock_response(self, full_rpc_name, rpc_result_message_kwargs):
+        rpc_result_message_kwargs.setdefault("rpc_message_id", 1)
+        self.mock_responses[full_rpc_name] = rpc_result_message_kwargs
 
 
 class TestEventTransport(EventTransport):
