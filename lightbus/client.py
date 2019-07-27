@@ -861,6 +861,9 @@ class BusClient(object):
                 "Ensure you are passing at least one time argument, and that it has a non-zero value."
             )
 
+        # TODO: There is an argument that the backgrounding of this should be done only after
+        #       on_start() has been fired. Otherwise this will be run before the on_start() setup
+        #       has happened in cases where also_run_immediately=True.
         def wrapper(f):
             coroutine = call_every(  # pylint: assignment-from-no-return
                 callback=f, timedelta=td, also_run_immediately=also_run_immediately, bus_client=self
