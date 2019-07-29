@@ -668,7 +668,6 @@ async def test_consume_events_per_api_stream(
 async def test_reconnect_upon_send_event(
     redis_event_transport: RedisEventTransport, redis_client, get_total_redis_connections
 ):
-    assert await get_total_redis_connections() == 2
     await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
     assert await get_total_redis_connections() == 1
 
