@@ -44,7 +44,7 @@ jobs:
 
       - run:
           command: |
-            pipenv run pytest --cov=lightbus --junit-xml=junit.xml
+            pipenv run pytest --cov=lightbus --junit-xml=junit.xml -v
 
       - run:
           command: |
