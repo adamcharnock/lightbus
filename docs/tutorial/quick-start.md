@@ -188,7 +188,7 @@ async def bus_start():
 
 Listening for events requires your service to sit waiting for something to 
 happen. Sitting around and waiting for something to happen is precisely 
-what the `lightbus run` command is for. 
+what the `lightbus run` console command is for. 
 
 Therefore, in **one terminal window** startup the `lightbus run` command for 
 `another_service`:

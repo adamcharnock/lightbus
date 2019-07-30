@@ -46,14 +46,14 @@ You can use this client anywhere you need to, such as:
 
 !!! important
 
-    Each service should create its bus client with the service's bus module (ie. the service's `bus.py` file). 
-    Other modules in the service should import the bus client from the bus module as needed.
+    Each service should create its bus client within the service's `bus.py` file (also known as the servies *bus module*). 
+    Other code within the service should import the bus client from the bus module as needed.
     See [how to access your bus client](/howto/access-your-bus-client.md).
 
 
 ## The Lightbus worker process (`lightbus run`)
 
-The Lightbus worker is a long running process started using `lightbus run`. 
+The Lightbus worker is a long running process started using the `lightbus run` console command. 
 This process serves two purposes:
 
 * Listens for events and fires any executes any listeners you have created.
