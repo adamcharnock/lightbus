@@ -42,7 +42,7 @@
     
     
       
-        <title>Write idempotent event handlers* - Lightbus</title>
+        <title>Write idempotent event handlers - Lightbus</title>
       
     
     
@@ -132,7 +132,7 @@
                 Lightbus
               </span>
               <span class="md-header-nav__topic">
-                Write idempotent event handlers*
+                Write idempotent event handlers
               </span>
             
           
@@ -508,9 +508,72 @@
       
     
     
-    <a href="./" title="Write idempotent event handlers*" class="md-nav__link md-nav__link--active">
-      Write idempotent event handlers*
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Write idempotent event handlers
+      </label>
+    
+    <a href="./" title="Write idempotent event handlers" class="md-nav__link md-nav__link--active">
+      Write idempotent event handlers
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-is-idempotency-useful" title="Why is idempotency useful?" class="md-nav__link">
+    Why is idempotency useful?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ensuring-idempotency-for-database-operations" title="Ensuring idempotency for database operations" class="md-nav__link">
+    Ensuring idempotency for database operations
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#upserts-in-django" title="Upserts in Django" class="md-nav__link">
+    Upserts in Django
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upserts-in-sql" title="Upserts in SQL" class="md-nav__link">
+    Upserts in SQL
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ensuring-idempotency-in-other-cases" title="Ensuring idempotency in other cases" class="md-nav__link">
+    Ensuring idempotency in other cases
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -933,6 +996,56 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-is-idempotency-useful" title="Why is idempotency useful?" class="md-nav__link">
+    Why is idempotency useful?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ensuring-idempotency-for-database-operations" title="Ensuring idempotency for database operations" class="md-nav__link">
+    Ensuring idempotency for database operations
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#upserts-in-django" title="Upserts in Django" class="md-nav__link">
+    Upserts in Django
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upserts-in-sql" title="Upserts in SQL" class="md-nav__link">
+    Upserts in SQL
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ensuring-idempotency-in-other-cases" title="Ensuring idempotency in other cases" class="md-nav__link">
+    Ensuring idempotency in other cases
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -947,7 +1060,87 @@
                 
                 
                 <h1 id="how-to-write-idempotent-event-handlers">How to write idempotent event handlers<a class="headerlink" href="#how-to-write-idempotent-event-handlers" title="Permanent link">&para;</a></h1>
-<p>TODO.</p>
+<p>An idempotent function is a function which, when called multiple times with the same parameters, will not result in any 
+change after the first call. As <a href="https://en.wikipedia.org/wiki/Idempotence">Wikipedia puts it</a>:</p>
+<blockquote>
+<p>Idempotence is the property of certain operations in mathematics and computer science 
+whereby they can be applied multiple times without changing the result beyond the initial application</p>
+</blockquote>
+<h2 id="why-is-idempotency-useful">Why is idempotency useful?<a class="headerlink" href="#why-is-idempotency-useful" title="Permanent link">&para;</a></h2>
+<p>Consider that Lightbus events will be delivered <a href="../../explanation/events/#at-least-once-semantics">at least once</a>. 
+This is in comparison to RPCs which are called <a href="../../explanation/rpcs/#at-least-once-semantics">at most once</a>.
+This is not Lightbus trying to be awkward, rather it is because it is theoretically impossible to ensure exactly-once 
+delivery.</p>
+<p>Lightbus therefore guarantees you that events will always arrive, but with the trade-off that sometimes the event 
+may arrive multiple times. <strong>In the wost case, your event handlers will be executed multiple times.</strong></p>
+<p>In some cases this will not cause a problem. For example, an event handler which performs a 
+simple <strong>update</strong> to a record with a specific ID. Executing this update a second time will leave the 
+record in the same state it was in after the first execution.</p>
+<p>However, an event handler which <strong>creates</strong> a new record will face a problem. If the event handler is executed twice
+then two records will be created, even though the event was identical in both cases.</p>
+<h2 id="ensuring-idempotency-for-database-operations">Ensuring idempotency for database operations<a class="headerlink" href="#ensuring-idempotency-for-database-operations" title="Permanent link">&para;</a></h2>
+<p>A simple and reliable way to ensure idempotency is through the use of <em>UUIDs</em> and <em>upserts</em>.</p>
+<p>A UUID is a standard way of producing a globally unique ID. An upsert is a combination of 
+an 'update' and an 'insert' which says: *'Insert this record, but if you find a duplicate then update it instead'. </p>
+<p>Take the following event handler as an example:</p>
+<div class="codehilite"><pre><span></span><span class="c1"># BAD, not idempotent</span>
+<span class="k">def</span> <span class="nf">handle_page_view</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO views (url)&quot;</span><span class="p">)</span>
+</pre></div>
+
+<p>This is not an idempotent event handler because multiple invocations for the same event will 
+result in multiple records being created.</p>
+<p>An idempotent version of the above can be rewritten as:</p>
+<div class="codehilite"><pre><span></span><span class="c1"># GOOD, idempotent</span>
+<span class="k">def</span> <span class="nf">handle_page_view</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Try to perform an insert first (this should normally work fine)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO views (</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">])</span>
+    <span class="k">except</span> <span class="n">IntegrityError</span><span class="p">:</span>
+        <span class="c1"># UUID already exists, so do an update</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;UPDATE views SET url = </span><span class="si">%s</span><span class="s2"> WHERE view_uuid = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">url</span><span class="p">,</span> <span class="n">uuid</span><span class="p">])</span>
+</pre></div>
+
+<p>This handler can be executed any number of times for the same parameters without ever 
+creating duplicate records. It is idempotent.</p>
+<p>Note that the <code>views</code> table must include a <code>UUID</code> column which is <code>UNIQUE</code>, otherwise an error 
+would not be raised. Additionally, the code which fires the event must now provide a value 
+for the UUID parameter.</p>
+<p>Many databases and frameworks provide direct support for performing upsert operations 
+which will make the above simpler (and therefore less error prone).</p>
+<h3 id="upserts-in-django">Upserts in Django<a class="headerlink" href="#upserts-in-django" title="Permanent link">&para;</a></h3>
+<p>Django provides the <a href="https://docs.djangoproject.com/en/latest/ref/models/querysets/#update-or-create">update_or_create()</a>
+method which serves exactly this purpose:</p>
+<div class="codehilite"><pre><span></span><span class="c1"># Idempotent</span>
+<span class="k">def</span> <span class="nf">handle_page_view</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+    <span class="n">Views</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">update_or_create</span><span class="p">(</span><span class="n">uuid</span><span class="o">=</span><span class="n">uuid</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="n">url</span><span class="p">})</span>
+</pre></div>
+
+<h3 id="upserts-in-sql">Upserts in SQL<a class="headerlink" href="#upserts-in-sql" title="Permanent link">&para;</a></h3>
+<p>Many relational databases can also perform upsert in a single SQL query:</p>
+<div class="codehilite"><pre><span></span><span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">views</span> <span class="p">(</span><span class="nb">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">&#39;uuid-here&#39;</span><span class="p">,</span> <span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">)</span> 
+<span class="k">ON</span> <span class="n">CONFLICT</span> <span class="p">(</span><span class="nb">uuid</span><span class="p">)</span> 
+<span class="k">DO</span> <span class="k">UPDATE</span> <span class="k">SET</span> <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">;</span>
+</pre></div>
+
+<h2 id="ensuring-idempotency-in-other-cases">Ensuring idempotency in other cases<a class="headerlink" href="#ensuring-idempotency-in-other-cases" title="Permanent link">&para;</a></h2>
+<p>There are additional areas where idempotency can become relevant:</p>
+<ul>
+<li>Event handlers which call external APIs</li>
+<li>Event handlers which send email</li>
+</ul>
+<p>Handling these cases is beyond the scope of this documentation. Rest 
+APIs which support idempotency keys will likely help here <sup id="fnref:1"><a class="footnote-ref" href="#fn:1" rel="footnote">1</a></sup>. 
+You may also decide that multiple invocations are acceptable in some situations
+as long as they are sufficiently rare (for example, sending emails).</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Blog post from Stripe: <a href="https://stripe.com/gb/blog/idempotency">Designing robust and predictable APIs with idempotency</a>&#160;<a class="footnote-backref" href="#fnref:1" rev="footnote" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
                 
                   
                 
