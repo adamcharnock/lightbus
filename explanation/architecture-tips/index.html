@@ -1052,7 +1052,7 @@ Both [NamedTuples] and [dataclasses] work well for this purpose.</p>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
 </pre></div>
 
-<p>You can then take advantage of Lightbus' schema checking a data casting:</p>
+<p>You can then take advantage of Lightbus' schema checking and data casting:</p>
 <div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="k">class</span> <span class="nc">CustomerApi</span><span class="p">(</span><span class="n">lightbus</span><span class="o">.</span><span class="n">Api</span><span class="p">):</span>
@@ -1062,7 +1062,7 @@ Both [NamedTuples] and [dataclasses] work well for this purpose.</p>
 
     <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="n">customer</span><span class="p">:</span> <span class="n">Customer</span><span class="p">):</span>
         <span class="c1"># Lightbus will ensure the incoming data conforms to</span>
-        <span class="c1"># Customer, and will cast the to be a Customer object</span>
+        <span class="c1"># Customer, and will cast the data to be a Customer object</span>
         <span class="o">...</span>
 </pre></div>
 
@@ -1109,20 +1109,22 @@ system it is very easy to end up passing around data in
 forms which become increasingly bloated, inconsistent, and complex.</p>
 <p><strong>You can mitigate this by grouping your entities together in a way that
 makes logical sense for your situation</strong>. These are your <em>aggregates</em>.
-Decide on these aggregates in advance, and stick to it</p>
+Decide on these aggregates in advance, and stick to it.</p>
 <p>For example, we may group the <code>Customer</code>, <code>Address</code>, <code>Order</code>, and <code>OrderLine</code>
 entities as follows:</p>
 <ul>
 <li>A <code>Customer</code> aggregate. Each <code>Customer</code> contains an <code>address</code> field, which is an <code>Address</code> entity.</li>
 <li>An <code>Order</code> aggregate. Each <code>Order</code> contains a <code>line_items</code> field, which is a list of <code>OrderLine</code> entities.</li>
 </ul>
+<p>The <code>Customer</code> and <code>Order</code> aggregates also will likely contain other fields not listed above (such as name, 
+email, or quantity).</p>
 <p><strong>You should only ever pass around the top level aggregates.</strong></p>
 <p>Additionally:</p>
 <ul>
 <li>Identify aggregates with UUIDs</li>
 <li>Do not enforce foreign keys between aggregates. Your application code
   will need to deal with inconsistencies gracefully.</li>
-<li>Probably still still a good idea to use sequential integer primary keys in your RDBMS</li>
+<li>It is likely still a good idea to use sequential integer primary keys in your RDBMS</li>
 <li>Do <strong>not</strong> share database-level sequential integer primary keys</li>
 </ul>
 <h2 id="writes-are-special">Writes are special<a class="headerlink" href="#writes-are-special" title="Permanent link">&para;</a></h2>

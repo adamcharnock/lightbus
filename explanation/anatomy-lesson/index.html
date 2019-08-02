@@ -1060,12 +1060,12 @@ codebase. For example:</p>
 </ul>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>Each service should create its bus client with the service's bus module (ie. the service's <code>bus.py</code> file). 
-Other modules in the service should import the bus client from the bus module as needed.
+<p>Each service should create its bus client within the service's <code>bus.py</code> file (also known as the servies <em>bus module</em>). 
+Other code within the service should import the bus client from the bus module as needed.
 See <a href="../../howto/access-your-bus-client/">how to access your bus client</a>.</p>
 </div>
 <h2 id="the-lightbus-worker-process-lightbus-run">The Lightbus worker process (<code>lightbus run</code>)<a class="headerlink" href="#the-lightbus-worker-process-lightbus-run" title="Permanent link">&para;</a></h2>
-<p>The Lightbus worker is a long running process started using <code>lightbus run</code>. 
+<p>The Lightbus worker is a long running process started using the <code>lightbus run</code> console command. 
 This process serves two purposes:</p>
 <ul>
 <li>Listens for events and fires any executes any listeners you have created.</li>
