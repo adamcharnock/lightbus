@@ -8,7 +8,7 @@ from hashlib import sha1
 import sys
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from lightbus import EventMessage, Api, BusPath, EventTransport
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
@@ -94,37 +94,49 @@ class Command(LogLevelMixin, BusImportMixin, object):
         """Entrypoint for the inspect command"""
         self.setup_logging(args.log_level or "warning", config)
         bus_module, bus = self.import_bus(args)
+        api_names: List[str]
 
+        # Locally registered APIs
         if args.internal or args.api:
-            apis = bus.client.api_registry.all()
+            api_names = [api.meta.name for api in bus.client.api_registry.all()]
         else:
-            apis = bus.client.api_registry.public()
+            api_names = [api.meta.name for api in bus.client.api_registry.public()]
 
-        if args.api and args.api not in {a.meta.name for a in apis}:
+        # APIs registered to other services on the bus
+        for api_name in bus.client.schema.api_names:
+            if api_name not in api_names:
+                api_names.append(api_name)
+
+        if args.api and args.api not in api_names:
             sys.stderr.write(
                 f"Specified API was not found locally or within the schema on the bus. Cannot continue.\n"
             )
             exit(1)
 
         try:
-            for api in apis:
-                if not args.api or self.wildcard_match(args.api, api.meta.name):
-                    logger.debug(f"Inspecting {api.meta.name}")
-                    block(self.search_in_api(args, api, bus))
+            for api_name in api_names:
+                if not args.api or self.wildcard_match(args.api, api_name):
+                    logger.debug(f"Inspecting {api_name}")
+                    block(self.search_in_api(args, api_name, bus))
                 else:
-                    logger.debug(f"API {api.meta.name} did not match {args.api}. Skipping")
+                    logger.debug(f"API {api_name} did not match {args.api}. Skipping")
         except KeyboardInterrupt:
             logger.info("Stopped by user")
 
-    async def search_in_api(self, args, api: Api, bus: BusPath):
-        transport = bus.client.transport_registry.get_event_transport(api.meta.name)
+    async def search_in_api(self, args, api_name: str, bus: BusPath):
+        transport = bus.client.transport_registry.get_event_transport(api_name)
         # TODO: --follow will only work for a single API. Use bus.client.listen, not transport.consume.
-        async for message in self.get_messages(args, api, args.event, transport, bus):
+        async for message in self.get_messages(args, api_name, args.event, transport, bus):
             if self.match_message(args, message):
                 self.output(args, transport, message)
 
     async def get_messages(
-        self, args, api: Api, event_name: Optional[str], transport: EventTransport, bus: BusPath
+        self,
+        args,
+        api_name: str,
+        event_name: Optional[str],
+        transport: EventTransport,
+        bus: BusPath,
     ):
         """Yields messages from various sources
 
@@ -138,8 +150,8 @@ class Command(LogLevelMixin, BusImportMixin, object):
         event_name = event_name or "*"
 
         # Construct the cache file name
-        file_name_hash = sha1((api.meta.name + "\0" + event_name).encode("utf8")).hexdigest()[:8]
-        file_name_api = re.sub("[^a-zA-Z0-9_]", "_", api.meta.name)
+        file_name_hash = sha1((api_name + "\0" + event_name).encode("utf8")).hexdigest()[:8]
+        file_name_api = re.sub("[^a-zA-Z0-9_]", "_", api_name)
         file_name_event = event_name.replace("*", "all")
 
         cache_file_name = f"{file_name_hash}-{file_name_api}-{file_name_event}.json"
@@ -150,11 +162,19 @@ class Command(LogLevelMixin, BusImportMixin, object):
         # Sanity check
         if not cache_file.exists() and args.cache_only:
             sys.stderr.write(
-                f"No cache file exists for {api.meta.name}.{event_name}, but --cache-only was specified\n"
+                f"No cache file exists for {api_name}.{event_name}, but --cache-only was specified\n"
             )
             exit(1)
 
+        def _progress(force=False):
+            if force or (cache_yield_count + transport_yield_count) % 1000 == 0:
+                logger.debug(
+                    f"Yielded {cache_yield_count} from cache and {transport_yield_count} from bus"
+                )
+
         # Start by reading from cache
+        cache_yield_count = 0
+        transport_yield_count = 0
         start = None
         if cache_file.exists():
             with cache_file.open() as f:
@@ -169,15 +189,18 @@ class Command(LogLevelMixin, BusImportMixin, object):
                                 "Event transport does not provide message datetimes. Will not load from cache."
                             )
                             break
-                        start = event_message.datetime
+                        start = (
+                            max(event_message.datetime, start) if start else event_message.datetime
+                        )
 
+                    cache_yield_count += 1
+                    _progress()
                     yield event_message
 
         if args.cache_only:
             return
 
         def _write_to_cache(f, event_message):
-            logger.debug(f"Writing message {event_message.id} to cache")
             f.write(json.dumps(transport.serializer(event_message)))
             f.write("\n")
             f.flush()
@@ -187,12 +210,11 @@ class Command(LogLevelMixin, BusImportMixin, object):
         while True:
             with cache_file.open("a") as f:
                 async for event_message in transport.history(
-                    api_name=api.meta.name,
-                    event_name=event_name,
-                    start=start,
-                    start_inclusive=False,
+                    api_name=api_name, event_name=event_name, start=start, start_inclusive=False
                 ):
                     _write_to_cache(f, event_message)
+                    transport_yield_count += 1
+                    _progress()
                     yield event_message
                     if hasattr(event_message, "datetime"):
                         start = event_message.datetime
@@ -212,6 +234,8 @@ class Command(LogLevelMixin, BusImportMixin, object):
             else:
                 # No waiting for new messages, so break out of the while loop
                 break
+
+        _progress(force=True)
 
     def wildcard_match(self, pattern: str, s: str) -> bool:
         return fnmatch(s, pattern)
