@@ -1031,13 +1031,14 @@
 <h2 id="the-client">The client<a class="headerlink" href="#the-client" title="Permanent link">&para;</a></h2>
 <p>The client allows you to interact with the bus from within your Python
 codebase. For example:</p>
-<div class="codehilite"><pre><span></span><span class="c1">## Creation in bus.py ##</span>
+<div class="codehilite"><pre><span></span><span class="c1"># The bus is created in your bus.py file</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+</pre></div>
 
-
-<span class="c1">## Example uses ##</span>
+<div class="codehilite"><pre><span></span><span class="c1"># Elsewhere in codebase</span>
+<span class="kn">from</span> <span class="nn">my_project.bus</span> <span class="k">import</span> <span class="n">bus</span>
 
 <span class="c1"># Perform a remote procedure call</span>
 <span class="n">is_valid</span> <span class="o">=</span> <span class="n">bus</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">check_password</span><span class="p">(</span>
@@ -1072,7 +1073,7 @@ This process serves two purposes:</p>
 <li>Respond to incoming remote procedure calls for the service's registered APIs.</li>
 </ul>
 <p>This process imports your bus module (see the <a href="../../reference/configuration.md/#1-module-loading">module loading configuration</a> reference) 
-in order to bootstrap itself. Your bus module should therefore</p>
+in order to bootstrap itself. Your bus module should therefore:</p>
 <ol>
 <li>Instantiate the <code>bus</code> client in a module variable named <code>bus</code></li>
 <li>Register any API definitions for your service</li>

@@ -1022,6 +1022,8 @@
 <li>Validation</li>
 <li>Deform / Cast</li>
 </ul>
+<p>A <strong>outbound message</strong> will go through this process from <strong>top to bottom</strong>. 
+An <strong>inbound message</strong> will go through this process from <strong>bottom to top</strong>.</p>
 <h2 id="inbound-flow">Inbound flow<a class="headerlink" href="#inbound-flow" title="Permanent link">&para;</a></h2>
 <p>Messages arriving from the bus go through the following stages
 in order to prepare the data for use:</p>
@@ -1031,8 +1033,8 @@ in order to prepare the data for use:</p>
 <li><strong>Validate:</strong> Validate the incoming message against the JSON schema
    available on the bus.</li>
 <li><strong>Cast:</strong> Best effort casting of parameters/results based on
-   the locally available type hinting
-   (<a href="../../reference/configuration/#api-config">disable with <code>cast_values</code></a>)).</li>
+   the locally available type hinting. This can be disabled with the 
+   <a href="../../reference/configuration/#api-config"><code>cast_values</code> configuration option</a>.</li>
 </ol>
 <h2 id="outbound-flow">Outbound flow<a class="headerlink" href="#outbound-flow" title="Permanent link">&para;</a></h2>
 <p>This is the reverse of the inbound flow. Messages being
@@ -1056,7 +1058,7 @@ prepare the data for transmission on bus:</p>
 <h2 id="about-casting">About casting<a class="headerlink" href="#about-casting" title="Permanent link">&para;</a></h2>
 <p>Casting is separate from validation, although both rely on type hints.
 Whereas validation uses a shared
-bus-wide schema to check data validity, casting uses type hints
+bus-wide schema to check data validity, casting uses any Python type hints
 available in the <strong>local codebase</strong> to marshall event and RPC parameters
 into a format useful to the service's developer.</p>
                 

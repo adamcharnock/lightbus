@@ -873,54 +873,60 @@
     3. Global bus configuration
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#root-config" title="Root config" class="md-nav__link">
     Root config
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#bus-config" title="Bus config" class="md-nav__link">
     Bus config
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#api-configuration-listing" title="API configuration listing" class="md-nav__link">
     API configuration listing
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#api-config" title="API config" class="md-nav__link">
     API config
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#schema-config" title="Schema config" class="md-nav__link">
     Schema config
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#transport-selector" title="Transport selector" class="md-nav__link">
     Transport selector
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#api-validation-config" title="API validation config" class="md-nav__link">
     API validation config
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1081,54 +1087,60 @@
     3. Global bus configuration
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#root-config" title="Root config" class="md-nav__link">
     Root config
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#bus-config" title="Bus config" class="md-nav__link">
     Bus config
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#api-configuration-listing" title="API configuration listing" class="md-nav__link">
     API configuration listing
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#api-config" title="API config" class="md-nav__link">
     API config
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#schema-config" title="Schema config" class="md-nav__link">
     Schema config
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#transport-selector" title="Transport selector" class="md-nav__link">
     Transport selector
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#api-validation-config" title="API validation config" class="md-nav__link">
     API validation config
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1164,29 +1176,38 @@
 By default Lightbus will attempt to import a module named <code>bus</code>,
 but you can modify this by specifying the <code>LIGHTBUS_MODULE</code>
 environment variable.</p>
-<p>This stage is only required when starting a [Lightbus process]
+<p>This stage is only required when starting a Lightbus worker process
 (i.e. <code>lightbus run</code>).</p>
-<p>[Non-lightbus processes] will import the bus module manually in order
+<p>Non-lightbus processes will import the bus module manually in order
 to access the bus client within (see next stage, below).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>See <a href="../../explanation/anatomy-lesson/">anatomy lesson</a> for further discusison of the 
+distinction between processes.</p>
+</div>
 <h2 id="2-service-level-configuration">2. Service-level configuration<a class="headerlink" href="#2-service-level-configuration" title="Permanent link">&para;</a></h2>
-<p>The <code>bus</code> module discovered in the module loading stage (above)
+<p>The <code>bus</code> module discovered in the module loading stage (<a href="#1-module-loading">above</a>)
 must define a Lightbus client as follows:</p>
-<div class="codehilite"><pre><span></span><span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+<div class="codehilite"><pre><span></span><span class="c1"># Must be in your bus.py file</span>
+<span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 </pre></div>
 
-<p>This serves several purposes:</p>
+<p>The above statement serves several purposes:</p>
 <ol>
-<li><code>lightbus run</code> will use this client to access the bus.</li>
+<li>The <code>lightbus run</code> command will use this client to access the bus.</li>
 <li>You can (and should) import this client
-   elsewhere in the service in order to call RPCs and fire events.</li>
+   elsewhere in the service in order to call RPCs and fire events
+   (see <a href="../../howto/access-your-bus-client/">how to access your bus client</a>).</li>
 <li>You can configure service-level configuration options for your
    Lightbus client.</li>
 </ol>
 <p>Service-level configuration is different to your global configuration
 because the values will vary between services.</p>
 <p>The following service-level options are available:</p>
-<div class="codehilite"><pre><span></span><span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-    <span class="c1"># Relevent to event consumption</span>
+<div class="codehilite"><pre><span></span><span class="c1"># Available service-level configuration options</span>
+
+<span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="c1"># Relevant to event consumption</span>
     <span class="n">service_name</span><span class="o">=</span><span class="s1">&#39;my_service&#39;</span><span class="p">,</span>
 
     <span class="c1"># Will be replaced 4 random characters. Default</span>
@@ -1204,6 +1225,11 @@ environment variables:</p>
 <li><code>LIGHTBUS_PROCESS_NAME</code></li>
 <li><code>LIGHTBUS_CONFIG</code></li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can read more about service and listener names in the 
+<a href="../../explanation/events/#service-names-listener-names">event explanation section</a>.</p>
+</div>
 <h3 id="service-process-name-placeholders">Service &amp; process name placeholders<a class="headerlink" href="#service-process-name-placeholders" title="Permanent link">&para;</a></h3>
 <p>The following placeholders may be used within your service and
 process name values:</p>
@@ -1292,7 +1318,7 @@ shared by all lightbus clients.</p>
 </pre></div>
 
 <p>Each section is detailed below.</p>
-<h2 id="root-config">Root config<a class="headerlink" href="#root-config" title="Permanent link">&para;</a></h2>
+<h3 id="root-config">Root config<a class="headerlink" href="#root-config" title="Permanent link">&para;</a></h3>
 <p>The available root-level configuration keys are:</p>
 <ul>
 <li><code>bus</code> – Contains the <a href="#bus-config">bus config</a></li>
@@ -1307,7 +1333,7 @@ per the <a href="#2-service-level-setup">service-level setup</a>:</p>
 <li><code>service_name</code> – Service name</li>
 <li><code>process_name</code> – Process name</li>
 </ul>
-<h2 id="bus-config">Bus config<a class="headerlink" href="#bus-config" title="Permanent link">&para;</a></h2>
+<h3 id="bus-config">Bus config<a class="headerlink" href="#bus-config" title="Permanent link">&para;</a></h3>
 <p>The bus config resides under the <a href="#root-config">root config</a>. It contains the
 following keys:</p>
 <ul>
@@ -1316,7 +1342,7 @@ following keys:</p>
   for development purposes, <code>warning</code> will be more suited to production.</li>
 <li><code>schema</code> - Contains the <a href="#schema-config">schema config</a></li>
 </ul>
-<h2 id="api-configuration-listing">API configuration listing<a class="headerlink" href="#api-configuration-listing" title="Permanent link">&para;</a></h2>
+<h3 id="api-configuration-listing">API configuration listing<a class="headerlink" href="#api-configuration-listing" title="Permanent link">&para;</a></h3>
 <p>The schema config resides under the <a href="#root-config">root config</a>.</p>
 <p>This is a key/value association between APIs and their configurations.
 The reserved API name of <code>default</code> provides a catch-all configuration
@@ -1352,7 +1378,7 @@ APIs do not inherit from the default configuration.</p>
 </pre></div>
 
 <p>See <a href="#api-config">API config</a> for further details on the API options available.</p>
-<h2 id="api-config">API config<a class="headerlink" href="#api-config" title="Permanent link">&para;</a></h2>
+<h3 id="api-config">API config<a class="headerlink" href="#api-config" title="Permanent link">&para;</a></h3>
 <p>The API config resides under the <a href="#api-configuration-listing">API configuration listing</a>.</p>
 <p>Each API can be individually configured using the options below:</p>
 <ul>
@@ -1379,7 +1405,7 @@ APIs do not inherit from the default configuration.</p>
   for that listener, but other event listeners will continue as normal.
   <code>shutdown</code> will cause the Lightbus process to exit with a non-zero exit code.</li>
 </ul>
-<h2 id="schema-config">Schema config<a class="headerlink" href="#schema-config" title="Permanent link">&para;</a></h2>
+<h3 id="schema-config">Schema config<a class="headerlink" href="#schema-config" title="Permanent link">&para;</a></h3>
 <p>The schema config resides under the <a href="#bus-config">bus config</a>.</p>
 <ul>
 <li><code>human_readable</code> (default: <code>True</code>) – Should the schema JSON be transmitted
@@ -1390,7 +1416,7 @@ APIs do not inherit from the default configuration.</p>
   every <code>ttl * 0.8</code> seconds.</li>
 <li><code>transport</code> – Contains the schema <a href="#transport-selector">transport selector</a></li>
 </ul>
-<h2 id="transport-selector">Transport selector<a class="headerlink" href="#transport-selector" title="Permanent link">&para;</a></h2>
+<h3 id="transport-selector">Transport selector<a class="headerlink" href="#transport-selector" title="Permanent link">&para;</a></h3>
 <p>The schema config resides under both the <a href="#api-config">API config</a> and the
 <a href="#schema-config">schema config</a>.</p>
 <p>Transports are specifed as follows:</p>
@@ -1441,7 +1467,7 @@ and <code>event</code> needs.</p>
 <p>The <code>schema</code> transport is global to the bus, and is not
 configurable on a per-api level.</p>
 <p>For more information see <a href="../transports/">transports</a>.</p>
-<h2 id="api-validation-config">API validation config<a class="headerlink" href="#api-validation-config" title="Permanent link">&para;</a></h2>
+<h3 id="api-validation-config">API validation config<a class="headerlink" href="#api-validation-config" title="Permanent link">&para;</a></h3>
 <p>The schema config resides under the <code>validate</code> key within
 the <a href="#api-config">API config</a>.</p>
 <p>Available options are:</p>

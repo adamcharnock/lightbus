@@ -1118,36 +1118,31 @@ group is identified by a name in the form:</p>
 </pre></div>
 
 
-<p>Your <em>service name</em> is specified in your <a href="../../reference/configuration/#2-service-level-configuration">service-level configuration</a>.
-Your <em>listener name</em> is setup when you create your event listener (see below).</p>
+<p>The <em>service name</em> is specified in your <a href="../../reference/configuration/#2-service-level-configuration">service-level configuration</a>.
+The <em>listener name</em> is setup when you create your event listener (see below).</p>
 <p>For example, this <code>bus</code> module sets up two listeners. Each listener is
 given a <code>listener_name</code>, thereby ensuring each listener receives a
 copy of every <code>competitor_prices.changed</code> event.</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">my_handlers</span> <span class="k">import</span> <span class="n">send_price_alerts</span><span class="p">,</span> <span class="n">update_db</span>
+<div class="codehilite"><pre><span></span><span class="c1"># Example of setting service and listener names</span>
+<span class="kn">from</span> <span class="nn">my_handlers</span> <span class="k">import</span> <span class="n">send_price_alerts</span><span class="p">,</span> <span class="n">update_db</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
     <span class="n">service_name</span><span class="o">=</span><span class="s1">&#39;price-monitor&#39;</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="c1"># Consumer group name: price-monitor-send-price-alerts</span>
+<span class="c1"># Consumer group name will be: price-monitor-send-price-alerts</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">competitor_prices</span><span class="o">.</span><span class="n">changed</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span>
     <span class="n">send_price_alerts</span><span class="p">,</span>
     <span class="n">listener_name</span><span class="o">=</span><span class="s2">&quot;send_price_alerts&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="c1"># Consumer group name: price-monitor-update-db</span>
+<span class="c1"># Consumer group name will be: price-monitor-update-db</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">competitor_prices</span><span class="o">.</span><span class="n">changed</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span>
     <span class="n">update_db</span><span class="p">,</span>
     <span class="n">listener_name</span><span class="o">=</span><span class="s2">&quot;update_db&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>Failure to specify <code>listener_name</code> in the above example will
-result in each message going to <strong>either</strong> one listener or the other,
-but never to both. This is almost certainly not what you want.</p>
-</div>
 <h2 id="process-names">Process names<a class="headerlink" href="#process-names" title="Permanent link">&para;</a></h2>
 <p>Your <a href="../../reference/configuration/#2-service-level-configuration">service-level configuration</a> also specifies a <em>process name</em>.
 This is less critical than the service name &amp; listener name pairing
@@ -1195,15 +1190,18 @@ remember that there can be exceptions to every rule.</p>
 <h3 id="event-naming">Event naming<a class="headerlink" href="#event-naming" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Name events using the past tense. Use <code>page_viewed</code>, not <code>page_view</code>. 
-  Use <code>item_created</code>, not <code>create_item</code>.</li>
+  Use <code>order_created</code>, not <code>create_order</code>.</li>
+<li>This can apply to events which are commands as well: Use <code>email_report_requested</code>, not <code>email_report</code>.</li>
 <li>Where relevant, consider using domain-based naming rather than technical names.
   For example, use <code>order_placed</code>, not <code>order_created</code>. Use 
   <code>parcel_delivered</code>, not <code>parcel_updated</code>.</li>
 </ul>
 <h3 id="parameter-values">Parameter values<a class="headerlink" href="#parameter-values" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Consistent meaning over time (not 'tomorrow', or '6 days ago')</li>
-<li>Chop up your relations (aggregates in DDD)</li>
+<li>Parameter values should have consistent meaning over time. Use 
+  complete datetimes, not 'tomorrow' or '6 days ago'.</li>
+<li>Decide on the boundaries between your relations. See <a href="../architecture-tips/#decide-on-boundaries">Decide on Boundaries</a>
+  with the <a href="../architecture-tips/">architecture tips</a> section.</li>
 </ul>
                 
                   
