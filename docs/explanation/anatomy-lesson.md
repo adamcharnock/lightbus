@@ -17,13 +17,15 @@ The client allows you to interact with the bus from within your Python
 codebase. For example:
 
 ```python3
-## Creation in bus.py ##
+# The bus is created in your bus.py file
 import lightbus
 
 bus = lightbus.create()
+```
 
-
-## Example uses ##
+```python3
+# Elsewhere in codebase
+from my_project.bus import bus
 
 # Perform a remote procedure call
 is_valid = bus.auth.check_password(
@@ -60,7 +62,7 @@ This process serves two purposes:
 * Respond to incoming remote procedure calls for the service's registered APIs.
 
 This process imports your bus module (see the [module loading configuration] reference) 
-in order to bootstrap itself. Your bus module should therefore
+in order to bootstrap itself. Your bus module should therefore:
 
 1. Instantiate the `bus` client in a module variable named `bus`
 1. Register any API definitions for your service

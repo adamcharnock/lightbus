@@ -12,26 +12,33 @@ By default Lightbus will attempt to import a module named `bus`,
 but you can modify this by specifying the `LIGHTBUS_MODULE`
 environment variable.
 
-This stage is only required when starting a [Lightbus process]
+This stage is only required when starting a Lightbus worker process
 (i.e. `lightbus run`).
 
-[Non-lightbus processes] will import the bus module manually in order
+Non-lightbus processes will import the bus module manually in order
 to access the bus client within (see next stage, below).
+
+!!! note
+
+    See [anatomy lesson](/explanation/anatomy-lesson.md) for further discusison of the 
+    distinction between processes.
 
 ## 2. Service-level configuration
 
-The `bus` module discovered in the module loading stage (above)
+The `bus` module discovered in the module loading stage ([above](#1-module-loading))
 must define a Lightbus client as follows:
 
 ```python3
+# Must be in your bus.py file
 bus = lightbus.create()
 ```
 
-This serves several purposes:
+The above statement serves several purposes:
 
-1. `lightbus run` will use this client to access the bus.
+1. The `lightbus run` command will use this client to access the bus.
 2. You can (and should) import this client
-   elsewhere in the service in order to call RPCs and fire events.
+   elsewhere in the service in order to call RPCs and fire events
+   (see [how to access your bus client](/howto/access-your-bus-client.md)).
 3. You can configure service-level configuration options for your
    Lightbus client.
 
@@ -41,8 +48,10 @@ because the values will vary between services.
 The following service-level options are available:
 
 ```python3
+# Available service-level configuration options
+
 bus = lightbus.create(
-    # Relevent to event consumption
+    # Relevant to event consumption
     service_name='my_service',
 
     # Will be replaced 4 random characters. Default
@@ -59,6 +68,11 @@ environment variables:
 * `LIGHTBUS_SERVICE_NAME`
 * `LIGHTBUS_PROCESS_NAME`
 * `LIGHTBUS_CONFIG`
+
+!!! note
+
+    You can read more about service and listener names in the 
+    [event explanation section](/explanation/events.md#service-names-listener-names).
 
 ### Service & process name placeholders
 
@@ -126,7 +140,7 @@ apis:
 
 Each section is detailed below.
 
-## Root config
+### Root config
 
 The available root-level configuration keys are:
 
@@ -142,7 +156,7 @@ per the [service-level setup]:
 * `service_name` – Service name
 * `process_name` – Process name
 
-## Bus config
+### Bus config
 
 The bus config resides under the [root config]. It contains the
 following keys:
@@ -152,7 +166,7 @@ following keys:
   for development purposes, `warning` will be more suited to production.
 * `schema` - Contains the [schema config]
 
-## API configuration listing
+### API configuration listing
 
 The schema config resides under the [root config].
 
@@ -194,7 +208,7 @@ apis:
 
 See [API config] for further details on the API options available.
 
-## API config
+### API config
 
 The API config resides under the [API configuration listing].
 
@@ -223,7 +237,7 @@ Each API can be individually configured using the options below:
   for that listener, but other event listeners will continue as normal.
   `shutdown` will cause the Lightbus process to exit with a non-zero exit code.
 
-## Schema config
+### Schema config
 
 The schema config resides under the [bus config].
 
@@ -235,7 +249,7 @@ The schema config resides under the [bus config].
   every `ttl * 0.8` seconds.
 * `transport` – Contains the schema [transport selector]
 
-## Transport selector
+### Transport selector
 
 The schema config resides under both the [API config] and the
 [schema config].
@@ -273,7 +287,7 @@ configurable on a per-api level.
 For more information see [transports](transports.md).
 
 
-## API validation config
+### API validation config
 
 The schema config resides under the `validate` key within
 the [API config].

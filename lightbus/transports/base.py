@@ -157,7 +157,10 @@ class EventTransport(Transport):
         stop: datetime = None,
         start_inclusive: bool = True,
     ) -> AsyncGenerator[EventMessage, None]:
-        """Return EventMessages for the given api/event names during the (optionally) given date range"""
+        """Return EventMessages for the given api/event names during the (optionally) given date range.
+
+        Should return newest messages first
+        """
         raise NotImplementedError(
             f"Event transport {self.__class__.__name__} does not support event history."
         )

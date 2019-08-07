@@ -865,7 +865,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             redis_start = redis_stream_id_add_one(redis_start)
 
         stream_name = self._get_stream_names([(api_name, event_name)])[0]
-        batch_size = 1000
+        batch_size = 10
 
         logger.debug(
             f"Getting history for stream {stream_name} from {redis_start} ({start}) "
@@ -873,20 +873,25 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         )
 
         with await self.connection_manager() as redis:
-            messages = await redis.xrange(stream_name, redis_start, redis_stop, count=batch_size)
-            if not messages:
-                return
-            for message_id, fields in messages:
-                message_id = decode(message_id, "utf8")
-                event_message = self._fields_to_message(
-                    fields,
-                    expected_event_names={event_name},
-                    stream=stream_name,
-                    native_id=message_id,
-                    consumer_group=None,
+            messages = True
+            while messages:
+                messages = await redis.xrevrange(
+                    stream_name, redis_stop, redis_start, count=batch_size
                 )
-                if event_message:
-                    yield event_message
+                if not messages:
+                    return
+                for message_id, fields in messages:
+                    message_id = decode(message_id, "utf8")
+                    redis_stop = redis_stream_id_subtract_one(message_id)
+                    event_message = self._fields_to_message(
+                        fields,
+                        expected_event_names={event_name},
+                        stream=stream_name,
+                        native_id=message_id,
+                        consumer_group=None,
+                    )
+                    if event_message:
+                        yield event_message
 
     async def _create_consumer_groups(self, streams, redis, consumer_group):
         for stream, since in streams.items():

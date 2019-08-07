@@ -5,6 +5,9 @@ Lightbus has four stages of data marshalling:
 * Validation
 * Deform / Cast
 
+A **outbound message** will go through this process from **top to bottom**. 
+An **inbound message** will go through this process from **bottom to top**.
+
 ## Inbound flow
 
 Messages arriving from the bus go through the following stages
@@ -15,8 +18,8 @@ in order to prepare the data for use:
 3. **Validate:** Validate the incoming message against the JSON schema
    available on the bus.
 4. **Cast:** Best effort casting of parameters/results based on
-   the locally available type hinting
-   ([disable with `cast_values`](/reference/configuration.md#api-config))).
+   the locally available type hinting. This can be disabled with the 
+   [`cast_values` configuration option](/reference/configuration.md#api-config).
 
 
 ## Outbound flow
@@ -43,7 +46,7 @@ prepare the data for transmission on bus:
 
 Casting is separate from validation, although both rely on type hints.
 Whereas validation uses a shared
-bus-wide schema to check data validity, casting uses type hints
+bus-wide schema to check data validity, casting uses any Python type hints
 available in the **local codebase** to marshall event and RPC parameters
 into a format useful to the service's developer.
 
