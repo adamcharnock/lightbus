@@ -399,12 +399,13 @@ class BusClient(object):
                     "after_rpc_execution", rpc_message=rpc_message, result_message=result_message
                 )
 
-                self._validate(
-                    result_message,
-                    "outgoing",
-                    api_name=rpc_message.api_name,
-                    procedure_name=rpc_message.procedure_name,
-                )
+                if not result_message.error:
+                    self._validate(
+                        result_message,
+                        "outgoing",
+                        api_name=rpc_message.api_name,
+                        procedure_name=rpc_message.procedure_name,
+                    )
 
                 await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
