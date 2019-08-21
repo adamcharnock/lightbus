@@ -66,10 +66,10 @@ def pytest_sessionstart(session):
     # Set custom lightbus policy on event loop
     configure_event_loop()
 
-    # Increase the number of allowable file descriptors to 1000
+    # Increase the number of allowable file descriptors to 10000
     # (needed in the reliability tests)
     min_files, max_files = resource.getrlimit(resource.RLIMIT_NOFILE)
-    resource.setrlimit(resource.RLIMIT_NOFILE, (1000, max_files))
+    resource.setrlimit(resource.RLIMIT_NOFILE, (10000, max_files))
 
 
 # Public fixtures
