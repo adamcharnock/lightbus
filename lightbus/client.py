@@ -335,6 +335,10 @@ class BusClient(object):
             )
         )
 
+        # Push all registered APIs into the global schema
+        for api in self.api_registry.all():
+            await self.schema.add_api(api)
+
         # Setup schema monitoring
         monitor_task = asyncio.ensure_future(self.schema.monitor())
         monitor_task.add_done_callback(make_exception_checker(self, die=True))
@@ -360,7 +364,7 @@ class BusClient(object):
             for coroutine in self._background_coroutines:
                 task = asyncio.ensure_future(coroutine)
                 task.add_done_callback(make_exception_checker(self, die=True))
-                self._background_tasks.append(coroutine)
+                self._background_tasks.append(task)
 
         self._server_tasks = [consume_rpc_task, monitor_task]
 
@@ -638,7 +642,6 @@ class BusClient(object):
             [(api_name, name)], listener, listener_name=listener_name, options=options
         )
 
-    @run_in_worker_thread()
     async def listen_for_events(
         self, events: List[Tuple[str, str]], listener, listener_name: str, options: dict = None
     ):
@@ -713,7 +716,6 @@ class BusClient(object):
         elif isinstance(message, ResultMessage):
             self.schema.validate_response(api_name, event_or_rpc_name, message.result)
 
-    @run_in_worker_thread()
     def add_background_task(self, coroutine: Union[Coroutine, asyncio.Future]):
         """Run a coroutine in the background
 
@@ -921,10 +923,8 @@ class BusClient(object):
     def register_api(self, api: Api):
         block(self.register_api_async(api), timeout=5)
 
-    @run_in_worker_thread()
     async def register_api_async(self, api: Api):
         self.api_registry.add(api)
-        await self.schema.add_api(api)
 
 
 class _EventListener(object):
@@ -959,9 +959,9 @@ class _EventListener(object):
         self.bus_client = bus_client
         self.listener_task: asyncio.Task = None
 
-        self.event_transports = self.get_event_transports()
-
-    def get_event_transports(self):
+    @property
+    @functools.lru_cache()
+    def event_transports(self):
         """ Get events grouped by transport
 
         It is possible that the specified events will be handled
