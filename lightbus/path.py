@@ -167,14 +167,11 @@ class BusPath(object):
         Only RPCs have responses. Accessing this property for an event will result in a
         SchemaNotFound error.
         """
-        # TODO: Test
         rpc_schema = self.client.schema.get_rpc_schema(self.api_name, self.name)["response"]
         return rpc_schema["response"]
 
     def validate_parameters(self, parameters: dict):
-        # TODO: Test
         self.client.schema.validate_parameters(self.api_name, self.name, parameters)
 
     def validate_response(self, response):
-        # TODO: Test
         self.client.schema.validate_parameters(self.api_name, self.name, response)
