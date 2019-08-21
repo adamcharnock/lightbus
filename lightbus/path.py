@@ -15,7 +15,7 @@ class BusPath(object):
     """Represents a path on the bus
 
     This class provides a higher-level wrapper around the `BusClient` class.
-    This wrapper allows for a more ideomatic use of the bus. For example:
+    This wrapper allows for a more idiomatic use of the bus. For example:
 
         bus.auth.get_user(username='admin')
 
