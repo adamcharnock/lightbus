@@ -7,12 +7,17 @@ import sys
 from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
+from lightbus.utilities.features import Feature
 
 logger = logging.getLogger(__name__)
 
 
 class Command(LogLevelMixin, BusImportMixin, object):
     def setup(self, parser, subparsers):
+        self.all_features = [f.value for f in Feature]
+        self.features_str = ", ".join(self.all_features)
+        csv_type = lambda value: [v.strip() for v in value.split(",") if value.split(",")]
+
         parser_run = subparsers.add_parser(
             "run", help="Run Lightbus", formatter_class=argparse.ArgumentDefaultsHelpFormatter
         )
@@ -20,10 +25,16 @@ class Command(LogLevelMixin, BusImportMixin, object):
 
         parser_run_action_group = parser_run.add_mutually_exclusive_group()
         parser_run_action_group.add_argument(
-            "--events-only",
-            "-E",
-            help="Only listen for and handle events, do not respond to RPC calls",
-            action="store_true",
+            "--only",
+            "-o",
+            help=f"Only provide the specified features. Comma separated list. Possible values: {self.features_str}",
+            type=csv_type,
+        )
+        parser_run_action_group.add_argument(
+            "--skip",
+            "-s",
+            help=f"Provide all except the specified features. Comma separated list. Possible values: {self.features_str}",
+            type=csv_type,
         )
         parser_run_action_group.add_argument(
             "--schema",
@@ -48,6 +59,23 @@ class Command(LogLevelMixin, BusImportMixin, object):
         self.setup_logging(override=getattr(args, "log_level", None), config=config)
 
         bus_module, bus = self.import_bus(args)
+
+        # Convert only & skip into a list of features to enable
+        if args.only:
+            features = args.only
+        else:
+            features = self.all_features
+
+        for skip_feature in args.skip or []:
+            if skip_feature in features:
+                features.remove(skip_feature)
+
+        for i, feature in enumerate(features):
+            try:
+                features[i] = Feature(feature)
+            except ValueError:
+                sys.stderr.write(f"Feature {feature} is not one of: {self.features_str}\n")
+                sys.exit(1)
 
         # TODO: Move to lightbus.create()?
         if args.schema:
@@ -77,7 +105,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
 
         try:
             block(plugin_registry.execute_hook("receive_args", args=args), timeout=5)
-            bus.client.run_forever()
+            bus.client.run_forever(features=features)
 
         finally:
             # Cleanup signal handlers

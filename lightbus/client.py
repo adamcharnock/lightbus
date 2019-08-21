@@ -62,6 +62,7 @@ from lightbus.utilities.async_tools import (
 )
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
+from lightbus.utilities.features import Feature
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.logging import log_transport_information
@@ -244,8 +245,14 @@ class BusClient(object):
     def loop(self):
         return get_event_loop()
 
-    def run_forever(self):
-        self.start_server()
+    def run_forever(self, features: List[Feature] = None):
+        features = features or []
+
+        if not self.api_registry.all() and Feature.RPCS in features:
+            logger.info("Disabling serving of RPCs as no APIs have been registered")
+            features.remove(Feature.RPCS)
+
+        self.start_server(features=features)
 
         self._actually_run_forever()
         logger.debug("Main thread event loop was stopped")
@@ -267,7 +274,7 @@ class BusClient(object):
             self._server_shutdown_queue.sync_q.put(exit_code)
 
     @assert_not_in_worker_thread()
-    def start_server(self):
+    def start_server(self, features: List[Feature] = None):
         """Server startup procedure
 
         Must be called from within the main thread
@@ -288,10 +295,12 @@ class BusClient(object):
         shutdown_monitor_task.add_done_callback(make_exception_checker(self, die=True))
         self._shutdown_monitor_task = shutdown_monitor_task
 
-        block(self._start_server_inner())
+        block(self._start_server_inner(features=features))
 
     @run_in_worker_thread()
-    async def _start_server_inner(self):
+    async def _start_server_inner(self, features: List[Feature] = None):
+        features = features or []
+
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())
 
@@ -304,7 +313,8 @@ class BusClient(object):
 
         # Setup RPC consumption
         consume_rpc_task = None
-        if self.api_registry.all():
+
+        if Feature.RPCS in features:
             consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
             consume_rpc_task.add_done_callback(make_exception_checker(self, die=True))
 
