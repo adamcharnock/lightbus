@@ -1,6 +1,7 @@
 import asyncio
 
 import logging
+import resource
 from asyncio import CancelledError
 
 import pytest
@@ -11,6 +12,8 @@ from lightbus.exceptions import LightbusTimeout
 
 
 pytestmark = pytest.mark.reliability
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.mark.asyncio
@@ -50,7 +53,7 @@ async def test_timeouts(bus: lightbus.path.BusPath, new_bus, caplog, dummy_api, 
         nonlocal results
         try:
             result = await client_bus.my.dummy.random_death.call_async(
-                n=n, death_every=10, bus_options={"timeout": 0.1}
+                n=n, death_every=20, bus_options={"timeout": 0.5}
             )
             results.append(result)
         except LightbusTimeout:
@@ -58,7 +61,7 @@ async def test_timeouts(bus: lightbus.path.BusPath, new_bus, caplog, dummy_api, 
 
     client_buses = [await new_bus() for n in range(0, 100)]
     # Create a lot of servers so we have enough to handle all the RPCs before the timeout
-    server_buses = [await new_bus() for n in range(0, 100)]
+    server_buses = [await new_bus() for n in range(0, 20)]
 
     for server_bus in server_buses:
         server_bus.client.register_api_async(dummy_api)
@@ -75,5 +78,5 @@ async def test_timeouts(bus: lightbus.path.BusPath, new_bus, caplog, dummy_api, 
     total_successful = len([r for r in results if r is not None])
     total_timeouts = len([r for r in results if r is None])
     assert len(results) == 100
-    assert total_timeouts == 10
-    assert total_successful == 90
+    assert total_timeouts == 5
+    assert total_successful == 95
