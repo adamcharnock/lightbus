@@ -50,6 +50,14 @@ def run_in_worker_thread(worker=None):
                     f"going on."
                 )
 
+            if worker_._call_queue.sync_q.unfinished_tasks:
+                # TODO: Improve exception
+                raise Exception(
+                    f"Deadlock detected: Calling {fn.__module__}.{fn.__name__} requires use of the Lightbus "
+                    f"client worker thread. However, that thread is already busy handling the call which got "
+                    f"us here in the first place. Enable --log-level=debug to see the offending call."
+                )
+
             # We'll provide a queue as the return path for results
             result_queue = queue.Queue()
 

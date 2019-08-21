@@ -74,7 +74,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
             try:
                 features[i] = Feature(feature)
             except ValueError:
-                sys.stderr.write(f"Feature {feature} is not one of: {self.features_str}\n")
+                logger.error(f"Feature {feature} is not one of: {self.features_str}\n")
                 sys.exit(1)
 
         # TODO: Move to lightbus.create()?

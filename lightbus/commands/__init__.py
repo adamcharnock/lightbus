@@ -97,5 +97,8 @@ def parse_args(args=None):
 
 def load_config(args) -> Config:
     return lightbus.creation.load_config(
-        from_file=args.config_file, service_name=args.service_name, process_name=args.process_name
+        from_file=args.config_file,
+        service_name=args.service_name,
+        process_name=args.process_name,
+        quiet=True,
     )

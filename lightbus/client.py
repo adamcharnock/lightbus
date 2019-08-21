@@ -89,7 +89,11 @@ class BusClient(object):
     def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
         self._event_listeners: List[_EventListener] = []  # Event listeners
         self._consumers = []  # RPC consumers
-        self._background_tasks = []  # Other background tasks added by user
+        # Coroutines added via schedule/every/add_background_task which should be started up
+        # once the server starts
+        self._background_coroutines = []
+        # Tasks produced from the values in self._background_coroutines. Will be closed on bus shutdown
+        self._background_tasks = []
         self._hook_callbacks = defaultdict(list)
         self.config = config
         self.transport_registry = transport_registry
@@ -297,6 +301,18 @@ class BusClient(object):
         shutdown_monitor_task.add_done_callback(make_exception_checker(self, die=True))
         self._shutdown_monitor_task = shutdown_monitor_task
 
+        logger.info(
+            LBullets(f"Enabled features ({len(features)})", items=[f.value for f in features])
+        )
+
+        disabled_features = set(ALL_FEATURES) - set(features)
+        logger.info(
+            LBullets(
+                f"Disabled features ({len(disabled_features)})",
+                items=[f.value for f in disabled_features],
+            )
+        )
+
         block(self._setup_server(features=features))
 
     @run_in_worker_thread()
@@ -319,17 +335,24 @@ class BusClient(object):
         await self._execute_hook("before_server_start")
         logger.info("Execution of before_server_start & on_start hooks was successful")
 
-        consume_rpc_task = None
-
         # Setup RPC consumption
         if Feature.RPCS in features:
             consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
             consume_rpc_task.add_done_callback(make_exception_checker(self, die=True))
+        else:
+            consume_rpc_task = None
 
         # Start off any registered event listeners
         if Feature.EVENTS in features:
             for event_listener in self._event_listeners:
                 event_listener.start_task(bus_client=self)
+
+        # Start off any background tasks
+        if Feature.TASKS in features:
+            for coroutine in self._background_coroutines:
+                task = asyncio.ensure_future(coroutine)
+                task.add_done_callback(make_exception_checker(self, die=True))
+                self._background_tasks.append(coroutine)
 
         self._server_tasks = [consume_rpc_task, monitor_task]
 
@@ -683,25 +706,20 @@ class BusClient(object):
             self.schema.validate_response(api_name, event_or_rpc_name, message.result)
 
     @run_in_worker_thread()
-    def add_background_task(
-        self, coroutine: Union[Coroutine, asyncio.Future], cancel_on_close=True
-    ):
+    def add_background_task(self, coroutine: Union[Coroutine, asyncio.Future]):
         """Run a coroutine in the background
 
         The provided coroutine will be run in the background once
         Lightbus startup is complete.
 
-        The coroutine will be cancelled when the bus client is closed if
-        `cancel_on_close` is set to `True`.
+        The coroutine will be cancelled when the bus client is closed.
 
         The Lightbus process will exit if the coroutine raises an exception.
         See lightbus.utilities.async_tools.check_for_exception() for details.
         """
-        task = asyncio.ensure_future(coroutine)
-        task.add_done_callback(make_exception_checker(self, die=True))
-        if cancel_on_close:
-            # Store task for closing later
-            self._background_tasks.append(task)
+
+        # Store coroutine for starting once the server starts
+        self._background_coroutines.append(coroutine)
 
     # Utilities
 

@@ -118,15 +118,17 @@ def create(*args, **kwargs) -> BusPath:
 
 
 def load_config(
-    from_file: str = None, service_name: str = None, process_name: str = None
+    from_file: str = None, service_name: str = None, process_name: str = None, quiet: bool = False
 ) -> Config:
     from_file = from_file or os.environ.get("LIGHTBUS_CONFIG")
 
     if from_file:
-        logger.info(f"Loading config from {from_file}")
+        if not quiet:
+            logger.info(f"Loading config from {from_file}")
         config = Config.load_file(file_path=from_file)
     else:
-        logger.info(f"No config file specified, will use default config")
+        if not quiet:
+            logger.info(f"No config file specified, will use default config")
         config = Config.load_dict({})
 
     if service_name:

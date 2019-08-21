@@ -23,7 +23,6 @@ def on_startup(**kwargs):
 Important points to note are:
 
 * The background task will be automatically cancelled when the bus is closed.
-  You can disable this by passing `cancel_on_close=False`.
 * Any errors in the background task will be bubbled up and cause the 
   Lightbus process to exit. If this is not desired you can implement 
   your own try/except handling within the function being executed.
