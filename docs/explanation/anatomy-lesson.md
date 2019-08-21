@@ -108,22 +108,6 @@ for incoming events and remote procedure calls.
 will only need a Lightbus process if it wishes to listen
 for [events] or provide any [RPCs] which can be called.**
 
-## Addendum
-
-The distinction between client & Lightbus process as described above
-is convention rather than a technical requirement.
-
-While you will need the client regardless, [you can start the Lightbus
-server in a more advanced fashion](/howto/combine-processes.md).
-
-The Lightbus process executes within the `asyncio` event loop. You
-can therefore merge the Lightbus process with any other process which
-also runs within the `asyncio` event loop.
-
-This does however add complexity, and the rewards are likely limited.
-Therefore only pursue this path if you are sure it suits your
-particular needs.
-
 [service]: concepts.md#service
 [events]: events.md
 [rpcs]: rpcs.md
