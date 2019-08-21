@@ -87,7 +87,7 @@ class BusClient(object):
     """
 
     def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
-        self.event_listeners: List[_EventListener] = []  # Event listeners
+        self._event_listeners: List[_EventListener] = []  # Event listeners
         self._consumers = []  # RPC consumers
         self._background_tasks = []  # Other background tasks added by user
         self._hook_callbacks = defaultdict(list)
@@ -328,7 +328,7 @@ class BusClient(object):
 
         # Start off any registered event listeners
         if Feature.EVENTS in features:
-            for event_listener in self.event_listeners:
+            for event_listener in self._event_listeners:
                 event_listener.start_task(bus_client=self)
 
         self._server_tasks = [consume_rpc_task, monitor_task]
@@ -626,7 +626,7 @@ class BusClient(object):
 
         # We will start up the event listeners (via start_task())
         # when the server starts. For now we just store them away
-        self.event_listeners.append(event_listener)
+        self._event_listeners.append(event_listener)
 
     # Results
 

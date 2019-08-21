@@ -145,7 +145,7 @@ class StatePlugin(LightbusPlugin):
         """Get the kwargs for a server_started or ping message"""
         max_memory_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         event_listeners = chain(
-            *[event_listener.events for event_listener in client.event_listeners]
+            *[event_listener.events for event_listener in client._event_listeners]
         )
         return dict(
             process_name=self.process_name,
