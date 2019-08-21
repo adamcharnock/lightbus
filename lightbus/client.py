@@ -260,7 +260,11 @@ class BusClient(object):
         self.close()
 
     def shutdown_server(self, exit_code):
-        self._server_shutdown_queue.sync_q.put(exit_code)
+        if self._server_shutdown_queue is not None:
+            # If this shutdown queue *is* None, then it is safe to assume
+            # the server hasn't started up yet, so no need to
+            # put anything in the shutdown queue
+            self._server_shutdown_queue.sync_q.put(exit_code)
 
     @assert_not_in_worker_thread()
     def start_server(self, consume_rpcs=True):
