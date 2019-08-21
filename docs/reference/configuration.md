@@ -57,22 +57,25 @@ bus = lightbus.create(
     # Will be replaced 4 random characters. Default
     process_name='{random4}',
 
-    # Global bus config. Can be path to file or URL
-    conifg='http://internal.mysite.com/bus/lightbus.yaml',
+    # Path to the global bus config
+    config='/path/to/lightbus.yaml',
+    
+    # Features to enable. Default is to enable all features.
+    # Can be configured using the --skip and --only arguments 
+    features=['rpcs', 'events', 'tasks'],
 )
 ```
 
 The above configuration options can also be set using the following
-environment variables:
+environment variables or command line arguments:
 
-* `LIGHTBUS_SERVICE_NAME`
-* `LIGHTBUS_PROCESS_NAME`
-* `LIGHTBUS_CONFIG`
+| Configuration option | Environment Variable    | Command line argument | Notes | 
+| -------------------- | ----------------------- | --------------------- | - | 
+| Service name         | `LIGHTBUS_SERVICE_NAME` | `--service-name`      | See [service name explanation] | 
+| Process name         | `LIGHTBUS_PROCESS_NAME` | `--process-name`      | See [process name explanation] | 
+| Configuration path   | `LIGHTBUS_CONFIG`       | `--config`            | Path to global configuration yaml/json file. See [global bus configuration]. | 
+| Features             | `LIGHTBUS_FEATURES`     | `--only`, `--skip`    | Features to enable/disable. Comma separated list of `rpcs`, `events`, `tasks` | 
 
-!!! note
-
-    You can read more about service and listener names in the 
-    [event explanation section](/explanation/events.md#service-names-listener-names).
 
 ### Service & process name placeholders
 
@@ -305,6 +308,7 @@ You can turn this into an error by enabling `strict_validation`
 within the [API config].
 
 [service-level setup]: #2-service-level-setup
+[global bus configuration]: #3-global-bus-configuration
 [root config]: #root-config
 [bus config]: #bus-config
 [API configuration listing]: #api-configuration-listing
@@ -314,3 +318,5 @@ within the [API config].
 [api config]: #api-config
 [api validation config]: #api-validation-config
 [events explanation section]: /explanation/events/
+[service name explanation]: /explanation/events.md#service-names-listener-names
+[process name explanation]: /explanation/events.md#process-names

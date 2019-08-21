@@ -2,9 +2,10 @@
 
 import os
 import sys
-from typing import Union, Optional, Mapping, Type
+from typing import Union, Mapping, Type, List
 
 from lightbus import BusClient
+from lightbus.utilities.features import ALL_FEATURES, Feature
 from lightbus.config.structure import RootConfig
 from lightbus.log import LBullets, L, Bold
 from lightbus.path import BusPath
@@ -28,6 +29,7 @@ async def create_async(
     config_file: str = None,
     service_name: str = None,
     process_name: str = None,
+    features: List[Union[Feature, str]] = ALL_FEATURES,
     client_class: Type[BusClient] = BusClient,
     node_class: Type[BusPath] = BusPath,
     plugins=None,
@@ -94,7 +96,9 @@ async def create_async(
         config
     )
 
-    client = client_class(transport_registry=transport_registry, config=config, **kwargs)
+    client = client_class(
+        transport_registry=transport_registry, config=config, features=features, **kwargs
+    )
     await client.setup_async(plugins=plugins)
 
     return node_class(name="", parent=None, client=client)

@@ -41,6 +41,7 @@ from lightbus.exceptions import (
     BusAlreadyClosed,
     TransportIsClosed,
     LightbusServerMustStartInMainThread,
+    UnsupportedUse,
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
@@ -86,7 +87,12 @@ class BusClient(object):
     All functionality in `BusPath` is provided by `BusClient`.
     """
 
-    def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
+    def __init__(
+        self,
+        config: "Config",
+        transport_registry: TransportRegistry = None,
+        features: List[Union[Feature, str]] = ALL_FEATURES,
+    ):
         self._event_listeners: List[_EventListener] = []  # Event listeners
         self._consumers = []  # RPC consumers
         # Coroutines added via schedule/every/add_background_task which should be started up
@@ -97,6 +103,8 @@ class BusClient(object):
         self._hook_callbacks = defaultdict(list)
         self.config = config
         self.transport_registry = transport_registry
+        self.features: List[Union[Feature, str]] = ALL_FEATURES
+        self.set_features(features)
         self.api_registry = Registry()
         self.plugin_registry = PluginRegistry()
         self.schema = None
@@ -249,14 +257,12 @@ class BusClient(object):
     def loop(self):
         return get_event_loop()
 
-    def run_forever(self, features: List[Feature] = ALL_FEATURES):
-        features = features or []
-
-        if not self.api_registry.all() and Feature.RPCS in features:
+    def run_forever(self):
+        if not self.api_registry.all() and Feature.RPCS in self.features:
             logger.info("Disabling serving of RPCs as no APIs have been registered")
-            features.remove(Feature.RPCS)
+            self.features.remove(Feature.RPCS)
 
-        self.start_server(features=features)
+        self.start_server()
 
         self._actually_run_forever()
         logger.debug("Main thread event loop was stopped")
@@ -278,7 +284,7 @@ class BusClient(object):
             self._server_shutdown_queue.sync_q.put(exit_code)
 
     @assert_not_in_worker_thread()
-    def start_server(self, features: List[Feature] = ALL_FEATURES):
+    def start_server(self):
         """Server startup procedure
 
         Must be called from within the main thread. Handles the niceties around
@@ -302,10 +308,12 @@ class BusClient(object):
         self._shutdown_monitor_task = shutdown_monitor_task
 
         logger.info(
-            LBullets(f"Enabled features ({len(features)})", items=[f.value for f in features])
+            LBullets(
+                f"Enabled features ({len(self.features)})", items=[f.value for f in self.features]
+            )
         )
 
-        disabled_features = set(ALL_FEATURES) - set(features)
+        disabled_features = set(ALL_FEATURES) - set(self.features)
         logger.info(
             LBullets(
                 f"Disabled features ({len(disabled_features)})",
@@ -313,10 +321,10 @@ class BusClient(object):
             )
         )
 
-        block(self._setup_server(features=features))
+        block(self._setup_server())
 
     @run_in_worker_thread()
-    async def _setup_server(self, features: List[Feature] = ALL_FEATURES):
+    async def _setup_server(self):
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())
 
@@ -336,19 +344,19 @@ class BusClient(object):
         logger.info("Execution of before_server_start & on_start hooks was successful")
 
         # Setup RPC consumption
-        if Feature.RPCS in features:
+        if Feature.RPCS in self.features:
             consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
             consume_rpc_task.add_done_callback(make_exception_checker(self, die=True))
         else:
             consume_rpc_task = None
 
         # Start off any registered event listeners
-        if Feature.EVENTS in features:
+        if Feature.EVENTS in self.features:
             for event_listener in self._event_listeners:
                 event_listener.start_task(bus_client=self)
 
         # Start off any background tasks
-        if Feature.TASKS in features:
+        if Feature.TASKS in self.features:
             for coroutine in self._background_coroutines:
                 task = asyncio.ensure_future(coroutine)
                 task.add_done_callback(make_exception_checker(self, die=True))
@@ -761,6 +769,16 @@ class BusClient(object):
                 f"This will be the event message. For example: "
                 f"my_listener(event_message, other, ...)"
             )
+
+    def set_features(self, features: List[Union[Feature, str]]):
+        for i, feature in enumerate(features):
+            try:
+                features[i] = Feature(feature)
+            except ValueError:
+                features_str = ", ".join([f.value for f in Feature])
+                raise UnsupportedUse(f"Feature '{feature}' is not one of: {features_str}\n")
+
+        self.features = features
 
     # Hooks
 
