@@ -311,6 +311,14 @@ class BusClient(object):
             )
         )
 
+        # Setup schema monitoring
+        monitor_task = asyncio.ensure_future(self.schema.monitor())
+        monitor_task.add_done_callback(make_exception_checker(self, die=True))
+
+        logger.info("Executing before_server_start & on_start hooks...")
+        await self._execute_hook("before_server_start")
+        logger.info("Execution of before_server_start & on_start hooks was successful")
+
         consume_rpc_task = None
 
         # Setup RPC consumption
@@ -322,14 +330,6 @@ class BusClient(object):
         if Feature.EVENTS in features:
             for event_listener in self.event_listeners:
                 event_listener.start_task(bus_client=self)
-
-        # Setup schema monitoring
-        monitor_task = asyncio.ensure_future(self.schema.monitor())
-        monitor_task.add_done_callback(make_exception_checker(self, die=True))
-
-        logger.info("Executing before_server_start & on_start hooks...")
-        await self._execute_hook("before_server_start")
-        logger.info("Execution of before_server_start & on_start hooks was successful")
 
         self._server_tasks = [consume_rpc_task, monitor_task]
 
