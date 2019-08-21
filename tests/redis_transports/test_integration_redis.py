@@ -68,7 +68,10 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
         nonlocal received_messages
         received_messages.append(event_message)
 
-    listener_task = await bus.my.dummy.my_event.listen_async(listener, listener_name="test")
+    await bus.my.dummy.my_event.listen_async(listener, listener_name="test")
+
+    await bus.client._setup_server()
+
     await asyncio.sleep(0.1)
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
     await asyncio.sleep(0.1)
@@ -264,6 +267,8 @@ async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, moc
         "my.dummy", "my_event", co_listener, listener_name="test"
     )
 
+    await bus.client._setup_server()
+
     await asyncio.sleep(0.1)
     await bus.my.dummy.my_event.fire_async(field="Hello")
     await asyncio.sleep(0.001)
@@ -319,6 +324,8 @@ async def test_listen_to_multiple_events_across_multiple_transports(
         events=[("api_a", "event_a"), ("api_b", "event_b")], listener=listener, listener_name="test"
     )
 
+    await bus.client._setup_server()
+
     await asyncio.sleep(0.1)
     await bus.api_a.event_a.fire_async()
     await bus.api_b.event_b.fire_async()
@@ -349,6 +356,8 @@ async def test_event_exception_in_listener_realtime(
     await bus.my.dummy.my_event.listen_async(
         listener, listener_name="test_listener", bus_options={"since": "0"}
     )
+    await bus.client._setup_server()
+
     await asyncio.sleep(0.1)
 
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
@@ -403,6 +412,8 @@ async def test_event_exception_in_listener_batch_fetch(
     await bus.my.dummy.my_event.listen_async(
         listener, listener_name="test_listener", bus_options={"since": "0"}
     )
+    await bus.client._setup_server()
+
     await asyncio.sleep(0.1)
 
     # Died when processing first message, so we only saw one message

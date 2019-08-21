@@ -6,3 +6,6 @@ class Feature(Enum):
     RPCS = "rpcs"
     EVENTS = "events"
     TASKS = "tasks"
+
+
+ALL_FEATURES = list(Feature)

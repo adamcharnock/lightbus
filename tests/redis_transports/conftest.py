@@ -83,7 +83,7 @@ def fire_dummy_events_fixture(bus):
 # fmt: off
 @pytest.fixture
 def new_bus(loop, redis_server_url):
-    async def _new_bus():
+    async def _new_bus(service_name="{friendly}"):
         bus = await lightbus.creation.create_async(
             config=RootConfig(
                 apis={
@@ -106,7 +106,8 @@ def new_bus(loop, redis_server_url):
                     schema=SchemaConfig(
                         transport=SchemaTransportSelector(redis=RedisSchemaTransport.Config(url=redis_server_url)),
                     )
-                )
+                ),
+                service_name=service_name
             ),
             plugins=[],
         )

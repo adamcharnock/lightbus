@@ -436,10 +436,12 @@ async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, 
         events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
     )
 
+    await dummy_bus.client._setup_server()
+
     # Check we have something in the shutdown queue
     await asyncio.wait_for(dummy_bus.client._server_shutdown_queue.async_q.get(), timeout=5)
 
-    # Note that this hasn't actually shut the bus down, we'll text that in test_server_shutdown
+    # Note that this hasn't actually shut the bus down, we'll test that in test_server_shutdown
 
 
 @pytest.mark.asyncio
@@ -455,6 +457,8 @@ async def test_exception_in_listener_stop_listener(dummy_bus: lightbus.path.BusP
     await dummy_bus.client.listen_for_events(
         events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
     )
+
+    await dummy_bus.client._setup_server()
 
     # Don't let the event loop be stopped as it is needed to run the tests!
     # (although stop() shouldn't actually be called here)
@@ -481,6 +485,8 @@ async def test_exception_in_listener_ignore(dummy_bus: lightbus.path.BusPath, lo
     await dummy_bus.client.listen_for_events(
         events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
     )
+
+    await dummy_bus.client._setup_server()
 
     # Don't let the event loop be stopped as it is needed to run the tests!
     # (although stop() shouldn't actually be called here)

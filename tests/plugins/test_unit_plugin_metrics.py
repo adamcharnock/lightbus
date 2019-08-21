@@ -155,6 +155,8 @@ async def test_execute_events(dummy_bus: BusPath, dummy_listener, get_dummy_even
 
     await dummy_listener("example.test", "my_event")
 
+    await dummy_bus.client._setup_server()
+
     # Setup the bus and do the call
     dummy_bus.client.plugin_registry.set_plugins(
         plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
@@ -164,14 +166,21 @@ async def test_execute_events(dummy_bus: BusPath, dummy_listener, get_dummy_even
     # The dummy transport will fire an every every 0.1 seconds
     await asyncio.sleep(0.15)
 
-    event_messages = get_dummy_events()
-    assert len(event_messages) == 2
+    # Arrange messages in a dict indexed by name (makes checking results)
+    event_messages = {}
+    event_message: EventMessage
+    for event_message in get_dummy_events():
+        event_messages[event_message.canonical_name] = event_message
+
+    assert "internal.metrics.event_received" in event_messages
+    assert "internal.metrics.event_processed" in event_messages
 
     # before_rpc_execution
-    assert event_messages[0].api_name == "internal.metrics"
-    assert event_messages[0].event_name == "event_received"
-    assert event_messages[0].kwargs.pop("timestamp")
-    assert event_messages[0].kwargs == {
+    event = event_messages["internal.metrics.event_received"]
+    assert event.api_name == "internal.metrics"
+    assert event.event_name == "event_received"
+    assert event.kwargs.pop("timestamp")
+    assert event.kwargs == {
         "api_name": "example.test",
         "event_name": "my_event",
         "event_id": "event_id",
@@ -181,10 +190,11 @@ async def test_execute_events(dummy_bus: BusPath, dummy_listener, get_dummy_even
     }
 
     # after_rpc_execution
-    assert event_messages[1].api_name == "internal.metrics"
-    assert event_messages[1].event_name == "event_processed"
-    assert event_messages[1].kwargs.pop("timestamp")
-    assert event_messages[1].kwargs == {
+    event = event_messages["internal.metrics.event_processed"]
+    assert event.api_name == "internal.metrics"
+    assert event.event_name == "event_processed"
+    assert event.kwargs.pop("timestamp")
+    assert event.kwargs == {
         "api_name": "example.test",
         "event_name": "my_event",
         "event_id": "event_id",

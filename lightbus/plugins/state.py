@@ -7,6 +7,7 @@ from argparse import ArgumentParser, _ArgumentGroup, Namespace
 from datetime import datetime
 
 import os
+from itertools import chain
 
 from lightbus.message import EventMessage
 from lightbus.plugins import LightbusPlugin
@@ -143,14 +144,16 @@ class StatePlugin(LightbusPlugin):
     def get_state_kwargs(self, client: "BusClient"):
         """Get the kwargs for a server_started or ping message"""
         max_memory_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        event_listeners = chain(
+            *[event_listener.events for event_listener in client.event_listeners]
+        )
         return dict(
             process_name=self.process_name,
             service_name=self.service_name,
             metrics_enabled=client.plugin_registry.is_plugin_loaded(MetricsPlugin),
             api_names=[api.meta.name for api in client.api_registry.public()],
             listening_for=[
-                "{}.{}".format(api_name, event_name)
-                for api_name, event_name in client._listeners.keys()
+                "{}.{}".format(api_name, event_name) for api_name, event_name in event_listeners
             ],
             timestamp=datetime.utcnow().timestamp(),
             ping_enabled=self.ping_enabled,

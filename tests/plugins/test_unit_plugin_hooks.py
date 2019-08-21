@@ -92,6 +92,7 @@ async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_
     await dummy_bus.client.listen_for_event(
         "my.dummy", "my_event", lambda *a, **kw: None, listener_name="test"
     )
+    await dummy_bus.client._setup_server()
     await asyncio.sleep(0.1)
 
     # Send the event message using a lower-level API to avoid triggering the
@@ -103,4 +104,5 @@ async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_
 
     # There is a chance of events firing twice (because the dummy_bus keeps firing events),
     # so cast to the lists to sets first before comparing
-    assert set(called_hooks()) == {"before_event_execution", "after_event_execution"}
+    assert "before_event_execution" in called_hooks()
+    assert "after_event_execution" in called_hooks()

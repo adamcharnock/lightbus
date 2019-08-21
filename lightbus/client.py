@@ -62,7 +62,7 @@ from lightbus.utilities.async_tools import (
 )
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
-from lightbus.utilities.features import Feature
+from lightbus.utilities.features import Feature, ALL_FEATURES
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.logging import log_transport_information
@@ -87,6 +87,7 @@ class BusClient(object):
     """
 
     def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
+        self.event_listeners: List[_EventListener] = []  # Event listeners
         self._consumers = []  # RPC consumers
         self._background_tasks = []  # Other background tasks added by user
         self._hook_callbacks = defaultdict(list)
@@ -244,7 +245,7 @@ class BusClient(object):
     def loop(self):
         return get_event_loop()
 
-    def run_forever(self, features: List[Feature] = None):
+    def run_forever(self, features: List[Feature] = ALL_FEATURES):
         features = features or []
 
         if not self.api_registry.all() and Feature.RPCS in features:
@@ -273,10 +274,12 @@ class BusClient(object):
             self._server_shutdown_queue.sync_q.put(exit_code)
 
     @assert_not_in_worker_thread()
-    def start_server(self, features: List[Feature] = None):
+    def start_server(self, features: List[Feature] = ALL_FEATURES):
         """Server startup procedure
 
-        Must be called from within the main thread
+        Must be called from within the main thread. Handles the niceties around
+        starting and stopping the server. The interesting setup happens in
+        BusClient._setup_server()
         """
         # Ensure an event loop exists
         get_event_loop()
@@ -294,12 +297,10 @@ class BusClient(object):
         shutdown_monitor_task.add_done_callback(make_exception_checker(self, die=True))
         self._shutdown_monitor_task = shutdown_monitor_task
 
-        block(self._start_server_inner(features=features))
+        block(self._setup_server(features=features))
 
     @run_in_worker_thread()
-    async def _start_server_inner(self, features: List[Feature] = None):
-        features = features or []
-
+    async def _setup_server(self, features: List[Feature] = ALL_FEATURES):
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())
 
@@ -310,12 +311,17 @@ class BusClient(object):
             )
         )
 
-        # Setup RPC consumption
         consume_rpc_task = None
 
+        # Setup RPC consumption
         if Feature.RPCS in features:
             consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
             consume_rpc_task.add_done_callback(make_exception_checker(self, die=True))
+
+        # Start off any registered event listeners
+        if Feature.EVENTS in features:
+            for event_listener in self.event_listeners:
+                event_listener.start_task(bus_client=self)
 
         # Setup schema monitoring
         monitor_task = asyncio.ensure_future(self.schema.monitor())
@@ -617,7 +623,10 @@ class BusClient(object):
             options=options,
             bus_client=self,
         )
-        event_listener.make_task(bus_client=self)
+
+        # We will start up the event listeners (via start_task())
+        # when the server starts. For now we just store them away
+        self.event_listeners.append(event_listener)
 
     # Results
 
@@ -887,7 +896,7 @@ class _EventListener(object):
 
     This class will take a list of events and a callable. Background
     tasks will be setup to listen for the specified events
-    (see make_task()) and the provided callable will be called when the
+    (see start_task()) and the provided callable will be called when the
     event is detected.
 
     This logic is smart enough to detect when the APIs of the events use
@@ -912,6 +921,7 @@ class _EventListener(object):
         self.listener_name = listener_name
         self.options = options or {}
         self.bus_client = bus_client
+        self.listener_task: asyncio.Task = None
 
         self.event_transports = self.get_event_transports()
 
@@ -953,7 +963,7 @@ class _EventListener(object):
         """Should the entire process die if an error occurs in a listener?"""
         return self.on_error == OnError.SHUTDOWN
 
-    def make_task(self, bus_client: BusClient) -> asyncio.Task:
+    def start_task(self, bus_client: BusClient) -> asyncio.Task:
         """ Create a task responsible for running the listener(s)
 
         This will create a task for each transport (see get_event_transports()).
@@ -987,7 +997,7 @@ class _EventListener(object):
         # task automatically on shutdown
         listener_task.is_listener = True
 
-        return listener_task
+        self.listener_task = listener_task
 
     async def listener(
         self, event_transport: EventTransport, events: List[Tuple[str, str]], bus_client: BusClient
