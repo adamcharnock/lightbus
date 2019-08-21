@@ -89,7 +89,7 @@ async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_
     add_base_plugin()
     dummy_bus.client.register_api(dummy_api)
 
-    await dummy_bus.client.listen_for_event(
+    dummy_bus.client.listen_for_event(
         "my.dummy", "my_event", lambda *a, **kw: None, listener_name="test"
     )
     await dummy_bus.client._setup_server()

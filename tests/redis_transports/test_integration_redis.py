@@ -68,7 +68,7 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
         nonlocal received_messages
         received_messages.append(event_message)
 
-    await bus.my.dummy.my_event.listen_async(listener, listener_name="test")
+    bus.my.dummy.my_event.listen(listener, listener_name="test")
 
     await bus.client._setup_server()
 
@@ -263,17 +263,13 @@ async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, moc
     await bus.client.schema.save_to_bus()
     await bus.client.schema.load_from_bus()
 
-    listener_task = await bus.client.listen_for_event(
-        "my.dummy", "my_event", co_listener, listener_name="test"
-    )
+    bus.client.listen_for_event("my.dummy", "my_event", co_listener, listener_name="test")
 
     await bus.client._setup_server()
 
     await asyncio.sleep(0.1)
     await bus.my.dummy.my_event.fire_async(field="Hello")
     await asyncio.sleep(0.001)
-
-    await cancel(listener_task)
 
     # Validate gets called
     jsonschema.validate.assert_called_with(
@@ -320,7 +316,7 @@ async def test_listen_to_multiple_events_across_multiple_transports(
         nonlocal calls
         calls += 1
 
-    await bus.client.listen_for_events(
+    bus.client.listen_for_events(
         events=[("api_a", "event_a"), ("api_b", "event_b")], listener=listener, listener_name="test"
     )
 
@@ -353,7 +349,7 @@ async def test_event_exception_in_listener_realtime(
         received_messages.append(event_message)
         raise Exception()
 
-    await bus.my.dummy.my_event.listen_async(
+    bus.my.dummy.my_event.listen(
         listener, listener_name="test_listener", bus_options={"since": "0"}
     )
     await bus.client._setup_server()
@@ -409,7 +405,7 @@ async def test_event_exception_in_listener_batch_fetch(
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
 
-    await bus.my.dummy.my_event.listen_async(
+    bus.my.dummy.my_event.listen(
         listener, listener_name="test_listener", bus_options={"since": "0"}
     )
     await bus.client._setup_server()

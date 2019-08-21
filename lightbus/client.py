@@ -635,14 +635,12 @@ class BusClient(object):
         await event_transport.send_event(event_message, options=options, bus_client=self)
         await self._execute_hook("after_event_sent", event_message=event_message)
 
-    async def listen_for_event(
-        self, api_name, name, listener, listener_name: str, options: dict = None
-    ):
-        return await self.listen_for_events(
+    def listen_for_event(self, api_name, name, listener, listener_name: str, options: dict = None):
+        self.listen_for_events(
             [(api_name, name)], listener, listener_name=listener_name, options=options
         )
 
-    async def listen_for_events(
+    def listen_for_events(
         self, events: List[Tuple[str, str]], listener, listener_name: str, options: dict = None
     ):
         self._sanity_check_listener(listener)

@@ -230,21 +230,16 @@ def dummy_bus(loop, redis_server_url):
 @pytest.yield_fixture
 async def dummy_listener(dummy_bus: BusPath, loop):
     """Start the dummy bus consuming events"""
+    # TODO: Remove. Barely used any more
     tasks = []
 
     async def listen(api_name, event_name):
         def pass_listener(*args, **kwargs):
             pass
 
-        task = await dummy_bus.client.listen_for_event(
-            api_name, event_name, pass_listener, listener_name="test"
-        )
-        tasks.append(task)
+        dummy_bus.client.listen_for_event(api_name, event_name, pass_listener, listener_name="test")
 
-    try:
-        yield listen
-    finally:
-        await cancel(*tasks)
+    yield listen
 
 
 @pytest.fixture

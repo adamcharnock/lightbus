@@ -19,5 +19,5 @@ def handle_page_view(event_message, url):
 
 
 @bus.client.on_start()
-async def my_startup(client):
-    await bus.store.page_view.listen_async(handle_page_view, listener_name="handle_page_view")
+def my_startup(client):
+    bus.store.page_view.listen(handle_page_view, listener_name="handle_page_view")

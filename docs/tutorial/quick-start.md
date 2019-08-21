@@ -179,8 +179,8 @@ def handler_new_user(event, username, email):
 
 
 @bus.client.on_start()
-async def bus_start():
-    await bus.auth.user_registered.listen_async(
+def bus_start():
+    bus.auth.user_registered.listen(
         handler_new_user,
         listener_name="print_on_new_registration"
     )

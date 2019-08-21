@@ -125,12 +125,9 @@ listener asynchronously using the `list_async()` method:
 ```python3
 # ...snipped from above example
 
-# Note that our startup handler below is defined as async
 @bus.client.on_start()
-async def on_start():
-
-    # We await the listen_async() method
-    await bus.auth.user_created.listen_async(
+def on_start():
+    bus.auth.user_created.listen(
         handle_created,
         listener_name="user_created"
     )

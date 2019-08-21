@@ -39,7 +39,7 @@ async def test_random_failures(
 
     for n in range(0, 120):
         cursed_bus: lightbus.path.BusPath = await new_bus(service_name="test")
-        await cursed_bus.my.dummy.my_event.listen_async(
+        cursed_bus.my.dummy.my_event.listen(
             listener, listener_name="test", bus_options={"since": "0"}
         )
         await cursed_bus.client._setup_server()

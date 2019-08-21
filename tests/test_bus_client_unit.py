@@ -52,7 +52,7 @@ async def test_fire_event_bad_event_arguments(dummy_bus: lightbus.path.BusPath, 
 @pytest.mark.asyncio
 async def test_listen_for_event_non_callable(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidEventListener):
-        await dummy_bus.client.listen_for_event(
+        dummy_bus.client.listen_for_event(
             "my.dummy", "my_event", listener=123, listener_name="test"
         )
 
@@ -60,7 +60,7 @@ async def test_listen_for_event_non_callable(dummy_bus: lightbus.path.BusPath):
 @pytest.mark.asyncio
 async def test_listen_for_event_no_args(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidEventListener):
-        await dummy_bus.client.listen_for_event(
+        dummy_bus.client.listen_for_event(
             "my.dummy", "my_event", listener=lambda: None, listener_name="test"
         )
 
@@ -68,28 +68,28 @@ async def test_listen_for_event_no_args(dummy_bus: lightbus.path.BusPath):
 @pytest.mark.asyncio
 async def test_listen_for_event_no_positional_args(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidEventListener):
-        await dummy_bus.client.listen_for_event(
+        dummy_bus.client.listen_for_event(
             "my.dummy", "my_event", listener=lambda **kw: None, listener_name="test"
         )
 
 
 @pytest.mark.asyncio
 async def test_listen_for_event_one_positional_arg(dummy_bus: lightbus.path.BusPath):
-    await dummy_bus.client.listen_for_event(
+    dummy_bus.client.listen_for_event(
         "my.dummy", "my_event", listener=lambda event_message: None, listener_name="test"
     )
 
 
 @pytest.mark.asyncio
 async def test_listen_for_event_two_positional_args(dummy_bus: lightbus.path.BusPath):
-    await dummy_bus.client.listen_for_event(
+    dummy_bus.client.listen_for_event(
         "my.dummy", "my_event", listener=lambda event_message, other: None, listener_name="test"
     )
 
 
 @pytest.mark.asyncio
 async def test_listen_for_event_variable_positional_args(dummy_bus: lightbus.path.BusPath):
-    await dummy_bus.client.listen_for_event(
+    dummy_bus.client.listen_for_event(
         "my.dummy", "my_event", listener=lambda *a: None, listener_name="test"
     )
 
@@ -97,7 +97,7 @@ async def test_listen_for_event_variable_positional_args(dummy_bus: lightbus.pat
 @pytest.mark.asyncio
 async def test_listen_for_event_starts_with_underscore(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidName):
-        await dummy_bus.client.listen_for_event(
+        dummy_bus.client.listen_for_event(
             "my.dummy", "_my_event", listener=lambda *a, **kw: None, listener_name="test"
         )
 
@@ -163,7 +163,7 @@ async def test_consume_rpcs_with_transport_error(
 @pytest.mark.asyncio
 async def test_listen_for_event_empty_name(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidName):
-        await dummy_bus.client.listen_for_event(
+        dummy_bus.client.listen_for_event(
             "my.dummy", "_my_event", listener=lambda *a: None, listener_name="test"
         )
 
@@ -432,7 +432,7 @@ async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, 
         raise Exception()
 
     # Start the listener
-    await dummy_bus.client.listen_for_events(
+    dummy_bus.client.listen_for_events(
         events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
     )
 
@@ -454,7 +454,7 @@ async def test_exception_in_listener_stop_listener(dummy_bus: lightbus.path.BusP
     def listener(*args, **kwargs):
         raise SomeException()
 
-    await dummy_bus.client.listen_for_events(
+    dummy_bus.client.listen_for_events(
         events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
     )
 
@@ -482,7 +482,7 @@ async def test_exception_in_listener_ignore(dummy_bus: lightbus.path.BusPath, lo
     def listener(*args, **kwargs):
         raise SomeException()
 
-    await dummy_bus.client.listen_for_events(
+    dummy_bus.client.listen_for_events(
         events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
     )
 
