@@ -2,8 +2,8 @@ sudo: required
 
 env:
   global:
-    - REDIS_URL: redis://localhost:60791
-    - REDIS_URL_B: redis://localhost:60792
+    - REDIS_URL: redis://127.0.0.1:60791
+    - REDIS_URL_B: redis://127.0.0.1:60792
     - PG_URL: postgres://postgres@localhost:54320/postgres
 
 language: python

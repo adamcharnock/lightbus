@@ -97,12 +97,15 @@ def create_redis_connection(_closable):
 
 @pytest.fixture
 def redis_server_url():
-    return os.environ.get("REDIS_URL", "") or "redis://localhost:6379/10"
+    # We use 127.0.0.1 rather than 'localhost' as this bypasses some
+    # problems we encounter with getaddrinfo when performing tests
+    # which create a lot of connections (e.g. the reliability tests)
+    return os.environ.get("REDIS_URL", "") or "redis://127.0.0.1:6379/10"
 
 
 @pytest.fixture
 def redis_server_b_url():
-    return os.environ.get("REDIS_URL_B", "") or "redis://localhost:6379/11"
+    return os.environ.get("REDIS_URL_B", "") or "redis://127.0.0.1:6379/11"
 
 
 @pytest.fixture
