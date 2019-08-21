@@ -371,17 +371,6 @@ def test_run_forever(dummy_bus: lightbus.path.BusPath, mocker, dummy_api):
     assert m.called
 
 
-def test_register_listener_context_manager(dummy_bus: lightbus.path.BusPath):
-    client = dummy_bus.client
-    assert len(client._listeners) == 0
-    with client._register_listener([("api_name", "event_name")]):
-        assert client._listeners[("api_name", "event_name")] == 1
-        with client._register_listener([("api_name", "event_name")]):
-            assert client._listeners[("api_name", "event_name")] == 2
-        assert client._listeners[("api_name", "event_name")] == 1
-    assert len(client._listeners) == 0
-
-
 DECORATOR_HOOK_PAIRS = [
     ("on_start", "before_server_start"),
     ("on_stop", "before_server_start"),

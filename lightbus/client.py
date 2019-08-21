@@ -87,7 +87,6 @@ class BusClient(object):
     """
 
     def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
-        self._listeners = {}  # event listeners
         self._consumers = []  # RPC consumers
         self._background_tasks = []  # Other background tasks added by user
         self._hook_callbacks = defaultdict(list)
@@ -618,7 +617,7 @@ class BusClient(object):
             options=options,
             bus_client=self,
         )
-        event_listener.make_task()
+        event_listener.make_task(bus_client=self)
 
     # Results
 
@@ -635,34 +634,6 @@ class BusClient(object):
         return await result_transport.receive_result(
             rpc_message, return_path, options, bus_client=self
         )
-
-    @contextlib.contextmanager
-    def _register_listener(self, events: List[Tuple[str, str]]):
-        """A context manager to help keep track of what the bus is listening for"""
-        logger.info(
-            LBullets(f"Registering listener for", items=[Bold(f"{a}.{e}") for a, e in events])
-        )
-
-        for api_name, event_name in events:
-            key = (api_name, event_name)
-            self._listeners.setdefault(key, 0)
-            self._listeners[key] += 1
-
-        yield
-
-        for api_name, event_name in events:
-            key = (api_name, event_name)
-            self._listeners[key] -= 1
-            if not self._listeners[key]:
-                self._listeners.pop(key)
-
-    @property
-    def listeners(self) -> List[Tuple[str, str]]:
-        """Returns a list of events which are currently being listened to
-
-        Each value is a tuple in the form `(api_name, event_name)`.
-        """
-        return list(self._listeners.keys())
 
     def _validate(self, message: Message, direction: str, api_name=None, procedure_name=None):
         if direction not in ("incoming", "outgoing"):
@@ -982,7 +953,7 @@ class _EventListener(object):
         """Should the entire process die if an error occurs in a listener?"""
         return self.on_error == OnError.SHUTDOWN
 
-    def make_task(self) -> asyncio.Task:
+    def make_task(self, bus_client: BusClient) -> asyncio.Task:
         """ Create a task responsible for running the listener(s)
 
         This will create a task for each transport (see get_event_transports()).
@@ -1003,7 +974,7 @@ class _EventListener(object):
                 if api_name in _api_names
             ]
 
-            task = asyncio.ensure_future(self.listener(_event_transport, events))
+            task = asyncio.ensure_future(self.listener(_event_transport, events, bus_client))
             task.is_listener = True  # Used by close()
             tasks.append(task)
 
@@ -1018,7 +989,9 @@ class _EventListener(object):
 
         return listener_task
 
-    async def listener(self, event_transport: EventTransport, events: List[Tuple[str, str]]):
+    async def listener(
+        self, event_transport: EventTransport, events: List[Tuple[str, str]], bus_client: BusClient
+    ):
         """ Receive events from the transport and invoke the listener callable
 
         This is the core glue which combines the event transports' consume()
@@ -1028,81 +1001,83 @@ class _EventListener(object):
         # event_transport.consume() returns an asynchronous generator
         # which will provide us with messages
         consumer = event_transport.consume(
-            listen_for=events, listener_name=self.listener_name, bus_client=self, **self.options
+            listen_for=events,
+            listener_name=self.listener_name,
+            bus_client=bus_client,
+            **self.options,
         )
 
         try:
-            with self.bus_client._register_listener(events):
-                async for event_messages in consumer:
-                    for event_message in event_messages:
-                        # TODO: Check events match those requested
-                        # TODO: Support event name of '*', but transports should raise
-                        # TODO: an exception if it is not supported.
-                        logger.info(
-                            L(
-                                "📩  Received event {}.{} with ID {}".format(
-                                    Bold(event_message.api_name),
-                                    Bold(event_message.event_name),
-                                    event_message.id,
-                                )
+            async for event_messages in consumer:
+                for event_message in event_messages:
+                    # TODO: Check events match those requested
+                    # TODO: Support event name of '*', but transports should raise
+                    # TODO: an exception if it is not supported.
+                    logger.info(
+                        L(
+                            "📩  Received event {}.{} with ID {}".format(
+                                Bold(event_message.api_name),
+                                Bold(event_message.event_name),
+                                event_message.id,
                             )
                         )
+                    )
 
-                        self.bus_client._validate(event_message, "incoming")
+                    self.bus_client._validate(event_message, "incoming")
 
-                        await self.bus_client._execute_hook(
-                            "before_event_execution", event_message=event_message
+                    await self.bus_client._execute_hook(
+                        "before_event_execution", event_message=event_message
+                    )
+
+                    if self.bus_client.config.api(event_message.api_name).cast_values:
+                        parameters = cast_to_signature(
+                            parameters=event_message.kwargs, callable=self.listener_callable
                         )
+                    else:
+                        parameters = event_message.kwargs
 
-                        if self.bus_client.config.api(event_message.api_name).cast_values:
-                            parameters = cast_to_signature(
-                                parameters=event_message.kwargs, callable=self.listener_callable
+                    try:
+                        # Call the listener.
+                        # Pass the event message as a positional argument,
+                        # thereby allowing listeners to have flexibility in the argument names.
+                        # (And therefore allowing listeners to use the `event` parameter themselves)
+                        await run_user_provided_callable(
+                            self.listener_callable,
+                            args=[event_message],
+                            kwargs=parameters,
+                            bus_client=self.bus_client,
+                            die_on_exception=False,
+                        )
+                    except LightbusShutdownInProgress as e:
+                        logger.info("Shutdown in progress: {}".format(e))
+                        return
+                    except Exception as e:
+                        if self.on_error == OnError.IGNORE:
+                            # We're ignore errors, so log it and move on
+                            logger.error(
+                                f"An event listener raised an exception while processing an event. Lightbus will "
+                                f"continue as normal because the on 'on_error' option is set "
+                                f"to '{OnError.IGNORE.value}'."
                             )
-                        else:
-                            parameters = event_message.kwargs
-
-                        try:
-                            # Call the listener.
-                            # Pass the event message as a positional argument,
-                            # thereby allowing listeners to have flexibility in the argument names.
-                            # (And therefore allowing listeners to use the `event` parameter themselves)
-                            await run_user_provided_callable(
-                                self.listener_callable,
-                                args=[event_message],
-                                kwargs=parameters,
-                                bus_client=self.bus_client,
-                                die_on_exception=False,
+                        elif self.on_error == OnError.STOP_LISTENER:
+                            logger.error(
+                                f"An event listener raised an exception while processing an event. Lightbus will "
+                                f"stop the listener but keep on running. This is because the 'on_error' option "
+                                f"is set to '{OnError.STOP_LISTENER.value}'."
                             )
-                        except LightbusShutdownInProgress as e:
-                            logger.info("Shutdown in progress: {}".format(e))
+                            # Stop the listener by returning
                             return
-                        except Exception as e:
-                            if self.on_error == OnError.IGNORE:
-                                # We're ignore errors, so log it and move on
-                                logger.error(
-                                    f"An event listener raised an exception while processing an event. Lightbus will "
-                                    f"continue as normal because the on 'on_error' option is set "
-                                    f"to '{OnError.IGNORE.value}'."
-                                )
-                            elif self.on_error == OnError.STOP_LISTENER:
-                                logger.error(
-                                    f"An event listener raised an exception while processing an event. Lightbus will "
-                                    f"stop the listener but keep on running. This is because the 'on_error' option "
-                                    f"is set to '{OnError.STOP_LISTENER.value}'."
-                                )
-                                # Stop the listener by returning
-                                return
-                            else:
-                                # We're not ignoring errors, so raise it and
-                                # let the error handler callback deal with it
-                                raise
+                        else:
+                            # We're not ignoring errors, so raise it and
+                            # let the error handler callback deal with it
+                            raise
 
-                        # Acknowledge the successfully processed message
-                        await event_transport.acknowledge(event_message, bus_client=self.bus_client)
+                    # Acknowledge the successfully processed message
+                    await event_transport.acknowledge(event_message, bus_client=self.bus_client)
 
-                        await self.bus_client._execute_hook(
-                            "after_event_execution", event_message=event_message
-                        )
+                    await self.bus_client._execute_hook(
+                        "after_event_execution", event_message=event_message
+                    )
         except CancelledError:
             # Close the consumer to allow it to do any cleanup
             try:
