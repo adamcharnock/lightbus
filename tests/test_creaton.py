@@ -41,7 +41,7 @@ def test_import_bus_module_contains_bus_but_wrong_type(make_test_bus_module):
     with pytest.raises(FailedToImportBusModule) as e:
         import_bus_module(bus_module_name)
 
-    assert "invalid value" in str(e).lower()
+    assert "invalid value" in str(e.value).lower()
     assert "int" in str(e.value).lower()
 
 

@@ -471,3 +471,7 @@ def check_for_dangling_threads():
     dangling_threads = threads_after - threads_before
     names = [t.name for t in dangling_threads if "ThreadPoolExecutor" not in t.name]
     assert not names, f"Some threads were left dangling: {', '.join(names)}"
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "also_run_in_child_thread: Used internally")

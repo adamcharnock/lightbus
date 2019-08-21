@@ -162,7 +162,7 @@ def test_commands_run_env(run_lightbus_command, redis_config_file, make_test_bus
     )
 
 
-def test_commands_shell():
+def test_commands_shell(run_lightbus_command):
     run_lightbus_command("shell")
 
 
