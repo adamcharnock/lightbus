@@ -31,7 +31,7 @@ async def test_random_failures(
         await asyncio.sleep(0.03)
 
     # Put a lot of events onto the bus (we'll pull them off shortly)
-    await bus.client.register_api_async(dummy_api)
+    bus.client.register_api(dummy_api)
     for n in range(0, 100):
         await bus.my.dummy.my_event.fire_async(field=str(n))
 

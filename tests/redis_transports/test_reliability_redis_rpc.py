@@ -31,7 +31,7 @@ async def test_many_calls_and_clients(bus: lightbus.path.BusPath, new_bus, caplo
     server_buses = [await new_bus() for n in range(0, 10)]
 
     for server_bus in server_buses:
-        server_bus.client.register_api_async(dummy_api)
+        server_bus.client.register_api(dummy_api)
         await server_bus.client.consume_rpcs(apis=[dummy_api])
 
     # Perform a lot of calls in parallel
@@ -64,7 +64,7 @@ async def test_timeouts(bus: lightbus.path.BusPath, new_bus, caplog, dummy_api, 
     server_buses = [await new_bus() for n in range(0, 20)]
 
     for server_bus in server_buses:
-        server_bus.client.register_api_async(dummy_api)
+        server_bus.client.register_api(dummy_api)
         await server_bus.client.consume_rpcs(apis=[dummy_api])
 
     # Perform a lot of calls in parallel

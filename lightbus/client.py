@@ -921,9 +921,6 @@ class BusClient(object):
     # API registration
 
     def register_api(self, api: Api):
-        block(self.register_api_async(api), timeout=5)
-
-    async def register_api_async(self, api: Api):
         self.api_registry.add(api)
 
 

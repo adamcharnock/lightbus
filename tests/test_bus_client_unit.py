@@ -37,14 +37,14 @@ async def test_fire_event_api_doesnt_exist(dummy_bus: lightbus.path.BusPath):
 
 @pytest.mark.asyncio
 async def test_fire_event_event_doesnt_exist(dummy_bus: lightbus.path.BusPath, dummy_api):
-    await dummy_bus.client.register_api_async(dummy_api)
+    dummy_bus.client.register_api(dummy_api)
     with pytest.raises(EventNotFound):
         await dummy_bus.client.fire_event("my.dummy", "bad_event")
 
 
 @pytest.mark.asyncio
 async def test_fire_event_bad_event_arguments(dummy_bus: lightbus.path.BusPath, dummy_api):
-    await dummy_bus.client.register_api_async(dummy_api)
+    dummy_bus.client.register_api(dummy_api)
     with pytest.raises(InvalidEventArguments):
         await dummy_bus.client.fire_event("my.dummy", "my_event", kwargs={"bad_arg": "value"})
 
@@ -104,7 +104,7 @@ async def test_listen_for_event_starts_with_underscore(dummy_bus: lightbus.path.
 
 @pytest.mark.asyncio
 async def test_fire_event_starts_with_underscore(dummy_bus: lightbus.path.BusPath, dummy_api):
-    await dummy_bus.client.register_api_async(dummy_api)
+    dummy_bus.client.register_api(dummy_api)
     with pytest.raises(InvalidName):
         await dummy_bus.client.fire_event("my.dummy", "_my_event")
 
@@ -117,7 +117,7 @@ async def test_call_rpc_remote_starts_with_underscore(dummy_bus: lightbus.path.B
 
 @pytest.mark.asyncio
 async def test_call_rpc_local_starts_with_underscore(dummy_bus: lightbus.path.BusPath, dummy_api):
-    await dummy_bus.client.register_api_async(dummy_api)
+    dummy_bus.client.register_api(dummy_api)
     with pytest.raises(InvalidName):
         await dummy_bus.client.call_rpc_local("my.dummy", "_my_event")
 
@@ -133,7 +133,7 @@ async def test_consume_rpcs_with_transport_error(
         if e:
             raise e
 
-    await dummy_bus.client.register_api_async(dummy_api)
+    dummy_bus.client.register_api(dummy_api)
 
     mocker.patch.object(dummy_bus.client, "call_rpc_local", return_value=co(TestException()))
     fut = asyncio.Future()
@@ -170,7 +170,7 @@ async def test_listen_for_event_empty_name(dummy_bus: lightbus.path.BusPath):
 
 @pytest.mark.asyncio
 async def test_fire_event_empty_name(dummy_bus: lightbus.path.BusPath, dummy_api):
-    await dummy_bus.client.register_api_async(dummy_api)
+    dummy_bus.client.register_api(dummy_api)
     with pytest.raises(InvalidName):
         await dummy_bus.client.fire_event("my.dummy", "_my_event")
 
@@ -184,7 +184,7 @@ async def test_fire_event_version(dummy_bus: lightbus.path.BusPath, mocker):
             name = "versioned_api"
             version = 5
 
-    await dummy_bus.client.register_api_async(ApiWithVersion())
+    dummy_bus.client.register_api(ApiWithVersion())
 
     send_event_spy = mocker.spy(
         dummy_bus.client.transport_registry.get_event_transport("versioned_api"), "send_event"
@@ -204,7 +204,7 @@ async def test_call_rpc_remote_empty_name(dummy_bus: lightbus.path.BusPath):
 
 @pytest.mark.asyncio
 async def test_call_rpc_local_empty_name(dummy_bus: lightbus.path.BusPath, dummy_api):
-    await dummy_bus.client.register_api_async(dummy_api)
+    dummy_bus.client.register_api(dummy_api)
     with pytest.raises(InvalidName):
         await dummy_bus.client.call_rpc_local("my.dummy", "_my_event")
 

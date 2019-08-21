@@ -56,7 +56,7 @@ async def test_rpc_execution(
     called_hooks, dummy_bus: BusPath, loop, mocker, add_base_plugin, dummy_api
 ):
     add_base_plugin()
-    await dummy_bus.client.register_api_async(dummy_api)
+    dummy_bus.client.register_api(dummy_api)
 
     async def dummy_transport_consume_rpcs(*args, **kwargs):
         if m.call_count == 1:
@@ -87,7 +87,7 @@ def test_event_sent(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dum
 @pytest.mark.asyncio
 async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
-    await dummy_bus.client.register_api_async(dummy_api)
+    dummy_bus.client.register_api(dummy_api)
 
     await dummy_bus.client.listen_for_event(
         "my.dummy", "my_event", lambda *a, **kw: None, listener_name="test"

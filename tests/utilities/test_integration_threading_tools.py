@@ -15,7 +15,7 @@ pytestmark = pytest.mark.integration
 @pytest.mark.asyncio
 async def test_run_in_worker_thread_in_child_thread(dummy_bus: BusPath, mocker):
     def in_thread():
-        dummy_bus.foo.bar.listen(lambda x: None, listener_name="foo")
+        dummy_bus.foo.bar.fire_event(api_name="foo", name="bar")
 
     mocker.spy(dummy_bus.client.worker._call_queue.sync_q, "put")
 
