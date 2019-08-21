@@ -244,7 +244,7 @@ class BusClient(object):
     def loop(self):
         return get_event_loop()
 
-    def run_forever(self, *, consume_rpcs=True):
+    def run_forever(self):
         self.start_server()
 
         self._actually_run_forever()
@@ -267,7 +267,7 @@ class BusClient(object):
             self._server_shutdown_queue.sync_q.put(exit_code)
 
     @assert_not_in_worker_thread()
-    def start_server(self, consume_rpcs=True):
+    def start_server(self):
         """Server startup procedure
 
         Must be called from within the main thread
@@ -291,21 +291,20 @@ class BusClient(object):
         block(self._start_server_inner())
 
     @run_in_worker_thread()
-    async def _start_server_inner(self, consume_rpcs=True):
+    async def _start_server_inner(self):
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())
 
-        if consume_rpcs:
-            logger.info(
-                LBullets(
-                    "APIs in registry ({})".format(len(self.api_registry.all())),
-                    items=self.api_registry.names(),
-                )
+        logger.info(
+            LBullets(
+                "APIs in registry ({})".format(len(self.api_registry.all())),
+                items=self.api_registry.names(),
             )
+        )
 
         # Setup RPC consumption
         consume_rpc_task = None
-        if consume_rpcs and self.api_registry.all():
+        if self.api_registry.all():
             consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
             consume_rpc_task.add_done_callback(make_exception_checker(self, die=True))
 

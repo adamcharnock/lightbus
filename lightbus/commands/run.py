@@ -77,10 +77,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
 
         try:
             block(plugin_registry.execute_hook("receive_args", args=args), timeout=5)
-            if args.events_only:
-                bus.client.run_forever(consume_rpcs=False)
-            else:
-                bus.client.run_forever()
+            bus.client.run_forever()
 
         finally:
             # Cleanup signal handlers

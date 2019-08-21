@@ -132,8 +132,8 @@ class BusPath(object):
                 yield parent
             parent = parent.parent
 
-    def xrun_forever(self, consume_rpcs=True):
-        self.client.run_forever(consume_rpcs=consume_rpcs)
+    def run_forever(self):
+        self.client.run_forever()
 
     @property
     def api_name(self):
