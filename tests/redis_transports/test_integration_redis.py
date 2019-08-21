@@ -23,7 +23,7 @@ stream_use_test_data = [StreamUse.PER_EVENT, StreamUse.PER_API]
 @pytest.mark.asyncio
 @pytest.mark.timeout(5)
 @pytest.mark.also_run_in_child_thread
-async def test_rpc(bus: lightbus.path.BusPath, dummy_api, thread):
+async def test_rpc(bus: lightbus.path.BusPath, dummy_api):
     """Full rpc call integration test"""
     await bus.client.register_api_async(dummy_api)
 
