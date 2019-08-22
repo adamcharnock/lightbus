@@ -1,11 +1,9 @@
 import sys
 import asyncio
-import inspect
 import logging
 import threading
 from contextlib import contextmanager
 from functools import partial
-from inspect import isawaitable
 from time import time
 from typing import Coroutine
 from datetime import timedelta, datetime
@@ -23,14 +21,6 @@ from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 logger = logging.getLogger(__name__)
 
 PYTHON_VERSION = tuple(sys.version_info)
-
-
-def all_tasks():
-    if sys.version_info < (3, 7):
-        # Python 3.6 comparability
-        return asyncio.Task.all_tasks()
-    else:
-        return asyncio.all_tasks()
 
 
 def block(coroutine: Coroutine, loop=None, *, timeout=None):

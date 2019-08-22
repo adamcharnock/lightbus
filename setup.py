@@ -21,7 +21,7 @@ setup(
         "python-dateutil",
         "janus",
     ],
-    extras_require={':python_version=="3.6"': ["dataclasses==0.6"]},
+    python_requires=">=3.7",
     include_package_data=True,
     entry_points={
         "console_scripts": ["lightbus = lightbus.commands:lightbus_entry_point"],

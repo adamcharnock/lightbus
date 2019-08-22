@@ -227,7 +227,7 @@ def home():
 This reads the JSON data that was written by the event listener in `dashboard/bus.py` above,
 then render it to HTML.
 
-## 3.6. Run it!
+## 3.7. Run it!
 
 You should now have the following python files:
 

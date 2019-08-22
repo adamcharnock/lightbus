@@ -3,7 +3,7 @@
 Before continuing, ensure you have completed the following steps detailed in
 the [installation section](/tutorial/installation.md):
 
-* Installed Python 3.6 or above
+* Installed Python 3.7 or above
 * Installed Lightbus
 * Running Redis 5 locally on the default port (6379)
 

@@ -59,7 +59,6 @@ from lightbus.utilities.async_tools import (
     call_every,
     call_on_schedule,
     run_user_provided_callable,
-    all_tasks,
 )
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
@@ -238,7 +237,9 @@ class BusClient(object):
         if self._closed:
             raise BusAlreadyClosed()
 
-        listener_tasks = [task for task in all_tasks() if getattr(task, "is_listener", False)]
+        listener_tasks = [
+            task for task in asyncio.all_tasks() if getattr(task, "is_listener", False)
+        ]
 
         for task in chain(listener_tasks, self._background_tasks):
             try:
