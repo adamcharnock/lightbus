@@ -4,14 +4,12 @@ workflows:
   version: 2
   tests:
     jobs:
-      - test-36
       - test-37
     # Disabling 3.8 until either psycopg2 has a binary for it,
     # or until we remove the need for psycopg2 in testing
     #  - test-38
       - combine_coverage_reports:
           requires:
-            - test-36
             - test-37
 #            - test-38
 
