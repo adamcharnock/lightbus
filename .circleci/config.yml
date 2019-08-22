@@ -5,13 +5,11 @@ workflows:
   tests:
     jobs:
       - test-37
-    # Disabling 3.8 until either psycopg2 has a binary for it,
-    # or until we remove the need for psycopg2 in testing
-    #  - test-38
+      - test-38
       - combine_coverage_reports:
           requires:
             - test-37
-#            - test-38
+            - test-38
 
   build_and_deploy_docs:
     jobs:
@@ -64,7 +62,7 @@ jobs:
   test-38:
     <<: *test-template
     docker:
-      - image: circleci/python:3.8-rc
+      - image: circleci/python:3.8.0b3
         environment:
           PIPENV_VENV_IN_PROJECT: true
       - image: postgres:9.6.2
