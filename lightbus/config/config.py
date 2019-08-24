@@ -2,6 +2,7 @@ import json as jsonlib
 import os
 from pathlib import Path
 from typing import Dict, NamedTuple
+import urllib.request
 
 import jsonschema
 import yaml as yamllib
@@ -52,19 +53,27 @@ class Config(object):
         return getattr(self._config.plugins, plugin_name)
 
     @classmethod
-    def load_file(cls, file_path):
+    def load_file(cls, file_path: str):
         """Instantiate the config from the given file path
 
         Files ending in `.json` will be parsed as JSON, otherwise the
         file will be parsed as YAML.
         """
-        file_path = Path(file_path)
-        encoded_config = file_path.read_text(encoding="utf8")
-
-        if file_path.name.endswith(".json"):
-            return cls.load_json(encoded_config)
+        if file_path.startswith("http://") or file_path.startswith("https://"):
+            response = urllib.request.urlopen(file_path, timeout=5)
+            encoded_config = response.read()
+            if "json" in response.headers.get("Content-Type") or file_path.endswith(".json"):
+                return cls.load_json(encoded_config)
+            else:
+                return cls.load_yaml(encoded_config)
         else:
-            return cls.load_yaml(encoded_config)
+            file_path = Path(file_path)
+            encoded_config = file_path.read_text(encoding="utf8")
+
+            if file_path.name.endswith(".json"):
+                return cls.load_json(encoded_config)
+            else:
+                return cls.load_yaml(encoded_config)
 
     @classmethod
     def load_json(cls, json: str):

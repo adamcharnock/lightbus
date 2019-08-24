@@ -57,7 +57,8 @@ bus = lightbus.create(
     # Will be replaced 4 random characters. Default
     process_name='{random4}',
 
-    # Path to the global bus config
+    # Path to the global bus config. 
+    # Can be .yaml or .json, and http(s) URLs are supported.
     config='/path/to/lightbus.yaml',
     
     # Features to enable. Default is to enable all features.
@@ -73,7 +74,7 @@ environment variables or command line arguments:
 | -------------------- | ----------------------- | --------------------- | - | 
 | Service name         | `LIGHTBUS_SERVICE_NAME` | `--service-name`      | See [service name explanation] | 
 | Process name         | `LIGHTBUS_PROCESS_NAME` | `--process-name`      | See [process name explanation] | 
-| Configuration path   | `LIGHTBUS_CONFIG`       | `--config`            | Path to global configuration yaml/json file. See [global bus configuration]. | 
+| Configuration path   | `LIGHTBUS_CONFIG`       | `--config`            | Path or URL to global configuration yaml/json file. See [global bus configuration]. | 
 | Features             | `LIGHTBUS_FEATURES`     | `--only`, `--skip`    | Features to enable/disable. Comma separated list of `rpcs`, `events`, `tasks` | 
 
 
@@ -101,9 +102,10 @@ service & process names affect event delivery.
 
 The global bus configuration specifies the bus' overall architecture.
 This takes the form of a YAML or JSON file. This file is typically
-shared by all lightbus clients.
+shared by all lightbus clients and can be specified as a path on 
+disk, or as a HTTP(S) URL.
 
-A basic default configuration is as follows:
+A basic default configuration file is as follows:
 
 ```yaml
 # Root config

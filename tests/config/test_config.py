@@ -1,4 +1,6 @@
 import json
+from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -100,10 +102,57 @@ def test_default_config():
     assert config.bus().schema.transport.redis
 
 
-def test_load_bus_config(tmp_file):
-    tmp_file.write("bus: { log_level: warning }")
-    tmp_file.flush()
-    config = Config.load_file(tmp_file.name)
+def test_load_bus_config_file_json(tmp_directory: Path):
+    config_file = tmp_directory / "config.json"
+    with config_file.open(mode="w") as f:
+        f.write(EXAMPLE_VALID_JSON)
+
+    config = Config.load_file(str(config_file))
+    assert config.bus().log_level == LogLevelEnum.WARNING
+
+
+def test_load_bus_config_file_yaml(tmp_directory: Path):
+    config_file = tmp_directory / "config.yaml"
+    with config_file.open(mode="w") as f:
+        f.write(EXAMPLE_VALID_YAML)
+
+    config = Config.load_file(str(config_file))
+    assert config.bus().log_level == LogLevelEnum.WARNING
+
+
+@patch("urllib.request.urlopen")
+def test_load_bus_config_url_json(mock_urlopen, tmp_directory: Path):
+    response = MagicMock()
+    response.getcode.return_value = 200
+    response.read.return_value = EXAMPLE_VALID_JSON
+    response.headers = {"Content-Type": "application/json"}
+    mock_urlopen.return_value = response
+
+    config = Config.load_file("http://999.999.999.999/config")
+    assert config.bus().log_level == LogLevelEnum.WARNING
+
+
+@patch("urllib.request.urlopen")
+def test_load_bus_config_url_json_no_headers(mock_urlopen, tmp_directory: Path):
+    response = MagicMock()
+    response.getcode.return_value = 200
+    response.read.return_value = EXAMPLE_VALID_JSON
+    mock_urlopen.return_value = response
+
+    config = Config.load_file("http://999.999.999.999/config.json")
+    # Still works because the URL ends in .json
+    assert config.bus().log_level == LogLevelEnum.WARNING
+
+
+@patch("urllib.request.urlopen")
+def test_load_bus_config_url_yaml(mock_urlopen, tmp_directory: Path):
+    response = MagicMock()
+    response.getcode.return_value = 200
+    response.read.return_value = EXAMPLE_VALID_YAML
+    response.headers = {"Content-Type": "application/yaml"}
+    mock_urlopen.return_value = response
+
+    config = Config.load_file("http://999.999.999.999/config")
     assert config.bus().log_level == LogLevelEnum.WARNING
 
 
@@ -184,4 +233,28 @@ apis:
         event_transport:
             redis:
                 batch_size: 1
+"""
+
+EXAMPLE_VALID_JSON = """
+{
+    "bus": {
+        "log_level": "warning"
+    },
+    "apis": {
+        "default": {
+            "event_transport": {
+                "redis": {
+                    "batch_size": 50
+                }
+            }
+        },
+        "my.api": {
+            "event_transport": {
+                "redis": {
+                    "batch_size": 1
+                }
+            }
+        }
+    }
+}
 """
