@@ -113,6 +113,7 @@ class BusClient(object):
         self._closed = False
         self._server_tasks = []
         self.worker = ClientWorker()
+        self._lazy_load_complete = False
 
         self.worker.start(bus_client=self, after_shutdown=self._handle_worker_shutdown)
         self.__init_worker___()
@@ -187,20 +188,6 @@ class BusClient(object):
             )
         else:
             logger.info("No plugins loaded")
-
-        # Load schema
-        logger.debug("Loading schema...")
-        await self.schema.load_from_bus()
-
-        logger.info(
-            LBullets(
-                "Loaded the following remote schemas ({})".format(len(self.schema.remote_schemas)),
-                items=self.schema.remote_schemas.keys(),
-            )
-        )
-
-        for transport in self.transport_registry.get_all_transports():
-            await transport.open()
 
     def setup(self, plugins: dict = None):
         block(self.setup_async(plugins), timeout=5)
@@ -340,6 +327,10 @@ class BusClient(object):
         for api in self.api_registry.all():
             await self.schema.add_api(api)
 
+        # We're running as a server now (e.g. lightbus run), so
+        # do the lazy loading immediately
+        await self.lazy_load_now()
+
         # Setup schema monitoring
         monitor_task = asyncio.ensure_future(self.schema.monitor())
         monitor_task.add_done_callback(make_exception_checker(self, die=True))
@@ -390,10 +381,45 @@ class BusClient(object):
         """
         self.loop.run_forever()
 
+    @run_in_worker_thread()
+    async def lazy_load_now(self):
+        """Perform lazy tasks immediately
+
+        When lightbus is used as a client it performs network tasks
+        lazily. This speeds up import of your bus module, and prevents
+        getting surprising errors at import time.
+
+        However, in some cases you may wish to hurry up these lazy tasks
+        (or perform them at a known point). In which case you can call this
+        method to execute them immediately.
+        """
+        if self._lazy_load_complete:
+            return
+
+        # 1. Load the schema
+        logger.debug("Loading schema...")
+        await self.schema.ensure_loaded_from_bus()
+
+        logger.info(
+            LBullets(
+                "Loaded the following remote schemas ({})".format(len(self.schema.remote_schemas)),
+                items=self.schema.remote_schemas.keys(),
+            )
+        )
+
+        # 2. Open the transports
+        for transport in self.transport_registry.get_all_transports():
+            await transport.open()
+
+        # 3. Done
+        self._lazy_load_complete = True
+
     # RPCs
 
     @run_in_worker_thread()
     async def consume_rpcs(self, apis: List[Api] = None):
+        await self.lazy_load_now()
+
         if apis is None:
             apis = self.api_registry.all()
 
@@ -422,6 +448,8 @@ class BusClient(object):
     async def _consume_rpcs_with_transport(
         self, rpc_transport: RpcTransport, apis: List[Api] = None
     ):
+        await self.lazy_load_now()
+
         while True:
             try:
                 rpc_messages = await rpc_transport.consume_rpcs(apis, bus_client=self)
@@ -467,6 +495,8 @@ class BusClient(object):
     async def call_rpc_remote(
         self, api_name: str, name: str, kwargs: dict = frozendict(), options: dict = frozendict()
     ):
+        await self.lazy_load_now()
+
         rpc_transport = self.transport_registry.get_rpc_transport(api_name)
         result_transport = self.transport_registry.get_result_transport(api_name)
 
@@ -549,6 +579,8 @@ class BusClient(object):
 
     @run_in_worker_thread()
     async def call_rpc_local(self, api_name: str, name: str, kwargs: dict = frozendict()):
+        await self.lazy_load_now()
+
         api = self.api_registry.get(api_name)
         self._validate_name(api_name, "rpc", name)
 
@@ -588,6 +620,8 @@ class BusClient(object):
 
     @run_in_worker_thread()
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
+        await self.lazy_load_now()
+
         kwargs = kwargs or {}
         try:
             api = self.api_registry.get(api_name)
@@ -665,6 +699,7 @@ class BusClient(object):
 
     @run_in_worker_thread()
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
+        await self.lazy_load_now()
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
         return await result_transport.send_result(
             rpc_message, result_message, rpc_message.return_path, bus_client=self
@@ -672,6 +707,7 @@ class BusClient(object):
 
     @run_in_worker_thread()
     async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict):
+        await self.lazy_load_now()
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
         return await result_transport.receive_result(
             rpc_message, return_path, options, bus_client=self

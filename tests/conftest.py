@@ -140,8 +140,9 @@ def create_redis_client(_closable, redis_server_config, loop, request):
 
 
 @pytest.fixture
-def create_redis_pool(_closable, redis_server_config, loop):
+def create_redis_pool(_closable, redis_server_config, loop, redis_client):
     """Wrapper around aioredis.create_redis_pool."""
+    # We use the redis_client fixture to ensure that redis is flushed before each test
 
     async def f(*args, **kw):
         kwargs = {}

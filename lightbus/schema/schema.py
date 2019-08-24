@@ -3,7 +3,7 @@ import json
 import logging
 from json import JSONDecodeError
 from pathlib import Path
-from typing import Optional, TextIO, Union, ChainMap, List, Tuple
+from typing import Optional, TextIO, Union, ChainMap, List, Tuple, Dict
 import jsonschema
 
 import asyncio
@@ -18,6 +18,7 @@ from lightbus.exceptions import (
     InvalidSchema,
     SchemaNotFound,
     ValidationError,
+    RemoteSchemasNotLoaded,
 )
 from lightbus.schema.encoder import json_encode
 from lightbus.schema.hints_to_schema import (
@@ -65,7 +66,7 @@ class Schema(object):
         # Schemas which have been retrieved from the bus. This will also contain local
         # schemas which have been stored onto the bus. The storing and retrieving of
         # remote schemas is mediated by the schema transport.
-        self.remote_schemas = {}
+        self._remote_schemas: Optional[Dict[str, dict]] = None
 
     def __contains__(self, item):
         return item in self.local_schemas or item in self.remote_schemas
@@ -262,7 +263,32 @@ class Schema(object):
 
         This will be done using the `schema_transport` provided to `__init__()`
         """
-        self.remote_schemas = await self.schema_transport.load()
+        self._remote_schemas = await self.schema_transport.load()
+
+    async def ensure_loaded_from_bus(self):
+        if self._remote_schemas is None:
+            await self.load_from_bus()
+
+    @property
+    def remote_schemas(self) -> Dict[str, Dict]:
+        """Schemas which have been retrieved from the bus.
+
+        This will also contain local schemas which have been stored onto the bus. \
+        The storing and retrieving of remote schemas is mediated by the schema transport.
+
+        The returned value is a dictionary where keys are fully qualified API names,
+        and the values are JSON schemas
+        """
+        if self._remote_schemas is None:
+            import ipdb
+
+            ipdb.set_trace()
+            raise RemoteSchemasNotLoaded(
+                "The remote schemas have not yet been loaded. Lightbus should have ensured this was done "
+                "already, and therefore this is likely a bug. However, calling "
+                "bus.client.lazy_load_now() should resolve this."
+            )
+        return self._remote_schemas
 
     async def monitor(self, interval=None):
         """Monitor for remote schema changes and keep any local schemas alive on the bus

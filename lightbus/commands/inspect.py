@@ -96,6 +96,8 @@ class Command(LogLevelMixin, BusImportMixin, object):
         bus_module, bus = self.import_bus(args)
         api_names: List[str]
 
+        block(bus.client.lazy_load_now())
+
         # Locally registered APIs
         if args.internal or args.api:
             api_names = [api.meta.name for api in bus.client.api_registry.all()]

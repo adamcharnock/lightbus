@@ -61,6 +61,3 @@ async def bus_start(**kwargs):
 
     # Sets up django. We must do this before importing any models
     django.setup()
-
-    # TODO: Implement handler
-    bus.auth.user_registered.listen(handler_new_user, listener_name="print_on_new_registration")

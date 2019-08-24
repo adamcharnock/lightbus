@@ -12,7 +12,7 @@ import pytest
 
 logger = logging.getLogger(__name__)
 
-pytestmark = pytest.mark.unit
+pytestmark = pytest.mark.integration
 
 
 REDIS_BUS_CONFIG = """

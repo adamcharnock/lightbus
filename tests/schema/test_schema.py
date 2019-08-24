@@ -21,7 +21,6 @@ pytestmark = pytest.mark.unit
 
 
 def test_api_to_schema_event_long_form():
-
     class TestApi(Api):
         my_event = Event([Parameter("field", bool)])
 
@@ -42,7 +41,6 @@ def test_api_to_schema_event_long_form():
 
 
 def test_api_to_schema_event_short_form():
-
     class TestApi(Api):
         my_event = Event(["field"])
 
@@ -76,9 +74,7 @@ def test_api_to_schema_event_private():
 
 
 def test_api_to_schema_rpc():
-
     class TestApi(Api):
-
         def my_proc(self, field: bool = True) -> str:
             pass
 
@@ -106,7 +102,6 @@ def test_api_to_schema_rpc_private():
     """Methods starting with an underscore should be ignored"""
 
     class TestApi(Api):
-
         def _my_proc(self, field: bool = True) -> str:
             pass
 
@@ -118,9 +113,7 @@ def test_api_to_schema_rpc_private():
 
 
 def test_api_to_schema_class_not_instance():
-
     class TestApi(Api):
-
         class Meta:
             name = "my.test_api"
 
@@ -133,7 +126,6 @@ def test_api_to_schema_class_not_instance():
 
 @pytest.mark.asyncio
 async def test_add_api(loop, schema, redis_client):
-
     class TestApi(Api):
         my_event = Event(["field"])
 
@@ -189,7 +181,10 @@ async def test_monitor_load(loop, schema, redis_client):
     await cancel(monitor_task)
 
 
-def test_save_local_file_empty(tmp_file, schema):
+@pytest.mark.asyncio
+async def test_save_local_file_empty(tmp_file, schema):
+    await schema.load_from_bus()
+
     schema.save_local(tmp_file.name)
     tmp_file.seek(0)
     assert tmp_file.read() == "{}"
@@ -197,7 +192,6 @@ def test_save_local_file_empty(tmp_file, schema):
 
 @pytest.mark.asyncio
 async def test_save_local_file(tmp_file, schema):
-
     class TestApi(Api):
         my_event = Event(["field"])
 
@@ -205,6 +199,7 @@ async def test_save_local_file(tmp_file, schema):
             name = "my.test_api"
 
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
     schema.save_local(tmp_file.name)
     tmp_file.seek(0)
     written_schema = tmp_file.read()
@@ -223,13 +218,16 @@ async def test_save_local_file_remote_api(tmp_file, schema):
     assert "my.test_api" in json.loads(written_schema)
 
 
-def test_save_local_directory_empty(tmp_directory, schema):
+@pytest.mark.asyncio
+async def test_save_local_directory_empty(tmp_directory, schema):
+    await schema.load_from_bus()
     schema.save_local(tmp_directory)
     assert not os.listdir(tmp_directory)
 
 
 @pytest.mark.asyncio
 async def test_save_local_directory(tmp_directory, schema):
+    await schema.load_from_bus()
 
     class TestApi(Api):
         my_event = Event(["field"])
@@ -246,40 +244,53 @@ async def test_save_local_directory(tmp_directory, schema):
     assert "my.test_api" in json.loads(written_schema)
 
 
-def test_load_local_file_path(tmp_file, schema):
+@pytest.mark.asyncio
+async def test_load_local_file_path(tmp_file, schema):
     tmp_file.write('{"a": 1}')
     tmp_file.flush()
     schema.load_local(tmp_file.name)
     assert schema.local_schemas == {"a": 1}
+
+    await schema.load_from_bus()
     assert schema.remote_schemas == {}
 
 
-def test_load_local_file_handle(tmp_file, schema):
+@pytest.mark.asyncio
+async def test_load_local_file_handle(tmp_file, schema):
     tmp_file.write('{"a": 1}')
     tmp_file.flush()
     tmp_file.seek(0)
     schema.load_local(tmp_file)
     assert schema.local_schemas == {"a": 1}
+
+    await schema.load_from_bus()
     assert schema.remote_schemas == {}
 
 
-def test_load_local_directory(tmp_directory, schema):
+@pytest.mark.asyncio
+async def test_load_local_directory(tmp_directory, schema):
     (tmp_directory / "test1.json").write_text('{"a": 1}')
     (tmp_directory / "test2.json").write_text('{"b": 2}')
     schema.load_local(tmp_directory)
     assert schema.local_schemas == {"a": 1, "b": 2}
+
+    await schema.load_from_bus()
     assert schema.remote_schemas == {}
 
 
 @pytest.mark.asyncio
 async def test_get_event_schema_found(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     assert schema.get_event_schema("my.test_api", "my_event")
 
 
 @pytest.mark.asyncio
 async def test_get_event_schema_not_found(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     with pytest.raises(SchemaNotFound):
         schema.get_event_schema("my.test_api", "foo")
 
@@ -287,12 +298,16 @@ async def test_get_event_schema_not_found(schema, TestApi):
 @pytest.mark.asyncio
 async def test_get_rpc_schema_found(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     assert schema.get_rpc_schema("my.test_api", "my_proc")
 
 
 @pytest.mark.asyncio
 async def test_get_rpc_schema_not_found(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     with pytest.raises(SchemaNotFound):
         schema.get_rpc_schema("my.test_api", "foo")
 
@@ -300,12 +315,16 @@ async def test_get_rpc_schema_not_found(schema, TestApi):
 @pytest.mark.asyncio
 async def test_get_event_or_rpc_schema_event_found(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     assert schema.get_event_or_rpc_schema("my.test_api", "my_event")
 
 
 @pytest.mark.asyncio
 async def test_get_event_or_rpc_schema_event_not_found(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     with pytest.raises(SchemaNotFound):
         schema.get_event_or_rpc_schema("my.test_api", "foo")
 
@@ -313,12 +332,16 @@ async def test_get_event_or_rpc_schema_event_not_found(schema, TestApi):
 @pytest.mark.asyncio
 async def test_get_event_or_rpc_schema_rpc_found(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     assert schema.get_event_or_rpc_schema("my.test_api", "my_proc")
 
 
 @pytest.mark.asyncio
 async def test_get_event_or_rpc_schema_rpc_not_found(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     with pytest.raises(SchemaNotFound):
         schema.get_event_or_rpc_schema("my.test_api", "foo")
 
@@ -326,12 +349,16 @@ async def test_get_event_or_rpc_schema_rpc_not_found(schema, TestApi):
 @pytest.mark.asyncio
 async def test_validate_parameters_rpc_valid(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     schema.validate_parameters("my.test_api", "my_proc", {"field": True})
 
 
 @pytest.mark.asyncio
 async def test_validate_parameters_rpc_invalid(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     with pytest.raises(ValidationError):
         schema.validate_parameters("my.test_api", "my_proc", {"field": 123})
 
@@ -339,12 +366,16 @@ async def test_validate_parameters_rpc_invalid(schema, TestApi):
 @pytest.mark.asyncio
 async def test_validate_parameters_event_valid(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     schema.validate_parameters("my.test_api", "my_event", {"field": True})
 
 
 @pytest.mark.asyncio
 async def test_validate_parameters_event_invalid(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     with pytest.raises(ValidationError):
         schema.validate_parameters("my.test_api", "my_event", {"field": 123})
 
@@ -352,12 +383,16 @@ async def test_validate_parameters_event_invalid(schema, TestApi):
 @pytest.mark.asyncio
 async def test_validate_response_valid(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     schema.validate_response("my.test_api", "my_proc", "string")
 
 
 @pytest.mark.asyncio
 async def test_validate_response_invalid(schema, TestApi):
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     with pytest.raises(ValidationError):
         schema.validate_response("my.test_api", "my_proc", 123)
 
@@ -369,6 +404,8 @@ async def test_validate_response_invalid(schema, TestApi):
 async def test_parameter_validation_error_parameter_mismatch(schema, TestApi):
     # Test omitted parameter / unexpected parameter message
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     with pytest.raises(ValidationError) as ex_info:
         schema.validate_parameters("my.test_api", "my_event", {"abc": "xyz"})
 
@@ -381,6 +418,8 @@ async def test_parameter_validation_error_parameter_mismatch(schema, TestApi):
 async def test_parameter_validation_error_bad_value(schema, TestApi):
     # Test incorrect value message
     await schema.add_api(TestApi())
+    await schema.load_from_bus()
+
     # field should be a bool
     with pytest.raises(ValidationError) as ex_info:
         schema.validate_parameters("my.test_api", "my_event", {"field": "xyz"})
@@ -405,6 +444,8 @@ async def test_parameter_validation_error_bad_structure(schema):
             name = "my.user_api"
 
     await schema.add_api(UserApi())
+    await schema.load_from_bus()
+
     # field should be a bool
     with pytest.raises(ValidationError) as ex_info:
         schema.validate_parameters(
@@ -436,7 +477,6 @@ async def test_parameter_validation_error_structure(schema, TestApi):
         address: Address
 
     class UserApi(Api):
-
         class Meta:
             name = "my.user_api"
 
@@ -444,6 +484,8 @@ async def test_parameter_validation_error_structure(schema, TestApi):
             pass
 
     await schema.add_api(UserApi())
+    await schema.load_from_bus()
+
     with pytest.raises(ValidationError) as ex_info:
         schema.validate_response("my.user_api", "my_proc", {"address": {"line_1": True}})
 
@@ -453,25 +495,22 @@ async def test_parameter_validation_error_structure(schema, TestApi):
 
 @pytest.mark.asyncio
 async def test_api_names(tmp_file, schema):
-
     class TestApi1(Api):
-
         class Meta:
             name = "my.test_api1"
 
     class TestApi2(Api):
-
         class Meta:
             name = "my.test_api2"
 
     await schema.add_api(TestApi1())
     await schema.add_api(TestApi2())
+    await schema.load_from_bus()
     assert set(schema.api_names) == {"my.test_api1", "my.test_api2"}
 
 
 @pytest.mark.asyncio
 async def test_events(tmp_file, schema):
-
     class TestApi1(Api):
         my_event_a = Event(["field"])
         my_event_b = Event(["field"])
@@ -487,6 +526,7 @@ async def test_events(tmp_file, schema):
 
     await schema.add_api(TestApi1())
     await schema.add_api(TestApi2())
+    await schema.load_from_bus()
     assert set(schema.events) == {
         ("my.test_api1", "my_event_a"),
         ("my.test_api1", "my_event_b"),
@@ -496,9 +536,7 @@ async def test_events(tmp_file, schema):
 
 @pytest.mark.asyncio
 async def test_rpcs(tmp_file, schema):
-
     class TestApi1(Api):
-
         class Meta:
             name = "my.test_api1"
 
@@ -509,7 +547,6 @@ async def test_rpcs(tmp_file, schema):
             pass
 
     class TestApi2(Api):
-
         class Meta:
             name = "my.test_api2"
 
@@ -518,6 +555,7 @@ async def test_rpcs(tmp_file, schema):
 
     await schema.add_api(TestApi1())
     await schema.add_api(TestApi2())
+    await schema.load_from_bus()
     assert set(schema.rpcs) == {
         ("my.test_api1", "rpc_a"),
         ("my.test_api1", "rpc_b"),

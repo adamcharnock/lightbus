@@ -198,3 +198,7 @@ class BusAlreadyClosed(LightbusException):
 
 class LightbusServerMustStartInMainThread(LightbusException):
     pass
+
+
+class RemoteSchemasNotLoaded(LightbusException):
+    pass

@@ -5,6 +5,7 @@ import pytest
 from aioredis import create_redis_pool
 
 import lightbus
+from lightbus import BusPath
 
 pytestmark = pytest.mark.reliability
 
@@ -18,7 +19,10 @@ async def test_redis_connections_closed(redis_client, loop, new_bus, caplog):
     assert int(info["clients"]["connected_clients"]) == 1  # This connection
 
     # Open and close the bus
-    bus = await new_bus()
+    bus: BusPath = await new_bus()
+    assert int(info["clients"]["connected_clients"]) == 1
+
+    await bus.client.lazy_load_now()
 
     info = await redis_client.info()
     assert int(info["clients"]["connected_clients"]) > 1

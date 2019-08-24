@@ -239,6 +239,8 @@ def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
         # Use the base transport as a dummy, it only needs to have a
         # close() method on it in order to keep the client.close() method happy
         schema = Schema(schema_transport=lightbus.Transport())
+        # Fake loading of remote schemas from schema transport
+        schema._remote_schemas = {}
         config = Config.load_dict(
             {"apis": {"default": {"validate": validate, "strict_validation": strict_validation}}}
         )
@@ -253,6 +255,7 @@ def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
         ),
         dummy_bus.client.schema = schema
         dummy_bus.client.config = config
+
         return dummy_bus.client
 
     return create_bus_client_with_unhappy_schema
@@ -359,6 +362,9 @@ def test_setup_transports_opened(mocker):
 
     bus = lightbus.creation.create(transport_registry=transport_registry, plugins=[])
     try:
+        assert m.call_count == 0
+
+        bus.client.lazy_load_now()
         assert m.call_count == 1
     finally:
         bus.client.close()
