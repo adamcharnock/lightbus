@@ -1,3 +1,9 @@
 # Schema protocol (Redis)
 
-TBA
+## Storing schemas
+
+
+## Loading schemas
+
+
+## Schema format

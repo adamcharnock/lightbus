@@ -73,11 +73,11 @@ See also: [data marshalling]
 
 Within the Redis RPC transports all messages are serialised into a single 
 value. This value is referred to as a 'blob'. This serialisation is 
-formed by the `BlobMessageSerializer` and `BlobMessageDeserializer` classes.
+performed by the `BlobMessageSerializer` and `BlobMessageDeserializer` classes.
 
 #### RPC Message
 
-This is an outgoing RPC message. I.e. a request that an RPC be executed and a response be
+This is an outgoing RPC message body. This RPC message represents a request that an RPC be executed and a response be
 returned.
 
 ```python3
@@ -126,15 +126,7 @@ This is the response message indicating an RPC has been
 }
 ```
 
-#### Customisation
-
-This blob serialization format is customisable within the Lightbus configuration. 
-You are welcome to use something custom here, but be aware that:
-
-* A single API must have a single format for all RPC messages
-* All clients accessing the bus must be configured to use the same custom format
-
-### Encoding  
+### Encoding & Customisation
 
 See also: [data marshalling]
 
@@ -145,13 +137,17 @@ as this encoding.
 This encoding is customisable within the Lightbus configuration. You are welcome to use 
 something custom here, but be aware that:
 
-* A single API must have a single encoding for all RPC messages
+* A single API must have a single encoding for all RPCs on that API
 * All clients accessing the bus must be configured to use the same custom encoding
 
 ## Data validation
 
-Validation of parameters and results can optionally be performed using the schema 
-available through the [schema protocol].
+Validation of outgoing parameters and incoming results is optional. However, 
+validation of outgoing parameters is recommended as sending of RPC messages which fail validation may 
+result in the message being rejected by the Lightbus server.  
+
+This validation can be 
+performed using the using the schema available through the [schema protocol].
 
 ## Data deformation & casting
 

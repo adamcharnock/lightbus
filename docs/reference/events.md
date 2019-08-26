@@ -13,7 +13,7 @@ your event handlers should be [idempotent].
 
 ## Defining events
 
-You can define events using the `lightbus.Event` class. For example,
+You can define events using the `Event` class. For example,
 you could define the following bus.py in your authenication service:
 
 ```python3
@@ -65,7 +65,7 @@ Listening for events is typically a long-running background
 activity, and is therefore dealt with by the `lightbus run`
 command.
 
-You can setup these listeners in another services' `bus` module
+You can setup event listeners in your services' `bus` module
 as follows:
 
 ```python3
@@ -110,28 +110,9 @@ def on_start():
 
 ```
 
-Specifying `listener_name` for each listener ensures each
-listener will receive its own copy of the `auth.user_deleted` event.
+Specifying `listener_name` is required in order to ensure 
+each listeners receives all events it is due.
 See the [events explanation page] for further discussion.
-
-## Listening for events (asynchronously)
-
-Event listener setup shown above should normally happen very quickly,
-however the process does still require some input/output.
-
-You can therefore modify the above example to setup an event
-listener asynchronously using the `list_async()` method:
-
-```python3
-# ...snipped from above example
-
-@bus.client.on_start()
-def on_start():
-    bus.auth.user_created.listen(
-        handle_created,
-        listener_name="user_created"
-    )
-```
 
 ## Type hints
 
