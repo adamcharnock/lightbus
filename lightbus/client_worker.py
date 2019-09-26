@@ -2,13 +2,20 @@ import asyncio
 import inspect
 import logging
 import queue
+import sys
 import threading
+import traceback
 from functools import partial
 
 import janus
 from typing import Callable
 
-from lightbus.exceptions import MustRunInBusThread, MustNotRunInBusThread
+from lightbus.exceptions import (
+    MustRunInBusThread,
+    MustNotRunInBusThread,
+    WorkerDeadlock,
+    WorkerNotReady,
+)
 from lightbus.utilities.async_tools import make_exception_checker, block, cancel
 
 logger = logging.getLogger(__name__)
@@ -31,6 +38,9 @@ def run_in_worker_thread(worker=None):
         return_awaitable = asyncio.iscoroutinefunction(fn)
 
         def wrapper(*args, **kwargs):
+            nonlocal wrapper
+            current_frame = inspect.currentframe()
+
             worker_ = worker or _get_worker_from_function_args(*args, **kwargs)
             worker_thread = worker_._thread
             if threading.current_thread() == worker_thread:
@@ -41,8 +51,7 @@ def run_in_worker_thread(worker=None):
             )
 
             if not worker_._ready.is_set():
-                # TODO: Improve exception
-                raise Exception(
+                raise WorkerNotReady(
                     f"The worker thread {worker_thread.name} is not ready to accept calls. Either it "
                     f"has not yet started, or it has been shutdown. "
                     f"The called function was {fn.__module__}.{fn.__name__}. "
@@ -51,18 +60,32 @@ def run_in_worker_thread(worker=None):
                 )
 
             if worker_._call_queue.sync_q.unfinished_tasks:
-                # TODO: Improve exception
-                raise Exception(
+                unfinished_traceback = traceback.format_list(
+                    traceback.extract_stack(f=worker_._current_frame, limit=5)[:-1]
+                )
+
+                if hasattr(wrapper, "_parent_stack"):
+                    new_stack = wrapper._parent_stack
+                else:
+                    new_stack = traceback.extract_stack(f=current_frame, limit=5)
+                new_traceback = traceback.format_list(new_stack)
+
+                raise WorkerDeadlock(
                     f"Deadlock detected: Calling {fn.__module__}.{fn.__name__} requires use of the Lightbus "
                     f"client worker thread. However, that thread is already busy handling the call which got "
-                    f"us here in the first place. Enable --log-level=debug to see the offending call."
+                    f"us here in the first place.\n"
+                    f"\n"
+                    f"The thread was busy handling a call at:\n"
+                    f"{''.join(unfinished_traceback)}\n"
+                    f"The blocked incoming call originated at:\n\n"
+                    f"{''.join(new_traceback)}\n"
                 )
 
             # We'll provide a queue as the return path for results
             result_queue = queue.Queue()
 
             # Enqueue the function, it's arguments, and our return path queue
-            worker_._call_queue.sync_q.put((fn, args, kwargs, result_queue))
+            worker_._call_queue.sync_q.put((fn, args, kwargs, current_frame, result_queue))
 
             # Wait for a return value on the result queue
             logger.debug("Awaiting execution completion")
@@ -99,6 +122,10 @@ def run_in_worker_thread(worker=None):
                 return future
             else:
                 return result
+
+        # Indicates to run_user_provided_callable() that a stack trace can be attached
+        # to this callable. This is useful for error reporting
+        wrapper._parent_stack = None
 
         return wrapper
 
@@ -189,6 +216,7 @@ class ClientWorker(object):
         self._worker_shutdown_queue = None
         self._thread = None
         self._ready = threading.Event()
+        self._current_frame = None
 
     def start(self, bus_client, after_shutdown: Callable = None):
         # TODO: Remove need for bus_client as an argument here
@@ -306,7 +334,9 @@ class ClientWorker(object):
         while True:
             # Wait for calls
             logger.debug("Awaiting calls on the call queue")
-            fn, args, kwargs, result_queue = await self._call_queue.async_q.get()
+            fn, args, kwargs, current_frame, result_queue = await self._call_queue.async_q.get()
+
+            self._current_frame = current_frame
 
             # Execute call
             logger.debug(f"Call to {fn.__name__} received, executing")
@@ -322,6 +352,7 @@ class ClientWorker(object):
                 # Acknowledge the completion
                 logger.debug("Call executed, marking as done")
                 self._call_queue.async_q.task_done()
+                self._current_frame = None
 
             # Put the result in the result queue
             logger.debug(f"Returning result {result}")

@@ -1,7 +1,9 @@
+import inspect
 import sys
 import asyncio
 import logging
 import threading
+import traceback
 from contextlib import contextmanager
 from functools import partial
 from time import time
@@ -146,6 +148,10 @@ async def run_user_provided_callable(
     """
     if asyncio.iscoroutinefunction(callable):
         return await callable(*args, **kwargs)
+
+    # Used to provide helpful output in case of deadlock in client worker
+    if hasattr(callable, "_parent_stack"):
+        callable._parent_stack = traceback.extract_stack(limit=5)[:-1]
 
     with exception_handling_context(bus_client, die=die_on_exception):
         future = asyncio.get_event_loop().run_in_executor(

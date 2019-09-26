@@ -11,6 +11,7 @@ import lightbus
 import lightbus.creation
 import lightbus.path
 from lightbus import Schema, RpcMessage, ResultMessage, EventMessage, BusClient
+from lightbus.client_worker import run_in_worker_thread
 from lightbus.config import Config
 from lightbus.config.structure import OnError
 from lightbus.exceptions import (
@@ -22,9 +23,10 @@ from lightbus.exceptions import (
     InvalidName,
     ValidationError,
     SuddenDeathException,
+    WorkerDeadlock,
 )
 from lightbus.transports.base import TransportRegistry
-from lightbus.utilities.async_tools import cancel
+from lightbus.utilities.async_tools import cancel, run_user_provided_callable
 
 pytestmark = pytest.mark.unit
 
@@ -582,3 +584,21 @@ async def test_server_shutdown(dummy_bus: lightbus.path.BusPath, caplog):
     ), "Bus worker thread is still running but should have stopped"
     # Make sure will pull out any exceptions
     dummy_bus.client.worker._thread.join()
+
+
+@pytest.mark.asyncio
+async def test_worker_deadlock(dummy_bus: lightbus.path.BusPath):
+    @run_in_worker_thread(worker=dummy_bus.client.worker)
+    async def fun1():
+        print("fun1")
+
+    @run_in_worker_thread(worker=dummy_bus.client.worker)
+    async def fun2():
+        await run_user_provided_callable(fun1, args=[], kwargs={}, bus_client=dummy_bus.client)
+
+    with pytest.raises(WorkerDeadlock) as exc_info:
+        await fun2()
+
+    # Check we have the stack trace for both calls printed out
+    assert "await fun2()" in str(exc_info.value)
+    assert "run_user_provided_callable(fun1" in str(exc_info.value)
