@@ -256,6 +256,17 @@ async def test_load_local_file_path(tmp_file, schema):
 
 
 @pytest.mark.asyncio
+async def test_load_local_file_path_pathlib(tmp_file, schema):
+    tmp_file.write('{"a": 1}')
+    tmp_file.flush()
+    schema.load_local(Path(tmp_file.name))
+    assert schema.local_schemas == {"a": 1}
+
+    await schema.load_from_bus()
+    assert schema.remote_schemas == {}
+
+
+@pytest.mark.asyncio
 async def test_load_local_file_handle(tmp_file, schema):
     tmp_file.write('{"a": 1}')
     tmp_file.flush()
