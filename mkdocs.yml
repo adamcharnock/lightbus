@@ -68,12 +68,12 @@ pages:
     - Remote procedure calls: reference/rpcs.md
     - Events: reference/events.md
     - Typing: reference/typing.md
-    - Transports*: reference/transports.md
     - Configuration: reference/configuration.md
     - Schema: reference/schema.md
     - Command line use*: reference/command-line-use.md
     - Debugging*: reference/debugging.md
     - Plugins*: reference/plugins.md
+    - Transports*: reference/transports.md
     - RPC Prococol (Redis): reference/rpc-protocol.md
     - Event Prococol (Redis)*: reference/event-protocol.md
     - Schema Prococol (Redis)*: reference/schema-protocol.md
