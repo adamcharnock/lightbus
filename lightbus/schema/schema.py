@@ -280,9 +280,6 @@ class Schema(object):
         and the values are JSON schemas
         """
         if self._remote_schemas is None:
-            import ipdb
-
-            ipdb.set_trace()
             raise RemoteSchemasNotLoaded(
                 "The remote schemas have not yet been loaded. Lightbus should have ensured this was done "
                 "already, and therefore this is likely a bug. However, calling "
