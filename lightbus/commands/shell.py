@@ -17,7 +17,7 @@ class Command(object):
             help="Provide an interactive Lightbus shell",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
-        command_utilities.setup_import_parameter(parser_shell)
+        command_utilities.setup_common_arguments(parser_shell)
         parser_shell.set_defaults(func=self.handle)
 
     def handle(self, args, config, plugin_registry: PluginRegistry, fake_it=False):

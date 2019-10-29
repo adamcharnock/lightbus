@@ -24,49 +24,50 @@ logger = logging.getLogger(__name__)
 
 class Command(object):
     def setup(self, parser, subparsers):
-        parser_shell = subparsers.add_parser(
+        parser_inspect = subparsers.add_parser(
             "inspect",
             help="Inspect events on the bus",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
-        parser_shell.add_argument(
+        group = parser_inspect.add_argument_group(title="Inspect command arguments")
+        group.add_argument(
             "--json-path",
             "-j",
             help=("Search event body json for the givn value. Eg. address.city=London"),
             metavar="JSON_SEARCH",
         )
-        parser_shell.add_argument(
+        group.add_argument(
             "--id",
             "-i",
             help=("Find a single event with this Lightbus event ID"),
             metavar="LIGHTBUS_EVENT_ID",
         )
-        parser_shell.add_argument(
+        group.add_argument(
             "--native-id",
             "-n",
             help=("Find a single event with this broker-native ID"),
             metavar="NATIVE_EVENT_ID",
         )
-        parser_shell.add_argument(
+        group.add_argument(
             "--api",
             "-a",
             help=("Find events for this API name. Supports '*' wildcard."),
             metavar="API_NAME",
         )
-        parser_shell.add_argument(
+        group.add_argument(
             "--event",
             "-e",
             help=("Find events for this event name. Supports '*' wildcard."),
             metavar="EVENT_NAME",
         )
-        parser_shell.add_argument(
+        group.add_argument(
             "--version",
             "-v",
             help=("Find events with the specified version number. Can be prefixed by <, >, <=, >="),
             metavar="VERSION_NUMBER",
             type=int,
         )
-        parser_shell.add_argument(
+        group.add_argument(
             "--format",
             "-F",
             help=("Formatting style. One of pretty, json"),
@@ -74,21 +75,19 @@ class Command(object):
             default="json",
             choices=("pretty", "json"),
         )
-        parser_shell.add_argument(
+        group.add_argument(
             "--cache-only", "-c", help=("Search the local cache only"), action="store_true"
         )
-        parser_shell.add_argument(
+        group.add_argument(
             "--follow",
             "-f",
             help=("Continually listen for new events matching the search criteria"),
             action="store_true",
         )
-        parser_shell.add_argument(
-            "--internal", "-I", help="Include internal APIs", action="store_true"
-        )
+        group.add_argument("--internal", "-I", help="Include internal APIs", action="store_true")
 
-        command_utilities.setup_import_parameter(parser_shell)
-        parser_shell.set_defaults(func=self.handle)
+        command_utilities.setup_common_arguments(parser_inspect)
+        parser_inspect.set_defaults(func=self.handle)
 
     def handle(self, args, config, plugin_registry: PluginRegistry):
         """Entrypoint for the inspect command"""

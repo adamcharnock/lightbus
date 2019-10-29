@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class Command(object):
     def setup(self, parser, subparsers):
-        parser_shell = subparsers.add_parser(
+        parser_dumpconfigschema = subparsers.add_parser(
             "dumpconfigschema",
             help=(
                 "Dumps the lightbus configuration json schema. Can be useful "
@@ -22,17 +22,20 @@ class Command(object):
             ),
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
-        parser_shell.add_argument(
+        group = parser_dumpconfigschema.add_argument_group(
+            title="Dump config schema command arguments"
+        )
+        group.add_argument(
             "--schema",
             "-m",
             help=(
                 "File to write config schema to. "
-                "If omitted schema will be written to standard out."
+                "If omitted the schema will be written to standard out."
             ),
             metavar="FILE",
         )
-        command_utilities.setup_import_parameter(parser_shell)
-        parser_shell.set_defaults(func=self.handle)
+        command_utilities.setup_common_arguments(parser_dumpconfigschema)
+        parser_dumpconfigschema.set_defaults(func=self.handle)
 
     def handle(self, args, config, plugin_registry: PluginRegistry):
         command_utilities.setup_logging(args.log_level or "warning", config)

@@ -13,23 +13,24 @@ logger = logging.getLogger(__name__)
 
 class Command(object):
     def setup(self, parser, subparsers):
-        parser_shell = subparsers.add_parser(
+        parser_dumpschema = subparsers.add_parser(
             "dumpschema",
             help="Dumps all currently present bus schemas to a file or directory",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
-        parser_shell.add_argument(
+        group = parser_dumpschema.add_argument_group(title="Dump config schema command arguments")
+        group.add_argument(
             "--schema",
             "-m",
             help=(
                 "File or directory to write schema to. If a directory is "
                 "specified one schema file will be created for each API. "
-                "If omitted schema will be written to standard out."
+                "If omitted the schema will be written to standard out."
             ),
             metavar="FILE_OR_DIRECTORY",
         )
-        command_utilities.setup_import_parameter(parser_shell)
-        parser_shell.set_defaults(func=self.handle)
+        command_utilities.setup_common_arguments(parser_dumpschema)
+        parser_dumpschema.set_defaults(func=self.handle)
 
     def handle(self, args, config, plugin_registry: PluginRegistry):
         command_utilities.setup_logging(args.log_level or "warning", config)

@@ -6,6 +6,7 @@ import lightbus
 import lightbus.client
 import lightbus.creation
 from lightbus.config import Config
+from lightbus.exceptions import FailedToImportBusModule
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.logging import configure_logging
 from lightbus.utilities.async_tools import block, configure_event_loop
@@ -42,35 +43,14 @@ def run_command_from_args(args=None, **extra):
     plugin_registry = PluginRegistry()
     plugin_registry.autoload_plugins(config)
 
-    parsed_args.func(parsed_args, config, plugin_registry, **extra)
+    try:
+        parsed_args.func(parsed_args, config, plugin_registry, **extra)
+    except FailedToImportBusModule as e:
+        sys.stderr.write(str(e) + "\n")
 
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description="Lightbus management command.")
-
-    # Set the top level arguments which can be specified for any lightbus command
-    parser.add_argument(
-        "--service-name",
-        "-s",
-        help="Name of service in which this process resides. YOU SHOULD "
-        "LIKELY SET THIS IN PRODUCTION. Can also be set using the "
-        "LIGHTBUS_SERVICE_NAME environment. Will default to a random string.",
-    )
-    parser.add_argument(
-        "--process-name",
-        "-p",
-        help="A unique name of this process within the service. Can also be set using the "
-        "LIGHTBUS_PROCESS_NAME environment. Will default to a random string.",
-    )
-    parser.add_argument(
-        "--config", dest="config_file", help="Config file to load, JSON or YAML", metavar="FILE"
-    )
-    parser.add_argument(
-        "--log-level",
-        help="Set the log level. Overrides any value set in config. "
-        "One of debug, info, warning, critical, exception.",
-        metavar="LOG_LEVEL",
-    )
 
     subparsers = parser.add_subparsers(help="Commands", dest="subcommand")
     subparsers.required = True

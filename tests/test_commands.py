@@ -108,11 +108,11 @@ def run_lightbus_command(make_test_bus_module, redis_config_file):
         config_path = config_path or redis_config_file
         full_args = full_args or [
             "lightbus",
+            cmd,
             "--config",
             config_path,
             "--log-level",
             "debug",
-            cmd,
             *args,
         ]
 

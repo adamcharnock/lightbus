@@ -23,22 +23,21 @@ class Command(object):
         parser_run = subparsers.add_parser(
             "run", help="Run Lightbus", formatter_class=argparse.ArgumentDefaultsHelpFormatter
         )
-        command_utilities.setup_import_parameter(parser_run)
 
-        parser_run_action_group = parser_run.add_mutually_exclusive_group()
-        parser_run_action_group.add_argument(
+        group = parser_run.add_argument_group(title="Run command arguments")
+        group.add_argument(
             "--only",
             "-o",
             help=f"Only provide the specified features. Comma separated list. Possible values: {self.features_str}",
             type=csv_type,
         )
-        parser_run_action_group.add_argument(
+        group.add_argument(
             "--skip",
-            "-s",
+            "-k",
             help=f"Provide all except the specified features. Comma separated list. Possible values: {self.features_str}",
             type=csv_type,
         )
-        parser_run_action_group.add_argument(
+        group.add_argument(
             "--schema",
             "-m",
             help=(
@@ -49,6 +48,8 @@ class Command(object):
             metavar="FILE_OR_DIRECTORY",
         )
         parser_run.set_defaults(func=self.handle)
+
+        command_utilities.setup_common_arguments(parser_run)
 
     def handle(self, args, config, plugin_registry: PluginRegistry):
         try:

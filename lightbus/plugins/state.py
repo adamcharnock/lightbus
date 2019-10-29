@@ -72,7 +72,7 @@ class StatePlugin(LightbusPlugin):
     async def before_parse_args(self, *, parser: ArgumentParser, subparsers: _ArgumentGroup):
         """Add some plugin-related args so behaviour can be customised"""
         run_command_parser = subparsers.choices["run"]
-        state_run_group = run_command_parser.add_argument_group(title="State plugin options")
+        state_run_group = run_command_parser.add_argument_group(title="State plugin arguments")
         state_run_group.add_argument(
             "--ping-interval",
             help="Interval between server ping events in seconds. Ping events alert the bus "
