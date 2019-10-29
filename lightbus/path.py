@@ -46,6 +46,7 @@ class BusPath(object):
         return "<BusPath {}>".format(self.fully_qualified_name)
 
     def __dir__(self):
+        # Used by `lightbus shell` command
         path = [node.name for node in self.ancestors(include_self=True)]
         path.reverse()
 

@@ -36,6 +36,7 @@ class Command(object):
         logger.setLevel(logging.WARNING)
 
         bus_module, bus = command_utilities.import_bus(args)
+        block(bus.client.lazy_load_now())
 
         objects = {k: v for k, v in lightbus.__dict__.items() if isclass(v)}
         objects.update(bus=bus)
