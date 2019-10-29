@@ -1,19 +1,19 @@
 import argparse
 import logging
 import sys
-import os
 
 import lightbus
 import lightbus.client
 import lightbus.creation
 from lightbus.config import Config
-from lightbus.plugins import autoload_plugins, plugin_hook, remove_all_plugins
+from lightbus.plugins import PluginRegistry
 from lightbus.utilities.logging import configure_logging
-from lightbus.utilities.async_tools import block, get_event_loop
+from lightbus.utilities.async_tools import block, configure_event_loop
 import lightbus.commands.run
 import lightbus.commands.shell
 import lightbus.commands.dump_schema
 import lightbus.commands.dump_config_schema
+import lightbus.commands.inspect
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,7 @@ COMMAND_PARSED_ARGS = {}
 def lightbus_entry_point():  # pragma: no cover
     sys.path.insert(0, "")
     configure_logging()
+    configure_event_loop()
     run_command_from_args()
 
 
@@ -38,7 +39,10 @@ def run_command_from_args(args=None, **extra):
     COMMAND_PARSED_ARGS.update(dict(parsed_args._get_kwargs()))
 
     config = load_config(parsed_args)
-    parsed_args.func(parsed_args, config, **extra)
+    plugin_registry = PluginRegistry()
+    plugin_registry.autoload_plugins(config)
+
+    parsed_args.func(parsed_args, config, plugin_registry, **extra)
 
 
 def parse_args(args=None):
@@ -74,11 +78,16 @@ def parse_args(args=None):
     lightbus.commands.dump_schema.Command().setup(parser, subparsers)
     lightbus.commands.dump_schema.Command().setup(parser, subparsers)
     lightbus.commands.dump_config_schema.Command().setup(parser, subparsers)
+    lightbus.commands.inspect.Command().setup(parser, subparsers)
 
-    autoload_plugins(config=Config.load_dict({}))
+    # Create a temporary plugin registry in order to run the before_parse_args hook
+    plugin_registry = PluginRegistry()
+    plugin_registry.autoload_plugins(config=Config.load_dict({}))
 
-    loop = get_event_loop()
-    block(plugin_hook("before_parse_args", parser=parser, subparsers=subparsers), timeout=5)
+    block(
+        plugin_registry.execute_hook("before_parse_args", parser=parser, subparsers=subparsers),
+        timeout=5,
+    )
     args = parser.parse_args(sys.argv[1:] if args is None else args)
     # Note that we don't have an after_parse_args plugin hook. Instead we use the receive_args
     # hook which is called once we have instantiated our plugins
@@ -88,5 +97,8 @@ def parse_args(args=None):
 
 def load_config(args) -> Config:
     return lightbus.creation.load_config(
-        from_file=args.config_file, service_name=args.service_name, process_name=args.process_name
+        from_file=args.config_file,
+        service_name=args.service_name,
+        process_name=args.process_name,
+        quiet=True,
     )

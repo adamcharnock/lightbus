@@ -8,19 +8,20 @@ setup(
     version=open("VERSION").read().strip(),
     author="Adam Charnock",
     author_email="adam@adamcharnock.com",
-    packages=find_packages(exclude=("lightbus_examples", "experiments", "tests")),
+    packages=find_packages(exclude=("lightbus_examples", "tests")),
     scripts=[],
     url="http://lightbus.org",
     license="MIT",
     description="Filling the gap between monolithic and microservice",
     long_description=open("README.rst").read() if exists("README.rst") else "",
     install_requires=[
-        "aioredis",  # TODO: Pin version once streams support is merged
+        "aioredis>=1.2.0,<2",
         "jsonschema>=2.6.0,<3",
         "pyyaml",
         "python-dateutil",
+        "janus",
     ],
-    extras_require={':python_version=="3.6"': ["dataclasses==0.6"]},
+    python_requires=">=3.7",
     include_package_data=True,
     entry_points={
         "console_scripts": ["lightbus = lightbus.commands:lightbus_entry_point"],
@@ -32,7 +33,6 @@ setup(
             "redis = lightbus:RedisEventTransport",
             "debug = lightbus:DebugEventTransport",
             "direct = lightbus:DirectEventTransport",
-            "transactional = lightbus:TransactionalEventTransport",
         ],
         "lightbus_rpc_transports": [
             "redis = lightbus:RedisRpcTransport",
@@ -44,6 +44,9 @@ setup(
             "debug = lightbus:DebugResultTransport",
             "direct = lightbus:DirectResultTransport",
         ],
-        "lightbus_schema_transports": ["redis = lightbus:RedisSchemaTransport"],
+        "lightbus_schema_transports": [
+            "redis = lightbus:RedisSchemaTransport",
+            "debug = lightbus:DebugSchemaTransport",
+        ],
     },
 )

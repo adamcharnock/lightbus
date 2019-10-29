@@ -15,14 +15,14 @@ from lightbus.exceptions import (
     LightbusShutdownInProgress,
 )
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
+from lightbus.utilities.async_tools import run_user_provided_callable
 from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
 
 if False:
+    # pylint: disable=unused-import
     from lightbus.config import Config
 
-_plugins = None
-_hooks_names = []
 ENTRYPOINT_NAME = "lightbus_plugins"
 
 
@@ -32,7 +32,6 @@ T = TypeVar("T")
 
 
 class PluginMetaclass(type):
-
     def __new__(mcs, name, bases, attrs, **kwds):
         cls = super().__new__(mcs, name, bases, attrs)
         if not hasattr(cls, f"{name}Config") and hasattr(cls, "from_config"):
@@ -135,27 +134,14 @@ class LightbusPlugin(object, metaclass=PluginMetaclass):
         pass
 
 
-def autoload_plugins(config: "Config", force=False):
-    global _plugins, _hooks_names
-    load_hook_names()
-
-    if force:
-        remove_all_plugins()
-
-    if _plugins is not None:
-        return _plugins
-    else:
-        _plugins = OrderedDict()
-
-    for name, cls in find_plugins().items():
-        plugin_config = config.plugin(name)
-        if plugin_config.enabled:
-            _plugins[name] = instantiate_plugin(config=config, plugin_config=plugin_config, cls=cls)
-    return _plugins
+def instantiate_plugin(config: "Config", plugin_config: NamedTuple, cls: Type[LightbusPlugin]):
+    options = plugin_config._asdict()
+    options.pop("enabled")
+    return cls.from_config(config=config, **options)
 
 
 def find_plugins() -> Dict[str, Type[LightbusPlugin]]:
-    """Discover available plugin classes
+    """Discover available plugin classes using the 'lightbus_plugins' entrypoint
     """
     available_plugin_classes = load_entrypoint_classes(ENTRYPOINT_NAME)
     available_plugin_classes = sorted(available_plugin_classes, key=lambda v: v[-1].priority)
@@ -169,76 +155,49 @@ def find_plugins() -> Dict[str, Type[LightbusPlugin]]:
     return plugins
 
 
-def instantiate_plugin(config: "Config", plugin_config: NamedTuple, cls: Type[LightbusPlugin]):
-    options = plugin_config._asdict()
-    options.pop("enabled")
-    return cls.from_config(config=config, **options)
+class PluginRegistry(object):
+    VALID_HOOK_NAMES = {k for k in LightbusPlugin.__dict__ if not k.startswith("_")}
 
+    def __init__(self):
+        self._plugins = []
 
-def manually_set_plugins(plugins: Dict[str, LightbusPlugin]):
-    """Manually set the plugins in the global plugin registry"""
-    global _plugins
-    if not isinstance(plugins, dict):
-        raise InvalidPlugins(
-            "You have attempted to specify your desired plugins as a {} ({}). This is not supported. "
-            "Plugins must be specified as a dictionary, where the key is the plugin name.".format(
-                type(plugins).__name__, plugins
+    def autoload_plugins(self, config: "Config"):
+        """Autoload this registry with plugins from the 'lightbus_plugins' entrypoint"""
+        for name, cls in find_plugins().items():
+            plugin_config = config.plugin(name)
+            if plugin_config.enabled:
+                self._plugins.append(
+                    instantiate_plugin(config=config, plugin_config=plugin_config, cls=cls)
+                )
+
+        return self._plugins
+
+    def set_plugins(self, plugins: list):
+        """Manually set the plugins in this registry"""
+        self._plugins = plugins
+
+    def is_plugin_loaded(self, plugin_class: Type[LightbusPlugin]):
+        return plugin_class in [type(p) for p in self._plugins]
+
+    async def execute_hook(self, name, **kwargs):
+        if name not in self.VALID_HOOK_NAMES:
+            raise PluginHookNotFound(
+                "Plugin hook '{}' could not be found. Must be one of: {}".format(
+                    name, ", ".join(self.VALID_HOOK_NAMES)
+                )
             )
-        )
 
-    load_hook_names()
-    _plugins = plugins
+        return_values = []
+        for plugin in self._plugins:
+            handler = getattr(plugin, name, None)
+            if handler:
+                try:
+                    return_values.append(await handler(**kwargs))
+                except asyncio.CancelledError:
+                    raise
+                except LightbusShutdownInProgress as e:
+                    logger.info("Shutdown in progress: {}".format(e))
+                except Exception:
+                    raise
 
-
-def load_hook_names():
-    """Load a list of valid hook names"""
-    global _hooks_names
-    _hooks_names = [k for k in LightbusPlugin.__dict__ if not k.startswith("_")]
-
-
-def remove_all_plugins():
-    """Remove all plugins. Useful for testing"""
-    global _plugins
-    _plugins = None
-
-
-def get_plugins() -> Dict[str, LightbusPlugin]:
-    """Get all plugins as an ordered dictionary"""
-    global _plugins
-    return _plugins
-
-
-def is_plugin_loaded(plugin_class: Type[LightbusPlugin]):
-    global _plugins
-    if not _plugins:
-        return False
-    return plugin_class in [type(p) for p in _plugins.values()]
-
-
-async def plugin_hook(name, **kwargs):
-    global _plugins
-    if _plugins is None:
-        raise PluginsNotLoaded(
-            "You must call autoload_plugins() before calling plugin_hook('{}').".format(name)
-        )
-    if name not in _hooks_names:
-        raise PluginHookNotFound(
-            "Plugin hook '{}' could not be found. Must be one of: {}".format(
-                name, ", ".join(_hooks_names)
-            )
-        )
-
-    return_values = []
-    for plugin in _plugins.values():
-        handler = getattr(plugin, name, None)
-        if handler:
-            try:
-                return_values.append(await handler(**kwargs))
-            except asyncio.CancelledError:
-                raise
-            except LightbusShutdownInProgress as e:
-                logger.info("Shutdown in progress: {}".format(e))
-            except Exception as e:
-                raise
-
-    return return_values
+        return return_values

@@ -1,10 +1,9 @@
 import asyncio
 import pytest
 
-from lightbus.api import registry, Api, Event
+from lightbus.api import Api, Event
 from lightbus.path import BusPath
 from lightbus.message import RpcMessage, EventMessage
-from lightbus.plugins import manually_set_plugins
 from lightbus.plugins.metrics import MetricsPlugin
 from lightbus.utilities.async_tools import cancel
 
@@ -24,8 +23,10 @@ class TestApi(Api):
 @pytest.mark.asyncio
 async def test_remote_rpc_call(dummy_bus: BusPath, get_dummy_events):
     # Setup the bus and do the call
-    manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
-    registry.add(TestApi())
+    dummy_bus.client.plugin_registry.set_plugins(
+        plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
+    )
+    dummy_bus.client.register_api(TestApi())
     await dummy_bus.example.test.my_method.call_async(f=123)
 
     # What events were fired?
@@ -74,8 +75,10 @@ async def test_local_rpc_call(loop, dummy_bus: BusPath, consume_rpcs, get_dummy_
     )
 
     # Setup the bus and do the call
-    manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
-    registry.add(TestApi())
+    dummy_bus.client.plugin_registry.set_plugins(
+        plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
+    )
+    dummy_bus.client.register_api(TestApi())
 
     task = asyncio.ensure_future(consume_rpcs(dummy_bus), loop=loop)
 
@@ -115,8 +118,10 @@ async def test_local_rpc_call(loop, dummy_bus: BusPath, consume_rpcs, get_dummy_
 
 @pytest.mark.asyncio
 async def test_send_event(dummy_bus: BusPath, get_dummy_events):
-    manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
-    registry.add(TestApi())
+    dummy_bus.client.plugin_registry.set_plugins(
+        plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
+    )
+    dummy_bus.client.register_api(TestApi())
     await dummy_bus.example.test.my_event.fire_async(f=123)
 
     # What events were fired?
@@ -150,21 +155,32 @@ async def test_execute_events(dummy_bus: BusPath, dummy_listener, get_dummy_even
 
     await dummy_listener("example.test", "my_event")
 
+    await dummy_bus.client._setup_server()
+
     # Setup the bus and do the call
-    manually_set_plugins(plugins={"metrics": MetricsPlugin(service_name="foo", process_name="bar")})
-    registry.add(TestApi())
+    dummy_bus.client.plugin_registry.set_plugins(
+        plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
+    )
+    dummy_bus.client.register_api(TestApi())
 
     # The dummy transport will fire an every every 0.1 seconds
     await asyncio.sleep(0.15)
 
-    event_messages = get_dummy_events()
-    assert len(event_messages) == 2
+    # Arrange messages in a dict indexed by name (makes checking results)
+    event_messages = {}
+    event_message: EventMessage
+    for event_message in get_dummy_events():
+        event_messages[event_message.canonical_name] = event_message
+
+    assert "internal.metrics.event_received" in event_messages
+    assert "internal.metrics.event_processed" in event_messages
 
     # before_rpc_execution
-    assert event_messages[0].api_name == "internal.metrics"
-    assert event_messages[0].event_name == "event_received"
-    assert event_messages[0].kwargs.pop("timestamp")
-    assert event_messages[0].kwargs == {
+    event = event_messages["internal.metrics.event_received"]
+    assert event.api_name == "internal.metrics"
+    assert event.event_name == "event_received"
+    assert event.kwargs.pop("timestamp")
+    assert event.kwargs == {
         "api_name": "example.test",
         "event_name": "my_event",
         "event_id": "event_id",
@@ -174,10 +190,11 @@ async def test_execute_events(dummy_bus: BusPath, dummy_listener, get_dummy_even
     }
 
     # after_rpc_execution
-    assert event_messages[1].api_name == "internal.metrics"
-    assert event_messages[1].event_name == "event_processed"
-    assert event_messages[1].kwargs.pop("timestamp")
-    assert event_messages[1].kwargs == {
+    event = event_messages["internal.metrics.event_processed"]
+    assert event.api_name == "internal.metrics"
+    assert event.event_name == "event_processed"
+    assert event.kwargs.pop("timestamp")
+    assert event.kwargs == {
         "api_name": "example.test",
         "event_name": "my_event",
         "event_id": "event_id",

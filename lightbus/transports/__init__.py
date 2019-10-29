@@ -12,4 +12,3 @@ from .redis import (
     RedisEventTransport,
     RedisSchemaTransport,
 )
-from .transactional import TransactionalEventTransport

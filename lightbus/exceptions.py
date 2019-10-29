@@ -64,6 +64,7 @@ class LightbusTimeout(LightbusException):
 
 class SuddenDeathException(LightbusException):
     """Used to kill an invocation for testing purposes"""
+
     pass
 
 
@@ -127,10 +128,6 @@ class ApisMustUseSameTransport(LightbusException):
     pass
 
 
-class ApisMustUseTransactionalTransport(LightbusException):
-    pass
-
-
 class OnlyAvailableOnRootNode(LightbusException):
     pass
 
@@ -172,4 +169,44 @@ class DeformError(LightbusException):
 
 
 class ValidationError(LightbusException):
+    pass
+
+
+class InvalidSchedule(LightbusException):
+    pass
+
+
+class TransportsNotInstalled(LightbusException):
+    pass
+
+
+class MustRunInBusThread(LightbusException):
+    pass
+
+
+class MustNotRunInBusThread(LightbusException):
+    pass
+
+
+class LightbusExit(LightbusException):
+    pass
+
+
+class BusAlreadyClosed(LightbusException):
+    pass
+
+
+class LightbusServerMustStartInMainThread(LightbusException):
+    pass
+
+
+class RemoteSchemasNotLoaded(LightbusException):
+    pass
+
+
+class WorkerNotReady(LightbusException):
+    pass
+
+
+class WorkerDeadlock(LightbusException):
     pass

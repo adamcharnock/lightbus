@@ -51,6 +51,7 @@ async def test_send_result(redis_result_transport: RedisResultTransport, redis_c
         ),
         result_message=ResultMessage(id="345", rpc_message_id="123abc", result="All done! 😎"),
         return_path="redis+key://my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e",
+        bus_client=None,
     )
     assert await redis_client.keys("*") == [
         b"my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e"
@@ -86,6 +87,7 @@ async def test_receive_result(redis_result_transport: RedisResultTransport, redi
         ),
         return_path="redis+key://my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e",
         options={},
+        bus_client=None,
     )
     assert result_message.result == "All done! 😎"
     assert result_message.rpc_message_id == "123abc"
@@ -111,6 +113,6 @@ async def test_from_config(redis_client):
         await transport_client.set("x", 1)
         assert await redis_client.get("x")
 
-    assert transport._local.redis_pool.connection.maxsize == 123
+    assert transport._redis_pool.connection.maxsize == 123
     assert isinstance(transport.serializer, ByFieldMessageSerializer)
     assert isinstance(transport.deserializer, ByFieldMessageDeserializer)

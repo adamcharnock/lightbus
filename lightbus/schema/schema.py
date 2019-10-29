@@ -3,7 +3,7 @@ import json
 import logging
 from json import JSONDecodeError
 from pathlib import Path
-from typing import Optional, TextIO, Union, ChainMap, List, Tuple
+from typing import Optional, TextIO, Union, ChainMap, List, Tuple, Dict
 import jsonschema
 
 import asyncio
@@ -18,6 +18,7 @@ from lightbus.exceptions import (
     InvalidSchema,
     SchemaNotFound,
     ValidationError,
+    RemoteSchemasNotLoaded,
 )
 from lightbus.schema.encoder import json_encode
 from lightbus.schema.hints_to_schema import (
@@ -25,8 +26,11 @@ from lightbus.schema.hints_to_schema import (
     make_rpc_parameter_schema,
     make_event_parameter_schema,
 )
-from lightbus.transports.base import SchemaTransport
 from lightbus.utilities.io import make_file_safe_api_name
+
+if False:
+    # pylint: disable=unused-import
+    from lightbus.transports.base import SchemaTransport
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +66,7 @@ class Schema(object):
         # Schemas which have been retrieved from the bus. This will also contain local
         # schemas which have been stored onto the bus. The storing and retrieving of
         # remote schemas is mediated by the schema transport.
-        self.remote_schemas = {}
+        self._remote_schemas: Optional[Dict[str, dict]] = None
 
     def __contains__(self, item):
         return item in self.local_schemas or item in self.remote_schemas
@@ -259,7 +263,29 @@ class Schema(object):
 
         This will be done using the `schema_transport` provided to `__init__()`
         """
-        self.remote_schemas = await self.schema_transport.load()
+        self._remote_schemas = await self.schema_transport.load()
+
+    async def ensure_loaded_from_bus(self):
+        if self._remote_schemas is None:
+            await self.load_from_bus()
+
+    @property
+    def remote_schemas(self) -> Dict[str, Dict]:
+        """Schemas which have been retrieved from the bus.
+
+        This will also contain local schemas which have been stored onto the bus. \
+        The storing and retrieving of remote schemas is mediated by the schema transport.
+
+        The returned value is a dictionary where keys are fully qualified API names,
+        and the values are JSON schemas
+        """
+        if self._remote_schemas is None:
+            raise RemoteSchemasNotLoaded(
+                "The remote schemas have not yet been loaded. Lightbus should have ensured this was done "
+                "already, and therefore this is likely a bug. However, calling "
+                "bus.client.lazy_load_now() should resolve this."
+            )
+        return self._remote_schemas
 
     async def monitor(self, interval=None):
         """Monitor for remote schema changes and keep any local schemas alive on the bus
@@ -357,6 +383,7 @@ class Schema(object):
 
 class Parameter(inspect.Parameter):
     """Describes the name and type of an event parameter"""
+
     empty = inspect.Parameter.empty
 
     def __init__(self, name, annotation=empty, *, default=empty):
@@ -368,8 +395,6 @@ class Parameter(inspect.Parameter):
 class WildcardParameter(inspect.Parameter):
     """Describes a **kwargs style parameter to an event
     """
-    # TODO: Consider removing if not found to be useful
-    empty = inspect.Parameter.empty
 
     def __init__(self):
         super(WildcardParameter, self).__init__(

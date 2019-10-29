@@ -1,5 +1,5 @@
-import random
 import logging
+import secrets
 
 logger = logging.getLogger(__name__)
 
@@ -205,5 +205,5 @@ def human_time(seconds: float):
 
 def generate_human_friendly_name():
     return "{}-{}-{}".format(
-        random.choice(_adjectives), random.choice(_nouns), random.randint(1, 1000)
+        secrets.choice(_adjectives), secrets.choice(_nouns), secrets.randbelow(999) + 1
     )

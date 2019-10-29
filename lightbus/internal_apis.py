@@ -36,7 +36,6 @@ class LightbusStateApi(Api):
     class Meta:
         name = "internal.state"
         internal = True
-        auto_register = False
 
 
 class LightbusMetricsApi(Api):
@@ -66,4 +65,3 @@ class LightbusMetricsApi(Api):
     class Meta:
         name = "internal.metrics"
         internal = True
-        auto_register = False

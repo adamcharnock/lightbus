@@ -1,31 +1,25 @@
 import logging
+from datetime import datetime
 from itertools import chain
-from typing import (
-    Sequence,
-    Tuple,
-    List,
-    Generator,
-    Dict,
-    NamedTuple,
-    TypeVar,
-    Type,
-    Set,
-    AsyncGenerator,
-)
-import inspect
+from typing import Sequence, Tuple, List, Dict, NamedTuple, TypeVar, Type, Set, AsyncGenerator
 
 from lightbus.api import Api
-from lightbus.exceptions import NothingToListenFor, TransportNotFound
+from lightbus.exceptions import NothingToListenFor, TransportNotFound, TransportsNotInstalled
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
-from lightbus.utilities.config import make_from_config_structure, random_name
+from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeserializer
+from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
+
+if False:
+    # pylint: disable=unused-import
+    from lightbus.config import Config
+    from lightbus.client import BusClient
 
 T = TypeVar("T")
 logger = logging.getLogger(__name__)
 
 
 class TransportMetaclass(type):
-
     def __new__(mcs, name, bases, attrs, **kwds):
         cls = super().__new__(mcs, name, bases, attrs)
         if not hasattr(cls, f"{name}Config") and hasattr(cls, "from_config"):
@@ -36,9 +30,8 @@ class TransportMetaclass(type):
 
 
 class Transport(object, metaclass=TransportMetaclass):
-
     @classmethod
-    def from_config(cls: Type[T], *config) -> T:
+    def from_config(cls: Type[T], config: "Config") -> T:
         return cls()
 
     async def open(self):
@@ -60,12 +53,14 @@ class Transport(object, metaclass=TransportMetaclass):
 class RpcTransport(Transport):
     """Implement the sending and receiving of RPC calls"""
 
-    async def call_rpc(self, rpc_message: RpcMessage, options: dict):
+    async def call_rpc(self, rpc_message: RpcMessage, options: dict, bus_client: "BusClient"):
         """Publish a call to a remote procedure"""
         RpcTransport.from_config()
         raise NotImplementedError()
 
-    async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
+    async def consume_rpcs(
+        self, apis: Sequence[Api], bus_client: "BusClient"
+    ) -> Sequence[RpcMessage]:
         """Consume RPC calls for the given API"""
         raise NotImplementedError()
 
@@ -79,7 +74,11 @@ class ResultTransport(Transport):
         raise NotImplementedError()
 
     async def send_result(
-        self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: str
+        self,
+        rpc_message: RpcMessage,
+        result_message: ResultMessage,
+        return_path: str,
+        bus_client: "BusClient",
     ):
         """Send a result back to the caller
 
@@ -92,7 +91,7 @@ class ResultTransport(Transport):
         raise NotImplementedError()
 
     async def receive_result(
-        self, rpc_message: RpcMessage, return_path: str, options: dict
+        self, rpc_message: RpcMessage, return_path: str, options: dict, bus_client: "BusClient"
     ) -> ResultMessage:
         """Receive the result for the given message
 
@@ -109,12 +108,24 @@ class EventTransport(Transport):
     """ Implement the sending/consumption of events over a given transport.
     """
 
-    async def send_event(self, event_message: EventMessage, options: dict):
+    def __init__(
+        self,
+        serializer=ByFieldMessageSerializer(),
+        deserializer=ByFieldMessageDeserializer(EventMessage),
+    ):
+        self.serializer = serializer
+        self.deserializer = deserializer
+
+    async def send_event(self, event_message: EventMessage, options: dict, bus_client: "BusClient"):
         """Publish an event"""
         raise NotImplementedError()
 
     async def consume(
-        self, listen_for: List[Tuple[str, str]], listener_name: str, **kwargs
+        self,
+        listen_for: List[Tuple[str, str]],
+        listener_name: str,
+        bus_client: "BusClient",
+        **kwargs,
     ) -> AsyncGenerator[List[EventMessage], None]:
         """Consume messages for the given APIs
 
@@ -134,13 +145,24 @@ class EventTransport(Transport):
             f"Event transport {self.__class__.__name__} does not support listening for events"
         )
 
-    async def acknowledge(self, *event_messages):
+    async def acknowledge(self, *event_messages, bus_client: "BusClient"):
         """Acknowledge that one or more events were successfully processed"""
         pass
 
-    async def history(self, listen_for: List[Tuple[str, str]]):
+    async def history(
+        self,
+        api_name,
+        event_name,
+        start: datetime = None,
+        stop: datetime = None,
+        start_inclusive: bool = True,
+    ) -> AsyncGenerator[EventMessage, None]:
+        """Return EventMessages for the given api/event names during the (optionally) given date range.
+
+        Should return newest messages first
+        """
         raise NotImplementedError(
-            f"Event transport {self.__class__.__name__} does not support fetching past events"
+            f"Event transport {self.__class__.__name__} does not support event history."
         )
 
     def _sanity_check_listen_for(self, listen_for):
@@ -351,6 +373,15 @@ class TransportRegistry(object):
 def get_available_transports(type_):
     loaded = load_entrypoint_classes(f"lightbus_{type_}_transports")
 
+    if not loaded:
+        raise TransportsNotInstalled(
+            f"No {type_} transports are available, which means lightbus has not been "
+            f"installed correctly. This is likely because you are working on Lightbus itself. "
+            f"In which case, within your local lightbus repo you should run "
+            f"something like 'pip install .' or 'python setup.py develop'.\n\n"
+            f"This will install the entrypoints (defined in setup.py) which point Lightbus "
+            f"to it's bundled transports."
+        )
     return {name: class_ for module_name, name, class_ in loaded}
 
 

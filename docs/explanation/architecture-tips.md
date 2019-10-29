@@ -24,7 +24,7 @@ class Customer(NamedTuple):
     age: int
 ```
 
-You can then take advantage of Lightbus' schema checking a data casting:
+You can then take advantage of Lightbus' schema checking and data casting:
 
 ```python3
 import lightbus
@@ -36,7 +36,7 @@ class CustomerApi(lightbus.Api):
 
     def create(customer: Customer):
         # Lightbus will ensure the incoming data conforms to
-        # Customer, and will cast the to be a Customer object
+        # Customer, and will cast the data to be a Customer object
         ...
 ```
 
@@ -62,7 +62,7 @@ your services.
 
     ```python3
     bus.customer.create(
-        customer={"name": "Joe", "email": "joe@gmail.com", "age": 54)
+        customer={"name": "Joe", "email": "joe@gmail.com", "age": 54}
     )
     ```
 
@@ -92,13 +92,16 @@ forms which become increasingly bloated, inconsistent, and complex.
 
 **You can mitigate this by grouping your entities together in a way that
 makes logical sense for your situation**. These are your *aggregates*.
-Decide on these aggregates in advance, and stick to it
+Decide on these aggregates in advance, and stick to it.
 
 For example, we may group the `Customer`, `Address`, `Order`, and `OrderLine`
 entities as follows:
 
 * A `Customer` aggregate. Each `Customer` contains an `address` field, which is an `Address` entity.
 * An `Order` aggregate. Each `Order` contains a `line_items` field, which is a list of `OrderLine` entities.
+
+The `Customer` and `Order` aggregates also will likely contain other fields not listed above (such as name, 
+email, or quantity).
 
 **You should only ever pass around the top level aggregates.**
 
@@ -107,7 +110,7 @@ Additionally:
 * Identify aggregates with UUIDs
 * Do not enforce foreign keys between aggregates. Your application code
   will need to deal with inconsistencies gracefully.
-* Probably still still a good idea to use sequential integer primary keys in your RDBMS
+* It is likely still a good idea to use sequential integer primary keys in your RDBMS
 * Do **not** share database-level sequential integer primary keys
 
 ## Writes are special

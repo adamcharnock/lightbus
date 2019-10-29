@@ -1,13 +1,15 @@
 import json
+from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 import pytest
 
 from lightbus import DebugRpcTransport
 from lightbus.config import Config
 from lightbus.config.config import config_as_json_schema
+from lightbus.plugins import PluginRegistry
 from lightbus.utilities.casting import cast_to_hint
 from lightbus.config.structure import RootConfig, BusConfig, LogLevelEnum
-from lightbus.plugins import autoload_plugins, manually_set_plugins
 from lightbus.plugins.metrics import MetricsPlugin
 from lightbus.plugins.state import StatePlugin
 from lightbus.schema.encoder import json_encode
@@ -38,16 +40,19 @@ def test_config_as_json_schema_apis():
     bus_config_schema = schema["properties"]["bus"]
     api_config_schema = schema["properties"]["apis"]["patternProperties"][".*"]["properties"]
 
-    assert api_config_schema["event_transport"]["type"] == "object"
-    assert api_config_schema["rpc_transport"]["type"] == "object"
-    assert api_config_schema["result_transport"]["type"] == "object"
+    assert api_config_schema["event_transport"]["oneOf"][0]["type"] == "object"
+    assert api_config_schema["rpc_transport"]["oneOf"][0]["type"] == "object"
+    assert api_config_schema["result_transport"]["oneOf"][0]["type"] == "object"
 
     assert api_config_schema["rpc_timeout"]["type"] == "number"
     assert api_config_schema["event_listener_setup_timeout"]["type"] == "number"
     assert api_config_schema["event_fire_timeout"]["type"] == "number"
     assert api_config_schema["validate"]["oneOf"]
 
-    assert bus_config_schema["properties"]["schema"]["properties"]["transport"]["type"] == "object"
+    assert (
+        bus_config_schema["properties"]["schema"]["properties"]["transport"]["oneOf"][0]["type"]
+        == "object"
+    )
 
 
 def test_config_as_json_schema_redis():
@@ -56,19 +61,23 @@ def test_config_as_json_schema_redis():
     bus_config_schema = schema["properties"]["bus"]
     api_config_schema = schema["properties"]["apis"]["patternProperties"][".*"]["properties"]
 
-    redis_rpc_transport = api_config_schema["rpc_transport"]["properties"]["redis"]["oneOf"][0]
-    redis_result_transport = api_config_schema["result_transport"]["properties"]["redis"]["oneOf"][
-        0
-    ]
-    redis_event_transport = api_config_schema["event_transport"]["properties"]["redis"]["oneOf"][0]
+    redis_rpc_transport = api_config_schema["rpc_transport"]["oneOf"][0]["properties"]["redis"][
+        "oneOf"
+    ][0]
+    redis_result_transport = api_config_schema["result_transport"]["oneOf"][0]["properties"][
+        "redis"
+    ]["oneOf"][0]
+    redis_event_transport = api_config_schema["event_transport"]["oneOf"][0]["properties"]["redis"][
+        "oneOf"
+    ][0]
 
     assert redis_rpc_transport["type"] == "object"
     assert redis_result_transport["type"] == "object"
     assert redis_event_transport["type"] == "object"
 
     redis_schema_transport = bus_config_schema["properties"]["schema"]["properties"]["transport"][
-        "properties"
-    ]["redis"]["oneOf"][0]
+        "oneOf"
+    ][0]["properties"]["redis"]["oneOf"][0]
     assert redis_schema_transport["type"] == "object"
 
 
@@ -93,10 +102,57 @@ def test_default_config():
     assert config.bus().schema.transport.redis
 
 
-def test_load_bus_config(tmp_file):
-    tmp_file.write("bus: { log_level: warning }")
-    tmp_file.flush()
-    config = Config.load_file(tmp_file.name)
+def test_load_bus_config_file_json(tmp_directory: Path):
+    config_file = tmp_directory / "config.json"
+    with config_file.open(mode="w") as f:
+        f.write(EXAMPLE_VALID_JSON)
+
+    config = Config.load_file(str(config_file))
+    assert config.bus().log_level == LogLevelEnum.WARNING
+
+
+def test_load_bus_config_file_yaml(tmp_directory: Path):
+    config_file = tmp_directory / "config.yaml"
+    with config_file.open(mode="w") as f:
+        f.write(EXAMPLE_VALID_YAML)
+
+    config = Config.load_file(str(config_file))
+    assert config.bus().log_level == LogLevelEnum.WARNING
+
+
+@patch("urllib.request.urlopen")
+def test_load_bus_config_url_json(mock_urlopen, tmp_directory: Path):
+    response = MagicMock()
+    response.getcode.return_value = 200
+    response.read.return_value = EXAMPLE_VALID_JSON
+    response.headers = {"Content-Type": "application/json"}
+    mock_urlopen.return_value = response
+
+    config = Config.load_file("http://999.999.999.999/config")
+    assert config.bus().log_level == LogLevelEnum.WARNING
+
+
+@patch("urllib.request.urlopen")
+def test_load_bus_config_url_json_no_headers(mock_urlopen, tmp_directory: Path):
+    response = MagicMock()
+    response.getcode.return_value = 200
+    response.read.return_value = EXAMPLE_VALID_JSON
+    mock_urlopen.return_value = response
+
+    config = Config.load_file("http://999.999.999.999/config.json")
+    # Still works because the URL ends in .json
+    assert config.bus().log_level == LogLevelEnum.WARNING
+
+
+@patch("urllib.request.urlopen")
+def test_load_bus_config_url_yaml(mock_urlopen, tmp_directory: Path):
+    response = MagicMock()
+    response.getcode.return_value = 200
+    response.read.return_value = EXAMPLE_VALID_YAML
+    response.headers = {"Content-Type": "application/yaml"}
+    mock_urlopen.return_value = response
+
+    config = Config.load_file("http://999.999.999.999/config")
     assert config.bus().log_level == LogLevelEnum.WARNING
 
 
@@ -153,20 +209,20 @@ def test_plugin_selector_custom_config():
     assert config.plugin("internal_state").ping_interval == 123
 
 
-def test_plugin_disabled():
+def test_plugin_disabled(plugin_registry: PluginRegistry):
     config = Config.load_dict(
         {"plugins": {"internal_state": {"enabled": False}, "internal_metrics": {"enabled": False}}}
     )
-    plugins = autoload_plugins(config)
-    assert not plugins
+    plugin_registry.autoload_plugins(config)
+    assert not plugin_registry._plugins
 
 
-def test_plugin_enabled():
+def test_plugin_enabled(plugin_registry: PluginRegistry):
     config = Config.load_dict(
         {"plugins": {"internal_state": {"enabled": True}, "internal_metrics": {"enabled": True}}}
     )
-    plugins = autoload_plugins(config)
-    assert plugins
+    plugin_registry.autoload_plugins(config)
+    assert plugin_registry._plugins
 
 
 EXAMPLE_VALID_YAML = """
@@ -183,4 +239,28 @@ apis:
         event_transport:
             redis:
                 batch_size: 1
+"""
+
+EXAMPLE_VALID_JSON = """
+{
+    "bus": {
+        "log_level": "warning"
+    },
+    "apis": {
+        "default": {
+            "event_transport": {
+                "redis": {
+                    "batch_size": 50
+                }
+            }
+        },
+        "my.api": {
+            "event_transport": {
+                "redis": {
+                    "batch_size": 1
+                }
+            }
+        }
+    }
+}
 """

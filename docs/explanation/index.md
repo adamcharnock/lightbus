@@ -2,7 +2,7 @@
 
 This section discusses the **theoretical and conceptual aspects
 of Lightbus**. This is in contrast to the more practical
-[tutorial] and [howto] sections.
+[tutorial] and [how to] sections.
 
 [tutorial]: /tutorial/index.md
-[howto]: /howto/index.md
+[how to]: /howto/index.md

@@ -6,7 +6,12 @@ will is still required to organise the setup code below.
 
 """
 import asyncio
+import resource
+import signal
+import threading
+import time
 from pathlib import Path
+from queue import Queue
 from random import randint
 from urllib.parse import urlparse
 
@@ -26,19 +31,46 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import lightbus
 import lightbus.creation
-from lightbus import BusClient
-from lightbus.api import registry
+from lightbus import (
+    BusClient,
+    RedisSchemaTransport,
+    DebugRpcTransport,
+    DebugResultTransport,
+    DebugEventTransport,
+)
 from lightbus.commands import COMMAND_PARSED_ARGS
+from lightbus.config.structure import (
+    RootConfig,
+    ApiConfig,
+    EventTransportSelector,
+    RpcTransportSelector,
+    ResultTransportSelector,
+    SchemaTransportSelector,
+    BusConfig,
+    SchemaConfig,
+)
+from lightbus.exceptions import BusAlreadyClosed
 from lightbus.path import BusPath
 from lightbus.message import EventMessage
-from lightbus.plugins import remove_all_plugins
-from lightbus.utilities.async_tools import cancel
+from lightbus.plugins import PluginRegistry
+from lightbus.utilities.async_tools import cancel, configure_event_loop
 
 TCPAddress = namedtuple("TCPAddress", "host port")
 
 RedisServer = namedtuple("RedisServer", "name tcp_address unixsocket version")
 
 logger = logging.getLogger(__file__)
+
+
+def pytest_sessionstart(session):
+    # Set custom lightbus policy on event loop
+    configure_event_loop()
+
+    # Increase the number of allowable file descriptors to 10000
+    # (needed in the reliability tests)
+    min_files, max_files = resource.getrlimit(resource.RLIMIT_NOFILE)
+    resource.setrlimit(resource.RLIMIT_NOFILE, (10000, max_files))
+
 
 # Public fixtures
 
@@ -65,12 +97,15 @@ def create_redis_connection(_closable):
 
 @pytest.fixture
 def redis_server_url():
-    return os.environ.get("REDIS_URL", "") or "redis://localhost:6379/10"
+    # We use 127.0.0.1 rather than 'localhost' as this bypasses some
+    # problems we encounter with getaddrinfo when performing tests
+    # which create a lot of connections (e.g. the reliability tests)
+    return os.environ.get("REDIS_URL", "") or "redis://127.0.0.1:6379/10"
 
 
 @pytest.fixture
 def redis_server_b_url():
-    return os.environ.get("REDIS_URL_B", "") or "redis://localhost:6379/11"
+    return os.environ.get("REDIS_URL_B", "") or "redis://127.0.0.1:6379/11"
 
 
 @pytest.fixture
@@ -105,8 +140,9 @@ def create_redis_client(_closable, redis_server_config, loop, request):
 
 
 @pytest.fixture
-def create_redis_pool(_closable, redis_server_config, loop):
+def create_redis_pool(_closable, redis_server_config, loop, redis_client):
     """Wrapper around aioredis.create_redis_pool."""
+    # We use the redis_client fixture to ensure that redis is flushed before each test
 
     async def f(*args, **kw):
         kwargs = {}
@@ -165,35 +201,46 @@ def _closable(loop):
 
 
 @pytest.yield_fixture
-def dummy_bus(loop):
+def dummy_bus(loop, redis_server_url):
+    # fmt: off
     dummy_bus = lightbus.creation.create(
-        rpc_transport=lightbus.DebugRpcTransport(),
-        result_transport=lightbus.DebugResultTransport(),
-        event_transport=lightbus.DebugEventTransport(),
-        schema_transport=lightbus.DebugSchemaTransport(),
-        plugins={},
+        config=RootConfig(
+            apis={
+                'default': ApiConfig(
+                    rpc_transport=RpcTransportSelector(debug=DebugRpcTransport.Config()),
+                    result_transport=ResultTransportSelector(debug=DebugResultTransport.Config()),
+                    event_transport=EventTransportSelector(debug=DebugEventTransport.Config()),
+                )
+            },
+            bus=BusConfig(
+                schema=SchemaConfig(
+                    transport=SchemaTransportSelector(redis=RedisSchemaTransport.Config(url=redis_server_url)),
+                )
+            )
+        ),
+        plugins=[],
     )
+    # fmt: on
     yield dummy_bus
-    dummy_bus.client.close()
+    try:
+        dummy_bus.client.close()
+    except BusAlreadyClosed:
+        pass
 
 
 @pytest.yield_fixture
 async def dummy_listener(dummy_bus: BusPath, loop):
     """Start the dummy bus consuming events"""
+    # TODO: Remove. Barely used any more
     tasks = []
 
     async def listen(api_name, event_name):
-
         def pass_listener(*args, **kwargs):
             pass
 
-        task = await dummy_bus.client.listen_for_event(api_name, event_name, pass_listener)
-        tasks.append(task)
+        dummy_bus.client.listen_for_event(api_name, event_name, pass_listener, listener_name="test")
 
-    try:
-        yield listen
-    finally:
-        await cancel(*tasks)
+    yield listen
 
 
 @pytest.fixture
@@ -286,12 +333,6 @@ TEST_TIMEOUT = 30
 
 
 def pytest_runtest_setup(item):
-    # Clear out any plugins
-    remove_all_plugins()
-
-    # Clear out the API registry
-    registry._apis = dict()
-
     # Clear out any stash command line args
     COMMAND_PARSED_ARGS.clear()
 
@@ -300,9 +341,7 @@ def pytest_runtest_setup(item):
 def dummy_api():
     from tests.dummy_api import DummyApi
 
-    dummy_api = DummyApi()
-    registry.add(dummy_api)
-    return dummy_api
+    return DummyApi()
 
 
 @pytest.yield_fixture
@@ -327,7 +366,6 @@ def tmp_directory():
 
 @pytest.fixture
 def set_env():
-
     @contextlib.contextmanager
     def _set_env(**environ):
         old_environ = dict(os.environ)
@@ -343,6 +381,7 @@ def set_env():
 
 @pytest.yield_fixture
 def make_test_bus_module(mocker):
+    """Create a python module on disk which contains a bus, and put it on the python path"""
     created_modules = []
 
     # Prevent setup from being called, as it'll try to
@@ -377,7 +416,67 @@ def make_test_bus_module(mocker):
         if module_name in sys.modules:
             module = sys.modules[module_name]
             if hasattr(module, "bus") and isinstance(module.bus, BusPath):
-                module.bus.client.close()
+                try:
+                    module.bus.client.close()
+                except BusAlreadyClosed:
+                    # Tests may choose the close the bus of their own volition,
+                    # so don't worry about it here
+                    pass
             sys.modules.pop(module_name)
 
         sys.path.remove(str(directory))
+
+
+@pytest.fixture()
+def plugin_registry():
+    return PluginRegistry()
+
+
+def pytest_generate_tests(metafunc):
+    if hasattr(metafunc.function, "also_run_in_child_thread"):
+        metafunc.parametrize("thread", ["main", "child"], ids=("main_thread", "child_thread"))
+
+
+def pytest_runtest_call(item):
+    if hasattr(item.function, "also_run_in_child_thread"):
+        if item.callspec.params.get("thread") == "child":
+            exec_queue = Queue()
+
+            def wrapper():
+                try:
+                    item.runtest()
+                except Exception:
+                    # Store trace info to allow postmortem debugging
+                    type, value, tb = sys.exc_info()
+                    exec_queue.put((type, value, tb))
+                    tb = tb.tb_next  # Skip *this* frame
+                    sys.last_type = type
+                    sys.last_value = value
+                    sys.last_traceback = tb
+                    del type, value, tb  # Get rid of these in this frame
+                    raise
+                else:
+                    exec_queue.put(None)
+
+            t = threading.Thread(target=wrapper)
+            t.start()
+            t.join()
+
+            exec_info = exec_queue.get()
+            if exec_info:
+                raise exec_info[1]
+
+
+@pytest.fixture(autouse=True)
+def check_for_dangling_threads():
+    """Have any threads been abandoned?"""
+    threads_before = set(threading.enumerate())
+    yield
+    threads_after = set(threading.enumerate())
+    dangling_threads = threads_after - threads_before
+    names = [t.name for t in dangling_threads if "ThreadPoolExecutor" not in t.name]
+    assert not names, f"Some threads were left dangling: {', '.join(names)}"
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "also_run_in_child_thread: Used internally")

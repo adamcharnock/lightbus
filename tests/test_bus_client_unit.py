@@ -1,5 +1,8 @@
 import asyncio
+import threading
+from asyncio import BaseEventLoop
 
+import janus
 import jsonschema
 from unittest import mock
 import pytest
@@ -8,6 +11,7 @@ import lightbus
 import lightbus.creation
 import lightbus.path
 from lightbus import Schema, RpcMessage, ResultMessage, EventMessage, BusClient
+from lightbus.client_worker import run_in_worker_thread
 from lightbus.config import Config
 from lightbus.config.structure import OnError
 from lightbus.exceptions import (
@@ -18,7 +22,11 @@ from lightbus.exceptions import (
     TransportNotFound,
     InvalidName,
     ValidationError,
+    SuddenDeathException,
+    WorkerDeadlock,
 )
+from lightbus.transports.base import TransportRegistry
+from lightbus.utilities.async_tools import cancel, run_user_provided_callable
 
 pytestmark = pytest.mark.unit
 
@@ -31,12 +39,14 @@ async def test_fire_event_api_doesnt_exist(dummy_bus: lightbus.path.BusPath):
 
 @pytest.mark.asyncio
 async def test_fire_event_event_doesnt_exist(dummy_bus: lightbus.path.BusPath, dummy_api):
+    dummy_bus.client.register_api(dummy_api)
     with pytest.raises(EventNotFound):
         await dummy_bus.client.fire_event("my.dummy", "bad_event")
 
 
 @pytest.mark.asyncio
 async def test_fire_event_bad_event_arguments(dummy_bus: lightbus.path.BusPath, dummy_api):
+    dummy_bus.client.register_api(dummy_api)
     with pytest.raises(InvalidEventArguments):
         await dummy_bus.client.fire_event("my.dummy", "my_event", kwargs={"bad_arg": "value"})
 
@@ -44,50 +54,59 @@ async def test_fire_event_bad_event_arguments(dummy_bus: lightbus.path.BusPath, 
 @pytest.mark.asyncio
 async def test_listen_for_event_non_callable(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidEventListener):
-        await dummy_bus.client.listen_for_event("my.dummy", "my_event", listener=123)
+        dummy_bus.client.listen_for_event(
+            "my.dummy", "my_event", listener=123, listener_name="test"
+        )
 
 
 @pytest.mark.asyncio
 async def test_listen_for_event_no_args(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidEventListener):
-        await dummy_bus.client.listen_for_event("my.dummy", "my_event", listener=lambda: None)
+        dummy_bus.client.listen_for_event(
+            "my.dummy", "my_event", listener=lambda: None, listener_name="test"
+        )
 
 
 @pytest.mark.asyncio
 async def test_listen_for_event_no_positional_args(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidEventListener):
-        await dummy_bus.client.listen_for_event("my.dummy", "my_event", listener=lambda **kw: None)
+        dummy_bus.client.listen_for_event(
+            "my.dummy", "my_event", listener=lambda **kw: None, listener_name="test"
+        )
 
 
 @pytest.mark.asyncio
 async def test_listen_for_event_one_positional_arg(dummy_bus: lightbus.path.BusPath):
-    await dummy_bus.client.listen_for_event(
-        "my.dummy", "my_event", listener=lambda event_message: None
+    dummy_bus.client.listen_for_event(
+        "my.dummy", "my_event", listener=lambda event_message: None, listener_name="test"
     )
 
 
 @pytest.mark.asyncio
 async def test_listen_for_event_two_positional_args(dummy_bus: lightbus.path.BusPath):
-    await dummy_bus.client.listen_for_event(
-        "my.dummy", "my_event", listener=lambda event_message, other: None
+    dummy_bus.client.listen_for_event(
+        "my.dummy", "my_event", listener=lambda event_message, other: None, listener_name="test"
     )
 
 
 @pytest.mark.asyncio
 async def test_listen_for_event_variable_positional_args(dummy_bus: lightbus.path.BusPath):
-    await dummy_bus.client.listen_for_event("my.dummy", "my_event", listener=lambda *a: None)
+    dummy_bus.client.listen_for_event(
+        "my.dummy", "my_event", listener=lambda *a: None, listener_name="test"
+    )
 
 
 @pytest.mark.asyncio
 async def test_listen_for_event_starts_with_underscore(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidName):
-        await dummy_bus.client.listen_for_event(
-            "my.dummy", "_my_event", listener=lambda *a, **kw: None
+        dummy_bus.client.listen_for_event(
+            "my.dummy", "_my_event", listener=lambda *a, **kw: None, listener_name="test"
         )
 
 
 @pytest.mark.asyncio
 async def test_fire_event_starts_with_underscore(dummy_bus: lightbus.path.BusPath, dummy_api):
+    dummy_bus.client.register_api(dummy_api)
     with pytest.raises(InvalidName):
         await dummy_bus.client.fire_event("my.dummy", "_my_event")
 
@@ -100,20 +119,83 @@ async def test_call_rpc_remote_starts_with_underscore(dummy_bus: lightbus.path.B
 
 @pytest.mark.asyncio
 async def test_call_rpc_local_starts_with_underscore(dummy_bus: lightbus.path.BusPath, dummy_api):
+    dummy_bus.client.register_api(dummy_api)
     with pytest.raises(InvalidName):
         await dummy_bus.client.call_rpc_local("my.dummy", "_my_event")
 
 
 @pytest.mark.asyncio
+async def test_consume_rpcs_with_transport_error(
+    mocker, dummy_bus: lightbus.path.BusPath, dummy_api
+):
+    class TestException(Exception):
+        pass
+
+    async def co(e=None):
+        if e:
+            raise e
+
+    dummy_bus.client.register_api(dummy_api)
+
+    mocker.patch.object(dummy_bus.client, "call_rpc_local", return_value=co(TestException()))
+    fut = asyncio.Future()
+    fut.set_result(None)
+    send_result = mocker.patch.object(dummy_bus.client, "send_result", return_value=fut)
+
+    task = asyncio.ensure_future(
+        dummy_bus.client._consume_rpcs_with_transport(
+            rpc_transport=dummy_bus.client.transport_registry.get_rpc_transport("default"), apis=[]
+        )
+    )
+
+    # Wait for the consumer to send the result
+    for _ in range(0, 10):
+        if send_result.called:
+            break
+        await asyncio.sleep(0.1)
+    await cancel(task)
+
+    assert send_result.called
+    result_kwargs = send_result.call_args[1]
+    assert result_kwargs["result_message"].error
+    assert result_kwargs["result_message"].result
+    assert result_kwargs["result_message"].trace
+
+
+@pytest.mark.asyncio
 async def test_listen_for_event_empty_name(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidName):
-        await dummy_bus.client.listen_for_event("my.dummy", "_my_event", listener=lambda *a: None)
+        dummy_bus.client.listen_for_event(
+            "my.dummy", "_my_event", listener=lambda *a: None, listener_name="test"
+        )
 
 
 @pytest.mark.asyncio
 async def test_fire_event_empty_name(dummy_bus: lightbus.path.BusPath, dummy_api):
+    dummy_bus.client.register_api(dummy_api)
     with pytest.raises(InvalidName):
         await dummy_bus.client.fire_event("my.dummy", "_my_event")
+
+
+@pytest.mark.asyncio
+async def test_fire_event_version(dummy_bus: lightbus.path.BusPath, mocker):
+    class ApiWithVersion(lightbus.Api):
+        my_event = lightbus.Event()
+
+        class Meta:
+            name = "versioned_api"
+            version = 5
+
+    dummy_bus.client.register_api(ApiWithVersion())
+
+    send_event_spy = mocker.spy(
+        dummy_bus.client.transport_registry.get_event_transport("versioned_api"), "send_event"
+    )
+
+    await dummy_bus.client.fire_event("versioned_api", "my_event")
+    assert send_event_spy.called
+    (message,), _ = send_event_spy.call_args
+    assert message.version == 5
 
 
 @pytest.mark.asyncio
@@ -124,36 +206,27 @@ async def test_call_rpc_remote_empty_name(dummy_bus: lightbus.path.BusPath):
 
 @pytest.mark.asyncio
 async def test_call_rpc_local_empty_name(dummy_bus: lightbus.path.BusPath, dummy_api):
+    dummy_bus.client.register_api(dummy_api)
     with pytest.raises(InvalidName):
         await dummy_bus.client.call_rpc_local("my.dummy", "_my_event")
 
 
 @pytest.mark.asyncio
-async def test_no_transport():
+async def test_no_transport(dummy_bus):
     # No transports configured for any relevant api
-    config = Config.load_dict(
-        {"apis": {"default": {"event_transport": {"redis": {}}}}}, set_defaults=False
-    )
-    client = lightbus.BusClient(config=config)
+    dummy_bus.client.transport_registry._registry = {}
     with pytest.raises(TransportNotFound):
-        await client.call_rpc_remote("my_api", "test", kwargs={}, options={})
+        await dummy_bus.client.call_rpc_remote("my_api", "test", kwargs={}, options={})
 
 
 @pytest.mark.asyncio
-async def test_no_transport_type():
+async def test_no_transport_type(dummy_bus):
     # Transports configured, but the wrong type of transport
-    config = Config.load_dict(
-        {
-            "apis": {
-                "default": {"event_transport": {"redis": {}}},
-                "my_api": {"event_transport": {"redis": {}}},
-            }
-        },
-        set_defaults=False,
-    )
-    client = lightbus.BusClient(config=config)
+    # No transports configured for any relevant api
+    registry_entry = dummy_bus.client.transport_registry._registry["default"]
+    dummy_bus.client.transport_registry._registry = {"default": registry_entry._replace(rpc=None)}
     with pytest.raises(TransportNotFound):
-        await client.call_rpc_remote("my_api", "test", kwargs={}, options={})
+        await dummy_bus.client.call_rpc_remote("my_api", "test", kwargs={}, options={})
 
 
 # Validation
@@ -168,6 +241,8 @@ def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
         # Use the base transport as a dummy, it only needs to have a
         # close() method on it in order to keep the client.close() method happy
         schema = Schema(schema_transport=lightbus.Transport())
+        # Fake loading of remote schemas from schema transport
+        schema._remote_schemas = {}
         config = Config.load_dict(
             {"apis": {"default": {"validate": validate, "strict_validation": strict_validation}}}
         )
@@ -182,6 +257,7 @@ def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
         ),
         dummy_bus.client.schema = schema
         dummy_bus.client.config = config
+
         return dummy_bus.client
 
     return create_bus_client_with_unhappy_schema
@@ -283,10 +359,17 @@ def test_setup_transports_opened(mocker):
 
     m = mocker.patch.object(rpc_transport, "open", autospec=True, return_value=dummy_coroutine())
 
-    lightbus.creation.create(
-        rpc_transport=rpc_transport, schema_transport=lightbus.DebugSchemaTransport(), plugins={}
-    )
-    assert m.call_count == 1
+    transport_registry = TransportRegistry().load_config(Config.load_dict({}))
+    transport_registry.set_rpc_transport("default", rpc_transport)
+
+    bus = lightbus.creation.create(transport_registry=transport_registry, plugins=[])
+    try:
+        assert m.call_count == 0
+
+        bus.client.lazy_load_now()
+        assert m.call_count == 1
+    finally:
+        bus.client.close()
 
 
 def test_run_forever(dummy_bus: lightbus.path.BusPath, mocker, dummy_api):
@@ -294,17 +377,6 @@ def test_run_forever(dummy_bus: lightbus.path.BusPath, mocker, dummy_api):
     m = mocker.patch.object(dummy_bus.client, "_actually_run_forever")
     dummy_bus.client.run_forever()
     assert m.called
-
-
-def test_register_listener_context_manager(dummy_bus: lightbus.path.BusPath):
-    client = dummy_bus.client
-    assert len(client._listeners) == 0
-    with client._register_listener([("api_name", "event_name")]):
-        assert client._listeners[("api_name", "event_name")] == 1
-        with client._register_listener([("api_name", "event_name")]):
-            assert client._listeners[("api_name", "event_name")] == 2
-        assert client._listeners[("api_name", "event_name")] == 1
-    assert len(client._listeners) == 0
 
 
 DECORATOR_HOOK_PAIRS = [
@@ -335,7 +407,7 @@ async def test_hook_decorator(dummy_bus: lightbus.path.BusPath, decorator, hook,
         nonlocal count
         count += 1
 
-    await dummy_bus.client._plugin_hook(hook)
+    await dummy_bus.client._execute_hook(hook)
 
     assert count == 1
 
@@ -352,41 +424,34 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
         count += 1
 
     decorator(callback, before_plugins=before_plugins)
-    await dummy_bus.client._plugin_hook(hook)
+    await dummy_bus.client._execute_hook(hook)
 
     assert count == 1
 
 
 @pytest.mark.asyncio
-async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, loop, caplog):
+async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, caplog):
     # Force override config
     dummy_bus.client.config._source["apis"]["default"]["on_error"] = "x"
     dummy_bus.client.config._config.apis["default"].on_error = OnError.SHUTDOWN
 
-    class SomeException(Exception):
-        pass
+    # This is normally only set on server startup, so set it here so it can be used
+    dummy_bus.client._server_shutdown_queue = janus.Queue()
 
     def listener(*args, **kwargs):
-        raise SomeException()
+        raise Exception()
 
-    task = await dummy_bus.client.listen_for_events(
-        events=[("my_company.auth", "user_registered")], listener=listener
+    # Start the listener
+    dummy_bus.client.listen_for_events(
+        events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
     )
 
-    # Don't let the event loop be stopped as it is needed to run the tests!
-    with mock.patch.object(loop, "stop") as m:
-        # Dummy event transport fires events every 0.1 seconds
-        await asyncio.sleep(0.15)
-        assert m.called
+    await dummy_bus.client._setup_server()
 
-    # Close the bus to force tasks to be cleaned up
-    # (This would have happened normally when the event loop was stopped,
-    # but we prevented that my mocking stop() above)
-    await dummy_bus.client.close_async()
+    # Check we have something in the shutdown queue
+    await asyncio.wait_for(dummy_bus.client._server_shutdown_queue.async_q.get(), timeout=5)
 
-    log_levels = {r.levelname for r in caplog.records}
-    # Ensure the error was logged
-    assert "ERROR" in log_levels
+    # Note that this hasn't actually shut the bus down, we'll test that in test_server_shutdown
 
 
 @pytest.mark.asyncio
@@ -401,9 +466,11 @@ async def test_exception_in_listener_stop_listener(dummy_bus: lightbus.path.BusP
     def listener(*args, **kwargs):
         raise SomeException()
 
-    task = await dummy_bus.client.listen_for_events(
-        events=[("my_company.auth", "user_registered")], listener=listener
+    dummy_bus.client.listen_for_events(
+        events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
     )
+
+    await dummy_bus.client._setup_server()
 
     # Don't let the event loop be stopped as it is needed to run the tests!
     # (although stop() shouldn't actually be called here)
@@ -411,9 +478,6 @@ async def test_exception_in_listener_stop_listener(dummy_bus: lightbus.path.BusP
         # Dummy event transport fires events every 0.1 seconds
         await asyncio.sleep(0.15)
         assert not m.called
-
-    # Listener task has stopped
-    assert task.done()
 
     log_levels = {r.levelname for r in caplog.records}
     # Ensure the error was logged
@@ -432,9 +496,11 @@ async def test_exception_in_listener_ignore(dummy_bus: lightbus.path.BusPath, lo
     def listener(*args, **kwargs):
         raise SomeException()
 
-    task = await dummy_bus.client.listen_for_events(
-        events=[("my_company.auth", "user_registered")], listener=listener
+    dummy_bus.client.listen_for_events(
+        events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
     )
+
+    await dummy_bus.client._setup_server()
 
     # Don't let the event loop be stopped as it is needed to run the tests!
     # (although stop() shouldn't actually be called here)
@@ -443,9 +509,102 @@ async def test_exception_in_listener_ignore(dummy_bus: lightbus.path.BusPath, lo
         await asyncio.sleep(0.15)
         assert not m.called
 
-    # Listener task is still running
-    assert not task.done()
-
     log_levels = {r.levelname for r in caplog.records}
     # Ensure the error was logged
     assert "ERROR" in log_levels
+
+
+def test_add_background_task(dummy_bus: lightbus.path.BusPath, event_loop):
+    calls = 0
+
+    async def test_coroutine():
+        nonlocal calls
+        while True:
+            calls += 1
+            if calls == 5:
+                raise Exception("Intentional exception: stopping lightbus dummy bus from running")
+            await asyncio.sleep(0.001)
+
+    dummy_bus.client.add_background_task(test_coroutine())
+
+    dummy_bus.client.run_forever()
+
+    assert dummy_bus.client.exit_code
+
+    assert calls == 5
+
+
+def test_every(dummy_bus: lightbus.path.BusPath, event_loop):
+    calls = 0
+
+    @dummy_bus.client.every(seconds=0.001)
+    async def test_coroutine():
+        nonlocal calls
+        while True:
+            calls += 1
+            if calls == 5:
+                raise Exception("Intentional exception: stopping lightbus dummy bus from running")
+            await asyncio.sleep(0.001)
+
+    # SystemExit raised because test_coroutine throws an exception
+    dummy_bus.client.run_forever()
+
+    assert dummy_bus.client.exit_code
+
+    assert calls == 5
+
+
+def test_schedule(dummy_bus: lightbus.path.BusPath, event_loop):
+    import schedule
+
+    calls = 0
+
+    # TODO: This kind of 'throw exception to stop bus' hackery in the tests can be cleaned up
+    @dummy_bus.client.schedule(schedule.every(0.001).seconds)
+    async def test_coroutine():
+        nonlocal calls
+        while True:
+            calls += 1
+            if calls == 5:
+                raise Exception("Intentional exception: stopping lightbus dummy bus from running")
+            await asyncio.sleep(0.001)
+
+    dummy_bus.client.run_forever()
+
+    assert dummy_bus.client.exit_code
+
+    assert calls == 5
+
+
+@pytest.mark.asyncio
+async def test_server_shutdown(dummy_bus: lightbus.path.BusPath, caplog):
+    thread = threading.Thread(target=dummy_bus.client.run_forever, name="TestLightbusServerThread")
+    thread.start()
+
+    await asyncio.sleep(0.1)
+    dummy_bus.client.shutdown_server(exit_code=1)
+    await asyncio.sleep(1)
+
+    assert (
+        not dummy_bus.client.worker._thread.is_alive()
+    ), "Bus worker thread is still running but should have stopped"
+    # Make sure will pull out any exceptions
+    dummy_bus.client.worker._thread.join()
+
+
+@pytest.mark.asyncio
+async def test_worker_deadlock(dummy_bus: lightbus.path.BusPath):
+    @run_in_worker_thread(worker=dummy_bus.client.worker)
+    async def fun1():
+        print("fun1")
+
+    @run_in_worker_thread(worker=dummy_bus.client.worker)
+    async def fun2():
+        await run_user_provided_callable(fun1, args=[], kwargs={}, bus_client=dummy_bus.client)
+
+    with pytest.raises(WorkerDeadlock) as exc_info:
+        await fun2()
+
+    # Check we have the stack trace for both calls printed out
+    assert "await fun2()" in str(exc_info.value)
+    assert "run_user_provided_callable(fun1" in str(exc_info.value)

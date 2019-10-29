@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 
-from lightbus.api import registry, Api, Event
+from lightbus.api import Api, Event
 from lightbus.path import BusPath
 from lightbus.plugins.state import StatePlugin
 from lightbus.utilities.async_tools import cancel
@@ -18,14 +18,13 @@ class TestApi(Api):
 
 @pytest.mark.asyncio
 async def test_before_server_start(dummy_bus: BusPath, loop, get_dummy_events):
-    registry.add(TestApi())
-    listener = await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
+    dummy_bus.client.register_api(TestApi())
+    dummy_bus.example.test.my_event.listen(lambda *a, **kw: None, listener_name="test")
     await asyncio.sleep(0.1)  # Give the bus a moment to kick up the listener
 
     state_plugin = StatePlugin(service_name="foo", process_name="bar")
     state_plugin.ping_enabled = False
     await state_plugin.before_server_start(client=dummy_bus.client)
-    await cancel(listener)
 
     dummy_events = get_dummy_events()
     assert len(dummy_events) == 1
@@ -46,9 +45,9 @@ async def test_before_server_start(dummy_bus: BusPath, loop, get_dummy_events):
 @pytest.mark.asyncio
 async def test_ping(dummy_bus: BusPath, loop, get_dummy_events):
     # We check the pings message contains a list of registries, so register one
-    registry.add(TestApi())
+    dummy_bus.client.register_api(TestApi())
     # Likewise for event listeners
-    await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
+    dummy_bus.example.test.my_event.listen(lambda *a, **kw: None, listener_name="test")
 
     # Let the state plugin send a ping then cancel it
     state_plugin = StatePlugin(service_name="foo", process_name="bar")
@@ -75,8 +74,8 @@ async def test_ping(dummy_bus: BusPath, loop, get_dummy_events):
 
 @pytest.mark.asyncio
 async def test_after_server_stopped(dummy_bus: BusPath, loop, get_dummy_events):
-    registry.add(TestApi())
-    listener = await dummy_bus.example.test.my_event.listen_async(lambda *a, **kw: None)
+    dummy_bus.client.register_api(TestApi())
+    dummy_bus.example.test.my_event.listen(lambda *a, **kw: None, listener_name="test")
 
     plugin = StatePlugin(service_name="foo", process_name="bar")
     plugin._ping_task = asyncio.Future()
@@ -93,5 +92,3 @@ async def test_after_server_stopped(dummy_bus: BusPath, loop, get_dummy_events):
     assert event_message.event_name == "server_stopped"
     assert event_message.kwargs["service_name"] == "foo"
     assert event_message.kwargs["process_name"] == "bar"
-
-    await cancel(listener)

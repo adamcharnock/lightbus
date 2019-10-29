@@ -24,14 +24,14 @@ default_log_colors = {
 # The default format to use for each style
 default_formats = {
     "%": {
-        "DEBUG": "%(log_color)s%(name)s | %(msg)s",
-        "INFO": "%(log_color)s%(name)s | %(msg)s",
-        "WARNING": "%(log_color)s%(name)s | %(msg)s",
-        "ERROR": "%(log_color)s%(name)s | ERROR: %(msg)s (%(module)s:%(lineno)d)",
-        "CRITICAL": "%(log_color)s%(name)s | CRITICAL: %(msg)s",
+        "DEBUG": "%(log_color)s %(name)s | %(msg)s",
+        "INFO": "%(log_color)s %(name)s | %(msg)s",
+        "WARNING": "%(log_color)s %(name)s | %(msg)s",
+        "ERROR": "%(log_color)s %(name)s | ERROR: %(msg)s (%(module)s:%(lineno)d)",
+        "CRITICAL": "%(log_color)s %(name)s | CRITICAL: %(msg)s",
     },
-    "{": "{log_color}{levelname}:{name}:{message}",
-    "$": "${log_color}${levelname}:${name}:${message}",
+    "{": "{log_color} {levelname}:{name}:{message}",
+    "$": "${log_color}$ ${levelname}:${name}:${message}",
 }
 
 
@@ -213,7 +213,7 @@ class LightbusFormatter(logging.Formatter):  # pragma: no cover
         return formatted_prefix
 
 
-class L(object):
+class L(object):  # pragma: no cover
     style = ""
 
     def __init__(self, log_message, *values):
@@ -243,12 +243,11 @@ class L(object):
             return str(self.log_message).format(*keys)
 
 
-class Bold(L):
+class Bold(L):  # pragma: no cover
     style = escape_codes["bold"]
 
 
-class LBullets(L):
-
+class LBullets(L):  # pragma: no cover
     def __init__(self, log_message, *values, items, bullet="∙", indent=4):
         super().__init__(log_message, *values)
         self.items = items

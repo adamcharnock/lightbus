@@ -7,14 +7,15 @@ from argparse import ArgumentParser, _ArgumentGroup, Namespace
 from datetime import datetime
 
 import os
+from itertools import chain
 
-from lightbus.api import registry
 from lightbus.message import EventMessage
-from lightbus.plugins import LightbusPlugin, is_plugin_loaded
+from lightbus.plugins import LightbusPlugin
 from lightbus.plugins.metrics import MetricsPlugin
 from lightbus.utilities.async_tools import cancel
 
 if False:
+    # pylint: disable=unused-import
     from lightbus import BusClient
     from lightbus.config import Config
 
@@ -44,6 +45,7 @@ class StatePlugin(LightbusPlugin):
 
     Per-message events are available via the MetricsPlugin, which is substantially higher volume.
     """
+
     priority = 100
 
     def __init__(
@@ -101,6 +103,7 @@ class StatePlugin(LightbusPlugin):
                 kwargs=self.get_state_kwargs(client),
             ),
             options={},
+            bus_client=client,
         )
         if self.ping_enabled:
             logger.info("Ping messages will be sent every {} seconds".format(self.ping_interval))
@@ -120,6 +123,7 @@ class StatePlugin(LightbusPlugin):
                 kwargs=dict(process_name=self.process_name, service_name=self.service_name),
             ),
             options={},
+            bus_client=client,
         )
         await cancel(self._ping_task)
 
@@ -134,19 +138,22 @@ class StatePlugin(LightbusPlugin):
                     kwargs=self.get_state_kwargs(client),
                 ),
                 options={},
+                bus_client=client,
             )
 
     def get_state_kwargs(self, client: "BusClient"):
         """Get the kwargs for a server_started or ping message"""
         max_memory_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        event_listeners = chain(
+            *[event_listener.events for event_listener in client._event_listeners]
+        )
         return dict(
             process_name=self.process_name,
             service_name=self.service_name,
-            metrics_enabled=is_plugin_loaded(MetricsPlugin),
-            api_names=[api.meta.name for api in registry.public()],
+            metrics_enabled=client.plugin_registry.is_plugin_loaded(MetricsPlugin),
+            api_names=[api.meta.name for api in client.api_registry.public()],
             listening_for=[
-                "{}.{}".format(api_name, event_name)
-                for api_name, event_name in client._listeners.keys()
+                "{}.{}".format(api_name, event_name) for api_name, event_name in event_listeners
             ],
             timestamp=datetime.utcnow().timestamp(),
             ping_enabled=self.ping_enabled,

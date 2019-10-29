@@ -43,7 +43,7 @@ def make_transport_selector_structure(type_) -> NamedTuple:
 
     globals_ = globals().copy()
     globals_.update(vars)
-    exec(code, globals_)
+    exec(code, globals_)  # nosec
     structure = globals_[class_name]
     return enable_config_inheritance(structure)
 
@@ -56,13 +56,11 @@ def make_plugin_selector_structure() -> NamedTuple:
     for plugin_name, plugin_class in find_plugins().items():
         plugin_class_name = plugin_class.__name__
         vars[plugin_class_name] = plugin_class
-        code += (
-            f"    {plugin_name}: Optional[{plugin_class_name}.Config] = {plugin_class_name}.Config()\n"
-        )
+        code += f"    {plugin_name}: Optional[{plugin_class_name}.Config] = {plugin_class_name}.Config()\n"
 
     globals_ = globals().copy()
     globals_.update(vars)
-    exec(code, globals_)
+    exec(code, globals_)  # nosec
     return globals_[class_name]
 
 

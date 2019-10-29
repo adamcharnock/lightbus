@@ -1,7 +1,8 @@
 import json as jsonlib
 import os
 from pathlib import Path
-from typing import TypeVar, Dict, NamedTuple, Union
+from typing import Dict, NamedTuple, Union, Optional
+import urllib.request
 
 import jsonschema
 import yaml as yamllib
@@ -12,6 +13,7 @@ from lightbus.utilities.casting import cast_to_hint
 from lightbus.utilities.deforming import deform_to_bus
 
 if False:
+    # pylint: disable=unused-import
     from .structure import RootConfig, BusConfig, ApiConfig, ConfigProxy
 
 
@@ -27,11 +29,19 @@ class Config(object):
     will normally have a default catch-all definition, but can be customised
     on a per-api basis.
     """
+
     _config: "RootConfig"
 
-    def __init__(self, root_config: "RootConfig", source: dict):
+    def __init__(self, root_config: "RootConfig", source: Optional[dict] = None):
         self._config = root_config
-        self._source = source
+        if source is not None:
+            self._source = source
+        else:
+            # Use the default config as a source if none is specified.
+            # This is triggered when instantiating a bus client
+            # with a RootConfig object rather than loading in a dict or json.
+            # This frequently happens in testing.
+            self._source = Config.load_dict({})._source
 
     def bus(self) -> "BusConfig":
         return self._config.bus
@@ -60,19 +70,28 @@ class Config(object):
         return getattr(self._config.plugins, plugin_name)
 
     @classmethod
-    def load_file(cls, file_path):
+    def load_file(cls, file_path: Union[str, Path]):
         """Instantiate the config from the given file path
 
         Files ending in `.json` will be parsed as JSON, otherwise the
         file will be parsed as YAML.
         """
-        file_path = Path(file_path)
-        encoded_config = file_path.read_text(encoding="utf8")
 
-        if file_path.name.endswith(".json"):
-            return cls.load_json(encoded_config)
+        if str(file_path).startswith("http://") or str(file_path).startswith("https://"):
+            response = urllib.request.urlopen(file_path, timeout=5)
+            encoded_config = response.read()
+            if "json" in response.headers.get("Content-Type") or file_path.endswith(".json"):
+                return cls.load_json(encoded_config)
+            else:
+                return cls.load_yaml(encoded_config)
         else:
-            return cls.load_yaml(encoded_config)
+            file_path = Path(file_path)
+            encoded_config = file_path.read_text(encoding="utf8")
+
+            if file_path.name.endswith(".json"):
+                return cls.load_json(encoded_config)
+            else:
+                return cls.load_yaml(encoded_config)
 
     @classmethod
     def load_json(cls, json: str):
@@ -82,7 +101,7 @@ class Config(object):
     @classmethod
     def load_yaml(cls, yaml: str):
         """Instantiate the config from a YAML string"""
-        config = yamllib.load(yaml)
+        config = yamllib.safe_load(yaml)
         if not isinstance(config, dict):
             raise UnexpectedConfigurationFormat(
                 f"The config file was loaded but it appears to be in an unexpected format. "
@@ -133,6 +152,7 @@ def config_as_json_schema() -> dict:
 
 
 def set_default_config(config: dict) -> dict:
+    """Set the default configuration options on a loaded config dictionary"""
     env_service_name = os.environ.get("LIGHTBUS_SERVICE_NAME")
     if env_service_name:
         config.setdefault("service_name", env_service_name)

@@ -37,38 +37,33 @@ group is identified by a name in the form:
     # Consumer group naming format
     {service_name}-{listener_name}
 
-Your *service name* is specified in your [service-level configuration].
-Your *listener name* is setup when you create your event listener (see below).
+The *service name* is specified in your [service-level configuration].
+The *listener name* is setup when you create your event listener (see below).
 
 For example, this `bus` module sets up two listeners. Each listener is
 given a `listener_name`, thereby ensuring each listener receives a
 copy of every `competitor_prices.changed` event.
 
 ```python3
+# Example of setting service and listener names
 from my_handlers import send_price_alerts, update_db
 
 bus = lightbus.create(
     service_name='price-monitor',
 )
 
-# Consumer group name: price-monitor-send-price-alerts
+# Consumer group name will be: price-monitor-send-price-alerts
 bus.competitor_prices.changed.listen(
     send_price_alerts,
     listener_name="send_price_alerts",
 )
 
-# Consumer group name: price-monitor-update-db
+# Consumer group name will be: price-monitor-update-db
 bus.competitor_prices.changed.listen(
     update_db,
     listener_name="update_db",
 )
 ```
-
-!!! important
-
-    Failure to specify `listener_name` in the above example will
-    result in each message going to **either** one listener or the other,
-    but never to both. This is almost certainly not what you want.
 
 ## Process names
 
@@ -102,20 +97,41 @@ the will be picked up by another process.
 
 ## Considerations
 
-* More complex
-* More robust
+* Events are more complex, you may need maintain state as events are received. 
+  The source-of-truth regarding stored state may no longer be clear. Enforcing 
+  consistency can become difficult.
+* Events are more robust. Your service will be able to fire events as long as the bus 
+  client can connect. Likewise, you service can listen for events until the cows come home.
+  Incoming events may be delayed by problems in other services, but each service should 
+  be isolated from those problems.
+  
+Concepts such as Domain Driven Design and Event Sourcing can help to tackle some 
+of these problems.
 
 ## Best practices
 
+You may find some of these best practices & suggestions useful. Just 
+remember that there can be exceptions to every rule.
+
+!!! note
+
+    See [architecture tips](architecture-tips.md) for further details.
+
 ### Event naming
 
-* Past tense
-* Domain-based vs technical-based
+* Name events using the past tense. Use `page_viewed`, not `page_view`. 
+  Use `order_created`, not `create_order`.
+* This can apply to events which are commands as well: Use `email_report_requested`, not `email_report`.
+* Where relevant, consider using domain-based naming rather than technical names.
+  For example, use `order_placed`, not `order_created`. Use 
+  `parcel_delivered`, not `parcel_updated`.
 
 ### Parameter values
 
-* Consistent meaning over time (not 'tomorrow', or '6 days ago')
-* Chop up your relations (aggregates in DDD)
+* Parameter values should have consistent meaning over time. Use 
+  complete datetimes, not 'tomorrow' or '6 days ago'.
+* Decide on the boundaries between your relations. See [Decide on Boundaries](/explanation/architecture-tips.md#decide-on-boundaries)
+  with the [architecture tips](architecture-tips.md) section.
 
 
 [service-level configuration]: /reference/configuration.md#2-service-level-configuration

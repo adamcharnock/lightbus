@@ -31,7 +31,7 @@ theme:
   feature:
     tabs: true
 
-pages:
+nav:
   - Home: index.md
   - Tutorials:
     - Overview: tutorial/index.md
@@ -41,19 +41,21 @@ pages:
   - How to:
     - Overview: howto/index.md
     - Access your bus client: howto/access-your-bus-client.md
+    - Schedule recurring tasks: howto/schedule-recurring-tasks.md
+    - Run background tasks: howto/run-background-tasks.md
     - Use Lightbus for realtime metrics*: howto/metrics.md
     - Use Lightbus for event sourcing*: howto/event-sourcing.md
-    - Write idempotent event handlers*: howto/write-idempotent-event-handlers.md
-    - Combine processes: howto/combine-processes.md
+    - Write idempotent event handlers: howto/write-idempotent-event-handlers.md
+#    - Combine processes: howto/combine-processes.md
   - Explanation:
     - Overview: explanation/index.md
     - Anatomy lesson: explanation/anatomy-lesson.md
     - Services: explanation/services.md
     - The bus: explanation/bus.md
     - APIs: explanation/apis.md
-    - Remote prcedure calls: explanation/rpcs.md
+    - Remote procedure calls: explanation/rpcs.md
     - Events: explanation/events.md
-    - Marselling: explanation/marshelling.md
+    - Marshelling: explanation/marshalling.md
     - Transports: explanation/transports.md
     - Configuration*: explanation/configuration.md
     - Schema*: explanation/schema.md
@@ -63,15 +65,23 @@ pages:
   - Reference:
     - Overview: reference/index.md
     - APIs: reference/apis.md
-    - Remote prcedure calls: reference/rpcs.md
+    - Remote procedure calls: reference/rpcs.md
     - Events: reference/events.md
     - Typing: reference/typing.md
-    - Transports*: reference/transports.md
     - Configuration: reference/configuration.md
     - Schema: reference/schema.md
-    - Command line use*: reference/command-line-use.md
+    - Command line use:
+      - run*: reference/command-line-use/run.md
+      - inspect*: reference/command-line-use/inspect.md
+      - shell*: reference/command-line-use/shell.md
+      - dumpschema*: reference/command-line-use/dumpschema.md
+      - dumpconfigschema*: reference/command-line-use/dumpconfigschema.md
     - Debugging*: reference/debugging.md
     - Plugins*: reference/plugins.md
+    - Transports*: reference/transports.md
+    - RPC Prococol (Redis): reference/rpc-protocol.md
+    - Event Prococol (Redis): reference/event-protocol.md
+    - Schema Prococol (Redis)*: reference/schema-protocol.md
 
 # Extensions
 markdown_extensions:
@@ -103,3 +113,6 @@ markdown_extensions:
 google_analytics:
   - 'UA-103655163-1'
   - 'auto'
+
+extra_css:
+  - 'static/stylesheets/extra.css'

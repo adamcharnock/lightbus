@@ -3,7 +3,8 @@ import datetime
 import inspect
 import logging
 from enum import Enum
-from typing import Mapping, Type, get_type_hints, Union, TypeVar, Callable
+from typing import Mapping, Type, get_type_hints, Union, TypeVar, Callable, Any
+from base64 import b64decode
 
 import dateutil.parser
 
@@ -14,6 +15,7 @@ from lightbus.utilities.type_checks import (
     isinstance_safe,
     parse_hint,
     issubclass_safe,
+    get_property_default,
 )
 
 is_callable = callable
@@ -35,6 +37,11 @@ H = TypeVar("A")
 
 
 def cast_to_hint(value: V, hint: Type[H]) -> Union[V, H]:
+    if value is None:
+        return None
+    elif hint in (Any, ...):
+        return value
+
     optional_hint = is_optional(hint)
     if optional_hint and value is not None:
         hint = optional_hint
@@ -59,6 +66,8 @@ def cast_to_hint(value: V, hint: Type[H]) -> Union[V, H]:
             instantiator=hint.__from_bus__,
             expand_kwargs=False,
         )
+    elif issubclass_safe(hint, bytes):
+        return b64decode(value.encode("utf8"))
     elif type_is_namedtuple(hint) and isinstance_safe(value, Mapping):
         return _mapping_to_instance(mapping=value, destination_type=hint)
     elif type_is_dataclass(hint) and isinstance_safe(value, Mapping):
@@ -68,19 +77,22 @@ def cast_to_hint(value: V, hint: Type[H]) -> Union[V, H]:
         return dateutil.parser.parse(value)
     elif is_class and issubclass_safe(hint_type, datetime.date) and isinstance_safe(value, str):
         # Date as a string
-        return dateutil.parser.parse(value).date()
+        return cast_or_warning(lambda v: dateutil.parser.parse(v).date(), value)
     elif is_class and issubclass_safe(hint_type, list):
         # Lists
-        if hint_args:
-            return [cast_to_hint(i, hint_args[0]) for i in value]
-        else:
-            return list(value)
+        if hint_args and hasattr(value, "__iter__"):
+            value = [cast_to_hint(i, hint_args[0]) for i in value]
+        return cast_or_warning(list, value)
     elif is_class and issubclass_safe(hint_type, tuple):
         # Tuples
-        if hint_args:
-            return tuple(cast_to_hint(i, hint_args[0]) for i in value)
-        else:
-            return tuple(value)
+        if hint_args and hasattr(value, "__iter__"):
+            value = [cast_to_hint(h, hint_args[i]) for i, h in enumerate(value)]
+        return cast_or_warning(tuple, value)
+    elif is_class and issubclass_safe(hint_type, set):
+        # Sets
+        if hint_args and hasattr(value, "__iter__"):
+            value = [cast_to_hint(i, hint_args[0]) for i in value]
+        return cast_or_warning(set, value)
     elif (
         inspect.isclass(hint)
         and hasattr(hint, "__annotations__")
@@ -94,15 +106,7 @@ def cast_to_hint(value: V, hint: Type[H]) -> Union[V, H]:
         )
         return value
     else:
-        try:
-            return hint(value)
-        except Exception as e:
-            logger.warning(
-                f"Failed to cast value {repr(value)} to type {hint}. Will "
-                f"continue without casting, but this may cause errors in any "
-                f"called code. Error was: {e}"
-            )
-            return value
+        return cast_or_warning(hint, value)
 
 
 T = TypeVar("T")
@@ -159,3 +163,15 @@ def _mapping_to_instance(
         return instantiator(**parameters)
     else:
         return instantiator(parameters)
+
+
+def cast_or_warning(type_, value):
+    try:
+        return type_(value)
+    except Exception as e:
+        logger.warning(
+            f"Failed to cast value {repr(value)} to type {type_}. Will "
+            f"continue without casting, but this may cause errors in any "
+            f"called code. Error was: {e}"
+        )
+        return value

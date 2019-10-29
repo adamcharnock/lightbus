@@ -3,13 +3,26 @@ import contextlib
 import functools
 import inspect
 import logging
+import os
 import signal
+import sys
+import threading
 import time
 from asyncio import CancelledError
 from collections import defaultdict
-from typing import List, Tuple
+from datetime import timedelta
+from itertools import chain
+from typing import List, Tuple, Coroutine, Union
 
-from lightbus.api import registry, Api
+import janus
+
+from lightbus.api import Api, Registry
+from lightbus.client_worker import (
+    ClientWorker,
+    run_in_worker_thread,
+    assert_not_in_worker_thread,
+    WorkerProxy,
+)
 from lightbus.config import Config
 from lightbus.config.structure import OnError
 from lightbus.exceptions import (
@@ -23,11 +36,17 @@ from lightbus.exceptions import (
     NoApisToListenOn,
     InvalidName,
     LightbusShutdownInProgress,
+    InvalidSchedule,
+    LightbusExit,
+    BusAlreadyClosed,
+    TransportIsClosed,
+    LightbusServerMustStartInMainThread,
+    UnsupportedUse,
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
-from lightbus.plugins import autoload_plugins, plugin_hook, manually_set_plugins
+from lightbus.plugins import PluginRegistry
 from lightbus.schema import Schema
 from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport
@@ -36,14 +55,21 @@ from lightbus.utilities.async_tools import (
     block,
     get_event_loop,
     cancel,
-    await_if_necessary,
     make_exception_checker,
+    call_every,
+    call_on_schedule,
+    run_user_provided_callable,
 )
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
+from lightbus.utilities.features import Feature, ALL_FEATURES
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.logging import log_transport_information
+
+if False:
+    # pylint: disable=unused-import
+    from schedule import Job
 
 __all__ = ["BusClient"]
 
@@ -60,19 +86,62 @@ class BusClient(object):
     All functionality in `BusPath` is provided by `BusClient`.
     """
 
-    def __init__(self, config: "Config", transport_registry: TransportRegistry = None):
-
+    def __init__(
+        self,
+        config: "Config",
+        transport_registry: TransportRegistry = None,
+        features: List[Union[Feature, str]] = ALL_FEATURES,
+    ):
+        self._event_listeners: List[_EventListener] = []  # Event listeners
+        self._consumers = []  # RPC consumers
+        # Coroutines added via schedule/every/add_background_task which should be started up
+        # once the server starts
+        self._background_coroutines = []
+        # Tasks produced from the values in self._background_coroutines. Will be closed on bus shutdown
+        self._background_tasks = []
+        self._hook_callbacks = defaultdict(list)
         self.config = config
-        self.transport_registry = transport_registry or TransportRegistry().load_config(config)
-        self.schema = Schema(
-            schema_transport=self.transport_registry.get_schema_transport("default"),
+        self.transport_registry = transport_registry
+        self.features: List[Union[Feature, str]] = ALL_FEATURES
+        self.set_features(features)
+        self.api_registry = Registry()
+        self.plugin_registry = PluginRegistry()
+        self.schema = None
+        self._server_shutdown_queue: janus.Queue = None
+        self._shutdown_monitor_task = None
+        self.exit_code = 0
+        self._closed = False
+        self._server_tasks = []
+        self.worker = ClientWorker()
+        self._lazy_load_complete = False
+
+        self.worker.start(bus_client=self, after_shutdown=self._handle_worker_shutdown)
+        self.__init_worker___()
+
+    @run_in_worker_thread()
+    def __init_worker___(self):
+        self.transport_registry = self.transport_registry or TransportRegistry().load_config(
+            self.config
+        )
+        schema = Schema(
+            schema_transport=self.transport_registry.get_schema_transport(),
             max_age_seconds=self.config.bus().schema.ttl,
             human_readable=self.config.bus().schema.human_readable,
         )
-        self._listeners = {}
-        self._hook_callbacks = defaultdict(list)
-        self._exit_code = 0
+        self.schema = WorkerProxy(proxied=schema, worker=self.worker)
 
+    def _handle_worker_shutdown(self):
+        # This method will be called within the worker thead, but after the worker
+        # thread's event loop has stopped
+
+        try:
+            # Close _close_async_inner() because, we are in the worker thead.
+            block(self._close_async_inner())
+        except BusAlreadyClosed:
+            # In the case of a clean shutdown the bus will already be closed.
+            pass
+
+    @run_in_worker_thread()
     async def setup_async(self, plugins: dict = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
 
@@ -105,122 +174,205 @@ class BusClient(object):
         # Log the plugins we have
         if plugins is None:
             logger.debug("Auto-loading any installed Lightbus plugins...")
-            # Force auto-loading as many commands need to do config-less best-effort
-            # plugin loading. But now we have the config loaded so we can
-            # make sure we load the plugins properly.
-            plugins = autoload_plugins(self.config, force=True)
+            self.plugin_registry.autoload_plugins(self.config)
         else:
             logger.debug("Loading explicitly specified Lightbus plugins....")
-            manually_set_plugins(plugins)
+            self.plugin_registry.set_plugins(plugins)
 
-        if plugins:
+        if self.plugin_registry._plugins:
             logger.info(
-                LBullets("Loaded the following plugins ({})".format(len(plugins)), items=plugins)
+                LBullets(
+                    "Loaded the following plugins ({})".format(len(self.plugin_registry._plugins)),
+                    items=self.plugin_registry._plugins,
+                )
             )
         else:
             logger.info("No plugins loaded")
 
-        # Load schema
-        logger.debug("Loading schema...")
-        await self.schema.load_from_bus()
-
-        # Share the schema of the registered APIs
-        for api in registry.all():
-            await self.schema.add_api(api)
-
-        logger.info(
-            LBullets(
-                "Loaded the following remote schemas ({})".format(len(self.schema.remote_schemas)),
-                items=self.schema.remote_schemas.keys(),
-            )
-        )
-
-        for transport in self.transport_registry.get_all_transports():
-            await transport.open()
-
     def setup(self, plugins: dict = None):
         block(self.setup_async(plugins), timeout=5)
 
-    def close(self):
-        block(self.close_async(), timeout=5)
+    @assert_not_in_worker_thread()
+    def close(self, _stop_worker=True):
+        """Close the bus client
 
-    async def close_async(self):
+        This will cancel all tasks and close all transports/connections
+        """
+        if self._closed:
+            raise BusAlreadyClosed()
+        block(self.close_async(_stop_worker=_stop_worker))
+
+    @assert_not_in_worker_thread()
+    async def close_async(self, _stop_worker=True):
+        """Async version of close()
+        """
+        try:
+            if self._closed:
+                raise BusAlreadyClosed()
+
+            await self._close_async_inner()
+        finally:
+            # Whatever happens, make sure we stop the event loop otherwise the
+            # bus thread will keep running and prevent the process for exiting
+            if _stop_worker:
+                self.worker.shutdown()
+                await self.worker.wait_for_shutdown()
+
+    @run_in_worker_thread()
+    async def _close_async_inner(self):
+        """Handle all aspects of the closing which need to run within the bus worker thread"""
+        if self._closed:
+            raise BusAlreadyClosed()
+
         listener_tasks = [
-            task for task in asyncio.Task.all_tasks() if getattr(task, "is_listener", False)
+            task for task in asyncio.all_tasks() if getattr(task, "is_listener", False)
         ]
 
-        for task in listener_tasks:
+        for task in chain(listener_tasks, self._background_tasks):
             try:
                 await cancel(task)
             except Exception as e:
                 logger.exception(e)
-                # The log message assumes that we are closing because of this error
-                # (is this a safe assumption?)
-                logger.error(
-                    f"An event listener raised an exception while processing an event. "
-                    f"Lightbus will now shutdown because the on_error option is set to"
-                    f" '{OnError.SHUTDOWN.value}'"
-                )
 
         for transport in self.transport_registry.get_all_transports():
             await transport.close()
 
         await self.schema.schema_transport.close()
 
+        self._closed = True
+
     @property
     def loop(self):
         return get_event_loop()
 
-    def run_forever(self, *, consume_rpcs=True):
-        registry.add(LightbusStateApi())
-        registry.add(LightbusMetricsApi())
+    def run_forever(self):
+        if not self.api_registry.all() and Feature.RPCS in self.features:
+            logger.info("Disabling serving of RPCs as no APIs have been registered")
+            self.features.remove(Feature.RPCS)
 
-        if consume_rpcs:
-            logger.info(
-                LBullets(
-                    "APIs in registry ({})".format(len(registry.all())), items=registry.names()
-                )
-            )
+        self.start_server()
 
-        block(self._plugin_hook("before_server_start"), timeout=5)
+        self._actually_run_forever()
+        logger.debug("Main thread event loop was stopped")
 
-        self._run_forever(consume_rpcs)
+        # Stopping the server requires access to the worker,
+        # so do this first
+        logger.debug("Stopping server")
+        self.stop_server()
 
-        self.loop.run_until_complete(self._plugin_hook("after_server_stopped"))
-
-        # Close the bus (which will in turn close the transports)
+        # Here we close connections and shutdown the worker thread
+        logger.debug("Closing bus")
         self.close()
 
-        # See if we've set the exit code on the event loop
-        if hasattr(self.loop, "lightbus_exit_code"):
-            raise SystemExit(self.loop.lightbus_exit_code)
+    def shutdown_server(self, exit_code):
+        if self._server_shutdown_queue is not None:
+            # If this shutdown queue *is* None, then it is safe to assume
+            # the server hasn't started up yet, so no need to
+            # put anything in the shutdown queue
+            self._server_shutdown_queue.sync_q.put(exit_code)
 
-    def _run_forever(self, consume_rpcs):
-        # Setup RPC consumption
-        consume_rpc_task = None
-        if consume_rpcs and registry.all():
-            consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
+    @assert_not_in_worker_thread()
+    def start_server(self):
+        """Server startup procedure
+
+        Must be called from within the main thread. Handles the niceties around
+        starting and stopping the server. The interesting setup happens in
+        BusClient._setup_server()
+        """
+        # Ensure an event loop exists
+        get_event_loop()
+
+        self._server_shutdown_queue = janus.Queue()
+        self._server_tasks = set()
+
+        async def server_shutdown_monitor():
+            exit_code = await self._server_shutdown_queue.async_q.get()
+            self.exit_code = exit_code
+            self.loop.stop()
+            self._server_shutdown_queue.async_q.task_done()
+
+        shutdown_monitor_task = asyncio.ensure_future(server_shutdown_monitor())
+        shutdown_monitor_task.add_done_callback(make_exception_checker(self, die=True))
+        self._shutdown_monitor_task = shutdown_monitor_task
+
+        logger.info(
+            LBullets(
+                f"Enabled features ({len(self.features)})", items=[f.value for f in self.features]
+            )
+        )
+
+        disabled_features = set(ALL_FEATURES) - set(self.features)
+        logger.info(
+            LBullets(
+                f"Disabled features ({len(disabled_features)})",
+                items=[f.value for f in disabled_features],
+            )
+        )
+
+        block(self._setup_server())
+
+    @run_in_worker_thread()
+    async def _setup_server(self):
+        self.api_registry.add(LightbusStateApi())
+        self.api_registry.add(LightbusMetricsApi())
+
+        logger.info(
+            LBullets(
+                "APIs in registry ({})".format(len(self.api_registry.all())),
+                items=self.api_registry.names(),
+            )
+        )
+
+        # Push all registered APIs into the global schema
+        for api in self.api_registry.all():
+            await self.schema.add_api(api)
+
+        # We're running as a server now (e.g. lightbus run), so
+        # do the lazy loading immediately
+        await self.lazy_load_now()
 
         # Setup schema monitoring
         monitor_task = asyncio.ensure_future(self.schema.monitor())
+        monitor_task.add_done_callback(make_exception_checker(self, die=True))
 
-        self.loop.add_signal_handler(signal.SIGINT, self.loop.stop)
-        self.loop.add_signal_handler(signal.SIGTERM, self.loop.stop)
+        logger.info("Executing before_server_start & on_start hooks...")
+        await self._execute_hook("before_server_start")
+        logger.info("Execution of before_server_start & on_start hooks was successful")
 
-        try:
-            self._actually_run_forever()
-            logger.warning("Interrupt received. Shutting down...")
-        except KeyboardInterrupt:
-            logger.warning("Keyboard interrupt. Shutting down...")
+        # Setup RPC consumption
+        if Feature.RPCS in self.features:
+            consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
+            consume_rpc_task.add_done_callback(make_exception_checker(self, die=True))
+        else:
+            consume_rpc_task = None
 
-        # The loop has stopped, so we're shutting down
+        # Start off any registered event listeners
+        if Feature.EVENTS in self.features:
+            for event_listener in self._event_listeners:
+                event_listener.start_task(bus_client=self)
 
-        # Remove the signal handlers
-        self.loop.remove_signal_handler(signal.SIGINT)
-        self.loop.remove_signal_handler(signal.SIGTERM)
+        # Start off any background tasks
+        if Feature.TASKS in self.features:
+            for coroutine in self._background_coroutines:
+                task = asyncio.ensure_future(coroutine)
+                task.add_done_callback(make_exception_checker(self, die=True))
+                self._background_tasks.append(task)
 
+        self._server_tasks = [consume_rpc_task, monitor_task]
+
+    @assert_not_in_worker_thread()
+    def stop_server(self):
+        block(cancel(self._shutdown_monitor_task))
+        block(self._stop_server_inner())
+
+    @run_in_worker_thread()
+    async def _stop_server_inner(self):
         # Cancel the tasks we created above
-        block(cancel(consume_rpc_task, monitor_task), timeout=1)
+        await cancel(*self._server_tasks)
+
+        logger.info("Executing after_server_stopped & on_stop hooks...")
+        await self._execute_hook("after_server_stopped")
+        logger.info("Execution of after_server_stopped & on_stop hooks was successful")
 
     def _actually_run_forever(self):  # pragma: no cover
         """Simply start the loop running forever
@@ -229,11 +381,47 @@ class BusClient(object):
         """
         self.loop.run_forever()
 
+    @run_in_worker_thread()
+    async def lazy_load_now(self):
+        """Perform lazy tasks immediately
+
+        When lightbus is used as a client it performs network tasks
+        lazily. This speeds up import of your bus module, and prevents
+        getting surprising errors at import time.
+
+        However, in some cases you may wish to hurry up these lazy tasks
+        (or perform them at a known point). In which case you can call this
+        method to execute them immediately.
+        """
+        if self._lazy_load_complete:
+            return
+
+        # 1. Load the schema
+        logger.debug("Loading schema...")
+        await self.schema.ensure_loaded_from_bus()
+
+        logger.info(
+            LBullets(
+                "Loaded the following remote schemas ({})".format(len(self.schema.remote_schemas)),
+                items=self.schema.remote_schemas.keys(),
+            )
+        )
+
+        # 2. Open the transports
+        for transport in self.transport_registry.get_all_transports():
+            await transport.open()
+
+        # 3. Done
+        self._lazy_load_complete = True
+
     # RPCs
 
+    @run_in_worker_thread()
     async def consume_rpcs(self, apis: List[Api] = None):
+        await self.lazy_load_now()
+
         if apis is None:
-            apis = registry.all()
+            apis = self.api_registry.all()
 
         if not apis:
             raise NoApisToListenOn(
@@ -241,59 +429,74 @@ class BusClient(object):
                 "or the API registry is empty."
             )
 
-        while True:
-            # Not all APIs will necessarily be served by the same transport, so group them
-            # accordingly
-            api_names = [api.meta.name for api in apis]
-            api_names_by_transport = self.transport_registry.get_rpc_transports(api_names)
+        # Not all APIs will necessarily be served by the same transport, so group them
+        # accordingly
+        api_names = [api.meta.name for api in apis]
+        api_names_by_transport = self.transport_registry.get_rpc_transports(api_names)
 
-            coroutines = []
-            for rpc_transport, transport_api_names in api_names_by_transport:
-                transport_apis = list(map(registry.get, transport_api_names))
-                coroutines.append(
-                    self._consume_rpcs_with_transport(
-                        rpc_transport=rpc_transport, apis=transport_apis
-                    )
-                )
+        coroutines = []
+        for rpc_transport, transport_api_names in api_names_by_transport:
+            transport_apis = list(map(self.api_registry.get, transport_api_names))
+            coroutines.append(
+                self._consume_rpcs_with_transport(rpc_transport=rpc_transport, apis=transport_apis)
+            )
 
-            await asyncio.gather(*coroutines)
+        task = asyncio.ensure_future(asyncio.gather(*coroutines))
+        task.add_done_callback(make_exception_checker(self, die=True))
+        self._consumers.append(task)
 
     async def _consume_rpcs_with_transport(
         self, rpc_transport: RpcTransport, apis: List[Api] = None
     ):
-        rpc_messages = await rpc_transport.consume_rpcs(apis)
-        for rpc_message in rpc_messages:
-            self._validate(rpc_message, "incoming")
+        await self.lazy_load_now()
 
-            await self._plugin_hook("before_rpc_execution", rpc_message=rpc_message)
+        while True:
             try:
-                result = await self.call_rpc_local(
-                    api_name=rpc_message.api_name,
-                    name=rpc_message.procedure_name,
-                    kwargs=rpc_message.kwargs,
-                )
-            except SuddenDeathException:
-                # Used to simulate message failure for testing
-                pass
-            else:
-                result = deform_to_bus(result)
+                rpc_messages = await rpc_transport.consume_rpcs(apis, bus_client=self)
+            except TransportIsClosed:
+                return
+
+            for rpc_message in rpc_messages:
+                self._validate(rpc_message, "incoming")
+
+                await self._execute_hook("before_rpc_execution", rpc_message=rpc_message)
+                try:
+                    result = await self.call_rpc_local(
+                        api_name=rpc_message.api_name,
+                        name=rpc_message.procedure_name,
+                        kwargs=rpc_message.kwargs,
+                    )
+                except SuddenDeathException:
+                    # Used to simulate message failure for testing
+                    return
+                except CancelledError:
+                    raise
+                except Exception as e:
+                    result = e
+                else:
+                    result = deform_to_bus(result)
+
                 result_message = ResultMessage(result=result, rpc_message_id=rpc_message.id)
-                await self._plugin_hook(
+                await self._execute_hook(
                     "after_rpc_execution", rpc_message=rpc_message, result_message=result_message
                 )
 
-                self._validate(
-                    result_message,
-                    "outgoing",
-                    api_name=rpc_message.api_name,
-                    procedure_name=rpc_message.procedure_name,
-                )
+                if not result_message.error:
+                    self._validate(
+                        result_message,
+                        "outgoing",
+                        api_name=rpc_message.api_name,
+                        procedure_name=rpc_message.procedure_name,
+                    )
 
                 await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
+    @run_in_worker_thread()
     async def call_rpc_remote(
         self, api_name: str, name: str, kwargs: dict = frozendict(), options: dict = frozendict()
     ):
+        await self.lazy_load_now()
+
         rpc_transport = self.transport_registry.get_rpc_transport(api_name)
         result_transport = self.transport_registry.get_result_transport(api_name)
 
@@ -303,7 +506,10 @@ class BusClient(object):
         rpc_message.return_path = return_path
         options = options or {}
         timeout = options.get("timeout", self.config.api(api_name).rpc_timeout)
-
+        # TODO: rpc_timeout is in three different places in the config!
+        #       Fix this. Really it makes most sense for the use if it goes on the
+        #       ApiConfig rather than having to repeat it on both the result & RPC
+        #       transports.
         self._validate_name(api_name, "rpc", name)
 
         logger.info("📞  Calling remote RPC {}.{}".format(Bold(api_name), Bold(name)))
@@ -315,10 +521,10 @@ class BusClient(object):
 
         future = asyncio.gather(
             self.receive_result(rpc_message, return_path, options=options),
-            rpc_transport.call_rpc(rpc_message, options=options),
+            rpc_transport.call_rpc(rpc_message, options=options, bus_client=self),
         )
 
-        await self._plugin_hook("before_rpc_call", rpc_message=rpc_message)
+        await self._execute_hook("before_rpc_call", rpc_message=rpc_message)
 
         try:
             result_message, _ = await asyncio.wait_for(future, timeout=timeout)
@@ -340,7 +546,7 @@ class BusClient(object):
                 f"config option."
             ) from None
 
-        await self._plugin_hook(
+        await self._execute_hook(
             "after_rpc_call", rpc_message=rpc_message, result_message=result_message
         )
 
@@ -371,8 +577,11 @@ class BusClient(object):
 
         return result_message.result
 
+    @run_in_worker_thread()
     async def call_rpc_local(self, api_name: str, name: str, kwargs: dict = frozendict()):
-        api = registry.get(api_name)
+        await self.lazy_load_now()
+
+        api = self.api_registry.get(api_name)
         self._validate_name(api_name, "rpc", name)
 
         start_time = time.time()
@@ -380,11 +589,13 @@ class BusClient(object):
             method = getattr(api, name)
             if self.config.api(api_name).cast_values:
                 kwargs = cast_to_signature(kwargs, method)
-            result = method(**kwargs)
-            result = await await_if_necessary(result)
+            result = await run_user_provided_callable(
+                method, args=[], kwargs=kwargs, bus_client=self
+            )
         except (CancelledError, SuddenDeathException):
             raise
         except Exception as e:
+            logging.exception(e)
             logger.warning(
                 L(
                     "⚡  Error while executing {}.{}. Took {}",
@@ -393,7 +604,7 @@ class BusClient(object):
                     human_time(time.time() - start_time),
                 )
             )
-            return e
+            raise
         else:
             logger.info(
                 L(
@@ -407,18 +618,21 @@ class BusClient(object):
 
     # Events
 
+    @run_in_worker_thread()
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
+        await self.lazy_load_now()
+
         kwargs = kwargs or {}
         try:
-            api = registry.get(api_name)
+            api = self.api_registry.get(api_name)
         except UnknownApi:
             raise UnknownApi(
-                "Lightbus tried to fire the event {api_name}.{name}, but could not find API {api_name} in the "
+                "Lightbus tried to fire the event {api_name}.{name}, but no API named {api_name} was found in the "
                 "registry. An API being in the registry implies you are an authority on that API. Therefore, "
                 "Lightbus requires the API to be in the registry as it is a bad idea to fire "
                 "events on behalf of remote APIs. However, this could also be caused by a typo in the "
                 "API name or event name, or be because the API class has not been "
-                "imported. ".format(**locals())
+                "registered using bus.client.register_api(). ".format(**locals())
             )
 
         self._validate_name(api_name, "event", name)
@@ -444,36 +658,26 @@ class BusClient(object):
             )
 
         kwargs = deform_to_bus(kwargs)
-        event_message = EventMessage(api_name=api.meta.name, event_name=name, kwargs=kwargs)
+        event_message = EventMessage(
+            api_name=api.meta.name, event_name=name, kwargs=kwargs, version=api.meta.version
+        )
 
         self._validate(event_message, "outgoing")
 
         event_transport = self.transport_registry.get_event_transport(api_name)
-        await self._plugin_hook("before_event_sent", event_message=event_message)
+        await self._execute_hook("before_event_sent", event_message=event_message)
         logger.info(L("📤  Sending event {}.{}".format(Bold(api_name), Bold(name))))
-        await event_transport.send_event(event_message, options=options)
-        await self._plugin_hook("after_event_sent", event_message=event_message)
+        await event_transport.send_event(event_message, options=options, bus_client=self)
+        await self._execute_hook("after_event_sent", event_message=event_message)
 
-    async def listen_for_event(
-        self, api_name, name, listener, listener_name: str = None, options: dict = None
-    ) -> asyncio.Task:
-        # TODO: Sanity check during pre-release use. Remove before official release
-        if options:
-            assert (
-                "listener_name" not in options
-            ), "Specify listener name as kwarg, not as bus_option"
-        return await self.listen_for_events(
+    def listen_for_event(self, api_name, name, listener, listener_name: str, options: dict = None):
+        self.listen_for_events(
             [(api_name, name)], listener, listener_name=listener_name, options=options
         )
 
-    async def listen_for_events(
-        self,
-        events: List[Tuple[str, str]],
-        listener,
-        listener_name: str = None,
-        options: dict = None,
-    ) -> asyncio.Task:
-
+    def listen_for_events(
+        self, events: List[Tuple[str, str]], listener, listener_name: str, options: dict = None
+    ):
         self._sanity_check_listener(listener)
 
         for api_name, name in events:
@@ -486,50 +690,32 @@ class BusClient(object):
             options=options,
             bus_client=self,
         )
-        return event_listener.make_task()
+
+        # We will start up the event listeners (via start_task())
+        # when the server starts. For now we just store them away
+        self._event_listeners.append(event_listener)
 
     # Results
 
+    @run_in_worker_thread()
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
+        await self.lazy_load_now()
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
         return await result_transport.send_result(
-            rpc_message, result_message, rpc_message.return_path
+            rpc_message, result_message, rpc_message.return_path, bus_client=self
         )
 
+    @run_in_worker_thread()
     async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict):
+        await self.lazy_load_now()
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
-        return await result_transport.receive_result(rpc_message, return_path, options)
-
-    @contextlib.contextmanager
-    def _register_listener(self, events: List[Tuple[str, str]]):
-        """A context manager to help keep track of what the bus is listening for"""
-        logger.info(
-            LBullets(f"Registering listener for", items=[Bold(f"{a}.{e}") for a, e in events])
+        return await result_transport.receive_result(
+            rpc_message, return_path, options, bus_client=self
         )
-
-        for api_name, event_name in events:
-            key = (api_name, event_name)
-            self._listeners.setdefault(key, 0)
-            self._listeners[key] += 1
-
-        yield
-
-        for api_name, event_name in events:
-            key = (api_name, event_name)
-            self._listeners[key] -= 1
-            if not self._listeners[key]:
-                self._listeners.pop(key)
-
-    @property
-    def listeners(self) -> List[Tuple[str, str]]:
-        """Returns a list of events which are currently being listened to
-
-        Each value is a tuple in the form `(api_name, event_name)`.
-        """
-        return list(self._listeners.keys())
 
     def _validate(self, message: Message, direction: str, api_name=None, procedure_name=None):
-        assert direction in ("incoming", "outgoing")
+        if direction not in ("incoming", "outgoing"):
+            raise AssertionError("Invalid direction specified")
 
         # Result messages do not carry the api or procedure name, so allow them to be
         # specified manually
@@ -546,14 +732,14 @@ class BusClient(object):
         if api_name not in self.schema:
             if strict_validation:
                 raise UnknownApi(
-                    f"Validation is enabled for API {api_name}, but there is no schema present for this API. "
+                    f"Validation is enabled for API named '{api_name}', but there is no schema present for this API. "
                     f"Validation is therefore not possible. You are also seeing this error because the "
                     f"'strict_validation' setting is enabled. Disabling this setting will turn this exception "
                     f"into a warning. "
                 )
             else:
                 logger.warning(
-                    f"Validation is enabled for API {api_name}, but there is no schema present for this API. "
+                    f"Validation is enabled for API named '{api_name}', but there is no schema present for this API. "
                     f"Validation is therefore not possible. You can force this to be an error by enabling "
                     f"the 'strict_validation' config option. You can silence this message by disabling validation "
                     f"for this API using the 'validate' option."
@@ -564,6 +750,21 @@ class BusClient(object):
             self.schema.validate_parameters(api_name, event_or_rpc_name, message.kwargs)
         elif isinstance(message, ResultMessage):
             self.schema.validate_response(api_name, event_or_rpc_name, message.result)
+
+    def add_background_task(self, coroutine: Union[Coroutine, asyncio.Future]):
+        """Run a coroutine in the background
+
+        The provided coroutine will be run in the background once
+        Lightbus startup is complete.
+
+        The coroutine will be cancelled when the bus client is closed.
+
+        The Lightbus process will exit if the coroutine raises an exception.
+        See lightbus.utilities.async_tools.check_for_exception() for details.
+        """
+
+        # Store coroutine for starting once the server starts
+        self._background_coroutines.append(coroutine)
 
     # Utilities
 
@@ -606,22 +807,39 @@ class BusClient(object):
                 f"my_listener(event_message, other, ...)"
             )
 
-    async def _plugin_hook(self, name, **kwargs):
+    def set_features(self, features: List[Union[Feature, str]]):
+        for i, feature in enumerate(features):
+            try:
+                features[i] = Feature(feature)
+            except ValueError:
+                features_str = ", ".join([f.value for f in Feature])
+                raise UnsupportedUse(f"Feature '{feature}' is not one of: {features_str}\n")
+
+        self.features = features
+
+    # Hooks
+
+    async def _execute_hook(self, name, **kwargs):
         # Hooks that need to run before plugins
         for callback in self._hook_callbacks[(name, True)]:
-            await await_if_necessary(callback(client=self, **kwargs))
+            await run_user_provided_callable(
+                callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
+            )
 
-        await plugin_hook(name, client=self, **kwargs)
+        await self.plugin_registry.execute_hook(name, client=self, **kwargs)
 
         # Hooks that need to run after plugins
         for callback in self._hook_callbacks[(name, False)]:
-            await await_if_necessary(callback(client=self, **kwargs))
+            await run_user_provided_callable(
+                callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
+            )
 
     def _register_hook_callback(self, name, fn, before_plugins=False):
         self._hook_callbacks[(name, bool(before_plugins))].append(fn)
 
     def _make_hook_decorator(self, name, before_plugins=False, callback=None):
-        assert not callback or callable(callback), "The provided callback is not callable"
+        if callback and not callable(callback):
+            raise AssertionError("The provided callback is not callable")
         if callback:
             self._register_hook_callback(name, callback, before_plugins)
         else:
@@ -670,13 +888,83 @@ class BusClient(object):
     def after_event_execution(self, callback=None, *, before_plugins=False):
         return self._make_hook_decorator("after_event_execution", before_plugins, callback)
 
+    # Scheduling
+
+    def every(
+        self,
+        *,
+        seconds=0,
+        minutes=0,
+        hours=0,
+        days=0,
+        also_run_immediately=False,
+        **timedelta_extra,
+    ):
+        """ Call a coroutine at the specified interval
+
+        This is a simple scheduling mechanism which you can use in your bus module to setup
+        recurring tasks. For example:
+
+            bus = lightbus.create()
+
+            @bus.client.every(seconds=30)
+            def my_func():
+                print("Hello")
+
+        This can also be used to decorate async functions. In this case the function will be awaited.
+
+        Note that the timing is best effort and is not guaranteed. That being said, execution
+        time is accounted for.
+
+        See Also:
+
+            @bus.client.schedule()
+        """
+        td = timedelta(seconds=seconds, minutes=minutes, hours=hours, days=days, **timedelta_extra)
+
+        if td.total_seconds() == 0:
+            raise InvalidSchedule(
+                "The @bus.client.every() decorator must be provided with a non-zero time argument. "
+                "Ensure you are passing at least one time argument, and that it has a non-zero value."
+            )
+
+        # TODO: There is an argument that the backgrounding of this should be done only after
+        #       on_start() has been fired. Otherwise this will be run before the on_start() setup
+        #       has happened in cases where also_run_immediately=True.
+        def wrapper(f):
+            coroutine = call_every(  # pylint: assignment-from-no-return
+                callback=f, timedelta=td, also_run_immediately=also_run_immediately, bus_client=self
+            )
+            self.add_background_task(coroutine)
+            return f
+
+        return wrapper
+
+    def schedule(self, schedule: "Job", also_run_immediately=False):
+        def wrapper(f):
+            coroutine = call_on_schedule(
+                callback=f,
+                schedule=schedule,
+                also_run_immediately=also_run_immediately,
+                bus_client=self,
+            )
+            self.add_background_task(coroutine)
+            return f
+
+        return wrapper
+
+    # API registration
+
+    def register_api(self, api: Api):
+        self.api_registry.add(api)
+
 
 class _EventListener(object):
     """ Logic for setting up listener tasks for 1 or more events
 
     This class will take a list of events and a callable. Background
     tasks will be setup to listen for the specified events
-    (see make_task()) and the provided callable will be called when the
+    (see start_task()) and the provided callable will be called when the
     event is detected.
 
     This logic is smart enough to detect when the APIs of the events use
@@ -692,19 +980,20 @@ class _EventListener(object):
         *,
         events: List[Tuple[str, str]],
         listener_callable,
-        listener_name: str = None,
+        listener_name: str,
         options: dict = None,
         bus_client: "BusClient",
     ):
         self.events = events
         self.listener_callable = listener_callable
-        self.listener_name = listener_name or "default"
+        self.listener_name = listener_name
         self.options = options or {}
         self.bus_client = bus_client
+        self.listener_task: asyncio.Task = None
 
-        self.event_transports = self.get_event_transports()
-
-    def get_event_transports(self):
+    @property
+    @functools.lru_cache()
+    def event_transports(self):
         """ Get events grouped by transport
 
         It is possible that the specified events will be handled
@@ -742,7 +1031,7 @@ class _EventListener(object):
         """Should the entire process die if an error occurs in a listener?"""
         return self.on_error == OnError.SHUTDOWN
 
-    def make_task(self) -> asyncio.Task:
+    def start_task(self, bus_client: BusClient) -> asyncio.Task:
         """ Create a task responsible for running the listener(s)
 
         This will create a task for each transport (see get_event_transports()).
@@ -763,22 +1052,24 @@ class _EventListener(object):
                 if api_name in _api_names
             ]
 
-            task = asyncio.ensure_future(self.listener(_event_transport, events))
+            task = asyncio.ensure_future(self.listener(_event_transport, events, bus_client))
             task.is_listener = True  # Used by close()
             tasks.append(task)
 
         listener_task = asyncio.gather(*tasks)
 
-        exception_checker = make_exception_checker(die=self.die_on_error)
+        exception_checker = make_exception_checker(self.bus_client, die=self.die_on_error)
         listener_task.add_done_callback(exception_checker)
 
         # Setting is_listener lets Client.close() know that it should mop up this
         # task automatically on shutdown
         listener_task.is_listener = True
 
-        return listener_task
+        self.listener_task = listener_task
 
-    async def listener(self, event_transport: EventTransport, events: List[Tuple[str, str]]):
+    async def listener(
+        self, event_transport: EventTransport, events: List[Tuple[str, str]], bus_client: BusClient
+    ):
         """ Receive events from the transport and invoke the listener callable
 
         This is the core glue which combines the event transports' consume()
@@ -788,10 +1079,13 @@ class _EventListener(object):
         # event_transport.consume() returns an asynchronous generator
         # which will provide us with messages
         consumer = event_transport.consume(
-            listen_for=events, listener_name=self.listener_name, **self.options
+            listen_for=events,
+            listener_name=self.listener_name,
+            bus_client=bus_client,
+            **self.options,
         )
 
-        with self.bus_client._register_listener(events):
+        try:
             async for event_messages in consumer:
                 for event_message in event_messages:
                     # TODO: Check events match those requested
@@ -809,7 +1103,7 @@ class _EventListener(object):
 
                     self.bus_client._validate(event_message, "incoming")
 
-                    await self.bus_client._plugin_hook(
+                    await self.bus_client._execute_hook(
                         "before_event_execution", event_message=event_message
                     )
 
@@ -821,21 +1115,20 @@ class _EventListener(object):
                         parameters = event_message.kwargs
 
                     try:
-                        # Call the listener
-                        co = self.listener_callable(
-                            # Pass the event message as a positional argument,
-                            # thereby allowing listeners to have flexibility in the argument names.
-                            # (And therefore allowing listeners to use the `event` parameter themselves)
-                            event_message,
-                            **parameters,
+                        # Call the listener.
+                        # Pass the event message as a positional argument,
+                        # thereby allowing listeners to have flexibility in the argument names.
+                        # (And therefore allowing listeners to use the `event` parameter themselves)
+                        await run_user_provided_callable(
+                            self.listener_callable,
+                            args=[event_message],
+                            kwargs=parameters,
+                            bus_client=self.bus_client,
+                            die_on_exception=False,
                         )
-
-                        # Support awaitable event listeners
-                        if inspect.isawaitable(co):
-                            await co
-
                     except LightbusShutdownInProgress as e:
                         logger.info("Shutdown in progress: {}".format(e))
+                        return
                     except Exception as e:
                         if self.on_error == OnError.IGNORE:
                             # We're ignore errors, so log it and move on
@@ -858,8 +1151,14 @@ class _EventListener(object):
                             raise
 
                     # Acknowledge the successfully processed message
-                    await event_transport.acknowledge(event_message)
+                    await event_transport.acknowledge(event_message, bus_client=self.bus_client)
 
-                    await self.bus_client._plugin_hook(
+                    await self.bus_client._execute_hook(
                         "after_event_execution", event_message=event_message
                     )
+        except CancelledError:
+            # Close the consumer to allow it to do any cleanup
+            try:
+                await consumer.aclose()
+            except StopAsyncIteration:
+                pass

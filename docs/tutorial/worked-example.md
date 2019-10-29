@@ -22,7 +22,7 @@ will assist us in running the various processes required for our services.
 
 We will assume you
 have already read and completed the [installation](/tutorial/installation.md) and
-[quick start](/tutorial/quick-start.md) tutorials
+[quick start](/tutorial/quick-start.md) tutorials.
 
 ## 3.2. Image resizing service
 
@@ -30,13 +30,10 @@ The image resizing service will be a simple Lightbus API, the purpose of which
 is to allow our store to resize images prior to display:
 
 ```python3
-"""Image resizing service (image/bus.py)
+# File: ./image/bus.py
+import lightbus
 
-An API with a single RPC method to resize images and return a URL
-"""
-from lightbus import Api, Event
-
-class ImageApi(Api):
+class ImageApi(lightbus.Api):
 
     class Meta:
         name = 'image'
@@ -44,6 +41,9 @@ class ImageApi(Api):
     def resize(self, url, width, height):
         # This is a demo, so just return an animal picture of the correct size
         return f'https://placeimg.com/{width}/{height}/animals?_={url}'
+
+bus = lightbus.create()
+bus.client.register_api(ImageApi)
 ```
 
 There is no web interface for this service, so this is all we need.
@@ -54,37 +54,34 @@ Our store will have both a Lightbus API and a web interface. We'll start
 with the API first:
 
 ```python3
-""" An internal Lightbus API for our online shop (store/bus.py)
-"""
-from lightbus import Api, Event, configure_logging
-configure_logging()
+# File: ./store/bus.py
+import lightbus
 
-class StoreApi(Api):
-    page_view = Event(parameters=('url', ))
+class StoreApi(lightbus.Api):
+    page_viewed = lightbus.Event(parameters=('url', ))
 
     class Meta:
         name = 'store'
+
+bus = lightbus.create()
+bus.client.register_api(StoreApi)
 ```
 
-This API has a single event called ``page_view``. The store web interface will fire this
+This API has a single event called ``page_viewed``. The store web interface will fire this
 event whenever a page is viewed.
 
 Our store web interface uses Flask and is a little longer:
 
 ```python3
-""" The web server for our online shop (store/web.py)
-"""
+# File: ./store/web.py
 import lightbus
 from flask import Flask
 
-# Ensure the Store API is loaded so we can fire events on it
-from .bus import StoreApi
+# Import our bus client
+from .bus import bus
 
 # Setup flask
 app = Flask(__name__)
-
-# Create our bus
-bus = lightbus.create()
 
 # A dummy list of pets our store will sell
 PETS = (
@@ -108,7 +105,7 @@ def home():
         )
 
     # Fire the page view
-    bus.store.page_view.fire(url='/')
+    bus.store.page_viewed.fire(url='/')
 
     return html
 
@@ -118,7 +115,7 @@ def pet(pet_num):
     resized_url = bus.image.resize(url=PETS[pet_num], width=200, height=200)
 
     # Fire the page view
-    bus.store.page_view.fire(url=f'/pet/{pet_num}')
+    bus.store.page_viewed.fire(url=f'/pet/{pet_num}')
 
     html = f'<h1>Pet {pet_num}</h1>'
     html = f'<img src="{resized_url}"><br />'
@@ -152,9 +149,9 @@ The flask web interface should also have some logging output akin to the followi
 Here you can see:
 
 1. `image.resize` was called three times, once for each image
-2. The `store.page_view` event was fired
+2. The `store.page_viewed` event was fired
 
-Next we will create the dashboard which will make use of the `store.page_view` event.
+Next we will create the dashboard which will make use of the `store.page_viewed` event.
 
 ## 3.5. Dashboard service
 
@@ -168,28 +165,34 @@ web process.
 Fist we will start with the `bus.py` file:
 
 ```python3
-""" Lightbus event listeners for our shop dashboard (dashboard/bus.py)
-""""
+# File: ./dashboard/bus.py
 import json
+import lightbus
 
+bus = lightbus.client()
 page_views = {}
 
 def handle_page_view(event_message, url):
+    # Record the page view in our page_views dictionary
     page_views.setdefault(url, 0)
     page_views[url] += 1
+    
+    # Store the dictionary on disk
+    # (In reality you would probably use an external database)
     with open('/tmp/.dashboard.db.json', 'w') as f:
         json.dump(page_views, f)
 
-def before_server_start(bus):
+@bus.client.on_start()
+def on_start(**kwargs):
     # Called when lightbus starts up
-    bus.store.page_view.listen(handle_page_view)
+    bus.store.page_viewed.listen(handle_page_view)
 ```
 
-This is a simple listener for the `bus.store.page_view` event. This is event is fired by the
+This is a simple listener for the `bus.store.page_viewed` event. This event is fired by the
 store's web interface we created above.
 
 Note we do not define any APIs,
-instead we setup our event listener using the `before_server_start()` hook. Listening for this
+instead we setup our event listener once the bus client has started up. Listening for this
 event is all the dashboard's Lightbus process will do, it will not provide any APIs.
 
 The `handle_page_view()` handler persists each view to the Dashboard services' local database.
@@ -199,8 +202,7 @@ Redis, Mongo etc). For simplicity we just store JSON to a file.
 Now we'll define our dashboard's web interface:
 
 ```python3
-""" Web interface for our shop dashboard (dashboard/web.py)
-"""
+# File: ./dashboard/web.py
 import json
 from flask import Flask
 
@@ -225,15 +227,15 @@ def home():
 This reads the JSON data that was written by the event listener in `dashboard/bus.py` above,
 then render it to HTML.
 
-## 3.6. Run it!
+## 3.7. Run it!
 
 You should now have the following python files:
 
-    image/bus.py
-    store/bus.py
-    store/web.py
-    dashboard/bus.py
-    dashboard/web.py
+./image/bus.py
+./store/bus.py
+./store/web.py
+./dashboard/bus.py
+./dashboard/web.py
 
 This translates into the following processes:
 
@@ -241,7 +243,7 @@ This translates into the following processes:
 | -------------- | ------------- | ------------------------------------------------------------- |
 | Image reszier  | Lightbus      | Will resize images and return a new URL                       |
 | Store          | Web           | Render the store UI. Use bus to resize image and fire events  |
-| ~~Store~~      | ~~Bus~~       | While the store does have a `bus.py`, it does not have any RPCs to serve. We therefore do not need to run a lightbus service. |
+| ~~Store~~      | ~~Lightbus~~  | While the store does have a `bus.py`, it does not have any RPCs to serve or events to listen for. We therefore do not need to run a lightbus service. |
 | Dashboard      | Web           | Render the dashboard web UI, read data from database          |
 | Dashboard      | Lightbus      | Listen for page view events and store stats to database       |
 
@@ -251,13 +253,13 @@ You can run each of these as follows:
 $ ls
 dashboard/    image/    store/
 
-# Image resizer
+# Image resizer (Lightbus)
 $ lightbus run --bus=image.bus
 
-# Store
+# Store (Web)
 $ FLASK_APP=store/web.py flask run --port=5001
 
-# Dashboard
+# Dashboard (Web + Lightbus)
 $ lightbus run --bus=dashboard.bus
 $ FLASK_APP=dashboard/web.py flask run --port=5000
 ```
@@ -286,7 +288,7 @@ $ honcho start
 If you see an error stating `command not found`, ensure you installed `honcho` as
 detailed above (`pip3 install honcho`).
 
-Once started, checkout the output for any errors. Each log line will state the process
+Once started, see the output for any errors. Each log line will state the process
 it came from. If all is well, you should see something like this:
 
 ![honcho startup logging output][honcho-startup]
@@ -294,9 +296,13 @@ it came from. If all is well, you should see something like this:
 You should now be able to access the store's web interface at [127.0.0.1:5001] as you
 did previously.
 
-Upon viewing the page, the web interface will resize each image and fire the `store.page_view`
-event. The dashboard will receive the `store.page_view` event and create the
-database for the first time. The logging output should reflect this:
+Upon viewing the page, the following will happen:
+
+1. The store web process will resize each image using the image resizing service
+2. The store web service will fire the `store.page_viewed` event. 
+3. The dashboard will receive the `store.page_viewed` event and create the database for the first time. 
+
+The logging output should reflect this:
 
 ![honcho page view logging output][honcho-page-view]
 
@@ -312,8 +318,9 @@ Go back to the store and view a few pages. Now refresh the dashboard and note th
 While the services we have have created here are very crude, hopefully they have helped
 show how Lightbus can be used as a effective communications infrastructure.
 
-Next we will the detail the ins-and-outs of each area of Lightbus – APIs, RPCs, events, configuration,
-schemas, and so on.
+If you want to continue with practical learning, you should take a look at the 
+[How to] or [Reference] sections. To learn more about the underlying concepts 
+you should explore the [Explanation] section.
 
 
 
@@ -327,3 +334,6 @@ schemas, and so on.
 [127.0.0.1:5001]: http://127.0.0.1:5001
 [127.0.0.1:5000]: http://127.0.0.1:5000
 
+[How to]: /howto/index.md
+[Reference]: /reference/index.md
+[Explanation]: /explanation/index.md

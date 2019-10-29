@@ -4,6 +4,7 @@ from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum
 from uuid import UUID
+from base64 import b64encode
 
 from lightbus.exceptions import DeformError
 from lightbus.utilities.frozendict import frozendict
@@ -19,13 +20,14 @@ def deform_to_bus(value):
     if value is None:
         return value
     elif hasattr(value, "__to_bus__"):
-        return value.__to_bus__()
+        return deform_to_bus(value.__to_bus__())
     elif isinstance(value, OrderedDict):
         return deform_to_bus(dict(value))
     elif isinstance_safe(value, dict):
+        new_dict = {}
         for dict_key, dict_value in value.items():
-            value[dict_key] = deform_to_bus(dict_value)
-        return value
+            new_dict[dict_key] = deform_to_bus(dict_value)
+        return new_dict
     elif is_namedtuple(value):
         return deform_to_bus(dict(value._asdict()))
     elif is_dataclass(value):
@@ -40,12 +42,16 @@ def deform_to_bus(value):
         return value.isoformat()
     elif isinstance_safe(value, UUID):
         return str(value)
+    elif isinstance_safe(value, set):
+        return [deform_to_bus(v) for v in value]
     elif type(value) == tuple:
-        return list(value)
+        return [deform_to_bus(v) for v in value]
     elif isinstance_safe(value, list):
         return [deform_to_bus(v) for v in value]
     elif isinstance_safe(value, (int, float, str)):
         return value
+    elif isinstance_safe(value, (bytes, memoryview)):
+        return b64encode(bytes(value)).decode("utf8")
     elif isinstance_safe(value, (Decimal, complex)):
         return str(value)
     elif hasattr(value, "__module__"):

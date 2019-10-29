@@ -12,19 +12,19 @@ All processes in a service will generally:
 
 ---
 
-For example, your company may run the following:
+For example, your company may have the following:
 
-* A help desk
 * An online store
-* An internal image resizing service
+* A price monitoring script
+* An image resizing resizing process 
 
 Each of these would be a service.
 
-The support and store services would both likely have a web process and a
-Lightbus process each. The image resizing service would likely have a Lightbus
-process only.
+The store service would have a web process and a
+Lightbus process. The image resizing service & and price monitoring services 
+would each likely have a Lightbus process only.
 
-A simple lightbus deployment could look something like this:
+A simple lightbus deployment could therefore look something like this:
 
 ![A simple Lightbus deployment][simple-processes]
 

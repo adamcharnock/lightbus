@@ -6,6 +6,10 @@ This *how to* requires some knowledge of Python's asyncio features.
 
 !!! warning
 
+    This document is out of date and needs to be updated
+
+!!! warning
+
     **You can use Lightbus perfectly well without adding this complexity.**
     See the [anatomy lesson] for additional discussion.
 

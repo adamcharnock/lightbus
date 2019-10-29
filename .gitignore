@@ -5,10 +5,9 @@ INTEREST
 /dist
 /.cache
 /.coverage
+/coverage.xml
 /site
 /.env
 /.venv
-/Pipfile
-/Pipfile.lock
 /.tox
 /.python-version

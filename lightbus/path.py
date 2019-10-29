@@ -1,7 +1,6 @@
 from typing import Optional, List
 
 from lightbus import BusClient
-from lightbus.api import registry
 from lightbus.exceptions import (
     InvalidBusPathConfiguration,
     InvalidParameters,
@@ -16,7 +15,7 @@ class BusPath(object):
     """Represents a path on the bus
 
     This class provides a higher-level wrapper around the `BusClient` class.
-    This wrapper allows for a more ideomatic use of the bus. For example:
+    This wrapper allows for a more idiomatic use of the bus. For example:
 
         bus.auth.get_user(username='admin')
 
@@ -50,7 +49,7 @@ class BusPath(object):
         path = [node.name for node in self.ancestors(include_self=True)]
         path.reverse()
 
-        api_names = [[""] + n.split(".") for n in registry.names()]
+        api_names = [[""] + n.split(".") for n in self.client.api_registry.names()]
 
         matches = []
         apis = []
@@ -63,7 +62,7 @@ class BusPath(object):
                 matches.append(api_name[len(path)])
 
         for api_name in apis:
-            api = registry.get(".".join(api_name[1:]))
+            api = self.client.api_registry.get(".".join(api_name[1:]))
             matches.extend(dir(api))
 
         return matches
@@ -92,19 +91,13 @@ class BusPath(object):
 
     # Events
 
-    async def listen_async(self, listener, *, listener_name: str = None, bus_options: dict = None):
-        return await self.client.listen_for_event(
+    def listen(self, listener, *, listener_name: str, bus_options: dict = None):
+        return self.client.listen_for_event(
             api_name=self.api_name,
             name=self.name,
             listener=listener,
             listener_name=listener_name,
             options=bus_options,
-        )
-
-    def listen(self, listener, *, listener_name: str = None, bus_options: dict = None):
-        return block(
-            self.listen_async(listener, listener_name=listener_name, bus_options=bus_options),
-            timeout=self.client.config.api(self.api_name).event_listener_setup_timeout,
         )
 
     async def fire_async(self, *args, bus_options: dict = None, **kwargs):
@@ -133,8 +126,8 @@ class BusPath(object):
                 yield parent
             parent = parent.parent
 
-    def run_forever(self, consume_rpcs=True):
-        self.client.run_forever(consume_rpcs=consume_rpcs)
+    def run_forever(self):
+        self.client.run_forever()
 
     @property
     def api_name(self):
@@ -174,14 +167,11 @@ class BusPath(object):
         Only RPCs have responses. Accessing this property for an event will result in a
         SchemaNotFound error.
         """
-        # TODO: Test
         rpc_schema = self.client.schema.get_rpc_schema(self.api_name, self.name)["response"]
         return rpc_schema["response"]
 
     def validate_parameters(self, parameters: dict):
-        # TODO: Test
         self.client.schema.validate_parameters(self.api_name, self.name, parameters)
 
     def validate_response(self, response):
-        # TODO: Test
         self.client.schema.validate_parameters(self.api_name, self.name, response)

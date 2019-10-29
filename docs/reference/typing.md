@@ -100,13 +100,8 @@ class AuthApi(Api):
 
 ### Dataclass example
 
-[Dataclasses](https://www.python.org/dev/peps/pep-0557/)
-were introduced in Python 3.7, with a
-[backport available](https://pypi.org/project/dataclasses/) for
-Python 3.6.
-
-Lightbus supports dataclasses in the same way as it supports
-[named tuples](#named-tuples). For example:
+Lightbus supports [dataclasses](https://www.python.org/dev/peps/pep-0557/) 
+in the same way as it supports [named tuples](#named-tuples). For example:
 
 ```python3
 # bus.py

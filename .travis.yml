@@ -2,8 +2,8 @@ sudo: required
 
 env:
   global:
-    - REDIS_URL: redis://localhost:60791
-    - REDIS_URL_B: redis://localhost:60792
+    - REDIS_URL: redis://127.0.0.1:60791
+    - REDIS_URL_B: redis://127.0.0.1:60792
     - PG_URL: postgres://postgres@localhost:54320/postgres
 
 language: python
@@ -11,16 +11,13 @@ language: python
 matrix:
   fast_finish: true
   include:
-    - python: 3.6
-      dist: trusty
-      sudo: false
     - python: 3.7
       dist: xenial
       sudo: true
     - python: 3.8-dev
       dist: xenial
       sudo: true
-    - python: 3.6
+    - python: 3.7
       dist: trusty
       sudo: false
       env: TOXENV=docs
@@ -45,6 +42,12 @@ before_install:
   - docker-compose -f tests/docker-compose.yaml up -d db redis_a redis_b
   - pip install tox tox-travis coverage coveralls
   - mkdir -p .coverage
+  # Let postgres start up
+  - |
+    while ! psql --port=54320 --host=localhost --username=postgres -c 'SELECT 1'> /dev/null 2>&1; do
+      echo 'Waiting for postgres...'
+      sleep 1;
+    done;
 
 script:
   - tox -- --cov=lightbus

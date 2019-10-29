@@ -3,15 +3,7 @@ import pytest
 from collections import OrderedDict
 
 from lightbus.config import Config
-from lightbus.plugins import (
-    get_plugins,
-    manually_set_plugins,
-    LightbusPlugin,
-    autoload_plugins,
-    plugin_hook,
-    remove_all_plugins,
-    is_plugin_loaded,
-)
+from lightbus.plugins import LightbusPlugin, PluginRegistry
 from lightbus.plugins.metrics import MetricsPlugin
 from lightbus.plugins.state import StatePlugin
 
@@ -19,59 +11,47 @@ from lightbus.plugins.state import StatePlugin
 pytestmark = pytest.mark.unit
 
 
-def test_manually_set_plugins():
-    assert get_plugins() is None
+def test_manually_set_plugins(plugin_registry: PluginRegistry):
+    assert not plugin_registry._plugins
     p1 = LightbusPlugin()
     p2 = LightbusPlugin()
-    manually_set_plugins(OrderedDict([("p1", p1), ("p2", p2)]))
-    assert get_plugins() == OrderedDict([("p1", p1), ("p2", p2)])
+    plugin_registry.set_plugins([p1, p2])
+    assert plugin_registry._plugins == [p1, p2]
 
 
-def test_autoload_plugins():
+def test_autoload_plugins(plugin_registry: PluginRegistry):
     config = Config.load_dict({})
-    assert get_plugins() is None
-    assert autoload_plugins(config)
-    assert [(name, p.__class__) for name, p in get_plugins().items()] == [
-        ("internal_state", StatePlugin),
-        ("internal_metrics", MetricsPlugin),
-    ]
+    assert not plugin_registry._plugins
+    assert plugin_registry.autoload_plugins(config)
+    assert [type(p) for p in plugin_registry._plugins] == [StatePlugin, MetricsPlugin]
 
 
 @pytest.mark.asyncio
-async def test_plugin_hook(mocker):
-    """Ensure calling plugin_hook() calls the method on the plugin"""
-    assert get_plugins() is None
+async def test_execute_hook(mocker, plugin_registry: PluginRegistry):
+    """Ensure calling execute_hook() calls the method on the plugin"""
+    assert not plugin_registry._plugins
     plugin = LightbusPlugin()
-    manually_set_plugins(OrderedDict([("p1", plugin)]))
+    plugin_registry.set_plugins([plugin])
 
     async def dummy_coroutine(*args, **kwargs):
         pass
 
     m = mocker.patch.object(plugin, "before_server_start", return_value=dummy_coroutine())
 
-    await plugin_hook("before_server_start", client=None, loop=None)
+    await plugin_registry.execute_hook("before_server_start", client=None, loop=None)
     assert m.called
 
 
-def test_remove_all_plugins():
-    assert get_plugins() is None
-    manually_set_plugins(OrderedDict([("p1", LightbusPlugin())]))
-    remove_all_plugins()
-    assert get_plugins() is None
-
-
-def test_is_plugin_loaded():
-    assert get_plugins() is None
-    assert is_plugin_loaded(LightbusPlugin) == False
-    manually_set_plugins(OrderedDict([("p1", LightbusPlugin())]))
-    assert is_plugin_loaded(LightbusPlugin) == True
+def test_is_plugin_loaded(plugin_registry: PluginRegistry):
+    assert plugin_registry.is_plugin_loaded(LightbusPlugin) == False
+    plugin_registry.set_plugins([LightbusPlugin()])
+    assert plugin_registry.is_plugin_loaded(LightbusPlugin) == True
 
 
 def test_plugin_config():
     # Is the Config attached to the plugin class by the
     # base plugin's metaclass?
     class PluginWithConfig(LightbusPlugin):
-
         @classmethod
         def from_config(cls, config, first: int = 123):
             pass

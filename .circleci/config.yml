@@ -1,0 +1,112 @@
+version: 2.1
+
+workflows:
+  version: 2
+  tests:
+    jobs:
+      - test-37
+#      - test-38
+      - combine_coverage_reports:
+          requires:
+            - test-37
+#            - test-38
+
+  build_and_deploy_docs:
+    jobs:
+      - docs:
+          filters:
+            branches:
+              only:
+                - master
+                - run-in-executor
+jobs:
+  test-37: &test-template
+    docker:
+      - image: circleci/python:3.7
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
+      - image: postgres:9.6.2
+      - image: redis:5
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - deps-3-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
+      - run:
+          command: |
+            pipenv install --ignore-pipfile --dev
+            mkdir -p .coverage .test-reports
+
+      - run:
+          command: |
+            pipenv run pytest --cov=lightbus --junit-xml=junit.xml -v
+
+      - run:
+          command: |
+            mv .coverage/coverage .coverage/coverage$CIRCLE_BUILD_NUM
+
+      - persist_to_workspace:
+          root: /home/circleci/project/.coverage
+          paths:
+            - coverage*
+
+      - store_test_results:
+          path: .test-reports
+
+      - save_cache:
+          key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ".venv"
+
+  test-38:
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.8.0b3
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
+      - image: postgres:9.6.2
+      - image: redis:5
+
+  docs:
+    docker:
+      - image: circleci/python:3.7
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
+
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "cf:7f:13:98:f7:41:bf:92:af:ff:52:ed:6c:35:8f:65"
+
+      - checkout
+
+      - restore_cache:
+          keys:
+            - deps-3-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
+      - run:
+          command: |
+            pipenv install --ignore-pipfile --dev
+            pipenv run mkdocs gh-deploy --force --message="Automated build by CircleCI [ci skip]"
+
+      - save_cache:
+          key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ".venv"
+
+  combine_coverage_reports:
+    docker:
+      - image: circleci/python:3.7
+        environment:
+          PIPENV_VENV_IN_PROJECT: true
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .coverage
+      - run:
+          command: |
+            pipenv install --skip-lock coverage codacy-coverage
+            pipenv run coverage combine .coverage/coverage*
+            pipenv run coverage xml -i
+            pipenv run python-codacy-coverage -r coverage.xml
