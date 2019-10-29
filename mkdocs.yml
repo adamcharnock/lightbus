@@ -80,7 +80,7 @@ nav:
     - Plugins*: reference/plugins.md
     - Transports*: reference/transports.md
     - RPC Prococol (Redis): reference/rpc-protocol.md
-    - Event Prococol (Redis)*: reference/event-protocol.md
+    - Event Prococol (Redis): reference/event-protocol.md
     - Schema Prococol (Redis)*: reference/schema-protocol.md
 
 # Extensions
