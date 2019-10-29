@@ -76,7 +76,6 @@ def parse_args(args=None):
     lightbus.commands.run.Command().setup(parser, subparsers)
     lightbus.commands.shell.Command().setup(parser, subparsers)
     lightbus.commands.dump_schema.Command().setup(parser, subparsers)
-    lightbus.commands.dump_schema.Command().setup(parser, subparsers)
     lightbus.commands.dump_config_schema.Command().setup(parser, subparsers)
     lightbus.commands.inspect.Command().setup(parser, subparsers)
 
