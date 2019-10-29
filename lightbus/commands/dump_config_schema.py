@@ -16,7 +16,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
             "dumpconfigschema",
             help=(
                 "Dumps the lightbus configuration json schema. Can be useful "
-                "in validating your config. This is not the same as your"
+                "in validating your config. This is not the same as your "
                 "bus' API schema, for that see the more commonly used 'dumpschema' "
                 "command"
             ),
