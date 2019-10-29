@@ -35,8 +35,8 @@ async def test_get_return_path(redis_result_transport: RedisResultTransport):
         )
     )
     assert return_path.startswith("redis+key://my.api.my_proc:result:")
-    result_uuid = b64decode(return_path.split(":")[-1])
-    assert UUID(bytes=result_uuid)
+    result_uuid = return_path.split(":")[-1]
+    assert UUID(hex=result_uuid)
 
 
 @pytest.mark.asyncio

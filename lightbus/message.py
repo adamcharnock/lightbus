@@ -11,7 +11,7 @@ class Message(object):
     required_metadata: Sequence
 
     def __init__(self, id: str = "", native_id: str = None):
-        self.id = id or b64encode(uuid1().bytes).decode("utf8")
+        self.id = id or str(uuid1())
         self.native_id = native_id
 
     def get_metadata(self) -> dict:
