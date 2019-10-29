@@ -134,6 +134,7 @@ def config_as_json_schema() -> dict:
 
 
 def set_default_config(config: dict) -> dict:
+    """Set the default configuration options on a loaded config dictionary"""
     env_service_name = os.environ.get("LIGHTBUS_SERVICE_NAME")
     if env_service_name:
         config.setdefault("service_name", env_service_name)
