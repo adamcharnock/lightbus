@@ -81,7 +81,7 @@ nav:
     - Transports*: reference/transports.md
     - RPC & Result Prococol (Redis): reference/rpc-and-result-protocol.md
     - Event Prococol (Redis): reference/event-protocol.md
-    - Schema Prococol (Redis)*: reference/schema-protocol.md
+    - Schema Prococol (Redis): reference/schema-protocol.md
 
 # Extensions
 markdown_extensions:
