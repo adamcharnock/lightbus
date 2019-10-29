@@ -47,6 +47,8 @@ def run_command_from_args(args=None, **extra):
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description="Lightbus management command.")
+
+    # Set the top level arguments which can be specified for any lightbus command
     parser.add_argument(
         "--service-name",
         "-s",
@@ -73,6 +75,7 @@ def parse_args(args=None):
     subparsers = parser.add_subparsers(help="Commands", dest="subcommand")
     subparsers.required = True
 
+    # Allow each command to set up its own arguments
     lightbus.commands.run.Command().setup(parser, subparsers)
     lightbus.commands.shell.Command().setup(parser, subparsers)
     lightbus.commands.dump_schema.Command().setup(parser, subparsers)
