@@ -151,24 +151,25 @@ def import_bus_module(bus_module_name: str = None):
         bus_module = import_module_from_string(bus_module_name)
     except ImportError as e:
         raise FailedToImportBusModule(
-            f"Failed to import bus module at '{bus_module_name}'. Perhaps you "
-            f"need to set the LIGHTBUS_MODULE environment variable? Alternatively "
-            f"you may need to configure your PYTHONPATH. Error was: {e}"
+            f"Failed to import bus module '{bus_module_name}'.\n\n"
+            f"    Perhaps you need to set the LIGHTBUS_MODULE environment variable? Alternatively "
+            f"you may need to configure your PYTHONPATH.\n\n"
+            f"    Error was: {e}"
         )
 
     if not hasattr(bus_module, "bus"):
         raise FailedToImportBusModule(
-            f"Bus module at '{bus_module_name}' contains no attribute named 'bus'.\n"
-            f"Your bus module must set a variable named bus using:\n"
-            f"     bus = lightbus.create()"
+            f"Bus module at '{bus_module_name}' contains no attribute named 'bus'.\n\n"
+            f"    Your bus module must set a variable named bus using:\n"
+            f"        bus = lightbus.create()"
         )
 
     if not isinstance(bus_module.bus, BusPath):
         raise FailedToImportBusModule(
-            f"Bus module at '{bus_module_name}' contains an invalid value for the 'bus' attribute.\n"
-            f"We expected a BusPath instance, but found '{type(bus_module.bus).__name__}'.\n"
-            f"Your bus module must set a variable named bus using:\n"
-            f"     bus = lightbus.create()"
+            f"Bus module at '{bus_module_name}' contains an invalid value for the 'bus' attribute.\n\n"
+            f"    We expected a BusPath instance, but found '{type(bus_module.bus).__name__}'.\n"
+            f"    Your bus module must contain a variable named 'bus' using:\n"
+            f"        bus = lightbus.create()"
         )
 
     return bus_module

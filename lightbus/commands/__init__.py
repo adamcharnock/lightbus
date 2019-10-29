@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 COMMAND_PARSED_ARGS = {}
 
+RED = "\033[91m" if sys.stdout.isatty() else ""
+RESET = "\033[0m" if sys.stdout.isatty() else ""
+
 
 def lightbus_entry_point():  # pragma: no cover
     sys.path.insert(0, "")
@@ -46,7 +49,7 @@ def run_command_from_args(args=None, **extra):
     try:
         parsed_args.func(parsed_args, config, plugin_registry, **extra)
     except FailedToImportBusModule as e:
-        sys.stderr.write(str(e) + "\n")
+        sys.stderr.write(f"{RED}{e}{RESET}\n")
 
 
 def parse_args(args=None):
