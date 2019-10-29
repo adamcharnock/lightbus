@@ -1,14 +1,14 @@
 ## 2.1 Requirements
 
 Before continuing, ensure you have completed the following steps detailed in
-the [installation section](/tutorial/installation.md):
+the [installation section](installation.md):
 
 * Installed Python 3.7 or above
 * Installed Lightbus
 * Running Redis 5 locally on the default port (6379)
 
 Optionally, you can read some additional *explanation* in the
-[anatomy lesson] and [concepts] sections.
+[anatomy lesson] section.
 
 ## 2.2 Define your API
 
@@ -234,7 +234,7 @@ a more realistic scenario involving multiple services.
 
 [lightbus-run]: /static/images/quickstart-lightbus-run.png
 [events]: /static/images/quickstart-events.png
-[anatomy lesson]: /explanation/anatomy-lesson.md
-[concepts]: /explanation/concepts.md
+[anatomy lesson]: ../explanation/anatomy-lesson.md
+[concepts]: ../explanation/concepts.md
 [worked example]: worked-example.md
-[authoritative]: /explanation/apis.md#authoritativenon-authoritative-apis
+[authoritative]: ../explanation/apis.md#authoritativenon-authoritative-apis

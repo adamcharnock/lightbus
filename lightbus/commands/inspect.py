@@ -51,13 +51,13 @@ class Command(object):
         group.add_argument(
             "--api",
             "-a",
-            help=("Find events for this API name. Supports '*' wildcard."),
+            help=("Find events for this API name. Supports the '*' wildcard."),
             metavar="API_NAME",
         )
         group.add_argument(
             "--event",
             "-e",
-            help=("Find events for this event name. Supports '*' wildcard."),
+            help=("Find events for this event name. Supports the '*' wildcard."),
             metavar="EVENT_NAME",
         )
         group.add_argument(
@@ -70,10 +70,10 @@ class Command(object):
         group.add_argument(
             "--format",
             "-F",
-            help=("Formatting style. One of pretty, json"),
+            help="Formatting style. One of json, pretty, or human.",
             metavar="FORMAT",
             default="json",
-            choices=("pretty", "json"),
+            choices=("json", "pretty", "human"),
         )
         group.add_argument(
             "--cache-only", "-c", help=("Search the local cache only"), action="store_true"
@@ -81,7 +81,10 @@ class Command(object):
         group.add_argument(
             "--follow",
             "-f",
-            help=("Continually listen for new events matching the search criteria"),
+            help=(
+                "Continually listen for new events matching the search criteria. "
+                "May only be used on a single API"
+            ),
             action="store_true",
         )
         group.add_argument("--internal", "-I", help="Include internal APIs", action="store_true")
@@ -98,24 +101,39 @@ class Command(object):
         block(bus.client.lazy_load_now())
 
         # Locally registered APIs
-        if args.internal or args.api:
-            api_names = [api.meta.name for api in bus.client.api_registry.all()]
-        else:
-            api_names = [api.meta.name for api in bus.client.api_registry.public()]
+        api_names = [api.meta.name for api in bus.client.api_registry.all()]
 
         # APIs registered to other services on the bus
         for api_name in bus.client.schema.api_names:
             if api_name not in api_names:
                 api_names.append(api_name)
 
+        if not args.internal and not args.api:
+            # Hide internal APIs if we don't want them
+            api_names = [api_name for api_name in api_names if not api_name.startswith("internal.")]
+
         if args.api and args.api not in api_names:
             sys.stderr.write(
-                f"Specified API was not found locally or within the schema on the bus. Cannot continue.\n"
+                f"Specified API was not found locally or within the schema on the bus.\n"
+                f"Ensure a Lightbus worker is running for this API.\n"
+                f"Cannot continue.\n"
+            )
+            exit(1)
+
+        api_names_to_inspect = []
+        for api_name in api_names:
+            if not args.api or self.wildcard_match(args.api, api_name):
+                api_names_to_inspect.append(api_name)
+
+        if len(api_names_to_inspect) != 1 and args.follow:
+            sys.stderr.write(
+                f"The --follow option is only available when following a single API.\n"
+                f"Please specify the --api option to select a single API to follow.\n"
             )
             exit(1)
 
         try:
-            for api_name in api_names:
+            for api_name in api_names_to_inspect:
                 if not args.api or self.wildcard_match(args.api, api_name):
                     logger.debug(f"Inspecting {api_name}")
                     block(self.search_in_api(args, api_name, bus))
@@ -126,7 +144,6 @@ class Command(object):
 
     async def search_in_api(self, args, api_name: str, bus: BusPath):
         transport = bus.client.transport_registry.get_event_transport(api_name)
-        # TODO: --follow will only work for a single API. Use bus.client.listen, not transport.consume.
         async for message in self.get_messages(args, api_name, args.event, transport, bus):
             if self.match_message(args, message):
                 self.output(args, transport, message)
@@ -208,6 +225,12 @@ class Command(object):
 
         # Now get messages from the transport, writing to the cache as we go
         allow_following = True
+
+        if start:
+            logger.debug(
+                f"Finished reading from cache. Now reading from {start} on {api_name}.{event_name}"
+            )
+
         while True:
             with cache_file.open("a") as f:
                 async for event_message in transport.history(
@@ -300,12 +323,16 @@ class Command(object):
         """Print out the given message"""
 
         serialized = transport.serializer(message)
-        if args.format == "json":
-            sys.stdout.write(json.dumps(serialized))
+        if args.format in ("json", "pretty"):
+            if args.format == "pretty":
+                dumped = json.dumps(serialized, indent=4)
+            else:
+                dumped = json.dumps(serialized)
+            sys.stdout.write(dumped)
             sys.stdout.write("\n")
             sys.stdout.flush()
 
-        elif args.format == "pretty":
+        elif args.format == "human":
             print(Colors.BGreen, end="")
             print(f" {message.api_name}.{message.event_name} ".center(80, "="))
             if hasattr(message, "datetime"):

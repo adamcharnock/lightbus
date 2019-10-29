@@ -8,9 +8,17 @@ by other Lightbus clients. This provides a number of features:
 * RPCs, results, and events transmitted on the bus can be validated by both the sender and receiver
 * Lightbus tooling can load the schema to provide additional functionality
 
-The schema is transmitted in the [JSON schema] format. 
+Note that an API's schema will only be available on the bus while there is a worker 
+running to provides it. Once the worker process for an API shuts down the schema on the 
+bus will be cleaned up shortly thereafter.
 
-See the [schema reference](../reference/schema.md) section for details on how this works in practice. 
+## See also
+
+See the [schema reference](../reference/schema.md) section for details on how this works in practice.
+ 
+The schema is created using the [JSON schema] format, see the [schema protocol] for details of 
+the transmission format.
 
 
 [JSON schema]: https://json-schema.org/
+[schema protocol]

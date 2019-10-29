@@ -71,17 +71,17 @@ nav:
     - Configuration: reference/configuration.md
     - Schema: reference/schema.md
     - Command line use:
-      - run*: reference/command-line-use/run.md
-      - inspect*: reference/command-line-use/inspect.md
+      - run: reference/command-line-use/run.md
+      - inspect: reference/command-line-use/inspect.md
       - shell*: reference/command-line-use/shell.md
       - dumpschema*: reference/command-line-use/dumpschema.md
       - dumpconfigschema*: reference/command-line-use/dumpconfigschema.md
     - Debugging*: reference/debugging.md
     - Plugins*: reference/plugins.md
     - Transports*: reference/transports.md
-    - RPC & Result Prococol (Redis): reference/rpc-and-result-protocol.md
-    - Event Prococol (Redis): reference/event-protocol.md
-    - Schema Prococol (Redis): reference/schema-protocol.md
+    - RPC & Result Protocol (Redis): reference/rpc-and-result-protocol.md
+    - Event Protocol (Redis): reference/event-protocol.md
+    - Schema Protocol (Redis): reference/schema-protocol.md
 
 # Extensions
 markdown_extensions:

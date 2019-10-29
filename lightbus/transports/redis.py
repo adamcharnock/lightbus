@@ -856,6 +856,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         start: datetime = None,
         stop: datetime = None,
         start_inclusive: bool = True,
+        batch_size: int = 100,
     ) -> AsyncGenerator[EventMessage, None]:
         # TODO: Test
         redis_start = datetime_to_redis_steam_id(start) if start else "-"
@@ -865,7 +866,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             redis_start = redis_stream_id_add_one(redis_start)
 
         stream_name = self._get_stream_names([(api_name, event_name)])[0]
-        batch_size = 10
 
         logger.debug(
             f"Getting history for stream {stream_name} from {redis_start} ({start}) "
