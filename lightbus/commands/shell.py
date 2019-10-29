@@ -3,25 +3,25 @@ import logging
 from inspect import isclass
 
 import lightbus
-from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
+from lightbus.commands import utilities as command_utilities
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
 
 logger = logging.getLogger(__name__)
 
 
-class Command(LogLevelMixin, BusImportMixin, object):
+class Command(object):
     def setup(self, parser, subparsers):
         parser_shell = subparsers.add_parser(
             "shell",
             help="Provide an interactive Lightbus shell",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
-        self.setup_import_parameter(parser_shell)
+        command_utilities.setup_import_parameter(parser_shell)
         parser_shell.set_defaults(func=self.handle)
 
     def handle(self, args, config, plugin_registry: PluginRegistry, fake_it=False):
-        self.setup_logging(args.log_level or "warning", config)
+        command_utilities.setup_logging(args.log_level or "warning", config)
 
         try:
             # pylint: disable=unused-import
@@ -35,7 +35,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         logger = logging.getLogger("lightbus")
         logger.setLevel(logging.WARNING)
 
-        bus_module, bus = self.import_bus(args)
+        bus_module, bus = command_utilities.import_bus(args)
 
         objects = {k: v for k, v in lightbus.__dict__.items() if isclass(v)}
         objects.update(bus=bus)

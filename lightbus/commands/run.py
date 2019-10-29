@@ -5,7 +5,7 @@ import os
 import signal
 import sys
 
-from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
+from lightbus.commands import utilities as command_utilities
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
 from lightbus.utilities.features import Feature, ALL_FEATURES
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 csv_type = lambda value: [v.strip() for v in value.split(",") if value.split(",")]
 
 
-class Command(LogLevelMixin, BusImportMixin, object):
+class Command(object):
     def setup(self, parser, subparsers):
         self.all_features = [f.value for f in Feature]
         self.features_str = ", ".join(self.all_features)
@@ -23,7 +23,7 @@ class Command(LogLevelMixin, BusImportMixin, object):
         parser_run = subparsers.add_parser(
             "run", help="Run Lightbus", formatter_class=argparse.ArgumentDefaultsHelpFormatter
         )
-        self.setup_import_parameter(parser_run)
+        command_utilities.setup_import_parameter(parser_run)
 
         parser_run_action_group = parser_run.add_mutually_exclusive_group()
         parser_run_action_group.add_argument(
@@ -58,9 +58,9 @@ class Command(LogLevelMixin, BusImportMixin, object):
             raise
 
     def _handle(self, args, config, plugin_registry: PluginRegistry):
-        self.setup_logging(override=getattr(args, "log_level", None), config=config)
+        command_utilities.setup_logging(override=getattr(args, "log_level", None), config=config)
 
-        bus_module, bus = self.import_bus(args)
+        bus_module, bus = command_utilities.import_bus(args)
 
         # Convert only & skip into a list of features to enable
         if args.only or args.skip:

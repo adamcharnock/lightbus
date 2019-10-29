@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Optional, List
 
 from lightbus import EventMessage, Api, BusPath, EventTransport
-from lightbus.commands.utilities import BusImportMixin, LogLevelMixin
+from lightbus.commands import utilities as command_utilities
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
 from lightbus_vendored.jsonpath import jsonpath
@@ -22,7 +22,7 @@ CACHE_PATH = Path("~/.lightbus/inspect_cache").expanduser()
 logger = logging.getLogger(__name__)
 
 
-class Command(LogLevelMixin, BusImportMixin, object):
+class Command(object):
     def setup(self, parser, subparsers):
         parser_shell = subparsers.add_parser(
             "inspect",
@@ -87,13 +87,13 @@ class Command(LogLevelMixin, BusImportMixin, object):
             "--internal", "-I", help="Include internal APIs", action="store_true"
         )
 
-        self.setup_import_parameter(parser_shell)
+        command_utilities.setup_import_parameter(parser_shell)
         parser_shell.set_defaults(func=self.handle)
 
     def handle(self, args, config, plugin_registry: PluginRegistry):
         """Entrypoint for the inspect command"""
-        self.setup_logging(args.log_level or "warning", config)
-        bus_module, bus = self.import_bus(args)
+        command_utilities.setup_logging(args.log_level or "warning", config)
+        bus_module, bus = command_utilities.import_bus(args)
         api_names: List[str]
 
         block(bus.client.lazy_load_now())
