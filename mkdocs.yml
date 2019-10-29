@@ -79,7 +79,7 @@ nav:
     - Debugging*: reference/debugging.md
     - Plugins*: reference/plugins.md
     - Transports*: reference/transports.md
-    - RPC Prococol (Redis): reference/rpc-protocol.md
+    - RPC & Result Prococol (Redis): reference/rpc-and-result-protocol.md
     - Event Prococol (Redis): reference/event-protocol.md
     - Schema Prococol (Redis)*: reference/schema-protocol.md
 

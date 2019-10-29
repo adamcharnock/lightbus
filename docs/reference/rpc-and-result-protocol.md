@@ -1,4 +1,4 @@
-# RPC protocol (Redis)
+# RPC & result protocol (Redis)
 
 Here we document the specific interactions between Lightbus and Redis. 
 The concrete implementation of this is provided by the `RedisRpcTransport` and 
