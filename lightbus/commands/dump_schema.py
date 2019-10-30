@@ -20,8 +20,8 @@ class Command(object):
         )
         group = parser_dumpschema.add_argument_group(title="Dump config schema command arguments")
         group.add_argument(
-            "--schema",
-            "-m",
+            "--out",
+            "-o",
             help=(
                 "File or directory to write schema to. If a directory is "
                 "specified one schema file will be created for each API. "
@@ -37,11 +37,11 @@ class Command(object):
 
         bus_module, bus = command_utilities.import_bus(args)
         block(bus.client.lazy_load_now())
-        bus.schema.save_local(args.schema)
+        bus.schema.save_local(args.out)
 
-        if args.schema:
+        if args.out:
             sys.stderr.write(
                 "Schema for {} APIs saved to {}\n".format(
-                    len(bus.schema.api_names), Path(args.schema).resolve()
+                    len(bus.schema.api_names), Path(args.out).resolve()
                 )
             )
