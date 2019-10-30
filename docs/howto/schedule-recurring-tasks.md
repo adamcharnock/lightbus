@@ -45,4 +45,22 @@ def do_it():
 
 ```
 
+## Long running tasks
+
+If your tasks are long running you may prefer to handle these in a separate 
+Lightbus process. This will avoid blocking the processing of incoming events and RPCs.
+
+For example, the default RPC timeout is 5 seconds. Any task which runs for longer than 
+this has the possibility of causing incoming RPCs to timeout.
+ 
+You can move your task processing to a separate process as follows:
+
+```
+# Process 1: Handles scheduled tasks only
+lightbus run --only tasks
+
+# Process 2: Handles everything else (events and rpcs)
+lightbus run --skip rpcs
+```
+
 [schedule]: https://github.com/dbader/schedule

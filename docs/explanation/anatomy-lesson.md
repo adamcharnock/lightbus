@@ -2,8 +2,8 @@
 
 Lightbus provides you with two tools:
 
-* A **client** with which to fire events, listen for events
-  and make remote procedure calls (RPCs).
+* A **client** with which to fire [events], listen for events
+  and make [remote procedure calls] (RPCs).
 * A **stand-alone Lightbus worker process** in which you can setup
   event listeners. This process will also respond to RPCs calls.
 
@@ -111,4 +111,5 @@ for [events] or provide any [RPCs] which can be called.**
 [service]: concepts.md#service
 [events]: events.md
 [rpcs]: rpcs.md
+[remote procedure calls]: rpcs.md
 [module loading configuration]: /reference/configuration.md/#1-module-loading
