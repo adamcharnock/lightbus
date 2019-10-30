@@ -172,7 +172,7 @@ def test_commands_dump_schema(run_lightbus_command):
     except FileNotFoundError:
         pass
 
-    run_lightbus_command("dumpschema", "--schema", "/tmp/test_commands_dump_schema.json")
+    run_lightbus_command("dumpschema", "--out", "/tmp/test_commands_dump_schema.json")
     time.sleep(1)
 
     with open("/tmp/test_commands_dump_schema.json", "r") as f:
@@ -186,9 +186,7 @@ def test_commands_dump_config_schema(run_lightbus_command):
     except FileNotFoundError:
         pass
 
-    run_lightbus_command(
-        "dumpconfigschema", "--schema", "/tmp/test_commands_dump_config_schema.json"
-    )
+    run_lightbus_command("dumpconfigschema", "--out", "/tmp/test_commands_dump_config_schema.json")
     time.sleep(1)
 
     with open("/tmp/test_commands_dump_config_schema.json", "r") as f:
