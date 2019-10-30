@@ -75,7 +75,7 @@ nav:
       - inspect: reference/command-line-use/inspect.md
       - shell: reference/command-line-use/shell.md
       - dumpschema: reference/command-line-use/dumpschema.md
-      - dumpconfigschema*: reference/command-line-use/dumpconfigschema.md
+      - dumpconfigschema: reference/command-line-use/dumpconfigschema.md
     - Debugging*: reference/debugging.md
     - Plugins*: reference/plugins.md
     - Transports*: reference/transports.md

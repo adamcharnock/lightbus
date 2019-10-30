@@ -26,8 +26,8 @@ class Command(object):
             title="Dump config schema command arguments"
         )
         group.add_argument(
-            "--schema",
-            "-m",
+            "--out",
+            "-o",
             help=(
                 "File to write config schema to. "
                 "If omitted the schema will be written to standard out."
@@ -44,8 +44,8 @@ class Command(object):
 
         schema = json_encode(config_as_json_schema(), indent=2, sort_keys=True)
 
-        if args.schema:
-            with open(args.schema, "w", encoding="utf8") as f:
+        if args.out:
+            with open(args.out, "w", encoding="utf8") as f:
                 f.write(schema)
         else:
             print(schema)
