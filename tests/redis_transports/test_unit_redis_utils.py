@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from lightbus.transports.redis import (
+from lightbus.transports.redis.utilities import (
     redis_stream_id_subtract_one,
     redis_steam_id_to_datetime,
     datetime_to_redis_steam_id,

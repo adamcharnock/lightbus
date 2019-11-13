@@ -8,10 +8,9 @@ import jsonschema
 import os
 import pytest
 
-from lightbus import Event, Api, Parameter, Schema
+from lightbus import Event, Api, Parameter, Schema, RedisSchemaTransport
 from lightbus.exceptions import InvalidApiForSchemaCreation, SchemaNotFound, ValidationError
 from lightbus.schema.schema import api_to_schema
-from lightbus.transports.redis import RedisSchemaTransport
 from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.unit

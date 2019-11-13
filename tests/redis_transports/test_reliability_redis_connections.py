@@ -5,6 +5,10 @@ import pytest
 from aioredis import create_redis_pool
 
 import lightbus
+import lightbus.transports.redis.event
+import lightbus.transports.redis.result
+import lightbus.transports.redis.rpc
+import lightbus.transports.redis.schema
 from lightbus import BusPath
 
 pytestmark = pytest.mark.reliability
@@ -62,13 +66,13 @@ async def test_create_and_destroy_redis_buses(redis_client, dummy_api, new_bus, 
 @pytest.mark.parametrize(
     "transport_class,kwargs",
     [
-        (lightbus.RedisRpcTransport, {}),
-        (lightbus.RedisResultTransport, {}),
+        (lightbus.transports.redis.rpc.RedisRpcTransport, {}),
+        (lightbus.transports.redis.result.RedisResultTransport, {}),
         (
-            lightbus.RedisEventTransport,
+            lightbus.transports.redis.event.RedisEventTransport,
             {"service_name": "test_service", "consumer_name": "test_consumer"},
         ),
-        (lightbus.RedisSchemaTransport, {}),
+        (lightbus.transports.redis.schema.RedisSchemaTransport, {}),
     ],
     ids=["rpc", "result", "event", "schema"],
 )

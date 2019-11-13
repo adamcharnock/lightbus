@@ -8,7 +8,6 @@ from uuid import UUID
 import pytest
 from dataclasses import dataclass
 
-from lightbus.transports.redis import redis_stream_id_subtract_one
 from lightbus.utilities.casting import cast_to_signature, cast_to_hint
 from lightbus.utilities.frozendict import frozendict
 

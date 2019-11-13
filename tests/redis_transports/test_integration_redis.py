@@ -12,7 +12,7 @@ from lightbus.config.structure import OnError
 from lightbus.path import BusPath
 from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
-from lightbus.transports.redis import StreamUse
+from lightbus.transports.redis.event import StreamUse
 from lightbus.utilities.async_tools import cancel, block
 
 pytestmark = pytest.mark.integration

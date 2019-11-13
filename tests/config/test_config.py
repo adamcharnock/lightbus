@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from lightbus import DebugRpcTransport
+from lightbus import DebugRpcTransport, RedisRpcTransport
 from lightbus.config import Config
 from lightbus.config.config import config_as_json_schema
 from lightbus.plugins import PluginRegistry
@@ -13,7 +13,6 @@ from lightbus.config.structure import RootConfig, BusConfig, LogLevelEnum
 from lightbus.plugins.metrics import MetricsPlugin
 from lightbus.plugins.state import StatePlugin
 from lightbus.schema.encoder import json_encode
-from lightbus.transports.redis import RedisRpcTransport
 
 pytestmark = pytest.mark.unit
 

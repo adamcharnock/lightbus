@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from lightbus.transports.redis import RedisSchemaTransport
+from lightbus import RedisSchemaTransport
 
 pytestmark = pytest.mark.unit
 

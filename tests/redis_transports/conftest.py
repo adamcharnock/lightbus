@@ -6,6 +6,10 @@ from aioredis import create_redis_pool
 
 import lightbus
 import lightbus.creation
+import lightbus.transports.redis.event
+import lightbus.transports.redis.result
+import lightbus.transports.redis.rpc
+import lightbus.transports.redis.schema
 from lightbus import (
     RedisRpcTransport,
     RedisSchemaTransport,
@@ -24,24 +28,28 @@ from lightbus.config.structure import (
 )
 from lightbus.exceptions import BusAlreadyClosed
 from lightbus.path import BusPath
-from lightbus.transports.redis import StreamUse
+from lightbus.transports.redis.event import StreamUse
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
 async def redis_rpc_transport(new_redis_pool, loop):
-    return lightbus.RedisRpcTransport(redis_pool=await new_redis_pool(maxsize=10000))
+    return lightbus.transports.redis.rpc.RedisRpcTransport(
+        redis_pool=await new_redis_pool(maxsize=10000)
+    )
 
 
 @pytest.fixture
 async def redis_result_transport(new_redis_pool, loop):
-    return lightbus.RedisResultTransport(redis_pool=await new_redis_pool(maxsize=10000))
+    return lightbus.transports.redis.result.RedisResultTransport(
+        redis_pool=await new_redis_pool(maxsize=10000)
+    )
 
 
 @pytest.yield_fixture
 async def redis_event_transport(new_redis_pool, loop):
-    transport = lightbus.RedisEventTransport(
+    transport = lightbus.transports.redis.event.RedisEventTransport(
         redis_pool=await new_redis_pool(maxsize=10000),
         service_name="test_service",
         consumer_name="test_consumer",
@@ -54,7 +62,9 @@ async def redis_event_transport(new_redis_pool, loop):
 
 @pytest.fixture
 async def redis_schema_transport(new_redis_pool, loop):
-    return lightbus.RedisSchemaTransport(redis_pool=await new_redis_pool(maxsize=10000))
+    return lightbus.transports.redis.schema.RedisSchemaTransport(
+        redis_pool=await new_redis_pool(maxsize=10000)
+    )
 
 
 @pytest.yield_fixture

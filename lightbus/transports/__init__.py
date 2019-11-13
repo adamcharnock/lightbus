@@ -1,14 +1,22 @@
-from .base import RpcTransport, ResultTransport, EventTransport, SchemaTransport, Transport
-from .debug import (
+from lightbus.transports.base import (
+    RpcTransport,
+    ResultTransport,
+    EventTransport,
+    SchemaTransport,
+    Transport,
+)
+from lightbus.transports.debug import (
     DebugRpcTransport,
     DebugResultTransport,
     DebugEventTransport,
     DebugSchemaTransport,
 )
-from .direct import DirectRpcTransport, DirectResultTransport, DirectEventTransport
-from .redis import (
-    RedisRpcTransport,
-    RedisResultTransport,
-    RedisEventTransport,
-    RedisSchemaTransport,
+from lightbus.transports.direct import (
+    DirectRpcTransport,
+    DirectResultTransport,
+    DirectEventTransport,
 )
+from lightbus.transports.redis.rpc import RedisRpcTransport
+from lightbus.transports.redis.result import RedisResultTransport
+from lightbus.transports.redis.event import RedisEventTransport
+from lightbus.transports.redis.schema import RedisSchemaTransport

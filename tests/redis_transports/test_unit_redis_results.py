@@ -10,8 +10,7 @@ from lightbus.serializers import (
     ByFieldMessageSerializer,
     ByFieldMessageDeserializer,
 )
-from lightbus.transports.redis import RedisResultTransport
-
+from lightbus import RedisResultTransport
 
 pytestmark = pytest.mark.unit
 

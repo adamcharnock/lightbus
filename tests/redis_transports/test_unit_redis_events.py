@@ -12,7 +12,9 @@ from lightbus.serializers import (
     BlobMessageSerializer,
     BlobMessageDeserializer,
 )
-from lightbus.transports.redis import RedisEventTransport, StreamUse, RedisEventMessage
+from lightbus.transports.redis.event import StreamUse
+from lightbus.transports.redis.utilities import RedisEventMessage
+from lightbus import RedisEventTransport
 from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.unit
