@@ -1,7 +1,7 @@
 import pytest
 
 from lightbus import Api, Event
-from lightbus.api import Registry
+from lightbus.api import ApiRegistry
 from lightbus.exceptions import (
     MisconfiguredApiOptions,
     InvalidApiEventConfiguration,
@@ -23,7 +23,7 @@ def SimpleApi():
 
 @pytest.fixture()
 def registry():
-    return Registry()
+    return ApiRegistry()
 
 
 def test_api_named_default():

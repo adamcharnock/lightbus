@@ -16,7 +16,7 @@ from typing import List, Tuple, Coroutine, Union
 
 import janus
 
-from lightbus.api import Api, Registry
+from lightbus.api import Api, ApiRegistry
 from lightbus.client_worker import (
     ClientWorker,
     run_in_worker_thread,
@@ -104,7 +104,7 @@ class BusClient(object):
         self.transport_registry = transport_registry
         self.features: List[Union[Feature, str]] = ALL_FEATURES
         self.set_features(features)
-        self.api_registry = Registry()
+        self.api_registry = ApiRegistry()
         self.plugin_registry = PluginRegistry()
         self.schema = None
         self._server_shutdown_queue: janus.Queue = None

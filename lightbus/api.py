@@ -12,8 +12,7 @@ from lightbus.exceptions import (
 __all__ = ["Api", "Event"]
 
 
-class Registry(object):
-    # TODO: Rename to ApiRegistry
+class ApiRegistry(object):
     def __init__(self):
         self._apis: Dict[str, Api] = dict()
 
