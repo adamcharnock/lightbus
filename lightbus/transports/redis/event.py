@@ -389,63 +389,83 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         """
         with await self.connection_manager() as redis:
             for stream in stream_names:
-                old_messages = await redis.xpending(
-                    stream, consumer_group, "-", "+", count=self.reclaim_batch_size
-                )
-                timeout = self.acknowledgement_timeout * 1000
-                event_messages = []
-                for (
-                    message_id,
-                    consumer_name,
-                    ms_since_last_delivery,
-                    num_deliveries,
-                ) in old_messages:
-                    message_id = decode(message_id, "utf8")
-                    consumer_name = decode(consumer_name, "utf8")
 
-                    if ms_since_last_delivery > timeout:
-                        logger.info(
-                            L(
-                                "Found timed out event {} in stream {}. Abandoned by {}. Attempting to reclaim...",
-                                Bold(message_id),
-                                Bold(stream),
-                                Bold(consumer_name),
-                            )
-                        )
+                old_messages = True
+                reclaim_from = None
 
-                    result = await redis.xclaim(
-                        stream, consumer_group, self.consumer_name, int(timeout), message_id
+                # Keep pulling reclaimable messages from Redis until there are none left
+                while old_messages:
+                    # reclaim_from keeps track of where we are up to in our fetching
+                    # of messages
+                    if not reclaim_from:
+                        # This is our first iteration, so fetch from the start of time
+                        reclaim_from = "-"
+                    else:
+                        # This is a subsequent iteration. XPENDING's 'start' parameter is inclusive,
+                        # so we need to add one to the reclaim_from value to ensure we don't get a message
+                        # we've already seen
+                        reclaim_from = redis_stream_id_add_one(reclaim_from)
+
+                    # Fetch the next batch of messages
+                    old_messages = await redis.xpending(
+                        stream, consumer_group, reclaim_from, "+", count=self.reclaim_batch_size
                     )
-                    for claimed_message_id, fields in result:
-                        claimed_message_id = decode(claimed_message_id, "utf8")
-                        event_message = self._fields_to_message(
-                            fields,
-                            expected_events,
-                            stream=stream,
-                            native_id=claimed_message_id,
-                            consumer_group=consumer_group,
-                        )
-                        if not event_message:
-                            # noop message, or message an event we don't care about
-                            continue
-                        logger.debug(
-                            LBullets(
+
+                    timeout = self.acknowledgement_timeout * 1000
+                    event_messages = []
+                    for (
+                        message_id,
+                        consumer_name,
+                        ms_since_last_delivery,
+                        num_deliveries,
+                    ) in old_messages:
+                        message_id = decode(message_id, "utf8")
+                        consumer_name = decode(consumer_name, "utf8")
+                        reclaim_from = message_id
+
+                        if ms_since_last_delivery > timeout:
+                            logger.info(
                                 L(
-                                    "⬅ Reclaimed timed out event {} on stream {}. Abandoned by {}.",
+                                    "Found timed out event {} in stream {}. Abandoned by {}. Attempting to reclaim...",
                                     Bold(message_id),
                                     Bold(stream),
                                     Bold(consumer_name),
-                                ),
-                                items=dict(
-                                    **event_message.get_metadata(),
-                                    kwargs=event_message.get_kwargs(),
-                                ),
+                                )
                             )
-                        )
-                        event_messages.append(event_message)
 
-                    if event_messages:
-                        yield event_messages
+                        result = await redis.xclaim(
+                            stream, consumer_group, self.consumer_name, int(timeout), message_id
+                        )
+                        for claimed_message_id, fields in result:
+                            claimed_message_id = decode(claimed_message_id, "utf8")
+                            event_message = self._fields_to_message(
+                                fields,
+                                expected_events,
+                                stream=stream,
+                                native_id=claimed_message_id,
+                                consumer_group=consumer_group,
+                            )
+                            if not event_message:
+                                # noop message, or message an event we don't care about
+                                continue
+                            logger.debug(
+                                LBullets(
+                                    L(
+                                        "⬅ Reclaimed timed out event {} on stream {}. Abandoned by {}.",
+                                        Bold(message_id),
+                                        Bold(stream),
+                                        Bold(consumer_name),
+                                    ),
+                                    items=dict(
+                                        **event_message.get_metadata(),
+                                        kwargs=event_message.get_kwargs(),
+                                    ),
+                                )
+                            )
+                            event_messages.append(event_message)
+
+                        if event_messages:
+                            yield event_messages
 
     async def acknowledge(self, *event_messages: RedisEventMessage, bus_client: "BusClient"):
         with await self.connection_manager() as redis:

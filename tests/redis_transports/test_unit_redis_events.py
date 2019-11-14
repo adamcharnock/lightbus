@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime
+from itertools import chain
 
 import pytest
 
@@ -371,6 +372,62 @@ async def test_reclaim_lost_messages(loop, redis_client, redis_pool, dummy_api):
     assert len(reclaimed_messages) == 1
     assert reclaimed_messages[0].native_id
     assert type(reclaimed_messages[0].native_id) == str
+
+
+@pytest.mark.asyncio
+async def test_reclaim_lost_messages_many(loop, redis_client, redis_pool, dummy_api):
+    """Test that messages keep getting reclaimed until there are none left"""
+
+    # Add 20 messages
+    for x in range(0, 20):
+        await redis_client.xadd(
+            "my.dummy.my_event:stream",
+            fields={
+                b"api_name": b"my.dummy",
+                b"event_name": b"my_event",
+                b"id": b"123",
+                b"version": b"1",
+                b":field": b'"value"',
+            },
+        )
+
+    # Create the consumer group
+    await redis_client.xgroup_create(
+        stream="my.dummy.my_event:stream", group_name="test_service", latest_id="0"
+    )
+
+    # Claim them all in the name of another consumer
+    result = await redis_client.xread_group(
+        group_name="test_service",
+        consumer_name="bad_consumer",
+        streams=["my.dummy.my_event:stream"],
+        latest_ids=[">"],
+        count=20,
+    )
+    assert result, "Didn't actually manage to claim any message"
+
+    # Sleep a moment to fake a short timeout
+    await asyncio.sleep(0.1)
+
+    event_transport = RedisEventTransport(
+        redis_pool=redis_pool,
+        service_name="test_service",
+        consumer_name="good_consumer",
+        acknowledgement_timeout=0.01,  # in ms, short for the sake of testing
+        stream_use=StreamUse.PER_EVENT,
+        reclaim_batch_size=5,  # Less than 20 (see message creation above), so multiple fetches required
+    )
+
+    reclaimer = event_transport._reclaim_lost_messages(
+        stream_names=["my.dummy.my_event:stream"],
+        consumer_group="test_service",
+        expected_events={"my_event"},
+    )
+
+    # We should get 20 unique IDs back (i.e. no duplicates, nothing missed)
+    messages = chain(*[m async for m in reclaimer])
+    message_ids = {m.native_id for m in messages}
+    assert len(message_ids) == 20
 
 
 @pytest.mark.asyncio
