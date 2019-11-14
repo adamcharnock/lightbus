@@ -903,3 +903,83 @@ async def test_cleanup_group_deleted(redis_event_transport: RedisEventTransport,
 
     groups = await redis_client.xinfo_groups("test_stream")
     assert len(groups) == 0, groups
+
+
+@pytest.mark.asyncio
+async def test_history_get_all_single_batch(
+    redis_event_transport: RedisEventTransport, redis_client, dummy_api
+):
+    message = EventMessage(native_id="", api_name="my_api", event_name="my_event")
+    data = ByFieldMessageSerializer()(message)
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"1-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"2-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"3-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"4-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"5-0")
+
+    messages = redis_event_transport.history("my_api", "my_event", batch_size=100)
+    message_ids = {m.native_id async for m in messages}
+    assert len(message_ids) == 5
+
+
+@pytest.mark.asyncio
+async def test_history_get_all_multiple_batches(
+    redis_event_transport: RedisEventTransport, redis_client, dummy_api
+):
+    message = EventMessage(native_id="", api_name="my_api", event_name="my_event")
+    data = ByFieldMessageSerializer()(message)
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"1-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"2-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"3-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"4-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"5-0")
+
+    messages = redis_event_transport.history("my_api", "my_event", batch_size=2)
+    message_ids = {m.native_id async for m in messages}
+    assert len(message_ids) == 5
+
+
+@pytest.mark.asyncio
+async def test_history_get_subset_single_batch(
+    redis_event_transport: RedisEventTransport, redis_client, dummy_api
+):
+    message = EventMessage(native_id="", api_name="my_api", event_name="my_event")
+    data = ByFieldMessageSerializer()(message)
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"1-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"2-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"3-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"4-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"5-0")
+
+    messages = redis_event_transport.history(
+        "my_api",
+        "my_event",
+        batch_size=100,
+        start=datetime.fromtimestamp(0.002),
+        stop=datetime.fromtimestamp(0.004),
+    )
+    message_ids = {m.native_id async for m in messages}
+    assert message_ids == {"2-0", "3-0", "4-0"}
+
+
+@pytest.mark.asyncio
+async def test_history_get_subset_multiplee_batches(
+    redis_event_transport: RedisEventTransport, redis_client, dummy_api
+):
+    message = EventMessage(native_id="", api_name="my_api", event_name="my_event")
+    data = ByFieldMessageSerializer()(message)
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"1-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"2-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"3-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"4-0")
+    await redis_client.xadd("my_api.my_event:stream", data, message_id=b"5-0")
+
+    messages = redis_event_transport.history(
+        "my_api",
+        "my_event",
+        batch_size=2,
+        start=datetime.fromtimestamp(0.002),
+        stop=datetime.fromtimestamp(0.004),
+    )
+    message_ids = {m.native_id async for m in messages}
+    assert message_ids == {"2-0", "3-0", "4-0"}

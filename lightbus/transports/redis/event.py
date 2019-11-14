@@ -501,7 +501,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         start_inclusive: bool = True,
         batch_size: int = 100,
     ) -> AsyncGenerator[EventMessage, None]:
-        # TODO: Test
         redis_start = datetime_to_redis_steam_id(start) if start else "-"
         redis_stop = datetime_to_redis_steam_id(stop) if stop else "+"
 
