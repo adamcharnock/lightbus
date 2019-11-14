@@ -118,7 +118,7 @@ technical information regarding specific features.
 [issue-1]: https://github.com/adamcharnock/lightbus/issues/1
 [simple-processes]: /static/images/simple-processes.png
 [anatomy lesson]: /explanation/anatomy-lesson.md
-[tutorials]: /tutorial/index.md
-[explanation]: /explanation/index.md
-[How to]: /howto/index.md
-[Reference]: /reference/index.md
+[tutorials]: /tutorial/
+[explanation]: /explanation/
+[How to]: /howto/
+[Reference]: /reference/
