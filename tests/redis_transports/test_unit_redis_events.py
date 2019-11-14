@@ -620,14 +620,16 @@ async def test_consume_events_per_api_stream(
 
     events = []
 
-    async def co_consume(event_name):
-        consumer = redis_event_transport.consume([("my.dummy", event_name)], "cg", bus_client=None)
+    async def co_consume(event_name, consumer_group):
+        consumer = redis_event_transport.consume(
+            [("my.dummy", event_name)], consumer_group, bus_client=None
+        )
         async for messages in consumer:
             events.extend(messages)
 
-    task1 = asyncio.ensure_future(co_consume("my_event1"))
-    task2 = asyncio.ensure_future(co_consume("my_event2"))
-    task3 = asyncio.ensure_future(co_consume("my_event3"))
+    task1 = asyncio.ensure_future(co_consume("my_event1", "cg1"))
+    task2 = asyncio.ensure_future(co_consume("my_event2", "cg2"))
+    task3 = asyncio.ensure_future(co_consume("my_event3", "cg3"))
     await asyncio.sleep(0.2)
 
     await redis_client.xadd(
@@ -755,3 +757,92 @@ async def test_acknowledge(redis_event_transport: RedisEventTransport, redis_cli
 
     total_pending, *_ = await redis_client.xpending("test_api.test_event:stream", "test_group")
     assert total_pending == 0
+
+
+@pytest.mark.asyncio
+async def test_cleanup_consumer_deleted_only(
+    redis_event_transport: RedisEventTransport, redis_client
+):
+    """Test that a single consumer within a group is deleted"""
+    # Add a couple of messages for our consumers to fetch
+    await redis_client.xadd("test_stream", {"noop": ""})
+    await redis_client.xadd("test_stream", {"noop": ""})
+    # Create the group
+    await redis_client.xgroup_create("test_stream", "test_group", latest_id="0")
+
+    # Create group test_consumer_1 by performing a read.
+    await redis_client.xread_group(
+        group_name="test_group",
+        consumer_name="test_consumer_1",
+        streams=["test_stream"],
+        latest_ids=[">"],
+        timeout=None,
+        count=1,
+    )
+
+    # Wait a moment to force test_consumer_1 to look old
+    await asyncio.sleep(0.100)
+
+    # Create group test_consumer_2 by performing a read.
+    await redis_client.xread_group(
+        group_name="test_group",
+        consumer_name="test_consumer_2",
+        streams=["test_stream"],
+        latest_ids=[">"],
+        timeout=None,
+        count=1,
+    )
+
+    # Set a very low ttl
+    redis_event_transport.consumer_ttl = 0.050
+
+    # Do it
+    await redis_event_transport._cleanup(stream_names=["test_stream"])
+
+    groups = await redis_client.xinfo_groups("test_stream")
+    consumers = await redis_client.xinfo_consumers("test_stream", "test_group")
+    assert len(groups) == 1, groups
+    assert len(consumers) == 1, consumers
+    assert consumers[0][b"name"] == b"test_consumer_2"
+
+
+@pytest.mark.asyncio
+async def test_cleanup_group_deleted(redis_event_transport: RedisEventTransport, redis_client):
+    """Test that a whole group gets deleted when all the consumers get cleaned up"""
+    # Add a couple of messages for our consumers to fetch
+    await redis_client.xadd("test_stream", {"noop": ""})
+    await redis_client.xadd("test_stream", {"noop": ""})
+    # Create the group
+    await redis_client.xgroup_create("test_stream", "test_group", latest_id="0")
+
+    # Create group test_consumer_1 by performing a read.
+    await redis_client.xread_group(
+        group_name="test_group",
+        consumer_name="test_consumer_1",
+        streams=["test_stream"],
+        latest_ids=[">"],
+        timeout=None,
+        count=1,
+    )
+
+    # Create group test_consumer_2 by performing a read.
+    await redis_client.xread_group(
+        group_name="test_group",
+        consumer_name="test_consumer_2",
+        streams=["test_stream"],
+        latest_ids=[">"],
+        timeout=None,
+        count=1,
+    )
+
+    # Wait a moment to force test_consumer_1 & test_consumer_2 to look old
+    await asyncio.sleep(0.100)
+
+    # Set a very low ttl
+    redis_event_transport.consumer_ttl = 0.050
+
+    # Do it
+    await redis_event_transport._cleanup(stream_names=["test_stream"])
+
+    groups = await redis_client.xinfo_groups("test_stream")
+    assert len(groups) == 0, groups

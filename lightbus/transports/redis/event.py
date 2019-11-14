@@ -4,7 +4,17 @@ import time
 from collections import OrderedDict
 from datetime import datetime
 from enum import Enum
-from typing import Mapping, Optional, List, Tuple, Union, Sequence, AsyncGenerator, Container
+from typing import (
+    Mapping,
+    Optional,
+    List,
+    Tuple,
+    Union,
+    Sequence,
+    AsyncGenerator,
+    Container,
+    Iterable,
+)
 
 from aioredis import ConnectionClosedError, ReplyError
 from aioredis.util import decode
@@ -64,6 +74,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         max_stream_length: Optional[int] = 100_000,
         stream_use: StreamUse = StreamUse.PER_API,
         consumption_restart_delay: int = 5,
+        consumer_ttl: int = 2_592_000,
     ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self.batch_size = batch_size
@@ -74,6 +85,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self.max_stream_length = max_stream_length
         self.stream_use = stream_use
         self.consumption_restart_delay = consumption_restart_delay
+        self.consumer_ttl = consumer_ttl
         super().__init__(serializer=serializer, deserializer=deserializer)
 
     @classmethod
@@ -92,6 +104,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         max_stream_length: Optional[int] = 100_000,
         stream_use: StreamUse = StreamUse.PER_API,
         consumption_restart_delay: int = 5,
+        consumer_ttl: int = 2_592_000,
     ):
         serializer = import_from_string(serializer)()
         deserializer = import_from_string(deserializer)(RedisEventMessage)
@@ -114,6 +127,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             max_stream_length=max_stream_length or None,
             stream_use=stream_use,
             consumption_restart_delay=consumption_restart_delay,
+            consumer_ttl=consumer_ttl,
         )
 
     async def send_event(self, event_message: EventMessage, options: dict, bus_client: "BusClient"):
@@ -161,7 +175,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,
     ) -> AsyncGenerator[List[RedisEventMessage], None]:
-        # TODO: Cleanup consumer groups
         self._sanity_check_listen_for(listen_for)
 
         consumer_group = f"{self.service_name}-{listener_name}"
@@ -187,6 +200,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 items={"{} ({})".format(*v) for v in streams.items()},
             )
         )
+
+        # Cleanup any old groups & consumers
+        await self._cleanup(stream_names)
 
         # Here we use a queue to combine messages coming from both the
         # fetch messages loop and the reclaim messages loop.
@@ -493,6 +509,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         for stream, since in streams.items():
             if not await redis.exists(stream):
                 # Add a noop to ensure the stream exists
+                # TODO: We can now use MKSTREAM, change this logic
                 await redis.xadd(stream, fields={"": ""})
 
             try:
@@ -502,10 +519,73 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 if "BUSYGROUP" not in str(e):
                     raise
 
+    async def _cleanup(self, stream_names: List[str]):
+        """Cleanup old consumers and groups
+
+        A group will be deleted if it contains no consumers.
+
+        A consumer will be deleted if it has been idle for more than consumer_ttl.
+        """
+        if not self.consumer_ttl:
+            # Don't do the cleanup if no TTL is given, consider this to mean
+            # cleanup is disabled
+            return
+
+        with await self.connection_manager() as redis:
+            # For every stream key...
+            for stream_name in stream_names:
+                consumers: List[Tuple[str, str]] = []
+
+                # Get all the groups for that key...
+                try:
+                    groups = await redis.xinfo_groups(stream_name)
+                except ReplyError as e:
+                    if "ERR no such key" in str(e):
+                        # Steam doesn't exist yet
+                        groups = []
+                    else:
+                        raise
+
+                for group in groups:
+                    print(group)
+                    active_consumers = 0
+                    group_name = group[b"name"]
+
+                    # Get all the consumers for that group
+                    for consumer in await redis.xinfo_consumers(stream_name, group_name):
+                        consumer_name = consumer[b"name"]
+                        idle_seconds = consumer[b"idle"] / 1000
+
+                        # And delete the consumer if they have not re-started
+                        # listening for self.consumer_ttl seconds
+                        if idle_seconds >= self.consumer_ttl:
+                            logger.debug(
+                                f"Cleaning up consumer {consumer_name} in group {group_name} on stream {stream_name}. "
+                                f"The consumer has been idle for {idle_seconds} seconds, which is more than the "
+                                f"consumer TTL of {self.consumer_ttl}"
+                            )
+                            await redis.xgroup_delconsumer(stream_name, group_name, consumer_name)
+                        else:
+                            active_consumers += 1
+
+                    # If no active consumers were found for this group, then delete the entire group
+                    # on the grounds that it is no longer used and can be cleaned up.
+                    if not active_consumers:
+                        # We do this atomically using a lua script. This avoids race conditions
+                        # whereby a new consumer comes into existence the moment before we delete the group
+                        try:
+                            await redis.eval(
+                                ATOMIC_DESTROY_CONSUMER_GROUP, [stream_name], [group_name]
+                            )
+                        except ReplyError as e:
+                            if "NOGROUP" in str(e):
+                                # Already deleted
+                                pass
+
     def _fields_to_message(
         self,
         fields: dict,
-        expected_event_names: Container[str],
+        expected_event_names: Iterable[str],
         stream: str,
         native_id: str,
         consumer_group: Optional[str],
@@ -520,7 +600,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         if self.stream_use == StreamUse.PER_API and not want_message:
             # Only care about events we are listening for. If we have one stream
             # per API then we're probably going to receive some events we don't care about.
-            logger.debug(f"Ignoring message for unexpected event: {message}")
+            logger.debug(
+                f"Ignoring message for unexpected event: {message}. "
+                f"Was only expecting {', '.join(expected_event_names)}"
+            )
             return None
         return message
 
@@ -543,3 +626,14 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             if stream_name not in stream_names:
                 stream_names.append(stream_name)
         return stream_names
+
+
+# See RedisEventTransport._cleanup()
+ATOMIC_DESTROY_CONSUMER_GROUP = """
+local stream_name = KEYS[1]
+local group_name = ARGV[1]
+local consumers = redis.call('xinfo', 'consumers', stream_name, group_name)
+if table.getn(consumers) == 0 then
+    redis.call('xgroup', 'destroy', stream_name, group_name)
+end
+"""
