@@ -38,7 +38,7 @@ nav:
     - 1. Installation: tutorial/installation.md
     - 2. Quick start: tutorial/quick-start.md
     - 3. Worked example: tutorial/worked-example.md
-    - 4. Django & Lightbus*: tutorial/django-and-lightbus.md
+    - 4. Django & Lightbus: tutorial/django-and-lightbus.md
   - How to:
     - Overview: howto/index.md
     - Access your bus client: howto/access-your-bus-client.md
