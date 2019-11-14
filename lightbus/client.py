@@ -407,11 +407,22 @@ class BusClient(object):
             )
         )
 
-        # 2. Open the transports
+        # 2. Add any local APIs to the schema
+        for api in self.api_registry.all():
+            await self.schema.add_api(api)
+
+        logger.info(
+            LBullets(
+                "Loaded the following local schemas ({})".format(len(self.schema.remote_schemas)),
+                items=self.schema.local_schemas.keys(),
+            )
+        )
+
+        # 3. Open the transports
         for transport in self.transport_registry.get_all_transports():
             await transport.open()
 
-        # 3. Done
+        # 4. Done
         self._lazy_load_complete = True
 
     # RPCs

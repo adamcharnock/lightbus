@@ -56,3 +56,33 @@ async def test_positional_only_rpc(dummy_bus: lightbus.path.BusPath):
 async def test_positional_only_event(dummy_bus: lightbus.path.BusPath):
     with pytest.raises(InvalidParameters):
         await dummy_bus.my.dummy.event.fire_async(123)
+
+
+@pytest.mark.asyncio
+async def test_parameter_schema_event(dummy_bus: lightbus.path.BusPath, dummy_api):
+    dummy_bus.client.register_api(dummy_api)
+    await dummy_bus.client.lazy_load_now()
+    schema = dummy_bus.my.dummy.my_event.parameter_schema
+    assert schema
+    assert isinstance(schema, dict)
+    assert "$schema" in schema
+
+
+@pytest.mark.asyncio
+async def test_parameter_schema_rpc(dummy_bus: lightbus.path.BusPath, dummy_api):
+    dummy_bus.client.register_api(dummy_api)
+    await dummy_bus.client.lazy_load_now()
+    schema = dummy_bus.my.dummy.my_proc.parameter_schema
+    assert schema
+    assert isinstance(schema, dict)
+    assert "$schema" in schema
+
+
+@pytest.mark.asyncio
+async def test_response_schema_rpc(dummy_bus: lightbus.path.BusPath, dummy_api):
+    dummy_bus.client.register_api(dummy_api)
+    await dummy_bus.client.lazy_load_now()
+    schema = dummy_bus.my.dummy.my_proc.response_schema
+    assert schema
+    assert isinstance(schema, dict)
+    assert "$schema" in schema
