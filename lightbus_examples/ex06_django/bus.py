@@ -2,31 +2,10 @@ import os
 from datetime import datetime
 
 import django
-from django import db
-from django.db import InterfaceError, OperationalError
-
 import lightbus
+from lightbus.utilities.django import uses_django_db
 
 bus = lightbus.create()
-
-
-def uses_django_db(f):
-    """Ensures Django discards any broken database connections
-
-    Django normally cleans up connections once a web request has
-    been processed. However here we are not serving web requests,
-    so we need to make sure we cleanup broken database connections
-    ourselves.
-    """
-
-    def wrapped(*args, **kwargs):
-        try:
-            return f(*args, **kwargs)
-        except (InterfaceError, OperationalError):
-            db.connection.close()
-            raise
-
-    return wrapped
 
 
 class AnalyticsApi(lightbus.Api):

@@ -1,12 +1,19 @@
-Lightbus is designed to work smoothly with Django. A couple of additions are needed 
+Lightbus is designed to work smoothly with Django. A few of additions are needed 
 to your `bus.py` file in order to setup django correctly. You should 
 perform these at the very start of your `@bus.client.on_start()` function 
 within your `bus.py`:
 
 1. Set your `DJANGO_SETTINGS_MODULE` environment variable[^1]
 1. Call `django.setup()`
+1. Decorate RPCs and handlers which use the Django ORM with `@uses_django_db`. This 
+   will ensure database errors are cleaned up correctly.
 
 ## Simple example
+
+The following example demonstrates:
+
+1. Setting `DJANGO_SETTINGS_MODULE`
+2. Calling `django.setup()`
 
 ```python
 # bus.py
@@ -37,25 +44,31 @@ def on_start(**kwargs):
 
 ## Practical example
 
-Here is a more involved example (with an API and an event handler) based upon our work 
-in the [quick start tutorial](quick-start.md):
+Here we build upon the simple example (above). 
+This example includes an API and an event handler, and is loosely based upon our work 
+in the [quick start tutorial](quick-start.md). Here we demonstrate:
+
+1. Setting `DJANGO_SETTINGS_MODULE`
+2. Calling `django.setup()`
+3. Applying `@uses_django_db` to an RPC and event handler
 
 ```python
 import lightbus
+from lightbus.utilities.django import uses_django_db
 import django
 import os
 
-# Create your service's bus client. You can import this elsewere
-# in your service's codebase in order to access the bus
 bus = lightbus.create()
 
-# Define our auth Api
 class AuthApi(lightbus.Api):
     user_registered = lightbus.Event(parameters=('username', 'email'))
 
     class Meta:
         name = 'auth'
-
+    
+    # Decorating our RPC with @uses_django_db  
+    # ensures database connections are cleaned up
+    @uses_django_db
     def check_password(self, username, password):
         # Import django models here, once django.setup() has been called
         from django.contrib.auth.models import User
@@ -68,20 +81,18 @@ class AuthApi(lightbus.Api):
 bus.client.register_api(AuthApi())
 
 
+# Decorating our event handler with @uses_django_db  
+# ensures database connections are cleaned up
+@uses_django_db
 def handle_new_user(event, username, email):
     # For example, we may want to create an audit log entry
-    from my_app.models import AuditLog
-    AuditLog.objects.create(action=f"User {username} created")
+    from my_app.models import AuditLogEntry
+    AuditLogEntry.objects.create(message=f"User {username} created")
 
 
 @bus.client.on_start()
 def on_start(**kwargs):
-    # Customise (if necessary) to point to your settings module. 
-    # Should be the same as the corresponding line in your manage.py file.
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "my_company.a_project.settings")
-
-    # Trigger django to set itself up. We must do this before we import 
-    # any of our django models
     django.setup()
     
     # Setup a listener for the 'auth.user_registered' event, to be 
@@ -90,7 +101,13 @@ def on_start(**kwargs):
         handle_new_user,
         listener_name="create_audit_entry"
     )
-
 ```
+
+---
+
+!!! note "Further development"
+
+    Simplification to the Django setup process is 
+    [tracked in GitHub](https://github.com/adamcharnock/lightbus/issues/6).
 
 [^1]: You will see that your Django project' `manage.py` file also performs this same step
