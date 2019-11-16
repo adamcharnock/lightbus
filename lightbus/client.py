@@ -135,7 +135,7 @@ class BusClient:
             pass
 
     @run_in_worker_thread()
-    async def setup_async(self, plugins: dict = None):
+    async def setup_async(self, plugins: list = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
 
         You should call this manually if you are calling `consume_rpcs()`
@@ -182,7 +182,7 @@ class BusClient:
         else:
             logger.info("No plugins loaded")
 
-    def setup(self, plugins: dict = None):
+    def setup(self, plugins: list = None):
         block(self.setup_async(plugins), timeout=5)
 
     @assert_not_in_worker_thread()
