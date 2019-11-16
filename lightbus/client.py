@@ -519,7 +519,8 @@ class BusClient(object):
         logger.info("📞  Calling remote RPC {}.{}".format(Bold(api_name), Bold(name)))
 
         start_time = time.time()
-        # TODO: It is possible that the RPC will be called before we start waiting for the response. This is bad.
+        # TODO: It is possible that the RPC will be called before we start waiting for the
+        #       response. This is bad.
 
         self._validate(rpc_message, "outgoing")
 

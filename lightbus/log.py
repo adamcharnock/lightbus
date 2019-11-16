@@ -1,3 +1,4 @@
+# pylint: skip-file
 """Lightbus logging setup
 
 Credit to: https://github.com/borntyping/python-colorlog

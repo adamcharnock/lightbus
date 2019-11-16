@@ -164,7 +164,7 @@ def python_type_to_json_schemas(type_):
     elif issubclass_safe(type_, (str, bytes, complex, UUID)):
         return [{"type": "string"}]
     elif issubclass_safe(type_, Decimal):
-        return [{"type": "string", "pattern": "^-?\d+(\.\d+)?$"}]
+        return [{"type": "string", "pattern": r"^-?\d+(\.\d+)?$"}]
     elif issubclass_safe(type_, (bool,)):
         return [{"type": "boolean"}]
     elif issubclass_safe(type_, (int, float)):
@@ -217,11 +217,11 @@ def python_type_to_json_schemas(type_):
         return [
             {
                 "type": "string",
-                "pattern": "^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|[Zz])?$",
+                "pattern": r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|[Zz])?$",
             }
         ]
     elif issubclass_safe(type_, (datetime.date)):
-        return [{"type": "string", "pattern": "^\d{4}-\d\d-\d\d$"}]
+        return [{"type": "string", "pattern": r"^\d{4}-\d\d-\d\d$"}]
     elif getattr(type_, "__annotations__", None):
         # Custom class
         return [make_custom_object_schema(type_)]

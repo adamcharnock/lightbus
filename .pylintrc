@@ -1,2 +1,17 @@
 [MASTER]
-ignore=tests lightbus_examples lightbus_experiments
+
+disable=similarities,
+        bad-continuation,
+        missing-docstring,
+        too-few-public-methods,
+        unused-argument,
+        fixme,
+        too-many-branches,
+        logging-fstring-interpolation,
+        invalid-name,
+        using-constant-test,
+        arguments-differ,
+        too-many-arguments
+
+[FORMAT]
+max-line-length=120
