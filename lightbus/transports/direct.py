@@ -9,6 +9,7 @@ from lightbus.log import L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
 
 if False:
+    # pylint: disable=unused-import
     from lightbus.client import BusClient
 
 logger = logging.getLogger(__name__)

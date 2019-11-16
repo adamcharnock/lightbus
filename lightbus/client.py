@@ -17,7 +17,6 @@ from lightbus.client_worker import (
     assert_not_in_worker_thread,
     WorkerProxy,
 )
-from lightbus.config import Config
 from lightbus.config.structure import OnError
 from lightbus.exceptions import (
     InvalidEventArguments,
@@ -62,6 +61,7 @@ from lightbus.utilities.logging import log_transport_information
 if False:
     # pylint: disable=unused-import
     from schedule import Job
+    from lightbus.config import Config
 
 __all__ = ["BusClient"]
 
@@ -847,6 +847,7 @@ class BusClient:
             raise AssertionError("The provided callback is not callable")
         if callback:
             self._register_hook_callback(name, callback, before_plugins)
+            return None
         else:
 
             def hook_decorator(fn):

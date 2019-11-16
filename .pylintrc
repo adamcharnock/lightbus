@@ -8,6 +8,7 @@ disable=similarities,
         fixme,
         too-many-branches,
         logging-fstring-interpolation,
+        logging-format-interpolation,
         invalid-name,
         using-constant-test,
         arguments-differ,
@@ -18,6 +19,7 @@ disable=similarities,
         no-self-use,
         no-else-return,
         no-else-raise,
+        import-error
 
 [FORMAT]
 max-line-length=120

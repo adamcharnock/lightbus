@@ -4,13 +4,11 @@ import logging
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Optional, TextIO, Union, ChainMap, List, Tuple, Dict
-import jsonschema
-
 import asyncio
-
 import itertools
-
 import sys
+
+import jsonschema
 
 import lightbus
 from lightbus.exceptions import (

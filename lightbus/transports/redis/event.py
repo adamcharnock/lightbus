@@ -41,6 +41,7 @@ class StreamUse(Enum):
     PER_EVENT = "per_event"
 
     def __eq__(self, other):
+        # pylint: disable=comparison-with-callable
         if isinstance(other, str):
             return self.value == other
         else:

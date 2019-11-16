@@ -17,6 +17,8 @@ def make_from_config_structure(class_name, from_config_method, extra_parameters=
     This is useful when dynamically creating the config structure for Transports
     and Plugins.
     """
+    # pylint: disable=exec-used
+
     code = f"class {class_name}Config(NamedTuple):\n    pass\n"
     vars = dict(p={})
 

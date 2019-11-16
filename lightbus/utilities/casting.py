@@ -37,6 +37,7 @@ H = TypeVar("A")
 
 
 def cast_to_hint(value: V, hint: H) -> Union[V, H]:
+    # pylint: disable=too-many-return-statements
     if value is None:
         return None
     elif hint in (Any, ...):
