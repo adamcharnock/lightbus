@@ -3,6 +3,8 @@
 [![CircleCI](https://circleci.com/gh/adamcharnock/lightbus/tree/master.svg?style=svg)](https://circleci.com/gh/adamcharnock/lightbus/tree/master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/801d031fd2714b4f9c643182f1fbbd0b)](https://www.codacy.com/app/adamcharnock/lightbus?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=adamcharnock/lightbus&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/801d031fd2714b4f9c643182f1fbbd0b)](https://www.codacy.com/app/adamcharnock/lightbus?utm_source=github.com&utm_medium=referral&utm_content=adamcharnock/lightbus&utm_campaign=Badge_Coverage)
+[![Discord](https://img.shields.io/discord/645218336229031946)](https://discord.gg/2j594ws)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](https://lightbus.org/reference/code-of-conduct/)
 
 Lightbus allows your backend processes to communicate, run background tasks,
 and expose internal APIs.

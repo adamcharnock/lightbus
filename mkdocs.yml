@@ -39,6 +39,7 @@ nav:
     - 2. Quick start: tutorial/quick-start.md
     - 3. Worked example: tutorial/worked-example.md
     - 4. Django & Lightbus: tutorial/django-and-lightbus.md
+    - Getting involved (even if you don't code): tutorial/getting-involved.md
   - How to:
     - Overview: howto/index.md
     - Access your bus client: howto/access-your-bus-client.md
@@ -48,6 +49,7 @@ nav:
     - Write idempotent event handlers: howto/write-idempotent-event-handlers.md
     - Use Lightbus for realtime metrics*: howto/metrics.md
     - Use Lightbus for event sourcing*: howto/event-sourcing.md
+    - Modify Lightbus: howto/modify-lightbus.md
   - Explanation:
     - Overview: explanation/index.md
     - Anatomy lesson: explanation/anatomy-lesson.md
@@ -60,7 +62,6 @@ nav:
     - Transports: explanation/transports.md
     - Configuration*: explanation/configuration.md
     - Schema: explanation/schema.md
-    - Contributing*: contributing.md
     - Lightbus vs Celery: explanation/lightbus-vs-celery.md
     - Architecture tips: explanation/architecture-tips.md
   - Reference:
@@ -84,6 +85,7 @@ nav:
     - Event Protocol (Redis): reference/event-protocol.md
     - Schema Protocol (Redis): reference/schema-protocol.md
     - Authors: reference/authors.md
+    - Code of Conduct: reference/code-of-conduct.md
 
 # Extensions
 markdown_extensions:
