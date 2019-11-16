@@ -11,7 +11,9 @@ disable=similarities,
         invalid-name,
         using-constant-test,
         arguments-differ,
-        too-many-arguments
+        too-many-arguments,
+        too-many-locals,
+        protected-access
 
 [FORMAT]
 max-line-length=120
