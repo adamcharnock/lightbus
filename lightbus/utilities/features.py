@@ -8,4 +8,4 @@ class Feature(Enum):
     TASKS = "tasks"
 
 
-ALL_FEATURES = list(Feature)
+ALL_FEATURES = tuple(Feature)

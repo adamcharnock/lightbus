@@ -1,6 +1,5 @@
 import inspect
-import sys
-from typing import Optional, Type, Union, Tuple, List, Sequence, TypeVar
+from typing import Optional, Type, Union, Tuple, List, TypeVar
 
 
 def type_is_namedtuple(t) -> bool:

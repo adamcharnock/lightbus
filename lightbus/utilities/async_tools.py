@@ -1,4 +1,3 @@
-import inspect
 import sys
 import asyncio
 import logging

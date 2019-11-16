@@ -7,7 +7,7 @@ from typing import Union, Mapping, Type, List
 from lightbus import BusClient
 from lightbus.utilities.features import ALL_FEATURES, Feature
 from lightbus.config.structure import RootConfig
-from lightbus.log import LBullets, L, Bold
+from lightbus.log import Bold
 from lightbus.path import BusPath
 from lightbus.client import logger
 from lightbus.config import Config

@@ -7,6 +7,7 @@ from lightbus.transports.base import ResultTransport, RpcTransport, EventTranspo
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 
 if False:
+    # pylint: disable=unused-import
     from lightbus.client import BusClient
 
 logger = logging.getLogger(__name__)

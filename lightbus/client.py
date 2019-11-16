@@ -1,12 +1,7 @@
 import asyncio
-import contextlib
 import functools
 import inspect
 import logging
-import os
-import signal
-import sys
-import threading
 import time
 from asyncio import CancelledError
 from collections import defaultdict
@@ -37,10 +32,8 @@ from lightbus.exceptions import (
     InvalidName,
     LightbusShutdownInProgress,
     InvalidSchedule,
-    LightbusExit,
     BusAlreadyClosed,
     TransportIsClosed,
-    LightbusServerMustStartInMainThread,
     UnsupportedUse,
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi

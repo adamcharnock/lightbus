@@ -55,7 +55,6 @@ class RpcTransport(Transport):
 
     async def call_rpc(self, rpc_message: RpcMessage, options: dict, bus_client: "BusClient"):
         """Publish a call to a remote procedure"""
-        RpcTransport.from_config()
         raise NotImplementedError()
 
     async def consume_rpcs(

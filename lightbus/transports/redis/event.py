@@ -4,17 +4,7 @@ import time
 from collections import OrderedDict
 from datetime import datetime
 from enum import Enum
-from typing import (
-    Mapping,
-    Optional,
-    List,
-    Tuple,
-    Union,
-    Sequence,
-    AsyncGenerator,
-    Container,
-    Iterable,
-)
+from typing import Mapping, Optional, List, Tuple, Union, Sequence, AsyncGenerator, Iterable
 
 from aioredis import ConnectionClosedError, ReplyError
 from aioredis.util import decode

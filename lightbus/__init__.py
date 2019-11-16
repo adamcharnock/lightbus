@@ -4,6 +4,5 @@ from .client import *
 from .path import *
 from .message import *
 from .api import *
-from .message import *
 from .schema import *
 from .creation import *
