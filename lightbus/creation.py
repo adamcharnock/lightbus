@@ -16,9 +16,6 @@ from lightbus.transports.base import TransportRegistry
 from lightbus.utilities.async_tools import block
 from lightbus.utilities.importing import import_module_from_string
 
-if False:
-    # pylint: disable=unused-wildcard-import wildcard-import
-    from lightbus.transports import *
 
 __all__ = ["create", "create_async", "load_config", "import_bus_module", "get_bus"]
 
