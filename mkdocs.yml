@@ -83,6 +83,7 @@ nav:
     - RPC & Result Protocol (Redis): reference/rpc-and-result-protocol.md
     - Event Protocol (Redis): reference/event-protocol.md
     - Schema Protocol (Redis): reference/schema-protocol.md
+    - Authors: reference/authors.md
 
 # Extensions
 markdown_extensions:
