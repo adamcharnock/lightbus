@@ -34,7 +34,7 @@ def sanity_check_metadata(message_class, metadata):
 SerialisedData = TypeVar("SerialisedData")
 
 
-class MessageSerializer(object):
+class MessageSerializer:
     def __init__(self, encoder=json_encode):
         self.encoder = encoder
 
@@ -42,7 +42,7 @@ class MessageSerializer(object):
         raise NotImplementedError()
 
 
-class MessageDeserializer(object):
+class MessageDeserializer:
     def __init__(self, message_class: Type["lightbus.Message"], decoder=json.loads):
         if not inspect.isclass(message_class):
             raise InvalidSerializerConfiguration(

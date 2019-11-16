@@ -231,7 +231,7 @@ def test_response_named_tuple():
 
 
 def test_unknown_type():
-    class UnknownThing(object):
+    class UnknownThing:
         pass
 
     def func(username) -> UnknownThing:
@@ -310,7 +310,7 @@ def test_enum_empty():
 
 
 def test_enum_unknown_value_types():
-    class UnknownThing(object):
+    class UnknownThing:
         pass
 
     TestEnum = Enum("ExampleEnum", {"Foo": UnknownThing, "Bar": UnknownThing})

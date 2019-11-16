@@ -10,7 +10,7 @@ from lightbus.utilities.async_tools import block
 logger = logging.getLogger(__name__)
 
 
-class Command(object):
+class Command:
     def setup(self, parser, subparsers):
         parser_shell = subparsers.add_parser(
             "shell",

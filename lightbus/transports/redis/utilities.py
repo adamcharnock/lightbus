@@ -97,7 +97,7 @@ class RedisEventMessage(EventMessage):
         return metadata
 
 
-class RedisTransportMixin(object):
+class RedisTransportMixin:
     connection_parameters: dict = {"address": "redis://localhost:6379", "maxsize": 100}
     _redis_pool = None
 

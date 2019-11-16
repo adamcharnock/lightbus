@@ -7,7 +7,7 @@ from base64 import b64encode
 __all__ = ["Message", "RpcMessage", "ResultMessage", "EventMessage"]
 
 
-class Message(object):
+class Message:
     required_metadata: Sequence
 
     def __init__(self, id: str = "", native_id: str = None):

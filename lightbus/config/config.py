@@ -17,7 +17,7 @@ if False:
     from .structure import RootConfig, BusConfig, ApiConfig
 
 
-class Config(object):
+class Config:
     """Provides access to configuration options
 
     There are two forms of configuration:

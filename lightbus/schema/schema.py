@@ -35,7 +35,7 @@ if False:
 logger = logging.getLogger(__name__)
 
 
-class Schema(object):
+class Schema:
     """ Represents the bus' schema
 
 

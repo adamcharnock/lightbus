@@ -202,7 +202,7 @@ def test_get_transport():
 def test_get_transport_name():
     assert get_transport_name(RedisEventTransport) == "redis"
 
-    class FakeTransport(object):
+    class FakeTransport:
         pass
 
     with pytest.raises(TransportNotFound):

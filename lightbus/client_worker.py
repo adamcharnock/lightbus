@@ -167,7 +167,7 @@ def assert_not_in_worker_thread():
     return decorator
 
 
-class WarningProxy(object):
+class WarningProxy:
     def __init__(self, proxied, message):
         self.message = message
         self.proxied = proxied
@@ -183,7 +183,7 @@ class WarningProxy(object):
         return self.__getattr__("__await__")()
 
 
-class WorkerProxy(object):
+class WorkerProxy:
     """Proxy all attribute access for the given object to the given ClientWorker"""
 
     def __init__(self, proxied, worker):
@@ -207,7 +207,7 @@ class WorkerProxy(object):
         return self.__getattr__("__contains__")(item)
 
 
-class ClientWorker(object):
+class ClientWorker:
     _lock = threading.Lock()
     _TOTAL_WORKERS = 0
 

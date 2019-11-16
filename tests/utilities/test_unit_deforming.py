@@ -22,7 +22,7 @@ class SimpleNamedTuple(NamedTuple):
 
 
 @dataclass
-class SimpleDataclass(object):
+class SimpleDataclass:
     a: str
     b: int
 
@@ -32,12 +32,12 @@ class ComplexNamedTuple(NamedTuple):
 
 
 @dataclass
-class ComplexDataclass(object):
+class ComplexDataclass:
     val: SimpleDataclass
 
 
 @dataclass
-class DataclassWithMethod(object):
+class DataclassWithMethod:
     a: str
     b: int
 
@@ -45,13 +45,13 @@ class DataclassWithMethod(object):
         pass
 
 
-class CustomClass(object):
+class CustomClass:
     def __eq__(self, other):
         # Used below for checking the object hasn't been mutated
         return other.__dict__ == self.__dict__
 
 
-class CustomClassWithMagicMethod(object):
+class CustomClassWithMagicMethod:
     def __to_bus__(self):
         return {"a": 1}
 
@@ -60,7 +60,7 @@ class CustomClassWithMagicMethod(object):
         return other.__dict__ == self.__dict__
 
 
-class CustomClassWithMagicMethodNeedsEncoding(object):
+class CustomClassWithMagicMethodNeedsEncoding:
     def __to_bus__(self):
         return {"a": complex(1, 2)}
 

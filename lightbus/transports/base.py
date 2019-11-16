@@ -29,7 +29,7 @@ class TransportMetaclass(type):
         return cls
 
 
-class Transport(object, metaclass=TransportMetaclass):
+class Transport(metaclass=TransportMetaclass):
     @classmethod
     def from_config(cls: Type[T], config: "Config") -> T:
         return cls()
@@ -204,7 +204,7 @@ class SchemaTransport(Transport):
 empty = NamedTuple("Empty")
 
 
-class TransportRegistry(object):
+class TransportRegistry:
     """ Manages access to transports
 
     It is possible for different APIs within lightbus to use different transports.

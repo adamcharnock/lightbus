@@ -43,7 +43,7 @@ class PluginMetaclass(type):
         return cls
 
 
-class LightbusPlugin(object, metaclass=PluginMetaclass):
+class LightbusPlugin(metaclass=PluginMetaclass):
     priority = 1000
 
     @classmethod
@@ -155,7 +155,7 @@ def find_plugins() -> Dict[str, Type[LightbusPlugin]]:
     return plugins
 
 
-class PluginRegistry(object):
+class PluginRegistry:
     VALID_HOOK_NAMES = {k for k in LightbusPlugin.__dict__ if not k.startswith("_")}
 
     def __init__(self):

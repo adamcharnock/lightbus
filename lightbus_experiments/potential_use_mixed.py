@@ -82,7 +82,7 @@ class AuthApi(Api):
         return ...
 
 
-class User(object):
+class User():
     username: str
     email: str
 

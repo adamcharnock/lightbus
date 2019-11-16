@@ -11,11 +11,11 @@ from typing import Any
 from bottle import HTTPResponse
 
 
-class Event(object):
+class Event():
     pass
 
 
-class MyApi(object):
+class MyApi():
     my_event = Event()
 
     def _util(self):

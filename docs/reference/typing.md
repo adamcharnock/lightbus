@@ -109,7 +109,7 @@ from lightbus import Api
 from dataclasses import dataclass
 
 @dataclass()
-class User(object):
+class User():
     username: str
     name: str
     email: str
@@ -137,7 +137,7 @@ Lightbus can also work with classes of any type provided that:
 from lightbus import Api
 
 
-class User(object):
+class User():
     username: str
     name: str
     email: str

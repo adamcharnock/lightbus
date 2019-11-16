@@ -12,7 +12,7 @@ from lightbus.exceptions import (
 __all__ = ["Api", "Event"]
 
 
-class ApiRegistry(object):
+class ApiRegistry:
     def __init__(self):
         self._apis: Dict[str, Api] = dict()
 
@@ -61,7 +61,7 @@ class ApiRegistry(object):
         return list(self._apis.keys())
 
 
-class ApiOptions(object):
+class ApiOptions:
     name: str
     internal: bool = False
     version: int = 1
@@ -74,7 +74,7 @@ class ApiOptions(object):
 
 class ApiMetaclass(type):
     def __init__(cls, name, bases=None, dict=None):
-        is_api_base_class = name == "Api" and bases == (object,)
+        is_api_base_class = name == "Api" and not bases
         if is_api_base_class:
             super(ApiMetaclass, cls).__init__(name, bases, dict)
         else:
@@ -105,7 +105,7 @@ class ApiMetaclass(type):
             )
 
 
-class Api(object, metaclass=ApiMetaclass):
+class Api(metaclass=ApiMetaclass):
     class Meta:
         name = None
 
@@ -120,7 +120,7 @@ class Api(object, metaclass=ApiMetaclass):
         return self.meta.name
 
 
-class Event(object):
+class Event:
     def __init__(self, parameters=tuple()):
         # Ensure you update the __copy__() method if adding other instance variables below
         if isinstance(parameters, str):

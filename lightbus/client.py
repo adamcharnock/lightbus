@@ -70,7 +70,7 @@ __all__ = ["BusClient"]
 logger = logging.getLogger(__name__)
 
 
-class BusClient(object):
+class BusClient:
     """Provides a the lower level interface for accessing the bus
 
     The low-level `BusClient` is less expressive than the interface provided by `BusPath`,
@@ -964,7 +964,7 @@ class BusClient(object):
         self.api_registry.add(api)
 
 
-class _EventListener(object):
+class _EventListener:
     """ Logic for setting up listener tasks for 1 or more events
 
     This class will take a list of events and a callable. Background

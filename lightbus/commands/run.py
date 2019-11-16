@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 csv_type = lambda value: [v.strip() for v in value.split(",") if value.split(",")]
 
 
-class Command(object):
+class Command:
     def setup(self, parser, subparsers):
         self.all_features = [f.value for f in Feature]
         self.features_str = ", ".join(self.all_features)

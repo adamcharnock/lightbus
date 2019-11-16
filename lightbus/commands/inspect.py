@@ -22,7 +22,7 @@ CACHE_PATH = Path("~/.lightbus/inspect_cache").expanduser()
 logger = logging.getLogger(__name__)
 
 
-class Command(object):
+class Command:
     def setup(self, parser, subparsers):
         parser_inspect = subparsers.add_parser(
             "inspect",
@@ -373,7 +373,7 @@ class Command(object):
         return lookup[comparator]()
 
 
-class Colors(object):
+class Colors:
     # Reset
     Reset = "\033[0m"  # Text Reset
 

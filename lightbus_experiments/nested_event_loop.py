@@ -77,7 +77,7 @@ def run_in_main_thread():
 # Simplified bus client
 
 
-class Bus(object):
+class Bus():
 
     def __init__(self):
         self._call_queue = janus.Queue()

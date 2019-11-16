@@ -11,7 +11,7 @@ from lightbus.utilities.async_tools import block
 __all__ = ["BusPath"]
 
 
-class BusPath(object):
+class BusPath:
     """Represents a path on the bus
 
     This class provides a higher-level wrapper around the `BusClient` class.

@@ -11,7 +11,7 @@ class MyApi(lightbus.Api):
 bus.client.register_api(MyApi())
 
 
-class MyMigrations(object):
+class MyMigrations():
     def migrate_1_to_2(self, event: lightbus.EventMessage) -> lightbus.EventMessage:
         pass
 

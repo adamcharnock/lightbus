@@ -3,7 +3,7 @@ from typing import TypeVar, Type
 T = TypeVar("T", bound="Parent")
 
 
-class Parent(object):
+class Parent():
     def instance_method(self: T, x: int) -> T:
         return self
 

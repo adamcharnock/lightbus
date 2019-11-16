@@ -10,7 +10,7 @@ from lightbus.schema.encoder import json_encode
 logger = logging.getLogger(__name__)
 
 
-class Command(object):
+class Command:
     def setup(self, parser, subparsers):
         parser_dumpconfigschema = subparsers.add_parser(
             "dumpconfigschema",

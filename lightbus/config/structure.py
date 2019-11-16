@@ -89,7 +89,7 @@ class ApiValidationConfig(NamedTuple):
     incoming: bool = True
 
 
-class ApiConfig(object):
+class ApiConfig:
     rpc_timeout: int = 5
     event_listener_setup_timeout: int = 1
     event_fire_timeout: int = 5
@@ -132,7 +132,7 @@ class BusConfig(NamedTuple):
     schema: SchemaConfig = SchemaConfig()
 
 
-class RootConfig(object):
+class RootConfig:
     service_name: str = "{friendly}"
     process_name: str = "{random4}"
     bus: BusConfig = BusConfig()

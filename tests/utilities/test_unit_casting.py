@@ -39,7 +39,7 @@ class SimpleNamedTuple(NamedTuple):
 
 
 @dataclass
-class SimpleDataclass(object):
+class SimpleDataclass:
     a: str
     b: int
 
@@ -54,12 +54,12 @@ class ComplexNamedTuple(NamedTuple):
 
 
 @dataclass
-class ComplexDataclass(object):
+class ComplexDataclass:
     val: SimpleDataclass
 
 
 @dataclass
-class DataclassWithMethod(object):
+class DataclassWithMethod:
     a: str
     b: int
 
@@ -74,7 +74,7 @@ class NamedTupleWithMapping(NamedTuple):
 
 
 @dataclass
-class DataclassWithMapping(object):
+class DataclassWithMapping:
     a: dict
     b: Mapping
     c: Mapping[str, int]
@@ -85,25 +85,25 @@ class NamedTupleWithMappingToNamedTuple(NamedTuple):
 
 
 @dataclass
-class DataclassWithMappingToDataclass(object):
+class DataclassWithMappingToDataclass:
     a: Mapping[str, SimpleDataclass]
 
 
 @dataclass
-class DataclassWithNoneDefault(object):
+class DataclassWithNoneDefault:
     a: SimpleDataclass = None
 
 
 @dataclass
-class DataclassWithChildNoneDefault(object):
+class DataclassWithChildNoneDefault:
     z: DataclassWithNoneDefault
 
 
-class CustomClass(object):
+class CustomClass:
     pass
 
 
-class CustomClassWithMagicMethod(object):
+class CustomClassWithMagicMethod:
     value: str = "123"
 
     @classmethod
@@ -118,12 +118,12 @@ class NamedTupleWithMappingToCustomObject(NamedTuple):
 
 
 @dataclass
-class DataclassWithMappingToCustomObject(object):
+class DataclassWithMappingToCustomObject:
     a: Mapping[str, CustomClassWithMagicMethod]
 
 
 # @dataclass
-# class LedgerRecord(object):
+# class LedgerRecord():
 #     uuid: UUID
 #     message: str
 #     timestamp: datetime
@@ -135,7 +135,7 @@ _verb = str
 
 
 @dataclass
-class NamedTupleWithMappingToNestedTuple(object):
+class NamedTupleWithMappingToNestedTuple:
     a: List[Tuple[_verb, int]] = tuple()
 
 

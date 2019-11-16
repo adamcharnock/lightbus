@@ -48,7 +48,7 @@ def crash_at(hook_name):
 # Utility for mocking bus calls
 
 
-class MockResult(object):
+class MockResult:
     # We use camel case method names here for consistency with unittest
 
     def __init__(self, rpc_transport, result_transport, event_transport, schema_transport):

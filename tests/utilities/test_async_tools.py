@@ -18,7 +18,7 @@ pytestmark = pytest.mark.unit
 
 @pytest.fixture()
 def call_counter():
-    class CallCounter(object):
+    class CallCounter:
         def __init__(self):
             self.call_count = 0
 
