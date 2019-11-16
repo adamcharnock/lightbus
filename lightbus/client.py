@@ -7,7 +7,7 @@ from asyncio import CancelledError
 from collections import defaultdict
 from datetime import timedelta
 from itertools import chain
-from typing import List, Tuple, Coroutine, Union
+from typing import List, Tuple, Coroutine, Union, Sequence
 
 import janus
 
@@ -83,7 +83,7 @@ class BusClient(object):
         self,
         config: "Config",
         transport_registry: TransportRegistry = None,
-        features: List[Union[Feature, str]] = ALL_FEATURES,
+        features: Sequence[Union[Feature, str]] = ALL_FEATURES,
     ):
         self._event_listeners: List[_EventListener] = []  # Event listeners
         self._consumers = []  # RPC consumers
@@ -96,7 +96,7 @@ class BusClient(object):
         self.config = config
         self.transport_registry = transport_registry
         self.features: List[Union[Feature, str]] = ALL_FEATURES
-        self.set_features(features)
+        self.set_features(list(features))
         self.api_registry = ApiRegistry()
         self.plugin_registry = PluginRegistry()
         self.schema = None
