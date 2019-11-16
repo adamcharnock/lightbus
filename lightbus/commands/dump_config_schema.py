@@ -1,5 +1,4 @@
 import argparse
-import json
 import logging
 
 from lightbus.commands import utilities as command_utilities

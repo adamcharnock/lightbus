@@ -10,7 +10,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 from typing import Optional, List
 
-from lightbus import EventMessage, Api, BusPath, EventTransport
+from lightbus import EventMessage, BusPath, EventTransport
 from lightbus.commands import utilities as command_utilities
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block

@@ -32,8 +32,8 @@ class Command:
             exit(1)
             return  # noqa
 
-        logger = logging.getLogger("lightbus")
-        logger.setLevel(logging.WARNING)
+        lightbus_logger = logging.getLogger("lightbus")
+        lightbus_logger.setLevel(logging.WARNING)
 
         bus_module, bus = command_utilities.import_bus(args)
         block(bus.client.lazy_load_now())

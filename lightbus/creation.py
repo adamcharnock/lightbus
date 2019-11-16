@@ -69,8 +69,6 @@ async def create_async(
             # Flask has a reloader process that shouldn't start a lightbus client
             return
 
-    from lightbus.config import Config
-
     # If were are running via the Lightbus CLI then we may have
     # some command line arguments we need to apply.
     from lightbus.commands import COMMAND_PARSED_ARGS

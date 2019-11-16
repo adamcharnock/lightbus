@@ -34,7 +34,10 @@ class Command:
         group.add_argument(
             "--skip",
             "-k",
-            help=f"Provide all except the specified features. Comma separated list. Possible values: {self.features_str}",
+            help=(
+                f"Provide all except the specified features. Comma separated list. "
+                f"Possible values: {self.features_str}"
+            ),
             type=csv_type,
         )
         group.add_argument(

@@ -3,7 +3,6 @@ import functools
 import inspect
 import logging
 import time
-from asyncio import CancelledError
 from collections import defaultdict
 from datetime import timedelta
 from itertools import chain
@@ -222,6 +221,7 @@ class BusClient:
         ]
 
         for task in chain(listener_tasks, self._background_tasks):
+            # pylint: disable=broad-except
             try:
                 await cancel(task)
             except Exception as e:
@@ -473,7 +473,7 @@ class BusClient:
                 except SuddenDeathException:
                     # Used to simulate message failure for testing
                     return
-                except CancelledError:
+                except asyncio.CancelledError:
                     raise
                 except Exception as e:
                     result = e
@@ -539,7 +539,7 @@ class BusClient:
             try:
                 await future
                 future.result()
-            except CancelledError:
+            except asyncio.CancelledError:
                 pass
 
             # TODO: Remove RPC from queue. Perhaps add a RpcBackend.cancel() method. Optional,
@@ -597,7 +597,7 @@ class BusClient:
             result = await run_user_provided_callable(
                 method, args=[], kwargs=kwargs, bus_client=self
             )
-        except (CancelledError, SuddenDeathException):
+        except (asyncio.CancelledError, SuddenDeathException):
             raise
         except Exception as e:
             logging.exception(e)
@@ -1161,7 +1161,7 @@ class _EventListener:
                     await self.bus_client._execute_hook(
                         "after_event_execution", event_message=event_message
                     )
-        except CancelledError:
+        except asyncio.CancelledError:
             # Close the consumer to allow it to do any cleanup
             try:
                 await consumer.aclose()

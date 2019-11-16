@@ -13,7 +13,11 @@ disable=similarities,
         arguments-differ,
         too-many-arguments,
         too-many-locals,
-        protected-access
+        protected-access,
+        too-many-instance-attributes,
+        no-self-use,
+        no-else-return,
+        no-else-raise,
 
 [FORMAT]
 max-line-length=120
