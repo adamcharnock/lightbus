@@ -1,12 +1,11 @@
-from typing import Optional, List
+from typing import Optional, TYPE_CHECKING
 
-from lightbus import BusClient
-from lightbus.exceptions import (
-    InvalidBusPathConfiguration,
-    InvalidParameters,
-    OnlyAvailableOnRootNode,
-)
+from lightbus.exceptions import InvalidBusPathConfiguration, InvalidParameters
 from lightbus.utilities.async_tools import block
+
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
+    from lightbus import BusClient
 
 __all__ = ["BusPath"]
 
@@ -29,7 +28,7 @@ class BusPath:
 
     """
 
-    def __init__(self, name: str, *, parent: Optional["BusPath"], client: BusClient):
+    def __init__(self, name: str, *, parent: Optional["BusPath"], client: "BusClient"):
         if not parent and name:
             raise InvalidBusPathConfiguration("Root client node may not have a name")
         self.name = name

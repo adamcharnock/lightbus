@@ -4,7 +4,17 @@ import time
 from collections import OrderedDict
 from datetime import datetime
 from enum import Enum
-from typing import Mapping, Optional, List, Tuple, Union, Sequence, AsyncGenerator, Iterable
+from typing import (
+    Mapping,
+    Optional,
+    List,
+    Tuple,
+    Union,
+    Sequence,
+    AsyncGenerator,
+    Iterable,
+    TYPE_CHECKING,
+)
 
 from aioredis import ConnectionClosedError, ReplyError
 from aioredis.util import decode
@@ -25,8 +35,8 @@ from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
 
-if False:
-    # pylint: disable=unused-import
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
     from lightbus.config import Config
     from lightbus.client import BusClient
 

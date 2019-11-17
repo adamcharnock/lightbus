@@ -1,13 +1,13 @@
 """Plugin to broadcast Lightbus' state on the internal.state API"""
 from datetime import datetime
-from typing import Coroutine
+from typing import Coroutine, TYPE_CHECKING
 
 from lightbus.message import EventMessage, RpcMessage, ResultMessage
 from lightbus.plugins import LightbusPlugin
 from lightbus.utilities.deforming import deform_to_bus
 
-if False:
-    # pylint: disable=unused-import
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
     import lightbus
     from lightbus.config import Config
 

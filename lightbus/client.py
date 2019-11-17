@@ -6,7 +6,7 @@ import time
 from collections import defaultdict
 from datetime import timedelta
 from itertools import chain
-from typing import List, Tuple, Coroutine, Union, Sequence
+from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING
 
 import janus
 
@@ -58,8 +58,8 @@ from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.logging import log_transport_information
 
-if False:
-    # pylint: disable=unused-import
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
     from schedule import Job
     from lightbus.config import Config
 
@@ -813,6 +813,7 @@ class BusClient:
             )
 
     def set_features(self, features: List[Union[Feature, str]]):
+        features = list(features)
         for i, feature in enumerate(features):
             try:
                 features[i] = Feature(feature)

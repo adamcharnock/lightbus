@@ -2,13 +2,12 @@ import asyncio
 import inspect
 import logging
 import queue
-import sys
 import threading
 import traceback
 from functools import partial
+from typing import Callable
 
 import janus
-from typing import Callable
 
 from lightbus.exceptions import (
     MustRunInBusThread,
@@ -330,6 +329,7 @@ class ClientWorker:
     async def perform_calls(self):
         """Coroutine to run in background consuming incoming calls from other threads
         """
+        # pylint: disable=broad-except
         # TODO: The name 'perform_calls' is too generic, find all uses and rename to something better
         while True:
             # Wait for calls

@@ -6,18 +6,17 @@ import traceback
 from contextlib import contextmanager
 from functools import partial
 from time import time
-from typing import Coroutine
-from datetime import timedelta, datetime
+from typing import Coroutine, TYPE_CHECKING
+import datetime
 
 import aioredis
 
-if False:
-    # pylint: disable=unused-import
+from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
+
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import,cyclic-import
     from schedule import Job
     from lightbus.client import BusClient
-    from lightbus.path import BusPath
-
-from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +57,7 @@ def get_event_loop():
 
 async def cancel(*tasks):
     """Useful for cleaning up tasks in tests"""
+    # pylint: disable=broad-except
     ex = None
     for task in tasks:
         if task is None:
@@ -130,7 +130,7 @@ def exception_handling_context(bus_client: "BusClient", die=True):
 
 
 async def run_user_provided_callable(
-    callable, args, kwargs, bus_client: "BusClient", die_on_exception=True
+    callable_, args, kwargs, bus_client: "BusClient", die_on_exception=True
 ):
     """Run user provided code
 
@@ -145,22 +145,22 @@ async def run_user_provided_callable(
 
     The callable will be called with the given args and kwargs
     """
-    if asyncio.iscoroutinefunction(callable):
-        return await callable(*args, **kwargs)
+    if asyncio.iscoroutinefunction(callable_):
+        return await callable_(*args, **kwargs)
 
     # Used to provide helpful output in case of deadlock in client worker
-    if hasattr(callable, "_parent_stack"):
-        callable._parent_stack = traceback.extract_stack(limit=5)[:-1]
+    if hasattr(callable_, "_parent_stack"):
+        callable_._parent_stack = traceback.extract_stack(limit=5)[:-1]
 
     with exception_handling_context(bus_client, die=die_on_exception):
         future = asyncio.get_event_loop().run_in_executor(
-            executor=None, func=lambda: callable(*args, **kwargs)
+            executor=None, func=lambda: callable_(*args, **kwargs)
         )
     return await future
 
 
 async def call_every(
-    *, callback, timedelta: timedelta, also_run_immediately: bool, bus_client: "BusClient"
+    *, callback, timedelta: datetime.timedelta, also_run_immediately: bool, bus_client: "BusClient"
 ):
     """Call callback every timedelta
 
@@ -190,10 +190,10 @@ async def call_on_schedule(
         schedule._schedule_next_run()
 
         if not first_run or also_run_immediately:
-            schedule.last_run = datetime.now()
+            schedule.last_run = datetime.datetime.now()
             await run_user_provided_callable(callback, args=[], kwargs={}, bus_client=bus_client)
 
-        td = schedule.next_run - datetime.now()
+        td = schedule.next_run - datetime.datetime.now()
         await asyncio.sleep(td.total_seconds())
         first_run = False
 

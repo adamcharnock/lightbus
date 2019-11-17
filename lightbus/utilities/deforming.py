@@ -17,6 +17,7 @@ def deform_to_bus(value):
 
     The opposite of cast_to_signature()
     """
+    # pylint: disable=too-many-return-statements,unidiomatic-typecheck,import-outside-toplevel
     if value is None:
         return value
     elif hasattr(value, "__to_bus__"):

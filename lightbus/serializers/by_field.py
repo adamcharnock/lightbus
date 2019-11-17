@@ -14,18 +14,22 @@ format. The format looks like this::
     kw:password: '"secret"'
 
 """
+from typing import TYPE_CHECKING
 
-import lightbus  # pylint: disable=unused-import
-from lightbus.serializers import (
+from lightbus.serializers.base import (
     decode_bytes,
     sanity_check_metadata,
     MessageSerializer,
     MessageDeserializer,
 )
 
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
+    from lightbus import Message
+
 
 class ByFieldMessageSerializer(MessageSerializer):
-    def __call__(self, message: "lightbus.Message") -> dict:
+    def __call__(self, message: "Message") -> dict:
         """Takes a message object and returns a serialised dictionary representation
 
         See the module-level docs (above) for further details

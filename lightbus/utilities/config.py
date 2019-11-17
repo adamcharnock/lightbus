@@ -3,7 +3,7 @@ import logging
 import secrets
 import string
 
-from typing import Type, NamedTuple  # pylint: disable=unused-import
+from typing import Type, NamedTuple  # pylint: disable=unused-import,cyclic-import
 
 import itertools
 
@@ -20,7 +20,7 @@ def make_from_config_structure(class_name, from_config_method, extra_parameters=
     # pylint: disable=exec-used
 
     code = f"class {class_name}Config(NamedTuple):\n    pass\n"
-    vars = dict(p={})
+    variables = dict(p={})
 
     parameters = inspect.signature(from_config_method).parameters.values()
     for parameter in itertools.chain(parameters, extra_parameters):
@@ -40,11 +40,11 @@ def make_from_config_structure(class_name, from_config_method, extra_parameters=
             )
         else:
             name = parameter.name
-            vars["p"][name] = parameter
+            variables["p"][name] = parameter
             code += f"    {name}: p['{name}'].annotation = p['{name}'].default\n"
 
     globals_ = globals().copy()
-    globals_.update(vars)
+    globals_.update(variables)
     exec(code, globals_)  # nosec
     return globals_[f"{class_name}Config"]
 

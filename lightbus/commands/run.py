@@ -17,6 +17,7 @@ csv_type = lambda value: [v.strip() for v in value.split(",") if value.split(","
 
 class Command:
     def setup(self, parser, subparsers):
+        # pylint: disable=attribute-defined-outside-init
         self.all_features = [f.value for f in Feature]
         self.features_str = ", ".join(self.all_features)
 

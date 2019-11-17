@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Mapping
+from typing import Mapping, TYPE_CHECKING
 
 from lightbus.transports.base import ResultTransport, ResultMessage, RpcMessage
 from lightbus.log import L, Bold
@@ -10,8 +10,8 @@ from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
 
-if False:
-    # pylint: disable=unused-import
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
     from lightbus.config import Config
     from lightbus.client import BusClient
 

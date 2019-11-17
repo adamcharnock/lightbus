@@ -1,27 +1,20 @@
 import asyncio
 import logging
-import traceback
 from argparse import ArgumentParser, _ArgumentGroup, Namespace
-from typing import Dict, Type, TypeVar, NamedTuple
+from typing import Dict, Type, TypeVar, NamedTuple, TYPE_CHECKING
 
 from collections import OrderedDict
 
-import lightbus
 from lightbus.schema.schema import Parameter
-from lightbus.exceptions import (
-    PluginsNotLoaded,
-    PluginHookNotFound,
-    InvalidPlugins,
-    LightbusShutdownInProgress,
-)
+from lightbus.exceptions import PluginHookNotFound, LightbusShutdownInProgress
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
-from lightbus.utilities.async_tools import run_user_provided_callable
 from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
 
-if False:
-    # pylint: disable=unused-import
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
     from lightbus.config import Config
+    from lightbus.client import BusClient
 
 ENTRYPOINT_NAME = "lightbus_plugins"
 
@@ -72,58 +65,38 @@ class LightbusPlugin(metaclass=PluginMetaclass):
         """
         pass
 
-    async def before_server_start(self, *, client: "lightbus.client.BusClient"):
+    async def before_server_start(self, *, client: "BusClient"):
         pass
 
-    async def after_server_stopped(self, *, client: "lightbus.client.BusClient"):
+    async def after_server_stopped(self, *, client: "BusClient"):
         pass
 
-    async def before_rpc_call(
-        self, *, rpc_message: RpcMessage, client: "lightbus.client.BusClient"
-    ):
+    async def before_rpc_call(self, *, rpc_message: RpcMessage, client: "BusClient"):
         pass
 
     async def after_rpc_call(
-        self,
-        *,
-        rpc_message: RpcMessage,
-        result_message: ResultMessage,
-        client: "lightbus.client.BusClient",
+        self, *, rpc_message: RpcMessage, result_message: ResultMessage, client: "BusClient"
     ):
         pass
 
-    async def before_rpc_execution(
-        self, *, rpc_message: RpcMessage, client: "lightbus.client.BusClient"
-    ):
+    async def before_rpc_execution(self, *, rpc_message: RpcMessage, client: "BusClient"):
         pass
 
     async def after_rpc_execution(
-        self,
-        *,
-        rpc_message: RpcMessage,
-        result_message: ResultMessage,
-        client: "lightbus.client.BusClient",
+        self, *, rpc_message: RpcMessage, result_message: ResultMessage, client: "BusClient"
     ):
         pass
 
-    async def before_event_sent(
-        self, *, event_message: EventMessage, client: "lightbus.client.BusClient"
-    ):
+    async def before_event_sent(self, *, event_message: EventMessage, client: "BusClient"):
         pass
 
-    async def after_event_sent(
-        self, *, event_message: EventMessage, client: "lightbus.client.BusClient"
-    ):
+    async def after_event_sent(self, *, event_message: EventMessage, client: "BusClient"):
         pass
 
-    async def before_event_execution(
-        self, *, event_message: EventMessage, client: "lightbus.client.BusClient"
-    ):
+    async def before_event_execution(self, *, event_message: EventMessage, client: "BusClient"):
         pass
 
-    async def after_event_execution(
-        self, *, event_message: EventMessage, client: "lightbus.client.BusClient"
-    ):
+    async def after_event_execution(self, *, event_message: EventMessage, client: "BusClient"):
         pass
 
     async def exception(self, *, e: Exception):

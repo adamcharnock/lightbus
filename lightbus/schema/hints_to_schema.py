@@ -2,15 +2,18 @@ import inspect
 import itertools
 import logging
 from decimal import Decimal
-from typing import Union, Any, Tuple, Sequence, Mapping, Callable
+from typing import Union, Any, Tuple, Sequence, Mapping, Callable, TYPE_CHECKING
 
 import datetime
 from enum import Enum
 from uuid import UUID
 
-import lightbus
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.type_checks import parse_hint, issubclass_safe, get_property_default
+
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
+    from lightbus.api import Event
 
 NoneType = type(None)
 empty = inspect.Parameter.empty
@@ -39,7 +42,7 @@ def make_response_schema(api_name: str, method_name: str, method: Callable):
     return schema
 
 
-def make_event_parameter_schema(api_name, method_name, event: "lightbus.Event"):
+def make_event_parameter_schema(api_name, method_name, event: "Event"):
     """Create a full parameter JSON schema for the given event
     """
     parameters = _normalise_event_parameters(event.parameters)
@@ -153,6 +156,7 @@ def python_type_to_json_schemas(type_):
     which is why this function returns a list of schemas. An example of this is
     the `Union` type hint. These are later combined via `wrap_with_one_of()`
     """
+    # pylint: disable=too-many-return-statements
     type_, hint_args = parse_hint(type_)
 
     if type_ == Union:
@@ -303,6 +307,7 @@ def _normalise_event_parameters(parameters: Sequence) -> Sequence:
     Event parameters can be specified as strings or `inspect.Parameter`
     instances. Ensure all provided parameters are all in the latter form.
     """
+    # pylint: disable=cyclic-import,import-outside-toplevel
     from lightbus.schema import Parameter
 
     normalised = []

@@ -118,7 +118,7 @@ class Command:
                 f"Ensure a Lightbus worker is running for this API.\n"
                 f"Cannot continue.\n"
             )
-            exit(1)
+            sys.exit(1)
 
         api_names_to_inspect = []
         for api_name in api_names:
@@ -130,7 +130,7 @@ class Command:
                 f"The --follow option is only available when following a single API.\n"
                 f"Please specify the --api option to select a single API to follow.\n"
             )
-            exit(1)
+            sys.exit(1)
 
         try:
             for api_name in api_names_to_inspect:
@@ -182,7 +182,7 @@ class Command:
             sys.stderr.write(
                 f"No cache file exists for {api_name}.{event_name}, but --cache-only was specified\n"
             )
-            exit(1)
+            sys.exit(1)
 
         def _progress(force=False):
             if force or (cache_yield_count + transport_yield_count) % 1000 == 0:
@@ -269,7 +269,7 @@ class Command:
         match = re.match(r"(<|>|<=|>=|!=|=)(\d+)", pattern)
         if not match:
             sys.stderr.write("Invalid version\n")
-            exit(1)
+            sys.exit(1)
 
         comparator, version_ = match.groups()
 
@@ -277,7 +277,7 @@ class Command:
             version_ = int(version_)
         except TypeError:
             sys.stderr.write("Invalid version\n")
-            exit(1)
+            sys.exit(1)
 
         return self.compare(comparator, left_value=version, right_value=version_)
 
@@ -286,7 +286,7 @@ class Command:
         match = re.match(r"(.+?)(<|>|<=|>=|!=|=)(.+)", query)
         if not match:
             sys.stderr.write("Invalid json query\n")
-            exit(1)
+            sys.exit(1)
 
         query, comparator, value = match.groups()
         found_values = jsonpath(data, query)
@@ -353,7 +353,7 @@ class Command:
 
         else:
             sys.stderr.write(f"Unknown output format '{args.format}'\n")
-            exit(1)
+            sys.exit(1)
 
     def compare(self, comparator: str, left_value, right_value):
         """Utility for performing arbitrary comparisons"""
@@ -368,7 +368,7 @@ class Command:
 
         if comparator not in lookup:
             sys.stderr.write(f"Unknown comparator '{comparator}'\n")
-            exit(1)
+            sys.exit(1)
 
         return lookup[comparator]()
 

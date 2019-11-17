@@ -9,13 +9,15 @@ from datetime import datetime
 import os
 from itertools import chain
 
+from typing import TYPE_CHECKING
+
 from lightbus.message import EventMessage
 from lightbus.plugins import LightbusPlugin
 from lightbus.plugins.metrics import MetricsPlugin
 from lightbus.utilities.async_tools import cancel
 
-if False:
-    # pylint: disable=unused-import
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
     from lightbus import BusClient
     from lightbus.config import Config
 

@@ -3,7 +3,6 @@ import os
 from contextlib import contextmanager, ContextDecorator
 from copy import copy
 from functools import wraps
-from unittest.mock import patch
 
 from typing import List, Dict, Tuple
 
@@ -12,7 +11,6 @@ from lightbus import (
     EventTransport,
     SchemaTransport,
     ResultTransport,
-    EventMessage,
     RpcMessage,
     ResultMessage,
 )
@@ -119,6 +117,7 @@ class MockResult:
 class BusMocker(ContextDecorator):
     def __init__(self, bus: BusPath):
         self.bus = bus
+        self.old_transport_registry = None
 
     # Overriding ContextDecorator to pass the mock result to the function
     def __call__(self, func):
@@ -198,6 +197,7 @@ class TestResultTransport(ResultTransport):
 class TestEventTransport(EventTransport):
     def __init__(self):
         self.events = []
+        super().__init__()
 
     async def send_event(self, event_message, options, bus_client: "BusClient"):
         self.events.append((event_message, options))

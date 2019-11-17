@@ -30,18 +30,20 @@ from lightbus.utilities.human import generate_human_friendly_name
 
 logger = logging.getLogger(__name__)
 
+# pylint: disable=exec-used
+
 
 def make_transport_selector_structure(type_) -> NamedTuple:
     class_name = f"{type_.title()}TransportSelector"
     code = f"class {class_name}(NamedTuple):\n    pass\n"
-    vars = {}
+    variables = {}
     transports = get_available_transports(type_)
     for transport_name, transport_class in transports.items():
-        vars[transport_class.__name__] = transport_class
+        variables[transport_class.__name__] = transport_class
         code += f"    {transport_name}: Optional[{transport_class.__name__}.Config] = None\n"
 
     globals_ = globals().copy()
-    globals_.update(vars)
+    globals_.update(variables)
     exec(code, globals_)  # nosec
     return globals_[class_name]
 
@@ -49,15 +51,15 @@ def make_transport_selector_structure(type_) -> NamedTuple:
 def make_plugin_selector_structure() -> NamedTuple:
     class_name = f"PluginSelector"
     code = f"class {class_name}(NamedTuple):\n    pass\n"
-    vars = {}
+    variables = {}
 
     for plugin_name, plugin_class in find_plugins().items():
         plugin_class_name = plugin_class.__name__
-        vars[plugin_class_name] = plugin_class
+        variables[plugin_class_name] = plugin_class
         code += f"    {plugin_name}: Optional[{plugin_class_name}.Config] = {plugin_class_name}.Config()\n"
 
     globals_ = globals().copy()
-    globals_.update(vars)
+    globals_.update(variables)
     exec(code, globals_)  # nosec
     return globals_[class_name]
 
@@ -118,6 +120,7 @@ class ApiConfig:
             # Expand out the true/false shortcut
             self.validate = ApiValidationConfig(outgoing=self.validate, incoming=self.validate)
         elif isinstance(self.validate, dict):
+            # pylint: disable=not-a-mapping
             self.validate = ApiValidationConfig(**self.validate)
 
 

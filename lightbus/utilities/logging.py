@@ -1,10 +1,12 @@
 import logging
 from logging import Logger
 
+from typing import TYPE_CHECKING
+
 from lightbus.log import LightbusFormatter, LBullets, L, Bold
 
-if False:
-    # pylint: disable=unused-import
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
     from lightbus import RpcTransport, ResultTransport, EventTransport, SchemaTransport
 
 handler = logging.StreamHandler()

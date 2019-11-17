@@ -19,7 +19,13 @@ disable=similarities,
         no-self-use,
         no-else-return,
         no-else-raise,
-        import-error
+        import-error,
+        unnecessary-pass,
+        bad-mcs-classmethod-argument,
 
 [FORMAT]
 max-line-length=120
+
+[TYPECHECK]
+# For the Api.meta attribute which is generated the ApiMetaclass
+generated-members=meta

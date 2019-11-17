@@ -2,7 +2,6 @@ import traceback
 from typing import Optional, Dict, Any, Sequence
 from uuid import uuid1
 
-from base64 import b64encode
 
 __all__ = ["Message", "RpcMessage", "ResultMessage", "EventMessage"]
 

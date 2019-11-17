@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 from inspect import isclass
 
 import lightbus
@@ -24,12 +25,12 @@ class Command:
         command_utilities.setup_logging(args.log_level or "warning", config)
 
         try:
-            # pylint: disable=unused-import
+            # pylint: disable=unused-import,cyclic-import,import-outside-toplevel
             import bpython
             from bpython.curtsies import main as bpython_main
         except ImportError:  # pragma: no cover
             print("Lightbus shell requires bpython. Run `pip install bpython` to install bpython.")
-            exit(1)
+            sys.exit(1)
             return  # noqa
 
         lightbus_logger = logging.getLogger("lightbus")

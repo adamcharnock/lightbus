@@ -1,7 +1,7 @@
 import json as jsonlib
 import os
 from pathlib import Path
-from typing import Dict, NamedTuple, Union
+from typing import Dict, NamedTuple, Union, TYPE_CHECKING
 import urllib.request
 
 import jsonschema
@@ -12,8 +12,8 @@ from lightbus.schema.hints_to_schema import python_type_to_json_schemas, SCHEMA_
 from lightbus.utilities.casting import cast_to_hint
 from lightbus.utilities.deforming import deform_to_bus
 
-if False:
-    # pylint: disable=unused-import
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
     from .structure import RootConfig, BusConfig, ApiConfig
 
 
@@ -97,6 +97,7 @@ class Config:
     @classmethod
     def load_dict(cls, config: dict, set_defaults=True):
         """Instantiate the config from a dictionary"""
+        # pylint: disable=import-outside-toplevel
         from .structure import RootConfig
 
         config = config.copy()
@@ -121,6 +122,7 @@ def validate_config(config: dict):
 
 def config_as_json_schema() -> dict:
     """Get the configuration structure as a json schema"""
+    # pylint: disable=import-outside-toplevel
     from .structure import RootConfig
 
     schema, = python_type_to_json_schemas(RootConfig)

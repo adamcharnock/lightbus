@@ -3,9 +3,8 @@
 These serializers handle moving data to/from a string-based format.
 
 """
-from typing import Union
+from typing import Union, TYPE_CHECKING
 
-import lightbus
 from lightbus.serializers.base import (
     decode_bytes,
     sanity_check_metadata,
@@ -13,17 +12,19 @@ from lightbus.serializers.base import (
     MessageDeserializer,
 )
 
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
+    from lightbus import Message
+
 
 class BlobMessageSerializer(MessageSerializer):
-
-    def __call__(self, message: "lightbus.Message") -> str:
+    def __call__(self, message: "Message") -> str:
         # self.encoder will typically be a json encoder, or something similar.
         # Therefore here we just return a json encoded stricture including metadata & kwargs.
         return self.encoder({"metadata": message.get_metadata(), "kwargs": message.get_kwargs()})
 
 
 class BlobMessageDeserializer(MessageDeserializer):
-
     def __call__(self, serialized: Union[str, dict], *, native_id=None, **extra):
         # Reverse of BlobMessageSerializer
 

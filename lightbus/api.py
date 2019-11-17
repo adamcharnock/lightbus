@@ -73,12 +73,12 @@ class ApiOptions:
 
 
 class ApiMetaclass(type):
-    def __init__(cls, name, bases=None, dict=None):
+    def __init__(cls, name, bases=None, dict_=None):
         is_api_base_class = name == "Api" and not bases
         if is_api_base_class:
-            super(ApiMetaclass, cls).__init__(name, bases, dict)
+            super(ApiMetaclass, cls).__init__(name, bases, dict_)
         else:
-            options = dict.get("Meta", None)
+            options = dict_.get("Meta", None)
             if options is None:
                 raise MisconfiguredApiOptions(
                     f"API class {name} does not contain a class named 'Meta'. Each API definition "
@@ -88,7 +88,7 @@ class ApiMetaclass(type):
                 )
             cls.sanity_check_options(name, options)
             cls.meta = ApiOptions(cls.Meta.__dict__.copy())
-            super(ApiMetaclass, cls).__init__(name, bases, dict)
+            super(ApiMetaclass, cls).__init__(name, bases, dict_)
 
             if cls.meta.name == "default" or cls.meta.name.startswith("default."):
                 raise MisconfiguredApiOptions(

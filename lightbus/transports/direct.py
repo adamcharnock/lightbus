@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Sequence
+from typing import Sequence, TYPE_CHECKING
 
 from lightbus.transports.base import ResultTransport, RpcTransport, EventTransport
 from lightbus.api import Api
@@ -8,8 +8,8 @@ from lightbus.exceptions import UnsupportedUse
 from lightbus.log import L, Bold
 from lightbus.message import RpcMessage, ResultMessage, EventMessage
 
-if False:
-    # pylint: disable=unused-import
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
     from lightbus.client import BusClient
 
 logger = logging.getLogger(__name__)

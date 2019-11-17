@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import Mapping, Sequence
+from typing import Mapping, Sequence, TYPE_CHECKING
 
 from aioredis import PipelineError, ConnectionClosedError
 from aioredis.util import decode
@@ -15,8 +15,8 @@ from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
 
-if False:
-    # pylint: disable=unused-import
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
     from lightbus.config import Config
     from lightbus.client import BusClient
 

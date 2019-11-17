@@ -1,15 +1,14 @@
 """Utility functions relating to bus creation"""
-
+import logging
 import os
 import sys
 from typing import Union, Mapping, Type, List
 
-from lightbus import BusClient
 from lightbus.utilities.features import ALL_FEATURES, Feature
 from lightbus.config.structure import RootConfig
 from lightbus.log import Bold
 from lightbus.path import BusPath
-from lightbus.client import logger
+from lightbus.client import BusClient
 from lightbus.config import Config
 from lightbus.exceptions import FailedToImportBusModule
 from lightbus.transports.base import TransportRegistry
@@ -18,6 +17,7 @@ from lightbus.utilities.importing import import_module_from_string
 
 
 __all__ = ["create", "create_async", "load_config", "import_bus_module", "get_bus"]
+logger = logging.getLogger(__name__)
 
 
 async def create_async(
@@ -71,6 +71,7 @@ async def create_async(
 
     # If were are running via the Lightbus CLI then we may have
     # some command line arguments we need to apply.
+    # pylint: disable=cyclic-import,import-outside-toplevel
     from lightbus.commands import COMMAND_PARSED_ARGS
 
     config_file = COMMAND_PARSED_ARGS.get("config_file", None) or config_file

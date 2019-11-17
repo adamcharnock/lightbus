@@ -3,14 +3,13 @@ import json
 import logging
 from json import JSONDecodeError
 from pathlib import Path
-from typing import Optional, TextIO, Union, ChainMap, List, Tuple, Dict
+from typing import Optional, TextIO, Union, ChainMap, List, Tuple, Dict, TYPE_CHECKING
 import asyncio
 import itertools
 import sys
 
 import jsonschema
 
-import lightbus
 from lightbus.exceptions import (
     InvalidApiForSchemaCreation,
     InvalidSchema,
@@ -25,9 +24,10 @@ from lightbus.schema.hints_to_schema import (
     make_event_parameter_schema,
 )
 from lightbus.utilities.io import make_file_safe_api_name
+from lightbus.api import Api, Event
 
-if False:
-    # pylint: disable=unused-import
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
     from lightbus.transports.base import SchemaTransport
 
 logger = logging.getLogger(__name__)
@@ -415,7 +415,7 @@ def api_to_schema(api: "lightbus.Api") -> dict:
         if member_name.startswith("_"):
             # Don't create schema from private methods
             continue
-        if hasattr(lightbus.Api, member_name):
+        if hasattr(Api, member_name):
             # Don't create schema for methods defined on Api class
             continue
 
@@ -424,7 +424,7 @@ def api_to_schema(api: "lightbus.Api") -> dict:
                 "parameters": make_rpc_parameter_schema(api.meta.name, member_name, method=member),
                 "response": make_response_schema(api.meta.name, member_name, method=member),
             }
-        elif isinstance(member, lightbus.Event):
+        elif isinstance(member, Event):
             schema["events"][member_name] = {
                 "parameters": make_event_parameter_schema(api.meta.name, member_name, event=member)
             }

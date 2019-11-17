@@ -15,7 +15,6 @@ from lightbus.utilities.type_checks import (
     isinstance_safe,
     parse_hint,
     issubclass_safe,
-    get_property_default,
 )
 
 is_callable = callable

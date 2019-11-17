@@ -1,7 +1,18 @@
 import logging
 from datetime import datetime
 from itertools import chain
-from typing import Sequence, Tuple, List, Dict, NamedTuple, TypeVar, Type, Set, AsyncGenerator
+from typing import (
+    Sequence,
+    Tuple,
+    List,
+    Dict,
+    NamedTuple,
+    TypeVar,
+    Type,
+    Set,
+    AsyncGenerator,
+    TYPE_CHECKING,
+)
 
 from lightbus.api import Api
 from lightbus.exceptions import NothingToListenFor, TransportNotFound, TransportsNotInstalled
@@ -10,8 +21,8 @@ from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeseria
 from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
 
-if False:
-    # pylint: disable=unused-import
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
     from lightbus.config import Config
     from lightbus.client import BusClient
 
