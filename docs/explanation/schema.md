@@ -6,7 +6,9 @@ by other Lightbus clients. This provides a number of features:
 
 * The availability of a particular API can be detected by remote clients
 * RPCs, results, and events transmitted on the bus can be validated by both the sender and receiver
-* Lightbus tooling can load the schema to provide additional functionality
+* Tooling can load the schema to provide additional functionality. For example, you can 
+  [dump your production schema](https://lightbus.org/reference/command-line-use/dumpschema/) 
+  and run your development environment and tests against it.
 
 Note that an API's schema will only be available on the bus while there is a worker 
 running to provides it. Once the worker process for an API shuts down the schema on the 
