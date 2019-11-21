@@ -122,21 +122,9 @@ class DataclassWithMappingToCustomObject:
     a: Mapping[str, CustomClassWithMagicMethod]
 
 
-# @dataclass
-# class LedgerRecord():
-#     uuid: UUID
-#     message: str
-#     timestamp: datetime
-#     user: Optional[UUID]
-#     actions: Dict[str, _url]
-#     entities: List[Tuple[_verb, LedgerEntity]] = tuple()
-
-_verb = str
-
-
 @dataclass
 class NamedTupleWithMappingToNestedTuple:
-    a: List[Tuple[_verb, int]] = tuple()
+    a: List[Tuple[str, int]] = tuple()
 
 
 @pytest.mark.parametrize(
