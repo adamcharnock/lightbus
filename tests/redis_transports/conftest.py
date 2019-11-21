@@ -69,7 +69,7 @@ async def redis_schema_transport(new_redis_pool, loop):
 
 @pytest.yield_fixture
 async def bus(new_bus):
-    bus = await new_bus()
+    bus = new_bus()
 
     yield bus
 
@@ -93,8 +93,8 @@ def fire_dummy_events_fixture(bus):
 # fmt: off
 @pytest.fixture
 def new_bus(loop, redis_server_url):
-    async def _new_bus(service_name="{friendly}"):
-        bus = await lightbus.creation.create_async(
+    def _new_bus(service_name="{friendly}"):
+        bus = lightbus.creation.create(
             config=RootConfig(
                 apis={
                     'default': ApiConfig(

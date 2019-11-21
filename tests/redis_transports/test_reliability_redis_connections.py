@@ -23,7 +23,7 @@ async def test_redis_connections_closed(redis_client, loop, new_bus, caplog):
     assert int(info["clients"]["connected_clients"]) == 1  # This connection
 
     # Open and close the bus
-    bus: BusPath = await new_bus()
+    bus: BusPath = new_bus()
     assert int(info["clients"]["connected_clients"]) == 1
 
     await bus.client.lazy_load_now()
@@ -47,7 +47,7 @@ async def test_create_and_destroy_redis_buses(redis_client, dummy_api, new_bus, 
 
     for _ in range(0, 100):
         # make a bus
-        bus = await new_bus()
+        bus = new_bus()
         bus.client.register_api(dummy_api)
         # fire an event
         await bus.my.dummy.my_event.fire_async(field="a")

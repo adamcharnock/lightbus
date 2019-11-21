@@ -12,15 +12,14 @@ from lightbus.client import BusClient
 from lightbus.config import Config
 from lightbus.exceptions import FailedToImportBusModule
 from lightbus.transports.base import TransportRegistry
-from lightbus.utilities.async_tools import block
 from lightbus.utilities.importing import import_module_from_string
 
 
-__all__ = ["create", "create_async", "load_config", "import_bus_module", "get_bus"]
+__all__ = ["create", "load_config", "import_bus_module", "get_bus"]
 logger = logging.getLogger(__name__)
 
 
-async def create_async(
+def create(
     config: Union[dict, RootConfig] = None,
     *,
     config_file: str = None,
@@ -40,14 +39,10 @@ async def create_async(
 
         import lightbus
 
-        bus = await lightbus.create_async()
+        bus = lightbus.create()
 
     This will be a `BusPath` instance. If you wish to access the lower
     level `BusClient` you can do so via `bus.client`.
-
-    See Also:
-
-        `create()` - The synchronous wrapper for this function
 
     Args:
         config (dict, Config): The config object or dictionary to load
@@ -60,7 +55,7 @@ async def create_async(
         flask (bool): Are we using flask? If so we will make sure we don't start lightbus in the reloader process
         **kwargs (): Any additional instantiation arguments to be passed to `client_class`.
 
-    Returns:
+    Returns: BusPath
 
     """
     if flask:
@@ -98,23 +93,6 @@ async def create_async(
     client.setup(plugins=plugins)
 
     return node_class(name="", parent=None, client=client)
-
-
-def create(*args, **kwargs) -> BusPath:
-    """
-    Create a new bus instance which can be used to access the bus.
-
-    Typically this will be used as follows:
-
-        import lightbus
-
-        bus = lightbus.create()
-
-    See Also: This function is a wrapper around `create_async()`, see `create_async()`
-    for a list of arguments
-
-    """
-    return block(create_async(*args, **kwargs), timeout=5)
 
 
 def load_config(

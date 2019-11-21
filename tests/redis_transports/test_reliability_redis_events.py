@@ -38,7 +38,7 @@ async def test_random_failures(
     # Now pull the events off, and sometimes kill a worker early
 
     for n in range(0, 120):
-        cursed_bus: lightbus.path.BusPath = await new_bus(service_name="test")
+        cursed_bus: lightbus.path.BusPath = new_bus(service_name="test")
         cursed_bus.my.dummy.my_event.listen(
             listener, listener_name="test", bus_options={"since": "0"}
         )
