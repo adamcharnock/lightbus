@@ -144,8 +144,8 @@ class BusClient:
             # In the case of a clean shutdown the bus will already be closed.
             pass
 
-    def setup(self, plugins: list = None):
-        """Setup lightbus and get it ready to consume events and/or RPCs
+    def welcome_message(self, plugins: list = None):
+        """Show the server-startup welcome message
         """
         logger.info(
             LBullets(
@@ -267,6 +267,8 @@ class BusClient:
         starting and stopping the server. The interesting setup happens in
         BusClient._setup_server()
         """
+        self.welcome_message()
+
         # Ensure an event loop exists
         get_event_loop()
 

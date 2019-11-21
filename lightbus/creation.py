@@ -94,7 +94,6 @@ def create(
         plugins=plugins,
         **kwargs,
     )
-    client.setup()
 
     return node_class(name="", parent=None, client=client)
 

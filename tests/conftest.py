@@ -380,7 +380,7 @@ def set_env():
 
 
 @pytest.yield_fixture
-def make_test_bus_module(mocker):
+def make_test_bus_module():
     """Create a python module on disk which contains a bus, and put it on the python path"""
     created_modules = []
 
@@ -388,11 +388,6 @@ def make_test_bus_module(mocker):
     # load the schema from redis at the default location.
     # Plus this setup is needed for what this fixture is used
     # for (module loading)
-
-    def fake_setup_async(*args, **kwargs):
-        pass
-
-    mocker.patch.object(BusClient, "setup", side_effect=fake_setup_async)
 
     def inner(code: str = None):
         if code is None:
