@@ -54,7 +54,6 @@ from lightbus.path import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import cancel, configure_event_loop
-from tests.test_commands import logger
 
 TCPAddress = namedtuple("TCPAddress", "host port")
 
@@ -592,7 +591,11 @@ def run_lightbus_command(make_test_bus_module, redis_config_file):
             # Process already gone
             pass
 
-        p.wait(timeout=1)
+        try:
+            p.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            print(f"WARNING: Shutdown timed out. Killing")
+            p.kill()
 
         print(f"Cleaning up command 'lightbus {cmd}'")
         print(f"     Command: {' '.join(full_args)}")

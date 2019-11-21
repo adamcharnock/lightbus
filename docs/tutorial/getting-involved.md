@@ -9,7 +9,7 @@ not alone. The Lightbus team (which currently consists of me, Adam) is here to s
 
 ## Code of Conduct
 
-**Make sure you read over the [Code of Conduct](......)**. This will outline how you should 
+**Make sure you read over the [Code of Conduct](/reference/code-of-conduct.md)**. This will outline how you should 
 engage with others, and how you should expect to be treated yourself.
 
 ## How to get started (non-coding)
@@ -28,6 +28,8 @@ Python developer, this can still be a good place to start:
 
 If you want to get stuck in to writing some code here are some good places to start:
 
+* See [how to modify Lightbus](/howto/modify-lightbus.md) for a guide to getting your local development 
+  environment setup. 
 * **If you have a specific idea or bug you would like to fix then come and discuss it**, either 
   [in our community chat](https://discord.gg/2j594ws) or in a 
   [GitHub issue](https://github.com/adamcharnock/lightbus/issues/new). It would be great to meet you,

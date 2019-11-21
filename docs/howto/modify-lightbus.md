@@ -53,6 +53,7 @@ Note that you can run subsets of the tests as follows:
     pytest -m unit  # Fast with high coverage
     pytest -m integration
     pytest -m reliability
+    pytest -m benchmark
 
 ## Using within your project
 
