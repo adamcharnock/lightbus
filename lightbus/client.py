@@ -83,6 +83,7 @@ class BusClient:
         config: "Config",
         transport_registry: TransportRegistry = None,
         features: Sequence[Union[Feature, str]] = ALL_FEATURES,
+        plugins=None,
     ):
         self._event_listeners: List[_EventListener] = []  # Event listeners
         self._consumers = []  # RPC consumers
@@ -106,6 +107,13 @@ class BusClient:
         self._server_tasks = []
         self.worker = ClientWorker()
         self._lazy_load_complete = False
+
+        if plugins is None:
+            logger.debug("Auto-loading any installed Lightbus plugins...")
+            self.plugin_registry.autoload_plugins(self.config)
+        else:
+            logger.debug("Loading explicitly specified Lightbus plugins....")
+            self.plugin_registry.set_plugins(plugins)
 
         self.worker.start(bus_client=self, after_shutdown=self._handle_worker_shutdown)
         self.__init_worker___()
@@ -136,9 +144,8 @@ class BusClient:
             # In the case of a clean shutdown the bus will already be closed.
             pass
 
-    @run_in_worker_thread()
-    async def setup_async(self, plugins: list = None):
-        """Setup lightbus and get it ready to consume events and/or RPCs
+    def welcome_message(self, plugins: list = None):
+        """Show the server-startup welcome message
         """
         logger.info(
             LBullets(
@@ -162,14 +169,6 @@ class BusClient:
             rpc_transport, result_transport, event_transport, self.schema.schema_transport, logger
         )
 
-        # Log the plugins we have
-        if plugins is None:
-            logger.debug("Auto-loading any installed Lightbus plugins...")
-            self.plugin_registry.autoload_plugins(self.config)
-        else:
-            logger.debug("Loading explicitly specified Lightbus plugins....")
-            self.plugin_registry.set_plugins(plugins)
-
         if self.plugin_registry._plugins:
             logger.info(
                 LBullets(
@@ -179,9 +178,6 @@ class BusClient:
             )
         else:
             logger.info("No plugins loaded")
-
-    def setup(self, plugins: list = None):
-        block(self.setup_async(plugins), timeout=5)
 
     @assert_not_in_worker_thread()
     def close(self, _stop_worker=True):
@@ -271,6 +267,8 @@ class BusClient:
         starting and stopping the server. The interesting setup happens in
         BusClient._setup_server()
         """
+        self.welcome_message()
+
         # Ensure an event loop exists
         get_event_loop()
 

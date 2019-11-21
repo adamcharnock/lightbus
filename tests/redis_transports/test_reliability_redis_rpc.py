@@ -27,8 +27,8 @@ async def test_many_calls_and_clients(bus: lightbus.path.BusPath, new_bus, caplo
         result = await client_bus.my.dummy.my_proc.call_async(field="x")
         results.append(result)
 
-    client_buses = [await new_bus() for n in range(0, 100)]
-    server_buses = [await new_bus() for n in range(0, 10)]
+    client_buses = [new_bus() for n in range(0, 100)]
+    server_buses = [new_bus() for n in range(0, 10)]
 
     for server_bus in server_buses:
         server_bus.client.register_api(dummy_api)
@@ -59,9 +59,9 @@ async def test_timeouts(bus: lightbus.path.BusPath, new_bus, caplog, dummy_api, 
         except LightbusTimeout:
             results.append(None)
 
-    client_buses = [await new_bus() for n in range(0, 100)]
+    client_buses = [new_bus() for n in range(0, 100)]
     # Create a lot of servers so we have enough to handle all the RPCs before the timeout
-    server_buses = [await new_bus() for n in range(0, 20)]
+    server_buses = [new_bus() for n in range(0, 20)]
 
     for server_bus in server_buses:
         server_bus.client.register_api(dummy_api)
