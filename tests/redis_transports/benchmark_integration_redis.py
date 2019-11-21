@@ -47,7 +47,7 @@ def bus(redis_config_file):
     bus.client.close()
 
 
-@pytest.mark.timeout(5)
+@pytest.mark.benchmark(group="network")
 def benchmark_call_rpc(run_lightbus, bus, benchmark):
     def benchmark_me():
         assert bus.benchmark.call_me()
@@ -55,7 +55,7 @@ def benchmark_call_rpc(run_lightbus, bus, benchmark):
     benchmark.pedantic(benchmark_me, rounds=20, warmup_rounds=1)
 
 
-@pytest.mark.timeout(5)
+@pytest.mark.benchmark(group="network")
 def benchmark_fire_event(run_lightbus, bus, benchmark):
     bus.client.register_api(BenchmarkApi())
     benchmark.pedantic(bus.benchmark.fire_me.fire, rounds=20, warmup_rounds=1)
