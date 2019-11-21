@@ -385,11 +385,6 @@ def make_test_bus_module():
     """Create a python module on disk which contains a bus, and put it on the python path"""
     created_modules = []
 
-    # Prevent setup from being called, as it'll try to
-    # load the schema from redis at the default location.
-    # Plus this setup is needed for what this fixture is used
-    # for (module loading)
-
     def inner(code: str = None):
         if code is None:
             code = "bus = lightbus.create()"
