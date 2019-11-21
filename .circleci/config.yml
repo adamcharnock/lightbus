@@ -40,7 +40,7 @@ jobs:
 
       - run:
           command: |
-            pipenv run pytest --cov=lightbus --junit-xml=junit.xml -v
+            pipenv run pytest --cov=lightbus --junit-xml=junit.xml -v -m "not benchmark"
 
       - run:
           command: |
