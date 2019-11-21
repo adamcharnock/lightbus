@@ -95,7 +95,7 @@ async def create_async(
     client = client_class(
         transport_registry=transport_registry, config=config, features=features, **kwargs
     )
-    await client.setup_async(plugins=plugins)
+    client.setup(plugins=plugins)
 
     return node_class(name="", parent=None, client=client)
 

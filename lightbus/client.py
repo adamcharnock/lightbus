@@ -136,8 +136,7 @@ class BusClient:
             # In the case of a clean shutdown the bus will already be closed.
             pass
 
-    @run_in_worker_thread()
-    async def setup_async(self, plugins: list = None):
+    def setup(self, plugins: list = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
         """
         logger.info(
@@ -179,9 +178,6 @@ class BusClient:
             )
         else:
             logger.info("No plugins loaded")
-
-    def setup(self, plugins: list = None):
-        block(self.setup_async(plugins), timeout=5)
 
     @assert_not_in_worker_thread()
     def close(self, _stop_worker=True):

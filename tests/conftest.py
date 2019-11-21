@@ -389,10 +389,10 @@ def make_test_bus_module(mocker):
     # Plus this setup is needed for what this fixture is used
     # for (module loading)
 
-    async def face_setup_async(*args, **kwargs):
+    def fake_setup_async(*args, **kwargs):
         pass
 
-    mocker.patch.object(BusClient, "setup_async", side_effect=face_setup_async)
+    mocker.patch.object(BusClient, "setup", side_effect=fake_setup_async)
 
     def inner(code: str = None):
         if code is None:
