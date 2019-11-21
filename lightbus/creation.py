@@ -88,9 +88,13 @@ def create(
     )
 
     client = client_class(
-        transport_registry=transport_registry, config=config, features=features, **kwargs
+        transport_registry=transport_registry,
+        config=config,
+        features=features,
+        plugins=plugins,
+        **kwargs,
     )
-    client.setup(plugins=plugins)
+    client.setup()
 
     return node_class(name="", parent=None, client=client)
 

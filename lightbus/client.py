@@ -83,6 +83,7 @@ class BusClient:
         config: "Config",
         transport_registry: TransportRegistry = None,
         features: Sequence[Union[Feature, str]] = ALL_FEATURES,
+        plugins=None,
     ):
         self._event_listeners: List[_EventListener] = []  # Event listeners
         self._consumers = []  # RPC consumers
@@ -106,6 +107,13 @@ class BusClient:
         self._server_tasks = []
         self.worker = ClientWorker()
         self._lazy_load_complete = False
+
+        if plugins is None:
+            logger.debug("Auto-loading any installed Lightbus plugins...")
+            self.plugin_registry.autoload_plugins(self.config)
+        else:
+            logger.debug("Loading explicitly specified Lightbus plugins....")
+            self.plugin_registry.set_plugins(plugins)
 
         self.worker.start(bus_client=self, after_shutdown=self._handle_worker_shutdown)
         self.__init_worker___()
@@ -160,14 +168,6 @@ class BusClient:
         log_transport_information(
             rpc_transport, result_transport, event_transport, self.schema.schema_transport, logger
         )
-
-        # Log the plugins we have
-        if plugins is None:
-            logger.debug("Auto-loading any installed Lightbus plugins...")
-            self.plugin_registry.autoload_plugins(self.config)
-        else:
-            logger.debug("Loading explicitly specified Lightbus plugins....")
-            self.plugin_registry.set_plugins(plugins)
 
         if self.plugin_registry._plugins:
             logger.info(
