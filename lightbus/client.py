@@ -123,8 +123,11 @@ class BusClient:
         self.schema = WorkerProxy(proxied=schema, worker=self.worker)
 
     def _handle_worker_shutdown(self):
-        # This method will be called within the worker thead, but after the worker
-        # thread's event loop has stopped
+        """ Cleanup the BusClient due to worker thread shutdown
+
+        This method will be called within the worker thead,
+        but after the worker thread's event loop has stopped.
+        """
 
         try:
             # Close _close_async_inner() because, we are in the worker thead.
@@ -136,10 +139,6 @@ class BusClient:
     @run_in_worker_thread()
     async def setup_async(self, plugins: list = None):
         """Setup lightbus and get it ready to consume events and/or RPCs
-
-        You should call this manually if you are calling `consume_rpcs()`
-        directly. This you be handled for you if you are
-        calling `run_forever()`.
         """
         logger.info(
             LBullets(
