@@ -2,154 +2,16 @@ import json
 import logging
 import os
 import signal
-import subprocess
-import sys
 import time
 from subprocess import Popen
-from tempfile import NamedTemporaryFile
 
 import pytest
+
+from tests.conftest import BUS_MODULE
 
 logger = logging.getLogger(__name__)
 
 pytestmark = pytest.mark.integration
-
-
-REDIS_BUS_CONFIG = """
-apis:
-  default:
-    event_transport:
-      redis:
-        url: {redis_url}
-    rpc_transport:
-      redis:
-        url: {redis_url}
-    result_transport:
-      redis:
-        url: {redis_url}
-bus:
-  schema:
-    transport:
-      redis:
-        url: {redis_url}
-"""
-
-DEBUG_BUS_CONFIG = """
-apis:
-  default:
-    event_transport:
-      debug: {}
-    rpc_transport:
-      debug: {}
-    result_transport:
-      debug: {}
-bus:
-  schema:
-    transport:
-      debug: {}
-"""
-
-BUS_MODULE = """
-import lightbus
-
-bus = lightbus.create()
-
-class DummyApi(lightbus.Api):
-    my_event = lightbus.Event()
-
-    class Meta:
-        name = "my.dummy"
-
-
-bus.client.register_api(DummyApi())
-"""
-
-
-@pytest.yield_fixture()
-async def redis_config_file(loop, redis_server_url, redis_client):
-    config = REDIS_BUS_CONFIG.format(redis_url=redis_server_url)
-    with NamedTemporaryFile() as f:
-        f.write(config.encode("utf8"))
-        f.flush()
-        yield f.name
-        await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
-
-
-@pytest.yield_fixture()
-def debug_config_file():
-    with NamedTemporaryFile() as f:
-        f.write(DEBUG_BUS_CONFIG.encode("utf8"))
-        f.flush()
-        yield f.name
-
-
-@pytest.yield_fixture()
-def run_lightbus_command(make_test_bus_module, redis_config_file):
-    processes = []
-
-    def inner(
-        cmd: str,
-        *args: str,
-        env: dict = None,
-        bus_module_code: str = None,
-        config_path: str = None,
-        full_args: list = None,
-    ):
-        env = env or {}
-
-        # Create a bus module and tell lightbus where to find it
-        env.setdefault("LIGHTBUS_MODULE", make_test_bus_module(code=bus_module_code))
-        # Set the python path so we can load the bus module we've just create
-        env.setdefault("PYTHONPATH", ":".join(sys.path))
-
-        # Set the PATH so the 'lightbus' command can be found
-        env.setdefault("PATH", os.environ.get("PATH", ""))
-
-        config_path = config_path or redis_config_file
-        full_args = full_args or [
-            "lightbus",
-            cmd,
-            "--config",
-            config_path,
-            "--log-level",
-            "debug",
-            *args,
-        ]
-
-        logger.debug(f"Running: {' '.join(full_args)}. Environment: {env}")
-
-        p = subprocess.Popen(full_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
-        processes.append((cmd, full_args, env, p))
-
-        # Let it startup
-        time.sleep(1)
-
-        return p
-
-    yield inner
-
-    # Cleanup
-    for cmd, full_args, env, p in processes:
-        try:
-            os.kill(p.pid, signal.SIGINT)
-        except ProcessLookupError:
-            # Process already gone
-            pass
-
-        p.wait(timeout=1)
-
-        print(f"Cleaning up command 'lightbus {cmd}'")
-        print(f"     Command: {' '.join(full_args)}")
-        print(f"     Environment:")
-        for k, v in env.items():
-            print(f"         {k.ljust(20)}: {v}")
-
-        print(f"---- 'lightbus {cmd}' stdout ----", flush=True)
-        print(p.stdout.read().decode("utf8"), flush=True)
-
-        print(f"---- 'lightbus {cmd}' stderr ----", flush=True)
-        print(p.stderr.read().decode("utf8"), flush=True)
-        assert p.returncode == 0, f"Child process running 'lightbus {cmd}' exited abnormally"
 
 
 def test_commands_run_cli(run_lightbus_command, make_test_bus_module):
