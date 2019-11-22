@@ -19,7 +19,7 @@ in order to prepare the data for use:
    available on the bus.
 4. **Cast:** Best effort casting of parameters/results based on
    the locally available type hinting. This can be disabled with the 
-   [`cast_values` configuration option](/reference/configuration.md#api-config).
+   [`cast_values` configuration option](../reference/configuration.md#api-config).
 
 
 ## Outbound flow
@@ -53,6 +53,6 @@ into a format useful to the service's developer.
 
 
 
-[NamedTuples]: /reference/typing.md#namedtuple-example
-[dataclasses]: /reference/typing.md#dataclass-example
-[other classes]: /reference/typing.md#custom-class-example
+[NamedTuples]: ../reference/typing.md#namedtuple-example
+[dataclasses]: ../reference/typing.md#dataclass-example
+[other classes]: ../reference/typing.md#custom-class-example

@@ -20,7 +20,7 @@ to access the bus client within (see next stage, below).
 
 !!! note
 
-    See [anatomy lesson](/explanation/anatomy-lesson.md) for further discusison of the 
+    See [anatomy lesson](../explanation/anatomy-lesson.md) for further discusison of the 
     distinction between processes.
 
 ## 2. Service-level configuration
@@ -38,7 +38,7 @@ The above statement serves several purposes:
 1. The `lightbus run` command will use this client to access the bus.
 2. You can (and should) import this client
    elsewhere in the service in order to call RPCs and fire events
-   (see [how to access your bus client](/howto/access-your-bus-client.md)).
+   (see [how to access your bus client](../howto/access-your-bus-client.md)).
 3. You can configure service-level configuration options for your
    Lightbus client.
 
@@ -319,6 +319,6 @@ within the [API config].
 [transport selector]: #transport-selector
 [api config]: #api-config
 [api validation config]: #api-validation-config
-[events explanation section]: /explanation/events/
-[service name explanation]: /explanation/events.md#service-names-listener-names
-[process name explanation]: /explanation/events.md#process-names
+[events explanation section]: ../explanation/events.md
+[service name explanation]: ../explanation/events.md#service-names-listener-names
+[process name explanation]: ../explanation/events.md#process-names

@@ -6,5 +6,5 @@ features of Lightbus**.
 A grasp of the [tutorial] and [explantion] sections will
 be useful here.
 
-[tutorial]: /tutorial/index.md
-[explantion]: /explantion/index.md
+[tutorial]: ../tutorial/index.md
+[explantion]: ../explanation/index.md

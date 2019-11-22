@@ -8,8 +8,8 @@ change after the first call. As [Wikipedia puts it](https://en.wikipedia.org/wik
 
 ## Why is idempotency useful?
 
-Consider that Lightbus events will be delivered [at least once](/explanation/events.md#at-least-once-semantics). 
-This is in comparison to RPCs which are called [at most once](/explanation/rpcs.md#at-least-once-semantics).
+Consider that Lightbus events will be delivered [at least once](../explanation/events.md#at-least-once-semantics). 
+This is in comparison to RPCs which are called [at most once](../explanation/rpcs.md#at-least-once-semantics).
 This is not Lightbus trying to be awkward, rather it is because it is theoretically impossible to ensure exactly-once 
 delivery.
 

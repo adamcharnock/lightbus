@@ -10,7 +10,7 @@ This is useful when:
    with their implementation
 2. You wish the authoritative service to perform a known task in the background
 
-The [quickstart](/tutorial/quick-start.md#events) provides an example of the latter case.
+The [quickstart](../tutorial/quick-start.md#events) provides an example of the latter case.
 
 ## At-least-once semantics
 
@@ -130,10 +130,10 @@ remember that there can be exceptions to every rule.
 
 * Parameter values should have consistent meaning over time. Use 
   complete datetimes, not 'tomorrow' or '6 days ago'.
-* Decide on the boundaries between your relations. See [Decide on Boundaries](/explanation/architecture-tips.md#decide-on-boundaries)
+* Decide on the boundaries between your relations. See [Decide on Boundaries](../explanation/architecture-tips.md#decide-on-boundaries)
   with the [architecture tips](architecture-tips.md) section.
 
 
-[service-level configuration]: /reference/configuration.md#2-service-level-configuration
-[how to write idempotent event handlers]: /howto/write-idempotent-event-handlers.md
-[authoritative]: /explanation/apis.md#authoritativenon-authoritative-apis
+[service-level configuration]: ../reference/configuration.md#2-service-level-configuration
+[how to write idempotent event handlers]: ../howto/write-idempotent-event-handlers.md
+[authoritative]: ../explanation/apis.md#authoritativenon-authoritative-apis

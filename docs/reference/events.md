@@ -120,5 +120,5 @@ See the [typing reference](typing.md).
 
 
 [idempotent]: https://en.wikipedia.org/wiki/Idempotence
-[event considerations]: /explanation/events.md#considerations
-[events explanation page]: /explanation/events.md
+[event considerations]: ../explanation/events.md#considerations
+[events explanation page]: ../explanation/events.md

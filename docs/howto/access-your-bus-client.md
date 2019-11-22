@@ -56,4 +56,4 @@ will be at runtime. This could be the case when:
 * Writing a third party library
 
 
-[module loading configuration]: /reference/configuration.md#1-module-loading
+[module loading configuration]: ../reference/configuration.md#1-module-loading

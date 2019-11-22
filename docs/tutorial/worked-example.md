@@ -21,8 +21,8 @@ A passing familiarity with [Flask] may be useful, but is not required. [Honcho]
 will assist us in running the various processes required for our services.
 
 We will assume you
-have already read and completed the [installation](/tutorial/installation.md) and
-[quick start](/tutorial/quick-start.md) tutorials.
+have already read and completed the [installation](../tutorial/installation.md) and
+[quick start](../tutorial/quick-start.md) tutorials.
 
 ## 3.2. Image resizing service
 
@@ -334,6 +334,6 @@ you should explore the [Explanation] section.
 [127.0.0.1:5001]: http://127.0.0.1:5001
 [127.0.0.1:5000]: http://127.0.0.1:5000
 
-[How to]: /howto/index.md
-[Reference]: /reference/index.md
-[Explanation]: /explanation/index.md
+[How to]: ../howto/index.md
+[Reference]: ../reference/index.md
+[Explanation]: ../explanation/index.md

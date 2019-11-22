@@ -30,6 +30,6 @@ aims to address. In particular:
 * General feeling – Celery feels large and opaque, debugging issues was challenging. Lightbus aims to feel lightweight, with clear
   logging and debugging tools.
 
-[service]: /explanation/services.md
-[metrics]: /howto/metrics.md
-[event sourcing]: /howto/event-sourcing.md
+[service]: ../explanation/services.md
+[metrics]: ../howto/metrics.md
+[event sourcing]: ../howto/event-sourcing.md

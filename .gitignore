@@ -11,3 +11,4 @@ INTEREST
 /.venv
 /.tox
 /.python-version
+/bin/linkcheck

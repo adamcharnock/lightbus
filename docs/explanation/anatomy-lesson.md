@@ -50,7 +50,7 @@ You can use this client anywhere you need to, such as:
 
     Each service should create its bus client within the service's `bus.py` file (also known as the servies *bus module*). 
     Other code within the service should import the bus client from the bus module as needed.
-    See [how to access your bus client](/howto/access-your-bus-client.md).
+    See [how to access your bus client](../howto/access-your-bus-client.md).
 
 
 ## The Lightbus worker process (`lightbus run`)
@@ -112,4 +112,4 @@ for [events] or provide any [RPCs] which can be called.**
 [events]: events.md
 [rpcs]: rpcs.md
 [remote procedure calls]: rpcs.md
-[module loading configuration]: /reference/configuration.md/#1-module-loading
+[module loading configuration]: ../reference/configuration.md#1-module-loading

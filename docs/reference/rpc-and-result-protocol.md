@@ -158,5 +158,5 @@ structures.
 The level of functionality required in this regard is not specified here, and 
 is left up to individual library developers.
 
-[data marshalling]: /explanation/marshalling.md
-[schema protocol]: /reference/schema-protocol.md
+[data marshalling]: ../explanation/marshalling.md
+[schema protocol]: schema-protocol.md

@@ -139,7 +139,7 @@ The level of functionality required in this regard is not specified here, and
 is left up to individual library developers.
 
 
-[service name and listener name]: /explanation/events.md#service-names-listener-names
-[process name]: /explanation/events.md#process-names
-[data marshalling]: /explanation/marshalling.md
-[schema protocol]: /reference/schema-protocol.md
+[service name and listener name]: ../explanation/events.md#service-names-listener-names
+[process name]: ../explanation/events.md#process-names
+[data marshalling]: ../explanation/marshalling.md
+[schema protocol]: schema-protocol.md
