@@ -75,6 +75,6 @@ def bus_start():
     )
 ```
 
-To get started checkout the documentation at https://lightbus.org.
+**To get started checkout the documentation at https://lightbus.org.**
 
 [issue-1]: https://github.com/adamcharnock/lightbus/issues/1
