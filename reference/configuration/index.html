@@ -918,21 +918,8 @@
     Bus config
   </a>
   
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#api-configuration-listing" class="md-nav__link">
-    API configuration listing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#api-config" class="md-nav__link">
-    API config
-  </a>
-  
-</li>
+    <nav class="md-nav">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#schema-config" class="md-nav__link">
@@ -940,6 +927,27 @@
   </a>
   
 </li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-configuration-listing" class="md-nav__link">
+    API configuration listing
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-config" class="md-nav__link">
+    API config
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#transport-selector" class="md-nav__link">
@@ -959,11 +967,21 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#plugin-configuration-listing" class="md-nav__link">
     Plugin configuration listing
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1235,21 +1253,8 @@
     Bus config
   </a>
   
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#api-configuration-listing" class="md-nav__link">
-    API configuration listing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#api-config" class="md-nav__link">
-    API config
-  </a>
-  
-</li>
+    <nav class="md-nav">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#schema-config" class="md-nav__link">
@@ -1257,6 +1262,27 @@
   </a>
   
 </li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-configuration-listing" class="md-nav__link">
+    API configuration listing
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-config" class="md-nav__link">
+    API config
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#transport-selector" class="md-nav__link">
@@ -1276,11 +1302,21 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#plugin-configuration-listing" class="md-nav__link">
     Plugin configuration listing
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1487,15 +1523,27 @@ disk, or as a HTTP(S) URL.</p>
       <span class="c1"># Transport selector config</span>
       <span class="nt">redis</span><span class="p">:</span>
         <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
+
+<span class="nt">plugins</span><span class="p">:</span>
+  <span class="c1"># Plugin configuring listing</span>
+
+  <span class="c1"># These plugins ship with Lightbus</span>
+  <span class="nt">internal_metrics</span><span class="p">:</span>
+    <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+
+  <span class="nt">internal_state</span><span class="p">:</span>
+    <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+    <span class="nt">ping_enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+    <span class="nt">ping_interval</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">60</span>
 </pre></div>
 
 <p>Each section is detailed below.</p>
 <h3 id="root-config">Root config<a class="headerlink" href="#root-config" title="Permanent link">&para;</a></h3>
 <p>The available root-level configuration keys are:</p>
 <ul>
-<li><code>bus</code> – Contains the <a href="#bus-config">bus config</a></li>
-<li><code>apis</code> – Contains the <a href="#api-configuration-listing">API configuration listing</a></li>
-<li><code>plugins</code> - Contains the <a href="#plugin-configuration-listing">plugin configuration listing</a></li>
+<li><code>bus</code> – Contains the <strong><a href="#bus-config">bus config</a></strong></li>
+<li><code>apis</code> – Contains the <strong><a href="#api-configuration-listing">API configuration listing</a></strong></li>
+<li><code>plugins</code> - Contains the <strong><a href="#plugin-configuration-listing">plugin configuration listing</a></strong></li>
 </ul>
 <p>The following keys are also present, but <strong>should
 generally not be specified in your global yaml file</strong>.
@@ -1514,8 +1562,19 @@ following keys:</p>
   for development purposes, <code>warning</code> will be more suited to production.</li>
 <li><code>schema</code> - Contains the <a href="#schema-config">schema config</a></li>
 </ul>
+<h4 id="schema-config">Schema config<a class="headerlink" href="#schema-config" title="Permanent link">&para;</a></h4>
+<p>The schema config resides under the <a href="#bus-config">bus config</a>.</p>
+<ul>
+<li><code>human_readable</code> (default: <code>True</code>) – Should the schema JSON be transmitted
+  with human-friendly indentation and spacing?</li>
+<li><code>ttl</code> (default: <code>60</code>) – Integer number of seconds that an API schema should
+  live on the bus. Each schema will be pinged every <code>ttl * 0.8</code> seconds
+  in order to keep it alive. The bus will also check for new remote schemas
+  every <code>ttl * 0.8</code> seconds.</li>
+<li><code>transport</code> – Contains the schema <a href="#transport-selector">transport selector</a></li>
+</ul>
 <h3 id="api-configuration-listing">API configuration listing<a class="headerlink" href="#api-configuration-listing" title="Permanent link">&para;</a></h3>
-<p>The schema config resides under the <a href="#root-config">root config</a>.</p>
+<p>The API configuration listing config resides under the <a href="#root-config">root config</a>.</p>
 <p>This is a key/value association between APIs and their configurations.
 The reserved API name of <code>default</code> provides a catch-all configuration
 for any APIs without specific configurations. Specifically configured
@@ -1550,7 +1609,7 @@ APIs do not inherit from the default configuration.</p>
 </pre></div>
 
 <p>See <a href="#api-config">API config</a> for further details on the API options available.</p>
-<h3 id="api-config">API config<a class="headerlink" href="#api-config" title="Permanent link">&para;</a></h3>
+<h4 id="api-config">API config<a class="headerlink" href="#api-config" title="Permanent link">&para;</a></h4>
 <p>The API config resides under the <a href="#api-configuration-listing">API configuration listing</a>.</p>
 <p>Each API can be individually configured using the options below:</p>
 <ul>
@@ -1577,18 +1636,7 @@ APIs do not inherit from the default configuration.</p>
   for that listener, but other event listeners will continue as normal.
   <code>shutdown</code> will cause the Lightbus process to exit with a non-zero exit code.</li>
 </ul>
-<h3 id="schema-config">Schema config<a class="headerlink" href="#schema-config" title="Permanent link">&para;</a></h3>
-<p>The schema config resides under the <a href="#bus-config">bus config</a>.</p>
-<ul>
-<li><code>human_readable</code> (default: <code>True</code>) – Should the schema JSON be transmitted
-  with human-friendly indentation and spacing?</li>
-<li><code>ttl</code> (default: <code>60</code>) – Integer number of seconds that an API schema should
-  live on the bus. Each schema will be pinged every <code>ttl * 0.8</code> seconds
-  in order to keep it alive. The bus will also check for new remote schemas
-  every <code>ttl * 0.8</code> seconds.</li>
-<li><code>transport</code> – Contains the schema <a href="#transport-selector">transport selector</a></li>
-</ul>
-<h3 id="transport-selector">Transport selector<a class="headerlink" href="#transport-selector" title="Permanent link">&para;</a></h3>
+<h5 id="transport-selector">Transport selector<a class="headerlink" href="#transport-selector" title="Permanent link">&para;</a></h5>
 <p>The schema config resides under both the <a href="#api-config">API config</a> and the
 <a href="#schema-config">schema config</a>.</p>
 <p>Transports are specifed as follows:</p>
@@ -1639,7 +1687,7 @@ and <code>event</code> needs.</p>
 <p>The <code>schema</code> transport is global to the bus, and is not
 configurable on a per-api level.</p>
 <p>For more information see <a href="../transports/">transports</a>.</p>
-<h3 id="api-validation-config">API validation config<a class="headerlink" href="#api-validation-config" title="Permanent link">&para;</a></h3>
+<h5 id="api-validation-config">API validation config<a class="headerlink" href="#api-validation-config" title="Permanent link">&para;</a></h5>
 <p>The schema config resides under the <code>validate</code> key within
 the <a href="#api-config">API config</a>.</p>
 <p>Available options are:</p>
@@ -1653,20 +1701,11 @@ the <a href="#api-config">API config</a>.</p>
 is not present on the bus.
 You can turn this into an error by enabling <code>strict_validation</code>
 within the <a href="#api-config">API config</a>.</p>
-<h2 id="plugin-configuration-listing">Plugin configuration listing<a class="headerlink" href="#plugin-configuration-listing" title="Permanent link">&para;</a></h2>
+<h3 id="plugin-configuration-listing">Plugin configuration listing<a class="headerlink" href="#plugin-configuration-listing" title="Permanent link">&para;</a></h3>
+<p>The plugin configuration listing config resides under the <a href="#root-config">root config</a>.</p>
 <p>Plugins are made available to Lightbus via the <code>lightbus_plugins</code> entry 
-point (see Lightbus' <a href="https://github.com/adamcharnock/lightbus/blob/master/setup.py">setup.py</a> for an example). Lightbus ships with the 
-<code>StatePlugin</code> and the <code>MetricsPlugin</code>, which can be configured as follows:</p>
-<div class="codehilite"><pre><span></span><span class="nt">plugins</span><span class="p">:</span>
-  <span class="nt">internal_metrics</span><span class="p">:</span>
-    <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-
-  <span class="nt">internal_state</span><span class="p">:</span>
-    <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-    <span class="nt">ping_enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-    <span class="nt">ping_interval</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">60</span>
-</pre></div>
-
+point (see Lightbus' <a href="https://github.com/adamcharnock/lightbus/blob/master/setup.py">setup.py</a> for an example). As a result, installing a 
+plugin should be sufficient for it to be made available for configuration.</p>
 <p>Plugin developers should see the <a href="../plugins/">plugins reference</a> for further details.</p>
                 
                   
