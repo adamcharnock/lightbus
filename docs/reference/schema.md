@@ -116,12 +116,12 @@ TODO
 
 
 [type hints]: https://docs.python.org/3/library/typing.html
-[oneOf]: https://spacetelescope.github.io/understanding-json-schema/reference/combining.html#oneof
-[enum]: https://spacetelescope.github.io/understanding-json-schema/reference/generic.html#enumerated-values
-[pattern properties]: https://spacetelescope.github.io/understanding-json-schema/reference/object.html#pattern-properties
-[specific typed properties]: https://spacetelescope.github.io/understanding-json-schema/reference/object.html#properties
-[maxItems/minItems]: https://spacetelescope.github.io/understanding-json-schema/reference/array.html#length
-[items]: https://spacetelescope.github.io/understanding-json-schema/reference/array.html#tuple-validation
+[oneOf]: https://json-schema.org/understanding-json-schema/reference/combining.html#oneof
+[enum]: https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values
+[pattern properties]: https://json-schema.org/understanding-json-schema/reference/object.html#pattern-properties
+[specific typed properties]: https://json-schema.org/understanding-json-schema/reference/object.html#properties
+[maxItems/minItems]: https://json-schema.org/understanding-json-schema/reference/array.html#length
+[items]: https://json-schema.org/understanding-json-schema/reference/array.html#tuple-validation
 [jsonschema Python library]: https://github.com/Julian/jsonschema
 [requisite support]: https://github.com/Julian/jsonschema/issues/337
 [schema protocol reference]: schema-protocol.md

@@ -66,7 +66,7 @@ which will make the above simpler (and therefore less error prone).
 
 ### Upserts in Django
 
-Django provides the [update_or_create()](https://docs.djangoproject.com/en/latest/ref/models/querysets/#update-or-create)
+Django provides the [update_or_create()](https://docs.djangoproject.com/en/dev/ref/models/querysets/#update-or-create)
 method which serves exactly this purpose:
 
 ```python

@@ -309,7 +309,26 @@ is not present on the bus.
 You can turn this into an error by enabling `strict_validation`
 within the [API config].
 
-[service-level setup]: #2-service-level-setup
+## Plugin configuration listing
+
+Plugins are made available to Lightbus via the `lightbus_plugins` entry 
+point (see Lightbus' [setup.py] for an example). Lightbus ships with the 
+`StatePlugin` and the `MetricsPlugin`, which can be configured as follows:
+
+```yaml
+plugins:
+  internal_metrics:
+    enabled: true
+
+  internal_state:
+    enabled: true
+    ping_enabled: true
+    ping_interval: 60
+```
+
+Plugin developers should see the [plugins reference] for further details.
+
+[service-level setup]: #2-service-level-configuration
 [global bus configuration]: #3-global-bus-configuration
 [root config]: #root-config
 [bus config]: #bus-config
@@ -322,3 +341,5 @@ within the [API config].
 [events explanation section]: ../explanation/events.md
 [service name explanation]: ../explanation/events.md#service-names-listener-names
 [process name explanation]: ../explanation/events.md#process-names
+[setup.py]: https://github.com/adamcharnock/lightbus/blob/master/setup.py
+[plugins reference]: plugins.md

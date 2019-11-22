@@ -71,11 +71,18 @@ project as follows:
 ## Viewing the Lightbus documentation locally
 
 You can view the documentation of your local Lightbus install as follows:
-
+    
+    # Serve the docs locally
     mkdocs serve 
 
 You can now view the documentation http://127.0.0.1:8000. 
 The documentation source can be found in `docs/`.
+
+You can also check for broken links within the docs by running the 
+`check_links.sh` script:
+    
+    # Check for broken links
+    ./docs/check_links.sh
 
 ## See also
 
