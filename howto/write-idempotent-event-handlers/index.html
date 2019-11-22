@@ -1194,7 +1194,7 @@ whereby they can be applied multiple times without changing the result beyond th
 </blockquote>
 <h2 id="why-is-idempotency-useful">Why is idempotency useful?<a class="headerlink" href="#why-is-idempotency-useful" title="Permanent link">&para;</a></h2>
 <p>Consider that Lightbus events will be delivered <a href="../../explanation/events/#at-least-once-semantics">at least once</a>. 
-This is in comparison to RPCs which are called <a href="../../explanation/rpcs/#at-least-once-semantics">at most once</a>.
+This is in comparison to RPCs which are called <a href="../../explanation/rpcs/#at-most-once-semantics">at most once</a>.
 This is not Lightbus trying to be awkward, rather it is because it is theoretically impossible to ensure exactly-once 
 delivery.</p>
 <p>Lightbus therefore guarantees you that events will always arrive, but with the trade-off that sometimes the event 

@@ -1235,32 +1235,7 @@ Each Lightbus process will monitor for any schema changes.</p>
 and <a href="https://docs.python.org/3/library/typing.html">type hints</a> of your APIs' events and procedures.</p>
 <p>You can use the schema functionality without type hints, but the level of validation
 provided will be limited to ensuring parameter names match what is expected.</p>
-<p>Take the following API as an example:</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">lightbus</span> <span class="k">import</span> <span class="n">Api</span><span class="p">,</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Parameter</span>
-
-<span class="k">class</span> <span class="nc">AuthApi</span><span class="p">(</span><span class="n">Api</span><span class="p">):</span>
-    <span class="c1"># Here we specify event parameters in the long-form using Parameter().</span>
-    <span class="c1"># This provides sufficient information for the schema to be generated</span>
-    <span class="n">user_registered</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">parameters</span><span class="o">=</span><span class="p">(</span>
-        <span class="n">Parameter</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span>
-        <span class="n">Parameter</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span>
-        <span class="n">Parameter</span><span class="p">(</span><span class="s1">&#39;is_admin&#39;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
-    <span class="p">))</span>
-
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;auth&#39;</span>
-
-    <span class="c1"># We annotate check_password() with the apropriate types</span>
-    <span class="k">def</span> <span class="nf">check_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">username</span> <span class="o">==</span> <span class="s1">&#39;admin&#39;</span> <span class="ow">and</span> <span class="n">password</span> <span class="o">==</span> <span class="s1">&#39;secret&#39;</span>
-</pre></div>
-
-<p>Create this in a <code>bus.py</code> and run:</p>
-<div class="codehilite"><pre><span></span>$ lightbus dumpschema
-</pre></div>
-
-<p>This will dump out the auto-generated schema for the above API. See
-<a href="#schema-format">schema format</a> (below) for example output.</p>
+<p>The <a href="../schema-protocol/">schema protocol reference</a> covers the specifics of the schema data format.</p>
 <h2 id="supported-data-types">Supported data types<a class="headerlink" href="#supported-data-types" title="Permanent link">&para;</a></h2>
 <p>Lightbus maps Python types to JSON types. While Python-specific values can be sent using Lightbus,
 these values will arrive in their JSON form. For example, if you send a <code>string</code> then a <code>string</code> will arrive.
