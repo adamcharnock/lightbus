@@ -141,6 +141,18 @@ apis:
       # Transport selector config
       redis:
         url: "redis://redis.svc.cluster.local:6379/0"
+
+plugins:
+  # Plugin configuring listing
+
+  # These plugins ship with Lightbus
+  internal_metrics:
+    enabled: true
+
+  internal_state:
+    enabled: true
+    ping_enabled: true
+    ping_interval: 60
 ```
 
 Each section is detailed below.
@@ -149,9 +161,9 @@ Each section is detailed below.
 
 The available root-level configuration keys are:
 
-* `bus` – Contains the [bus config]
-* `apis` – Contains the [API configuration listing]
-* `plugins` - Contains the [plugin configuration listing]
+* `bus` – Contains the **[bus config]**
+* `apis` – Contains the **[API configuration listing]**
+* `plugins` - Contains the **[plugin configuration listing]**
 
 The following keys are also present, but **should
 generally not be specified in your global yaml file**.
@@ -171,9 +183,21 @@ following keys:
   for development purposes, `warning` will be more suited to production.
 * `schema` - Contains the [schema config]
 
+#### Schema config
+
+The schema config resides under the [bus config].
+
+* `human_readable` (default: `True`) – Should the schema JSON be transmitted
+  with human-friendly indentation and spacing?
+* `ttl` (default: `60`) – Integer number of seconds that an API schema should
+  live on the bus. Each schema will be pinged every `ttl * 0.8` seconds
+  in order to keep it alive. The bus will also check for new remote schemas
+  every `ttl * 0.8` seconds.
+* `transport` – Contains the schema [transport selector]
+
 ### API configuration listing
 
-The schema config resides under the [root config].
+The API configuration listing config resides under the [root config].
 
 This is a key/value association between APIs and their configurations.
 The reserved API name of `default` provides a catch-all configuration
@@ -213,7 +237,7 @@ apis:
 
 See [API config] for further details on the API options available.
 
-### API config
+#### API config
 
 The API config resides under the [API configuration listing].
 
@@ -242,19 +266,7 @@ Each API can be individually configured using the options below:
   for that listener, but other event listeners will continue as normal.
   `shutdown` will cause the Lightbus process to exit with a non-zero exit code.
 
-### Schema config
-
-The schema config resides under the [bus config].
-
-* `human_readable` (default: `True`) – Should the schema JSON be transmitted
-  with human-friendly indentation and spacing?
-* `ttl` (default: `60`) – Integer number of seconds that an API schema should
-  live on the bus. Each schema will be pinged every `ttl * 0.8` seconds
-  in order to keep it alive. The bus will also check for new remote schemas
-  every `ttl * 0.8` seconds.
-* `transport` – Contains the schema [transport selector]
-
-### Transport selector
+##### Transport selector
 
 The schema config resides under both the [API config] and the
 [schema config].
@@ -292,7 +304,7 @@ configurable on a per-api level.
 For more information see [transports](transports.md).
 
 
-### API validation config
+##### API validation config
 
 The schema config resides under the `validate` key within
 the [API config].
@@ -309,22 +321,13 @@ is not present on the bus.
 You can turn this into an error by enabling `strict_validation`
 within the [API config].
 
-## Plugin configuration listing
+### Plugin configuration listing
+
+The plugin configuration listing config resides under the [root config].
 
 Plugins are made available to Lightbus via the `lightbus_plugins` entry 
-point (see Lightbus' [setup.py] for an example). Lightbus ships with the 
-`StatePlugin` and the `MetricsPlugin`, which can be configured as follows:
-
-```yaml
-plugins:
-  internal_metrics:
-    enabled: true
-
-  internal_state:
-    enabled: true
-    ping_enabled: true
-    ping_interval: 60
-```
+point (see Lightbus' [setup.py] for an example). As a result, installing a 
+plugin should be sufficient for it to be made available for configuration.
 
 Plugin developers should see the [plugins reference] for further details.
 
