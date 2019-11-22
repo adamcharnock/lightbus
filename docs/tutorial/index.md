@@ -16,10 +16,10 @@ We recommend you approach the tutorials in the following order:
 2. [Quick start]
 3. [Worked example]
 
-[explanation]: /explanation/index.md
-[Installation]: /tutorial/installation.md
-[Quick start]: /tutorial/quick-start.md
-[Worked example]: /tutorial/worked-example.md
+[explanation]: index.md
+[Installation]: installation.md
+[Quick start]: quick-start.md
+[Worked example]: worked-example.md
 
 After completing these tutorials you should make sure you
 look over the [explanation] section.
