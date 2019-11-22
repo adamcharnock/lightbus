@@ -17,6 +17,8 @@ Lightbus requires Python 3.7 or above.
 **Lightbus is under active development and is still pre-release.**
 You can [track progress in GitHub][issue-1].
 
+**Full documentation can be found at https://lightbus.org**
+
 ## Designed for ease of use
 
 Lightbus is designed with developers in mind. The syntax aims to
@@ -56,15 +58,21 @@ bus.auth.check_password(
 You can also listen for events:
 
 ```python3
+import lightbus
+
+bus = lightbus.create()
+
 def send_signup_email(event_message,
                       username, email):
     send_mail(email,
         subject=f'Welcome {username}'
     )
 
-bus.auth.user_registered.listen(
-    send_signup_email
-)
+@bus.client.on_start()
+def bus_start():
+    bus.auth.user_registered.listen(
+        send_signup_email
+    )
 ```
 
 To get started checkout the documentation at https://lightbus.org.
