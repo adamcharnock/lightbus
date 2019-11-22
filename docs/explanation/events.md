@@ -10,7 +10,7 @@ This is useful when:
    with their implementation
 2. You wish the authoritative service to perform a known task in the background
 
-The [quickstart](../tutorial/quick-start.md#events) provides an example of the latter case.
+The [quickstart](../tutorial/quick-start.md#24-events) provides an example of the latter case.
 
 ## At-least-once semantics
 
@@ -136,4 +136,4 @@ remember that there can be exceptions to every rule.
 
 [service-level configuration]: ../reference/configuration.md#2-service-level-configuration
 [how to write idempotent event handlers]: ../howto/write-idempotent-event-handlers.md
-[authoritative]: ../explanation/apis.md#authoritativenon-authoritative-apis
+[authoritative]: ../explanation/apis.md#api-registration-authoritativenon-authoritative-apis

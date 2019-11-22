@@ -16,37 +16,7 @@ and [type hints] of your APIs' events and procedures.
 You can use the schema functionality without type hints, but the level of validation
 provided will be limited to ensuring parameter names match what is expected.
 
-Take the following API as an example:
-
-```python3
-from lightbus import Api, Event, Parameter
-
-class AuthApi(Api):
-    # Here we specify event parameters in the long-form using Parameter().
-    # This provides sufficient information for the schema to be generated
-    user_registered = Event(parameters=(
-        Parameter('username', str),
-        Parameter('email', str),
-        Parameter('is_admin', bool, default=False),
-    ))
-
-    class Meta:
-        name = 'auth'
-
-    # We annotate check_password() with the apropriate types
-    def check_password(self, username: str, password: str) -> bool:
-        return username == 'admin' and password == 'secret'
-```
-
-Create this in a ``bus.py`` and run:
-
-```bash
-$ lightbus dumpschema
-```
-
-This will dump out the auto-generated schema for the above API. See
-[schema format](#schema-format) (below) for example output.
-
+The [schema protocol reference] covers the specifics of the schema data format.
 
 ## Supported data types
 
@@ -154,3 +124,4 @@ TODO
 [items]: https://spacetelescope.github.io/understanding-json-schema/reference/array.html#tuple-validation
 [jsonschema Python library]: https://github.com/Julian/jsonschema
 [requisite support]: https://github.com/Julian/jsonschema/issues/337
+[schema protocol reference]: schema-protocol.md

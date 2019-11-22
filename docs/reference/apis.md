@@ -61,7 +61,7 @@ bus.support.case.case_created.fire(
 ### `name (str)`
 
 Specifies the name of the API. This will determine how the API is addressed
-on the bus. See [naming](#naming), below.
+on the bus. See [naming](#naming-your-apis), below.
 
 `name` is a required option.
 

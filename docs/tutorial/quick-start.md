@@ -249,4 +249,4 @@ a more realistic scenario involving multiple services.
 [anatomy lesson]: ../explanation/anatomy-lesson.md
 [concepts]: ../explanation/concepts.md
 [worked example]: worked-example.md
-[authoritative]: ../explanation/apis.md#authoritativenon-authoritative-apis
+[authoritative]: ../explanation/apis.md#api-registration-authoritativenon-authoritative-apis
