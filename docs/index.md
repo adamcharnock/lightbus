@@ -114,6 +114,18 @@ In addition, the [how to] section gives solutions to common
 use cases, and the [reference] section provides detailed 
 technical information regarding specific features.
 
+## Questions?
+
+Get in touch via:
+
+* Email: adam@adamcharnock.com
+* Phone: +442032896620 (Skype, London/Lisbon timezone)
+* [Community chat](https://discord.gg/2j594ws)
+* GitHub: https://github.com/adamcharnock/lightbus/  
+
+If you are having a technical problem then the more information 
+you can include the better (problem description, screenshots, and code 
+are all useful).
 
 [issue-1]: https://github.com/adamcharnock/lightbus/issues/1
 [simple-processes]: /static/images/simple-processes.png
