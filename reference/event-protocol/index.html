@@ -2,7 +2,7 @@
 
 
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="no-js">
   <head>
     
@@ -37,18 +37,18 @@
       
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
-      <link rel="shortcut icon" href="../../">
-      <meta name="generator" content="mkdocs-0.17.5, mkdocs-material-2.9.4">
+      <link rel="shortcut icon" href="../..">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
     
     
       
-        <title>Event Prococol (Redis)* - Lightbus</title>
+        <title>Event Protocol (Redis) - Lightbus</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application.451f80e5.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
       
-        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.22915126.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
       
       
         
@@ -57,18 +57,47 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr.1aa3b519.js"></script>
+      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
-      <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
       
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
     <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
     
+    
       <link rel="stylesheet" href="../../static/stylesheets/extra.css">
+    
+    
+      
+        
+<script>
+  window.ga = window.ga || function() {
+    (ga.q = ga.q || []).push(arguments)
+  }
+  ga.l = +new Date
+  /* Setup integration and send page view */
+  ga("create", "UA-103655163-1", "auto")
+  ga("set", "anonymizeIp", true)
+  ga("send", "pageview")
+  /* Register handler to log search on blur */
+  document.addEventListener("DOMContentLoaded", () => {
+    if (document.forms.search) {
+      var query = document.forms.search.query
+      query.addEventListener("blur", function() {
+        if (this.value) {
+          var path = document.location.pathname;
+          ga("send", "pageview", path + "?q=" + this.value)
+        }
+      })
+    }
+  })
+</script>
+<script async src="https://www.google-analytics.com/analytics.js"></script>
+      
     
     
   </head>
@@ -81,24 +110,7 @@
       <defs>
         
         
-          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
-    viewBox="0 0 416 448" id="__github">
-  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
-        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
-        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
-        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
-        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
-        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
-        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
-        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
-        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
-        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
-        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
-        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
-        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
-        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
-        99.5z" />
-</svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
         
       </defs>
     </svg>
@@ -127,22 +139,21 @@
       <div class="md-flex__cell md-flex__cell--stretch">
         <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
           
-            
-              <span class="md-header-nav__topic">
-                Lightbus
-              </span>
-              <span class="md-header-nav__topic">
-                Event Prococol (Redis)*
-              </span>
-            
+            <span class="md-header-nav__topic">
+              Lightbus
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Event Protocol (Redis)
+              
+            </span>
           
         </div>
       </div>
       <div class="md-flex__cell md-flex__cell--shrink">
         
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
           
-            <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
-            
 <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
@@ -165,7 +176,6 @@
     </div>
   </div>
 </div>
-          
         
       </div>
       
@@ -176,20 +186,18 @@
 
   
 
-
-  <a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#__github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
-      GitHub
+<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
     </div>
-  </a>
-
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
           </div>
         </div>
       
@@ -213,7 +221,7 @@
         
   <li class="md-tabs__item">
     
-      <a href="../.." title="Home" class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         Home
       </a>
     
@@ -225,7 +233,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../tutorial/" title="Tutorials" class="md-tabs__link">
+        <a href="../../tutorial/" class="md-tabs__link">
           Tutorials
         </a>
       
@@ -238,7 +246,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../howto/" title="How to" class="md-tabs__link">
+        <a href="../../howto/" class="md-tabs__link">
           How to
         </a>
       
@@ -251,7 +259,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../explanation/" title="Explanation" class="md-tabs__link">
+        <a href="../../explanation/" class="md-tabs__link">
           Explanation
         </a>
       
@@ -264,7 +272,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../" title="Reference" class="md-tabs__link md-tabs__link--active">
+        <a href="../" class="md-tabs__link md-tabs__link--active">
           Reference
         </a>
       
@@ -276,7 +284,7 @@
   </div>
 </nav>
       
-      <main class="md-main">
+      <main class="md-main" role="main">
         <div class="md-main__inner md-grid" data-md-component="container">
           
             
@@ -299,20 +307,18 @@
 
   
 
-
-  <a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#__github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
-      GitHub
+<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
     </div>
-  </a>
-
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
     </div>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -396,6 +402,30 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../tutorial/django-and-lightbus/" title="4. Django & Lightbus" class="md-nav__link">
+      4. Django & Lightbus
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../tutorial/getting-involved/" title="Getting involved (even if you don't code)" class="md-nav__link">
+      Getting involved (even if you don't code)
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -474,6 +504,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../../howto/migrate-from-celery-to-lightbus/" title="Migrate from Celery to Lightbus" class="md-nav__link">
+      Migrate from Celery to Lightbus
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../howto/write-idempotent-event-handlers/" title="Write idempotent event handlers" class="md-nav__link">
+      Write idempotent event handlers
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../howto/metrics/" title="Use Lightbus for realtime metrics*" class="md-nav__link">
       Use Lightbus for realtime metrics*
     </a>
@@ -498,20 +552,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../howto/write-idempotent-event-handlers/" title="Write idempotent event handlers" class="md-nav__link">
-      Write idempotent event handlers
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../howto/combine-processes/" title="Combine processes" class="md-nav__link">
-      Combine processes
+    <a href="../../howto/modify-lightbus/" title="Modify Lightbus" class="md-nav__link">
+      Modify Lightbus
     </a>
   </li>
 
@@ -666,20 +708,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/schema/" title="Schema*" class="md-nav__link">
-      Schema*
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../contributing/" title="Contributing*" class="md-nav__link">
-      Contributing*
+    <a href="../../explanation/schema/" title="Schema" class="md-nav__link">
+      Schema
     </a>
   </li>
 
@@ -704,6 +734,18 @@
   <li class="md-nav__item">
     <a href="../../explanation/architecture-tips/" title="Architecture tips" class="md-nav__link">
       Architecture tips
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/performance/" title="Performance" class="md-nav__link">
+      Performance
     </a>
   </li>
 
@@ -800,18 +842,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../transports/" title="Transports*" class="md-nav__link">
-      Transports*
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../configuration/" title="Configuration" class="md-nav__link">
       Configuration
     </a>
@@ -835,9 +865,28 @@
           
 
 
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-8" type="checkbox" id="nav-5-8">
+    
+    <label class="md-nav__link" for="nav-5-8">
+      Command line use
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-8">
+        Command line use
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
   <li class="md-nav__item">
-    <a href="../command-line-use/" title="Command line use*" class="md-nav__link">
-      Command line use*
+    <a href="../command-line-use/run/" title="run" class="md-nav__link">
+      run
     </a>
   </li>
 
@@ -848,9 +897,50 @@
 
 
   <li class="md-nav__item">
-    <a href="../debugging/" title="Debugging*" class="md-nav__link">
-      Debugging*
+    <a href="../command-line-use/inspect/" title="inspect" class="md-nav__link">
+      inspect
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../command-line-use/shell/" title="shell" class="md-nav__link">
+      shell
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../command-line-use/dumpschema/" title="dumpschema" class="md-nav__link">
+      dumpschema
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../command-line-use/dumpconfigschema/" title="dumpconfigschema" class="md-nav__link">
+      dumpconfigschema
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -872,8 +962,20 @@
 
 
   <li class="md-nav__item">
-    <a href="../rpc-protocol/" title="RPC Prococol (Redis)" class="md-nav__link">
-      RPC Prococol (Redis)
+    <a href="../transports/" title="Transports*" class="md-nav__link">
+      Transports*
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../rpc-and-result-protocol/" title="RPC & Result Protocol (Redis)" class="md-nav__link">
+      RPC & Result Protocol (Redis)
     </a>
   </li>
 
@@ -892,9 +994,147 @@
       
     
     
-    <a href="./" title="Event Prococol (Redis)*" class="md-nav__link md-nav__link--active">
-      Event Prococol (Redis)*
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Event Protocol (Redis)
+      </label>
+    
+    <a href="./" title="Event Protocol (Redis)" class="md-nav__link md-nav__link--active">
+      Event Protocol (Redis)
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sending-events" class="md-nav__link">
+    Sending events
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stream_name" class="md-nav__link">
+    {stream_name}
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maxlen" class="md-nav__link">
+    MAXLEN
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    Fields
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consuming-events" class="md-nav__link">
+    Consuming events
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#group_name" class="md-nav__link">
+    {group_name}
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consumer_name" class="md-nav__link">
+    {consumer_name}
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stream_name_1" class="md-nav__link">
+    {stream_name}
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reclaiming-timed-out-events" class="md-nav__link">
+    Reclaiming timed-out events
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#batch_size" class="md-nav__link">
+    {batch_size}
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timeout" class="md-nav__link">
+    {timeout}
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#encoding-customisation" class="md-nav__link">
+    Encoding &amp; Customisation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-validation" class="md-nav__link">
+    Data validation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-deformation-casting" class="md-nav__link">
+    Data deformation &amp; casting
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -905,8 +1145,32 @@
 
 
   <li class="md-nav__item">
-    <a href="../schema-protocol/" title="Schema Prococol (Redis)*" class="md-nav__link">
-      Schema Prococol (Redis)*
+    <a href="../schema-protocol/" title="Schema Protocol (Redis)" class="md-nav__link">
+      Schema Protocol (Redis)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../authors/" title="Authors" class="md-nav__link">
+      Authors
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../code-of-conduct/" title="Code of Conduct" class="md-nav__link">
+      Code of Conduct
     </a>
   </li>
 
@@ -933,6 +1197,131 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sending-events" class="md-nav__link">
+    Sending events
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stream_name" class="md-nav__link">
+    {stream_name}
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maxlen" class="md-nav__link">
+    MAXLEN
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fields" class="md-nav__link">
+    Fields
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consuming-events" class="md-nav__link">
+    Consuming events
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#group_name" class="md-nav__link">
+    {group_name}
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consumer_name" class="md-nav__link">
+    {consumer_name}
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stream_name_1" class="md-nav__link">
+    {stream_name}
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reclaiming-timed-out-events" class="md-nav__link">
+    Reclaiming timed-out events
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#batch_size" class="md-nav__link">
+    {batch_size}
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timeout" class="md-nav__link">
+    {timeout}
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#encoding-customisation" class="md-nav__link">
+    Encoding &amp; Customisation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-validation" class="md-nav__link">
+    Data validation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-deformation-casting" class="md-nav__link">
+    Data deformation &amp; casting
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -947,7 +1336,101 @@
                 
                 
                 <h1 id="event-protocol-redis">Event protocol (Redis)<a class="headerlink" href="#event-protocol-redis" title="Permanent link">&para;</a></h1>
-<p>TBA</p>
+<p>Here we document the specific interactions between Lightbus and Redis. 
+The concrete implementation of this is provided by the <code>RedisEventTransport</code> class. 
+Before reading you should be familiar with Lightbus' <a href="../../explanation/marshalling/">data marshalling</a>.</p>
+<p>This documentation may be useful when debugging, developing third-party client libraries, 
+or simply for general interest and review. <strong>You do not need to be aware of this 
+protocol in order to use Lightbus</strong>.</p>
+<h2 id="sending-events">Sending events<a class="headerlink" href="#sending-events" title="Permanent link">&para;</a></h2>
+<p>The following commands will send an event:</p>
+<div class="codehilite"><pre><span></span>XADD {stream_name} [MAXLEN ~ {max_stream_length}] * {field_name_1} {field_value_1} {field_name_2} {field_value_2}...
+</pre></div>
+
+<h3 id="stream_name"><code>{stream_name}</code><a class="headerlink" href="#stream_name" title="Permanent link">&para;</a></h3>
+<p>The <code>{stream_name}</code> value is composed in one of the following ways:</p>
+<ul>
+<li>One stream per event: <code>{api_name}.{event_name}</code></li>
+<li>One stream per API: <code>{api_name}.*</code></li>
+</ul>
+<h3 id="maxlen"><code>MAXLEN</code><a class="headerlink" href="#maxlen" title="Permanent link">&para;</a></h3>
+<p>The <code>MAXLEN ~ {max_stream_length}</code> component is optional, but will be used by Lightbus to 
+limit the stream to the approximate configured length. </p>
+<h3 id="fields">Fields<a class="headerlink" href="#fields" title="Permanent link">&para;</a></h3>
+<p>Field names are strings. Field values are JSON-encoded strings.</p>
+<p>The following metadata fields must be sent:</p>
+<ul>
+<li><code>:id</code> - A unique message ID</li>
+<li><code>:api_name</code> - The API name for this event</li>
+<li><code>:event_name</code> - The name of this event</li>
+<li><code>:version</code> – The version of this event (<code>1</code> is a sensible default value)</li>
+</ul>
+<p>Note that metadata fields are prefixed by a colon. 
+User-specified fields should not include this colon.</p>
+<p>Lightbus does not currently provide specific functionality around the <code>version</code> 
+field, but the field is available to developers via the <code>EventMessage</code> class. 
+Lightbus may implement event functionality around event versions in future 
+(such as event migrations).</p>
+<h2 id="consuming-events">Consuming events<a class="headerlink" href="#consuming-events" title="Permanent link">&para;</a></h2>
+<p>Consuming events involves an initial setup stage in which we check for any 
+events which this process has consumed yet failed to process (for example, 
+due to an error, hardware failure, network problem, etc).</p>
+<p>We perform this initial check for events as follows:</p>
+<div class="codehilite"><pre><span></span>XREAD_GROUP {group_name} {consumer_name} {stream_name} 0
+</pre></div>
+
+<p>The <code>0</code> above indicates we wish to receive un-acknowledged events for this consumer 
+(i.e this Lightbus process).</p>
+<p>Once we have received and processed any of these events, we can retrieve further events as follows:</p>
+<div class="codehilite"><pre><span></span>XREAD_GROUP {group_name} {consumer_name} {stream} &gt;
+</pre></div>
+
+<h3 id="group_name"><code>{group_name}</code><a class="headerlink" href="#group_name" title="Permanent link">&para;</a></h3>
+<p>The <code>{group_name}</code> value is comprised of the <a href="../../explanation/events/#service-names-listener-names">service name and listener name</a> as follows: 
+<code>{service_name}-{listener_name}</code>.</p>
+<h3 id="consumer_name"><code>{consumer_name}</code><a class="headerlink" href="#consumer_name" title="Permanent link">&para;</a></h3>
+<p>The <code>{consumer_name}</code> is set to the <a href="../../explanation/events/#process-names">process name</a> of the Lightbus process.</p>
+<h3 id="stream_name_1"><code>{stream_name}</code><a class="headerlink" href="#stream_name_1" title="Permanent link">&para;</a></h3>
+<p>The stream name, as described above in <a href="#sending-events">sending events</a>.</p>
+<h2 id="reclaiming-timed-out-events">Reclaiming timed-out events<a class="headerlink" href="#reclaiming-timed-out-events" title="Permanent link">&para;</a></h2>
+<p>Events can be considered timed if another Lightbus process has held onto them for too long.
+Any client consuming events should check for these from time to time.</p>
+<p>Timed out events can be claimed as follows:</p>
+<div class="codehilite"><pre><span></span># Get pending messages
+XPENDING {stream} {group_name} - + {batch_size}
+
+# For each message try to claim it
+XCLAIM {stream} {group_name} {timeout}
+
+# If successful, process the event. Otherwise ignore it
+</pre></div>
+
+<h3 id="batch_size"><code>{batch_size}</code><a class="headerlink" href="#batch_size" title="Permanent link">&para;</a></h3>
+<p>How many pending messages to fetch in each batch</p>
+<h3 id="timeout"><code>{timeout}</code><a class="headerlink" href="#timeout" title="Permanent link">&para;</a></h3>
+<p>Timeout in milliseconds. This is the maximum time a Lightbus process will have to process an event 
+before another processes assumes it has failed and takes over.</p>
+<h3 id="encoding-customisation">Encoding &amp; Customisation<a class="headerlink" href="#encoding-customisation" title="Permanent link">&para;</a></h3>
+<p>See also: <a href="../../explanation/marshalling/">data marshalling</a></p>
+<p>By default field values are serialised using JSON. This can be </p>
+<p>This encoding is customisable within the Lightbus configuration. You are welcome to use 
+something custom here, but be aware that:</p>
+<ul>
+<li>A single API must have a single encoding for all events on that API</li>
+<li>All clients accessing the bus must be configured to use the same custom encoding</li>
+</ul>
+<h2 id="data-validation">Data validation<a class="headerlink" href="#data-validation" title="Permanent link">&para;</a></h2>
+<p>Validation of outgoing and incoming events is optional. However, 
+validation of outgoing events is recommended as sending of event messages which fail validation may 
+result in the message being rejected by any consumer.</p>
+<p>This validation can be 
+performed using the using the schema available through the <a href="../schema-protocol/">schema protocol</a>.</p>
+<h2 id="data-deformation-casting">Data deformation &amp; casting<a class="headerlink" href="#data-deformation-casting" title="Permanent link">&para;</a></h2>
+<p>The Lightbus client provides Python-specific functionality to streamline the 
+process of moving between Python data structures and interoperable JSON data 
+structures.</p>
+<p>The level of functionality required in this regard is not specified here, and 
+is left up to individual library developers.</p>
                 
                   
                 
@@ -968,7 +1451,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../rpc-protocol/" title="RPC Prococol (Redis)" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../rpc-and-result-protocol/" title="RPC & Result Protocol (Redis)" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -977,19 +1460,19 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                RPC Prococol (Redis)
+                RPC & Result Protocol (Redis)
               </span>
             </div>
           </a>
         
         
-          <a href="../schema-protocol/" title="Schema Prococol (Redis)*" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../schema-protocol/" title="Schema Protocol (Redis)" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Schema Prococol (Redis)*
+                Schema Protocol (Redis)
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
@@ -1011,22 +1494,15 @@
           Material for MkDocs</a>
       </div>
       
-        
-      
     </div>
   </div>
 </footer>
       
     </div>
     
-      <script src="../../assets/javascripts/application.30f6b8b1.js"></script>
+      <script src="../../assets/javascripts/application.a8b5e56f.js"></script>
       
-      <script>app.initialize({version:"0.17.5",url:{base:"../.."}})</script>
-      
-    
-    
-      
-        <script>!function(e,a,t,n,o,c,i){e.GoogleAnalyticsObject=o,e.ga=e.ga||function(){(e.ga.q=e.ga.q||[]).push(arguments)},e.ga.l=1*new Date,c=a.createElement(t),i=a.getElementsByTagName(t)[0],c.async=1,c.src="https://www.google-analytics.com/analytics.js",i.parentNode.insertBefore(c,i)}(window,document,"script",0,"ga"),ga("create","UA-103655163-1","auto"),ga("set","anonymizeIp",!0),ga("send","pageview");var links=document.getElementsByTagName("a");if(Array.prototype.map.call(links,function(e){e.host!=document.location.host&&e.addEventListener("click",function(){var a=e.getAttribute("data-md-action")||"follow";ga("send","event","outbound",a,e.href)})}),document.forms.search){var query=document.forms.search.query;query.addEventListener("blur",function(){if(this.value){var e=document.location.pathname;ga("send","pageview",e+"?q="+this.value)}})}</script>
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       
     
   </body>

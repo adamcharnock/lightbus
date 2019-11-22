@@ -2,7 +2,7 @@
 
 
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="no-js">
   <head>
     
@@ -37,8 +37,8 @@
       
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
-      <link rel="shortcut icon" href="../../">
-      <meta name="generator" content="mkdocs-0.17.5, mkdocs-material-2.9.4">
+      <link rel="shortcut icon" href="../..">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
     
     
       
@@ -46,9 +46,9 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application.451f80e5.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
       
-        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.22915126.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
       
       
         
@@ -57,18 +57,47 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr.1aa3b519.js"></script>
+      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
-      <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
       
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
     <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
     
+    
       <link rel="stylesheet" href="../../static/stylesheets/extra.css">
+    
+    
+      
+        
+<script>
+  window.ga = window.ga || function() {
+    (ga.q = ga.q || []).push(arguments)
+  }
+  ga.l = +new Date
+  /* Setup integration and send page view */
+  ga("create", "UA-103655163-1", "auto")
+  ga("set", "anonymizeIp", true)
+  ga("send", "pageview")
+  /* Register handler to log search on blur */
+  document.addEventListener("DOMContentLoaded", () => {
+    if (document.forms.search) {
+      var query = document.forms.search.query
+      query.addEventListener("blur", function() {
+        if (this.value) {
+          var path = document.location.pathname;
+          ga("send", "pageview", path + "?q=" + this.value)
+        }
+      })
+    }
+  })
+</script>
+<script async src="https://www.google-analytics.com/analytics.js"></script>
+      
     
     
   </head>
@@ -81,24 +110,7 @@
       <defs>
         
         
-          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
-    viewBox="0 0 416 448" id="__github">
-  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
-        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
-        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
-        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
-        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
-        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
-        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
-        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
-        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
-        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
-        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
-        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
-        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
-        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
-        99.5z" />
-</svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
         
       </defs>
     </svg>
@@ -127,22 +139,21 @@
       <div class="md-flex__cell md-flex__cell--stretch">
         <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
           
-            
-              <span class="md-header-nav__topic">
-                Lightbus
-              </span>
-              <span class="md-header-nav__topic">
+            <span class="md-header-nav__topic">
+              Lightbus
+            </span>
+            <span class="md-header-nav__topic">
+              
                 3. Worked example
-              </span>
-            
+              
+            </span>
           
         </div>
       </div>
       <div class="md-flex__cell md-flex__cell--shrink">
         
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
           
-            <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
-            
 <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
@@ -165,7 +176,6 @@
     </div>
   </div>
 </div>
-          
         
       </div>
       
@@ -176,20 +186,18 @@
 
   
 
-
-  <a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#__github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
-      GitHub
+<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
     </div>
-  </a>
-
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
           </div>
         </div>
       
@@ -213,7 +221,7 @@
         
   <li class="md-tabs__item">
     
-      <a href="../.." title="Home" class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         Home
       </a>
     
@@ -225,7 +233,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../" title="Tutorials" class="md-tabs__link md-tabs__link--active">
+        <a href="../" class="md-tabs__link md-tabs__link--active">
           Tutorials
         </a>
       
@@ -238,7 +246,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../howto/" title="How to" class="md-tabs__link">
+        <a href="../../howto/" class="md-tabs__link">
           How to
         </a>
       
@@ -251,7 +259,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../explanation/" title="Explanation" class="md-tabs__link">
+        <a href="../../explanation/" class="md-tabs__link">
           Explanation
         </a>
       
@@ -264,7 +272,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../reference/" title="Reference" class="md-tabs__link">
+        <a href="../../reference/" class="md-tabs__link">
           Reference
         </a>
       
@@ -276,7 +284,7 @@
   </div>
 </nav>
       
-      <main class="md-main">
+      <main class="md-main" role="main">
         <div class="md-main__inner md-grid" data-md-component="container">
           
             
@@ -299,20 +307,18 @@
 
   
 
-
-  <a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#__github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
-      GitHub
+<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
     </div>
-  </a>
-
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
     </div>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -415,49 +421,49 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#31-getting-started" title="3.1. Getting started" class="md-nav__link">
+  <a href="#31-getting-started" class="md-nav__link">
     3.1. Getting started
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#32-image-resizing-service" title="3.2. Image resizing service" class="md-nav__link">
+  <a href="#32-image-resizing-service" class="md-nav__link">
     3.2. Image resizing service
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#33-store-service" title="3.3. Store service" class="md-nav__link">
+  <a href="#33-store-service" class="md-nav__link">
     3.3. Store service
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#34-interlude-give-it-a-go" title="3.4. Interlude: give it a go" class="md-nav__link">
+  <a href="#34-interlude-give-it-a-go" class="md-nav__link">
     3.4. Interlude: give it a go
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#35-dashboard-service" title="3.5. Dashboard service" class="md-nav__link">
+  <a href="#35-dashboard-service" class="md-nav__link">
     3.5. Dashboard service
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#36-run-it" title="3.6. Run it!" class="md-nav__link">
-    3.6. Run it!
+  <a href="#37-run-it" class="md-nav__link">
+    3.7. Run it!
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#37-wrapping-up" title="3.7. Wrapping up" class="md-nav__link">
+  <a href="#37-wrapping-up" class="md-nav__link">
     3.7. Wrapping up
   </a>
   
@@ -471,6 +477,30 @@
   
 </nav>
     
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../django-and-lightbus/" title="4. Django & Lightbus" class="md-nav__link">
+      4. Django & Lightbus
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../getting-involved/" title="Getting involved (even if you don't code)" class="md-nav__link">
+      Getting involved (even if you don't code)
+    </a>
   </li>
 
         
@@ -552,6 +582,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../../howto/migrate-from-celery-to-lightbus/" title="Migrate from Celery to Lightbus" class="md-nav__link">
+      Migrate from Celery to Lightbus
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../howto/write-idempotent-event-handlers/" title="Write idempotent event handlers" class="md-nav__link">
+      Write idempotent event handlers
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../howto/metrics/" title="Use Lightbus for realtime metrics*" class="md-nav__link">
       Use Lightbus for realtime metrics*
     </a>
@@ -576,20 +630,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../howto/write-idempotent-event-handlers/" title="Write idempotent event handlers" class="md-nav__link">
-      Write idempotent event handlers
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../howto/combine-processes/" title="Combine processes" class="md-nav__link">
-      Combine processes
+    <a href="../../howto/modify-lightbus/" title="Modify Lightbus" class="md-nav__link">
+      Modify Lightbus
     </a>
   </li>
 
@@ -744,20 +786,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/schema/" title="Schema*" class="md-nav__link">
-      Schema*
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../contributing/" title="Contributing*" class="md-nav__link">
-      Contributing*
+    <a href="../../explanation/schema/" title="Schema" class="md-nav__link">
+      Schema
     </a>
   </li>
 
@@ -782,6 +812,18 @@
   <li class="md-nav__item">
     <a href="../../explanation/architecture-tips/" title="Architecture tips" class="md-nav__link">
       Architecture tips
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/performance/" title="Performance" class="md-nav__link">
+      Performance
     </a>
   </li>
 
@@ -876,18 +918,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../../reference/transports/" title="Transports*" class="md-nav__link">
-      Transports*
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../../reference/configuration/" title="Configuration" class="md-nav__link">
       Configuration
     </a>
@@ -911,9 +941,28 @@
           
 
 
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-8" type="checkbox" id="nav-5-8">
+    
+    <label class="md-nav__link" for="nav-5-8">
+      Command line use
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-8">
+        Command line use
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
   <li class="md-nav__item">
-    <a href="../../reference/command-line-use/" title="Command line use*" class="md-nav__link">
-      Command line use*
+    <a href="../../reference/command-line-use/run/" title="run" class="md-nav__link">
+      run
     </a>
   </li>
 
@@ -924,9 +973,50 @@
 
 
   <li class="md-nav__item">
-    <a href="../../reference/debugging/" title="Debugging*" class="md-nav__link">
-      Debugging*
+    <a href="../../reference/command-line-use/inspect/" title="inspect" class="md-nav__link">
+      inspect
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/command-line-use/shell/" title="shell" class="md-nav__link">
+      shell
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/command-line-use/dumpschema/" title="dumpschema" class="md-nav__link">
+      dumpschema
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/command-line-use/dumpconfigschema/" title="dumpconfigschema" class="md-nav__link">
+      dumpconfigschema
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -948,8 +1038,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../reference/rpc-protocol/" title="RPC Prococol (Redis)" class="md-nav__link">
-      RPC Prococol (Redis)
+    <a href="../../reference/transports/" title="Transports*" class="md-nav__link">
+      Transports*
     </a>
   </li>
 
@@ -960,8 +1050,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../reference/event-protocol/" title="Event Prococol (Redis)*" class="md-nav__link">
-      Event Prococol (Redis)*
+    <a href="../../reference/rpc-and-result-protocol/" title="RPC & Result Protocol (Redis)" class="md-nav__link">
+      RPC & Result Protocol (Redis)
     </a>
   </li>
 
@@ -972,8 +1062,44 @@
 
 
   <li class="md-nav__item">
-    <a href="../../reference/schema-protocol/" title="Schema Prococol (Redis)*" class="md-nav__link">
-      Schema Prococol (Redis)*
+    <a href="../../reference/event-protocol/" title="Event Protocol (Redis)" class="md-nav__link">
+      Event Protocol (Redis)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/schema-protocol/" title="Schema Protocol (Redis)" class="md-nav__link">
+      Schema Protocol (Redis)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/authors/" title="Authors" class="md-nav__link">
+      Authors
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/code-of-conduct/" title="Code of Conduct" class="md-nav__link">
+      Code of Conduct
     </a>
   </li>
 
@@ -1002,49 +1128,49 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#31-getting-started" title="3.1. Getting started" class="md-nav__link">
+  <a href="#31-getting-started" class="md-nav__link">
     3.1. Getting started
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#32-image-resizing-service" title="3.2. Image resizing service" class="md-nav__link">
+  <a href="#32-image-resizing-service" class="md-nav__link">
     3.2. Image resizing service
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#33-store-service" title="3.3. Store service" class="md-nav__link">
+  <a href="#33-store-service" class="md-nav__link">
     3.3. Store service
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#34-interlude-give-it-a-go" title="3.4. Interlude: give it a go" class="md-nav__link">
+  <a href="#34-interlude-give-it-a-go" class="md-nav__link">
     3.4. Interlude: give it a go
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#35-dashboard-service" title="3.5. Dashboard service" class="md-nav__link">
+  <a href="#35-dashboard-service" class="md-nav__link">
     3.5. Dashboard service
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#36-run-it" title="3.6. Run it!" class="md-nav__link">
-    3.6. Run it!
+  <a href="#37-run-it" class="md-nav__link">
+    3.7. Run it!
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#37-wrapping-up" title="3.7. Wrapping up" class="md-nav__link">
+  <a href="#37-wrapping-up" class="md-nav__link">
     3.7. Wrapping up
   </a>
   
@@ -1198,7 +1324,7 @@ $ <span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py flask ru
 you should see three animal pictures awaiting you. The URL for each
 image was fetched from the image resizing service.</p>
 <p>The flask web interface should also have some logging output akin to the following:</p>
-<p><img alt="flask web app logging output" src="../../static/images/worked-example-flask-log.png" /></p>
+<p><img alt="flask web app logging output" src="/static/images/worked-example-flask-log.png" /></p>
 <p>Here you can see:</p>
 <ol>
 <li><code>image.resize</code> was called three times, once for each image</li>
@@ -1268,7 +1394,7 @@ Redis, Mongo etc). For simplicity we just store JSON to a file.</p>
 
 <p>This reads the JSON data that was written by the event listener in <code>dashboard/bus.py</code> above,
 then render it to HTML.</p>
-<h2 id="36-run-it">3.6. Run it!<a class="headerlink" href="#36-run-it" title="Permanent link">&para;</a></h2>
+<h2 id="37-run-it">3.7. Run it!<a class="headerlink" href="#37-run-it" title="Permanent link">&para;</a></h2>
 <p>You should now have the following python files:</p>
 <p>./image/bus.py
 ./store/bus.py
@@ -1348,7 +1474,7 @@ $ honcho start
 detailed above (<code>pip3 install honcho</code>).</p>
 <p>Once started, see the output for any errors. Each log line will state the process
 it came from. If all is well, you should see something like this:</p>
-<p><img alt="honcho startup logging output" src="../../static/images/worked-example-honcho-startup.png" /></p>
+<p><img alt="honcho startup logging output" src="/static/images/worked-example-honcho-startup.png" /></p>
 <p>You should now be able to access the store's web interface at <a href="http://127.0.0.1:5001">127.0.0.1:5001</a> as you
 did previously.</p>
 <p>Upon viewing the page, the following will happen:</p>
@@ -1358,7 +1484,7 @@ did previously.</p>
 <li>The dashboard will receive the <code>store.page_viewed</code> event and create the database for the first time. </li>
 </ol>
 <p>The logging output should reflect this:</p>
-<p><img alt="honcho page view logging output" src="../../static/images/worked-example-honcho-page-view.png" /></p>
+<p><img alt="honcho page view logging output" src="/static/images/worked-example-honcho-page-view.png" /></p>
 <p>At this point you can view the dashboard at <a href="http://127.0.0.1:5000">127.0.0.1:5000</a>. Note that opening the dashboard
 before this point would have resulted in an error as the database would not have been
 created.</p>
@@ -1405,13 +1531,13 @@ you should explore the <a href="../../explanation/">Explanation</a> section.</p>
           </a>
         
         
-          <a href="../../howto/" title="Overview" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../django-and-lightbus/" title="4. Django & Lightbus" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Overview
+                4. Django & Lightbus
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
@@ -1433,22 +1559,15 @@ you should explore the <a href="../../explanation/">Explanation</a> section.</p>
           Material for MkDocs</a>
       </div>
       
-        
-      
     </div>
   </div>
 </footer>
       
     </div>
     
-      <script src="../../assets/javascripts/application.30f6b8b1.js"></script>
+      <script src="../../assets/javascripts/application.a8b5e56f.js"></script>
       
-      <script>app.initialize({version:"0.17.5",url:{base:"../.."}})</script>
-      
-    
-    
-      
-        <script>!function(e,a,t,n,o,c,i){e.GoogleAnalyticsObject=o,e.ga=e.ga||function(){(e.ga.q=e.ga.q||[]).push(arguments)},e.ga.l=1*new Date,c=a.createElement(t),i=a.getElementsByTagName(t)[0],c.async=1,c.src="https://www.google-analytics.com/analytics.js",i.parentNode.insertBefore(c,i)}(window,document,"script",0,"ga"),ga("create","UA-103655163-1","auto"),ga("set","anonymizeIp",!0),ga("send","pageview");var links=document.getElementsByTagName("a");if(Array.prototype.map.call(links,function(e){e.host!=document.location.host&&e.addEventListener("click",function(){var a=e.getAttribute("data-md-action")||"follow";ga("send","event","outbound",a,e.href)})}),document.forms.search){var query=document.forms.search.query;query.addEventListener("blur",function(){if(this.value){var e=document.location.pathname;ga("send","pageview",e+"?q="+this.value)}})}</script>
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       
     
   </body>

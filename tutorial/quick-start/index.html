@@ -2,7 +2,7 @@
 
 
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="no-js">
   <head>
     
@@ -37,8 +37,8 @@
       
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
-      <link rel="shortcut icon" href="../../">
-      <meta name="generator" content="mkdocs-0.17.5, mkdocs-material-2.9.4">
+      <link rel="shortcut icon" href="../..">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
     
     
       
@@ -46,9 +46,9 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application.451f80e5.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
       
-        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.22915126.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
       
       
         
@@ -57,18 +57,47 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr.1aa3b519.js"></script>
+      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
-      <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
       
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
     <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
     
+    
       <link rel="stylesheet" href="../../static/stylesheets/extra.css">
+    
+    
+      
+        
+<script>
+  window.ga = window.ga || function() {
+    (ga.q = ga.q || []).push(arguments)
+  }
+  ga.l = +new Date
+  /* Setup integration and send page view */
+  ga("create", "UA-103655163-1", "auto")
+  ga("set", "anonymizeIp", true)
+  ga("send", "pageview")
+  /* Register handler to log search on blur */
+  document.addEventListener("DOMContentLoaded", () => {
+    if (document.forms.search) {
+      var query = document.forms.search.query
+      query.addEventListener("blur", function() {
+        if (this.value) {
+          var path = document.location.pathname;
+          ga("send", "pageview", path + "?q=" + this.value)
+        }
+      })
+    }
+  })
+</script>
+<script async src="https://www.google-analytics.com/analytics.js"></script>
+      
     
     
   </head>
@@ -81,24 +110,7 @@
       <defs>
         
         
-          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
-    viewBox="0 0 416 448" id="__github">
-  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
-        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
-        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
-        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
-        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
-        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
-        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
-        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
-        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
-        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
-        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
-        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
-        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
-        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
-        99.5z" />
-</svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
         
       </defs>
     </svg>
@@ -127,22 +139,21 @@
       <div class="md-flex__cell md-flex__cell--stretch">
         <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
           
-            
-              <span class="md-header-nav__topic">
-                Lightbus
-              </span>
-              <span class="md-header-nav__topic">
+            <span class="md-header-nav__topic">
+              Lightbus
+            </span>
+            <span class="md-header-nav__topic">
+              
                 2. Quick start
-              </span>
-            
+              
+            </span>
           
         </div>
       </div>
       <div class="md-flex__cell md-flex__cell--shrink">
         
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
           
-            <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
-            
 <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
@@ -165,7 +176,6 @@
     </div>
   </div>
 </div>
-          
         
       </div>
       
@@ -176,20 +186,18 @@
 
   
 
-
-  <a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#__github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
-      GitHub
+<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
     </div>
-  </a>
-
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
           </div>
         </div>
       
@@ -213,7 +221,7 @@
         
   <li class="md-tabs__item">
     
-      <a href="../.." title="Home" class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         Home
       </a>
     
@@ -225,7 +233,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../" title="Tutorials" class="md-tabs__link md-tabs__link--active">
+        <a href="../" class="md-tabs__link md-tabs__link--active">
           Tutorials
         </a>
       
@@ -238,7 +246,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../howto/" title="How to" class="md-tabs__link">
+        <a href="../../howto/" class="md-tabs__link">
           How to
         </a>
       
@@ -251,7 +259,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../explanation/" title="Explanation" class="md-tabs__link">
+        <a href="../../explanation/" class="md-tabs__link">
           Explanation
         </a>
       
@@ -264,7 +272,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../reference/" title="Reference" class="md-tabs__link">
+        <a href="../../reference/" class="md-tabs__link">
           Reference
         </a>
       
@@ -276,7 +284,7 @@
   </div>
 </nav>
       
-      <main class="md-main">
+      <main class="md-main" role="main">
         <div class="md-main__inner md-grid" data-md-component="container">
           
             
@@ -299,20 +307,18 @@
 
   
 
-
-  <a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
-    
-      <div class="md-source__icon">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <use xlink:href="#__github" width="24" height="24"></use>
-        </svg>
-      </div>
-    
-    <div class="md-source__repository">
-      GitHub
+<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
     </div>
-  </a>
-
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
     </div>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -403,28 +409,28 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#21-requirements" title="2.1 Requirements" class="md-nav__link">
+  <a href="#21-requirements" class="md-nav__link">
     2.1 Requirements
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#22-define-your-api" title="2.2 Define your API" class="md-nav__link">
+  <a href="#22-define-your-api" class="md-nav__link">
     2.2 Define your API
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#23-remote-procedure-calls" title="2.3 Remote procedure calls" class="md-nav__link">
+  <a href="#23-remote-procedure-calls" class="md-nav__link">
     2.3 Remote procedure calls
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#24-events" title="2.4 Events" class="md-nav__link">
+  <a href="#24-events" class="md-nav__link">
     2.4 Events
   </a>
   
@@ -432,21 +438,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#firing-events" title="Firing events" class="md-nav__link">
+  <a href="#firing-events" class="md-nav__link">
     Firing events
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#listening-for-events" title="Listening for events" class="md-nav__link">
+  <a href="#listening-for-events" class="md-nav__link">
     Listening for events
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#listener-names" title="Listener names" class="md-nav__link">
+  <a href="#listener-names" class="md-nav__link">
     Listener names
   </a>
   
@@ -458,7 +464,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#25-next" title="2.5 Next" class="md-nav__link">
+  <a href="#25-next" class="md-nav__link">
     2.5 Next
   </a>
   
@@ -483,6 +489,30 @@
   <li class="md-nav__item">
     <a href="../worked-example/" title="3. Worked example" class="md-nav__link">
       3. Worked example
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../django-and-lightbus/" title="4. Django & Lightbus" class="md-nav__link">
+      4. Django & Lightbus
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../getting-involved/" title="Getting involved (even if you don't code)" class="md-nav__link">
+      Getting involved (even if you don't code)
     </a>
   </li>
 
@@ -565,6 +595,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../../howto/migrate-from-celery-to-lightbus/" title="Migrate from Celery to Lightbus" class="md-nav__link">
+      Migrate from Celery to Lightbus
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../howto/write-idempotent-event-handlers/" title="Write idempotent event handlers" class="md-nav__link">
+      Write idempotent event handlers
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../howto/metrics/" title="Use Lightbus for realtime metrics*" class="md-nav__link">
       Use Lightbus for realtime metrics*
     </a>
@@ -589,20 +643,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../howto/write-idempotent-event-handlers/" title="Write idempotent event handlers" class="md-nav__link">
-      Write idempotent event handlers
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../howto/combine-processes/" title="Combine processes" class="md-nav__link">
-      Combine processes
+    <a href="../../howto/modify-lightbus/" title="Modify Lightbus" class="md-nav__link">
+      Modify Lightbus
     </a>
   </li>
 
@@ -757,20 +799,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/schema/" title="Schema*" class="md-nav__link">
-      Schema*
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../contributing/" title="Contributing*" class="md-nav__link">
-      Contributing*
+    <a href="../../explanation/schema/" title="Schema" class="md-nav__link">
+      Schema
     </a>
   </li>
 
@@ -795,6 +825,18 @@
   <li class="md-nav__item">
     <a href="../../explanation/architecture-tips/" title="Architecture tips" class="md-nav__link">
       Architecture tips
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/performance/" title="Performance" class="md-nav__link">
+      Performance
     </a>
   </li>
 
@@ -889,18 +931,6 @@
 
 
   <li class="md-nav__item">
-    <a href="../../reference/transports/" title="Transports*" class="md-nav__link">
-      Transports*
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
     <a href="../../reference/configuration/" title="Configuration" class="md-nav__link">
       Configuration
     </a>
@@ -924,9 +954,28 @@
           
 
 
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-8" type="checkbox" id="nav-5-8">
+    
+    <label class="md-nav__link" for="nav-5-8">
+      Command line use
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-8">
+        Command line use
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
   <li class="md-nav__item">
-    <a href="../../reference/command-line-use/" title="Command line use*" class="md-nav__link">
-      Command line use*
+    <a href="../../reference/command-line-use/run/" title="run" class="md-nav__link">
+      run
     </a>
   </li>
 
@@ -937,9 +986,50 @@
 
 
   <li class="md-nav__item">
-    <a href="../../reference/debugging/" title="Debugging*" class="md-nav__link">
-      Debugging*
+    <a href="../../reference/command-line-use/inspect/" title="inspect" class="md-nav__link">
+      inspect
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/command-line-use/shell/" title="shell" class="md-nav__link">
+      shell
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/command-line-use/dumpschema/" title="dumpschema" class="md-nav__link">
+      dumpschema
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/command-line-use/dumpconfigschema/" title="dumpconfigschema" class="md-nav__link">
+      dumpconfigschema
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -961,8 +1051,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../reference/rpc-protocol/" title="RPC Prococol (Redis)" class="md-nav__link">
-      RPC Prococol (Redis)
+    <a href="../../reference/transports/" title="Transports*" class="md-nav__link">
+      Transports*
     </a>
   </li>
 
@@ -973,8 +1063,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../reference/event-protocol/" title="Event Prococol (Redis)*" class="md-nav__link">
-      Event Prococol (Redis)*
+    <a href="../../reference/rpc-and-result-protocol/" title="RPC & Result Protocol (Redis)" class="md-nav__link">
+      RPC & Result Protocol (Redis)
     </a>
   </li>
 
@@ -985,8 +1075,44 @@
 
 
   <li class="md-nav__item">
-    <a href="../../reference/schema-protocol/" title="Schema Prococol (Redis)*" class="md-nav__link">
-      Schema Prococol (Redis)*
+    <a href="../../reference/event-protocol/" title="Event Protocol (Redis)" class="md-nav__link">
+      Event Protocol (Redis)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/schema-protocol/" title="Schema Protocol (Redis)" class="md-nav__link">
+      Schema Protocol (Redis)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/authors/" title="Authors" class="md-nav__link">
+      Authors
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/code-of-conduct/" title="Code of Conduct" class="md-nav__link">
+      Code of Conduct
     </a>
   </li>
 
@@ -1015,28 +1141,28 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#21-requirements" title="2.1 Requirements" class="md-nav__link">
+  <a href="#21-requirements" class="md-nav__link">
     2.1 Requirements
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#22-define-your-api" title="2.2 Define your API" class="md-nav__link">
+  <a href="#22-define-your-api" class="md-nav__link">
     2.2 Define your API
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#23-remote-procedure-calls" title="2.3 Remote procedure calls" class="md-nav__link">
+  <a href="#23-remote-procedure-calls" class="md-nav__link">
     2.3 Remote procedure calls
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#24-events" title="2.4 Events" class="md-nav__link">
+  <a href="#24-events" class="md-nav__link">
     2.4 Events
   </a>
   
@@ -1044,21 +1170,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#firing-events" title="Firing events" class="md-nav__link">
+  <a href="#firing-events" class="md-nav__link">
     Firing events
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#listening-for-events" title="Listening for events" class="md-nav__link">
+  <a href="#listening-for-events" class="md-nav__link">
     Listening for events
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#listener-names" title="Listener names" class="md-nav__link">
+  <a href="#listener-names" class="md-nav__link">
     Listener names
   </a>
   
@@ -1070,7 +1196,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#25-next" title="2.5 Next" class="md-nav__link">
+  <a href="#25-next" class="md-nav__link">
     2.5 Next
   </a>
   
@@ -1097,16 +1223,26 @@
                 
                   <h1>2. Quick start</h1>
                 
-                <h2 id="21-requirements">2.1 Requirements<a class="headerlink" href="#21-requirements" title="Permanent link">&para;</a></h2>
+                <div class="admonition note">
+<p class="admonition-title">If you get stuck...</p>
+<p>It is really useful to hear from people who have encountered a problem 
+or got stuck. Hearing from you means we can improve our documentation 
+and error messages.</p>
+<p><strong>If you get stuck drop then please drop an email to <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#97;&#100;&#97;&#109;&#64;&#97;&#100;&#97;&#109;&#99;&#104;&#97;&#114;&#110;&#111;&#99;&#107;&#46;&#99;&#111;&#109;">&#97;&#100;&#97;&#109;&#64;&#97;&#100;&#97;&#109;&#99;&#104;&#97;&#114;&#110;&#111;&#99;&#107;&#46;&#99;&#111;&#109;</a>, 
+visit the <a href="https://discord.gg/2j594ws">Lightbus discord server</a>, or call me on 
++442032896620.</strong> The more information 
+you can include the better (problem description, screenshots, and code are all useful)</p>
+</div>
+<h2 id="21-requirements">2.1 Requirements<a class="headerlink" href="#21-requirements" title="Permanent link">&para;</a></h2>
 <p>Before continuing, ensure you have completed the following steps detailed in
 the <a href="../installation/">installation section</a>:</p>
 <ul>
-<li>Installed Python 3.6 or above</li>
+<li>Installed Python 3.7 or above</li>
 <li>Installed Lightbus</li>
 <li>Running Redis 5 locally on the default port (6379)</li>
 </ul>
 <p>Optionally, you can read some additional <em>explanation</em> in the
-<a href="../../explanation/anatomy-lesson/">anatomy lesson</a> and <a href="/explanation/concepts.md">concepts</a> sections.</p>
+<a href="../../explanation/anatomy-lesson/">anatomy lesson</a> section.</p>
 <h2 id="22-define-your-api">2.2 Define your API<a class="headerlink" href="#22-define-your-api" title="Permanent link">&para;</a></h2>
 <p>First we will define an API for Lightbus to serve.
 This will be an authentication API and will live in an 
@@ -1142,7 +1278,7 @@ lightbus run
 
 <p>Lightbus will output some logging data which will include a list of
 registered APIs, including your new <code>auth</code> API:</p>
-<p><img alt="lightbus run output" src="../../static/images/quickstart-lightbus-run.png" /></p>
+<p><img alt="lightbus run output" src="/static/images/quickstart-lightbus-run.png" /></p>
 <p>Congratulations, you have now created an authentication service 
 which contains a single API named <code>auth</code>.</p>
 <p><strong>Leave Lightbus running and open a new terminal window for the next stage.</strong></p>
@@ -1240,16 +1376,16 @@ we can setup an event listener by modifying <code>./another_service/bus.py</code
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 
-<span class="k">def</span> <span class="nf">handler_new_user</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">email</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">handle_new_user</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">email</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;A new user was created in the authentication service:&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;    Username: </span><span class="si">{username}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;    Email: </span><span class="si">{email}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
 <span class="nd">@bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">on_start</span><span class="p">()</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">bus_start</span><span class="p">():</span>
-    <span class="k">await</span> <span class="n">bus</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">user_registered</span><span class="o">.</span><span class="n">listen_async</span><span class="p">(</span>
-        <span class="n">handler_new_user</span><span class="p">,</span>
+<span class="k">def</span> <span class="nf">bus_start</span><span class="p">():</span>
+    <span class="n">bus</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">user_registered</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span>
+        <span class="n">handle_new_user</span><span class="p">,</span>
         <span class="n">listener_name</span><span class="o">=</span><span class="s2">&quot;print_on_new_registration&quot;</span>
     <span class="p">)</span>
 </pre></div>
@@ -1273,10 +1409,10 @@ python3 manually_register_user.py
 
 <p>You should see that the event gets sent by the <code>manually_register_user.py</code> script within the 
 <code>auth_service</code>, and received by by the <code>lightbus run</code> process within the <code>another_service</code>.</p>
-<p><img alt="Listening for and firing an event" src="../../static/images/quickstart-events.png" /></p>
+<p><img alt="Listening for and firing an event" src="/static/images/quickstart-events.png" /></p>
 <h3 id="listener-names">Listener names<a class="headerlink" href="#listener-names" title="Permanent link">&para;</a></h3>
 <p>You may have noticed we specified the <code>listener_name</code> parameter in the above example, 
-and we set it to an arbitrary value of <code>&quot;print_on_new_registration&quot;</code>. This is important, because Lightbus tracks 
+and we set it to an arbitrary value of <code>"print_on_new_registration"</code>. This is important, because Lightbus tracks 
 which listeners have received which events. It is this listener name which is used to 
 uniquely identify each listener. You don't need to worry about this often, just follow the rule:</p>
 <p><strong>Ensure you specify a unique <code>listener_name</code> every time you setup a new listener</strong>.</p>
@@ -1348,22 +1484,15 @@ a more realistic scenario involving multiple services.</p>
           Material for MkDocs</a>
       </div>
       
-        
-      
     </div>
   </div>
 </footer>
       
     </div>
     
-      <script src="../../assets/javascripts/application.30f6b8b1.js"></script>
+      <script src="../../assets/javascripts/application.a8b5e56f.js"></script>
       
-      <script>app.initialize({version:"0.17.5",url:{base:"../.."}})</script>
-      
-    
-    
-      
-        <script>!function(e,a,t,n,o,c,i){e.GoogleAnalyticsObject=o,e.ga=e.ga||function(){(e.ga.q=e.ga.q||[]).push(arguments)},e.ga.l=1*new Date,c=a.createElement(t),i=a.getElementsByTagName(t)[0],c.async=1,c.src="https://www.google-analytics.com/analytics.js",i.parentNode.insertBefore(c,i)}(window,document,"script",0,"ga"),ga("create","UA-103655163-1","auto"),ga("set","anonymizeIp",!0),ga("send","pageview");var links=document.getElementsByTagName("a");if(Array.prototype.map.call(links,function(e){e.host!=document.location.host&&e.addEventListener("click",function(){var a=e.getAttribute("data-md-action")||"follow";ga("send","event","outbound",a,e.href)})}),document.forms.search){var query=document.forms.search.query;query.addEventListener("blur",function(){if(this.value){var e=document.location.pathname;ga("send","pageview",e+"?q="+this.value)}})}</script>
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       
     
   </body>
