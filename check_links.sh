@@ -22,13 +22,22 @@ done
 
 echo "Checking links"
 
+cat >.lightbus-skip-file <<EOL
+fonts.gstatic.com
+EOL
+
 set +e
-$LINKCHECK http://127.0.0.1:8000/
+$LINKCHECK http://127.0.0.1:8000/ --skip-file=/tmp/skip-file --connection-failures-as-warnings --external
 EXIT_CODE=$?
 set -e
 
 
 echo "Stopping server"
 kill %%
+rm -f .lightbus-skip-file
 
-exit $EXIT_CODE
+if [ $EXIT_CODE -gt 1 ]; then
+  # Exit code of 1 indicates warnings, which is ok, so only
+  # exit with codes of > 1
+  exit $EXIT_CODE
+fi

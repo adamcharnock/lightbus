@@ -960,6 +960,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#plugin-configuration-listing" class="md-nav__link">
+    Plugin configuration listing
+  </a>
+  
+</li>
+      
       
       
       
@@ -1270,6 +1277,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#plugin-configuration-listing" class="md-nav__link">
+    Plugin configuration listing
+  </a>
+  
+</li>
+      
       
       
       
@@ -1486,7 +1500,7 @@ disk, or as a HTTP(S) URL.</p>
 <p>The following keys are also present, but <strong>should
 generally not be specified in your global yaml file</strong>.
 Instead they should be specified for each service, as
-per the <a href="#2-service-level-setup">service-level setup</a>:</p>
+per the <a href="#2-service-level-configuration">service-level setup</a>:</p>
 <ul>
 <li><code>service_name</code> – Service name</li>
 <li><code>process_name</code> – Process name</li>
@@ -1639,6 +1653,21 @@ the <a href="#api-config">API config</a>.</p>
 is not present on the bus.
 You can turn this into an error by enabling <code>strict_validation</code>
 within the <a href="#api-config">API config</a>.</p>
+<h2 id="plugin-configuration-listing">Plugin configuration listing<a class="headerlink" href="#plugin-configuration-listing" title="Permanent link">&para;</a></h2>
+<p>Plugins are made available to Lightbus via the <code>lightbus_plugins</code> entry 
+point (see Lightbus' <a href="https://github.com/adamcharnock/lightbus/blob/master/setup.py">setup.py</a> for an example). Lightbus ships with the 
+<code>StatePlugin</code> and the <code>MetricsPlugin</code>, which can be configured as follows:</p>
+<div class="codehilite"><pre><span></span><span class="nt">plugins</span><span class="p">:</span>
+  <span class="nt">internal_metrics</span><span class="p">:</span>
+    <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+
+  <span class="nt">internal_state</span><span class="p">:</span>
+    <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+    <span class="nt">ping_enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+    <span class="nt">ping_interval</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">60</span>
+</pre></div>
+
+<p>Plugin developers should see the <a href="../plugins/">plugins reference</a> for further details.</p>
                 
                   
                 

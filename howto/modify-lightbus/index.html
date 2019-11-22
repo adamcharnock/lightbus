@@ -1287,12 +1287,20 @@ pip install --editable /path/to/your/local/lightbus
 
 <h2 id="viewing-the-lightbus-documentation-locally">Viewing the Lightbus documentation locally<a class="headerlink" href="#viewing-the-lightbus-documentation-locally" title="Permanent link">&para;</a></h2>
 <p>You can view the documentation of your local Lightbus install as follows:</p>
-<div class="codehilite"><pre><span></span>mkdocs serve
+<div class="codehilite"><pre><span></span># Serve the docs locally
+mkdocs serve
 </pre></div>
 
 
 <p>You can now view the documentation <a href="http://127.0.0.1:8000">http://127.0.0.1:8000</a>. 
 The documentation source can be found in <code>docs/</code>.</p>
+<p>You can also check for broken links within the docs by running the 
+<code>check_links.sh</code> script:</p>
+<div class="codehilite"><pre><span></span># Check for broken links
+./docs/check_links.sh
+</pre></div>
+
+
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <p>Being familiar with the <a href="../../explanation/">explanation</a> section is highly recommended 
 if modifying the Lightbus source</p>

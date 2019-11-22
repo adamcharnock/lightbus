@@ -1235,7 +1235,7 @@ for the UUID parameter.</p>
 <p>Many databases and frameworks provide direct support for performing upsert operations 
 which will make the above simpler (and therefore less error prone).</p>
 <h3 id="upserts-in-django">Upserts in Django<a class="headerlink" href="#upserts-in-django" title="Permanent link">&para;</a></h3>
-<p>Django provides the <a href="https://docs.djangoproject.com/en/latest/ref/models/querysets/#update-or-create">update_or_create()</a>
+<p>Django provides the <a href="https://docs.djangoproject.com/en/dev/ref/models/querysets/#update-or-create">update_or_create()</a>
 method which serves exactly this purpose:</p>
 <div class="codehilite"><pre><span></span><span class="c1"># Idempotent</span>
 <span class="k">def</span> <span class="nf">handle_page_view</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
