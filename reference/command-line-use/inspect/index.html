@@ -1176,7 +1176,7 @@ lightbus inspect --id 1bff06d0-fa9b-11e9-b8ca-f218986bf8ce --format human
 </pre></div>
 
 <hr />
-<p>You can also query by <strong>api and/or event name</strong>:</p>
+<p>You can also query by <strong>API and/or event name</strong>:</p>
 <div class="codehilite"><pre><span></span># Event/api filtering
 lightbus inspect --event user_registered 
 lightbus inspect --api my_company.auth 
@@ -1189,6 +1189,15 @@ lightbus inspect --event user_*
 lightbus inspect --api my_company.*
 </pre></div>
 
+<div class="admonition note">
+<p class="admonition-title">Unexpected results when using wildcards?</p>
+<p>You may need to quote wilcard strings in order to prevent your shell expanding them.
+For example:</p>
+<div class="codehilite"><pre><span></span>lightbus inspect --api &quot;my_company.*&quot;
+</pre></div>
+
+
+</div>
 <hr />
 <p>You can see a <strong>continually updating stream</strong> of all events for a single API:</p>
 <div class="codehilite"><pre><span></span># Continually show events for the given API 
