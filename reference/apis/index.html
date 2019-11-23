@@ -850,13 +850,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#organising-many-apis" class="md-nav__link">
-    Organising many APIs
-  </a>
-  
-</li>
-      
       
       
       
@@ -1165,13 +1158,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#organising-many-apis" class="md-nav__link">
-    Organising many APIs
-  </a>
-  
-</li>
-      
       
       
       
@@ -1252,29 +1238,20 @@ can contain periods which allow you
 to structure your bus in a suitable form for your situation.
 Some example API naming schemes may look like:</p>
 <div class="codehilite"><pre><span></span><span class="c1"># Example API naming schemes for use within Meta.name</span>
-<span class="nv">Format: </span> <span class="o">&lt;</span><span class="nx">service</span><span class="o">&gt;</span>
-<span class="nv">Example: </span><span class="nx">support</span><span class="p">.</span><span class="nx">get_case</span><span class="p">()</span>
-         <span class="nx">support</span><span class="p">.</span><span class="nx">get_activity</span><span class="p">()</span>
+<span class="nt">Format</span><span class="p">:</span>  <span class="l l-Scalar l-Scalar-Plain">&lt;service&gt;</span>
+<span class="nt">Example</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">support.get_case()</span>
+         <span class="l l-Scalar l-Scalar-Plain">support.get_activity()</span>
 
 
-<span class="nv">Format: </span> <span class="o">&lt;</span><span class="nx">service</span><span class="o">&gt;</span><span class="p">.</span><span class="o">&lt;</span><span class="nx">object</span><span class="o">&gt;</span>
-<span class="nv">Example: </span><span class="nx">support</span><span class="p">.</span><span class="nx">case</span><span class="p">.</span><span class="nx">get</span><span class="p">()</span>
-         <span class="nx">support</span><span class="p">.</span><span class="nx">activity</span><span class="p">.</span><span class="nx">get</span><span class="p">()</span>
+<span class="nt">Format</span><span class="p">:</span>  <span class="l l-Scalar l-Scalar-Plain">&lt;service&gt;.&lt;object&gt;</span>
+<span class="nt">Example</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">support.case.get()</span>
+         <span class="l l-Scalar l-Scalar-Plain">support.activity.get()</span>
 
 
-<span class="nv">Format: </span> <span class="o">&lt;</span><span class="nx">deparment</span><span class="o">&gt;</span><span class="p">.</span><span class="o">&lt;</span><span class="nx">service</span><span class="o">&gt;</span><span class="p">.</span><span class="o">&lt;</span><span class="nx">object</span><span class="o">&gt;</span>
-<span class="nv">Example: </span><span class="nx">marketing</span><span class="p">.</span><span class="nx">website</span><span class="p">.</span><span class="nx">stats</span><span class="p">.</span><span class="nx">get</span><span class="p">()</span>
-         <span class="nx">ops</span><span class="p">.</span><span class="nx">monitoring</span><span class="p">.</span><span class="nx">servers</span><span class="p">.</span><span class="nx">get_status</span><span class="p">()</span>
+<span class="nt">Format</span><span class="p">:</span>  <span class="l l-Scalar l-Scalar-Plain">&lt;deparment&gt;.&lt;service&gt;.&lt;object&gt;</span>
+<span class="nt">Example</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">marketing.website.stats.get()</span>
+         <span class="l l-Scalar l-Scalar-Plain">ops.monitoring.servers.get_status()</span>
 </pre></div>
-
-<h2 id="organising-many-apis">Organising many APIs<a class="headerlink" href="#organising-many-apis" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Will lightbus recognise a bus package as well as a bus module?
-  (i.e.<code>bus/__init__.py</code>?) TODO<ul>
-<li>It does now</li>
-</ul>
-</li>
-</ul>
                 
                   
                 

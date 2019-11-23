@@ -1173,9 +1173,9 @@
                 
                 <h1 id="architecture-tips">Architecture tips<a class="headerlink" href="#architecture-tips" title="Permanent link">&para;</a></h1>
 <p>These tips draw some core concepts from
-the [Domain Driven Design] and [CQRS] patterns. I only
+the [Domain Driven Design] and [CQRS] patterns. We only
 scape the surface of these patterns here, but the ideas covered
-below are the ones I found most useful when using Lightbus.</p>
+below are the ones the Lightbus maintainers found most useful when using Lightbus.</p>
 <p>There is a lot more to be said on each point. The intent
 here is to provide a digestible starting point.</p>
 <h2 id="use-common-data-structures">Use common data structures<a class="headerlink" href="#use-common-data-structures" title="Permanent link">&para;</a></h2>
@@ -1228,6 +1228,7 @@ use a dictionary:</p>
 <p>Likewise, an RPC or event listener without type hints will simply
 receive a dictionary.</p>
 </div>
+<p>See also <a href="#use-a-monorepository]">use a monorepository</a>.</p>
 <h2 id="decide-on-boundaries">Decide on boundaries<a class="headerlink" href="#decide-on-boundaries" title="Permanent link">&para;</a></h2>
 <p>Your services will likely use an assortment of entities. It is common
 for these to map to database tables or [ORM] classes. For example,
@@ -1261,9 +1262,9 @@ email, or quantity).</p>
 <ul>
 <li>Identify aggregates with UUIDs</li>
 <li>Do not enforce foreign keys between aggregates. Your application code
-  will need to deal with inconsistencies gracefully.</li>
+  will need to deal with inconsistencies gracefully (likely in it's user interface).</li>
 <li>It is likely still a good idea to use sequential integer primary keys in your RDBMS</li>
-<li>Do <strong>not</strong> share database-level sequential integer primary keys</li>
+<li>Do <strong>not</strong> share database-level sequential integer primary keys with other servces</li>
 </ul>
 <h2 id="writes-are-special">Writes are special<a class="headerlink" href="#writes-are-special" title="Permanent link">&para;</a></h2>
 <p>Writes are inherently different to reads in a distributed system.
@@ -1281,13 +1282,17 @@ need to be propagated to all concerned services.</p>
 <li>Broadcast the change (Lightbus event or RPC)</li>
 <li>Other services receive &amp; apply the change</li>
 </ol>
-<p>TODO: Pros/cons.</p>
+<p>The downside of this approach is that you have two write paths (writing locally and broadcasting the change). 
+If either of these fails then your services will have an inconsistent view of the world.</p>
 <p>A more <strong>CQRS-based approach to writing data</strong> looks like this:</p>
 <ol>
 <li>Broadcast the change (Lightbus event)</li>
 <li>Services (including the broadcasting service) receive &amp; apply the change</li>
 </ol>
-<p>TODO: Pros/cons.</p>
+<p>The benefit of this approach is that either the change happens or it does not. Additionally 
+all applications share the same write path, which reduces overall complexity. A downside 
+is that changes can take a moment to be applied,
+so changes made by a user may not be immediately visible.</p>
 <h2 id="use-a-monorepository">Use a monorepository<a class="headerlink" href="#use-a-monorepository" title="Permanent link">&para;</a></h2>
 <p>A monorepository is a repository which stores <em>all</em> your services, rather than having 
 one repository per service. There are pros and cons to this approach and you should 

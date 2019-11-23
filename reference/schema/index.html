@@ -1373,36 +1373,53 @@ bus' <code>config.yaml</code>.</p>
 <h4 id="validate-bool-true"><code>validate (bool) = true</code><a class="headerlink" href="#validate-bool-true" title="Permanent link">&para;</a></h4>
 <p>You can enable/disable validation using a boolean true/false flag:</p>
 <div class="codehilite"><pre><span></span><span class="c1"># In config.yaml</span>
-<span class="nv">apis:</span>
-    <span class="nv">default:</span>
-        <span class="nv">validate: </span><span class="kc">false</span>
+<span class="nt">apis</span><span class="p">:</span>
+    <span class="nt">default</span><span class="p">:</span>
+        <span class="nt">validate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
 </pre></div>
 
 <p>For finer grained control you can specify individual flags for incoming/outgoing
 validation:</p>
 <div class="codehilite"><pre><span></span><span class="c1"># In config.yaml</span>
-<span class="nv">apis:</span>
-    <span class="nv">default:</span>
-        <span class="nv">validate:</span>
-          <span class="nv">outgoing: </span><span class="kc">true</span>
-          <span class="nv">incoming: </span><span class="kc">false</span>
+<span class="nt">apis</span><span class="p">:</span>
+    <span class="nt">default</span><span class="p">:</span>
+        <span class="nt">validate</span><span class="p">:</span>
+          <span class="nt">outgoing</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+          <span class="nt">incoming</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
 </pre></div>
 
 <h4 id="strict_validation-bool-false"><code>strict_validation (bool) = false</code><a class="headerlink" href="#strict_validation-bool-false" title="Permanent link">&para;</a></h4>
 <p>If <code>strict_validation</code> is <code>true</code> then calling a procedure for which no schema exists will
 result in an error:</p>
 <div class="codehilite"><pre><span></span><span class="c1"># In config.yaml</span>
-<span class="nv">apis:</span>
-    <span class="nv">default:</span>
-        <span class="nv">strict_validation: </span><span class="kc">true</span>
+<span class="nt">apis</span><span class="p">:</span>
+    <span class="nt">default</span><span class="p">:</span>
+        <span class="nt">strict_validation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
 </pre></div>
 
 <h2 id="manual-validation">Manual validation<a class="headerlink" href="#manual-validation" title="Permanent link">&para;</a></h2>
-<p>TODO</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Lightbus will likely upgrade to a newer JSON Schema version once the <a href="https://github.com/Julian/jsonschema">jsonschema Python library</a> has the <a href="https://github.com/Julian/jsonschema/issues/337">requisite support</a>.</p>
-</div>
+<p>Lightbus supports manually loading your bus' schema into your bus client. 
+For example, you may <a href="../command-line-use/dumpschema/">take a dump of your production bus schema</a>
+and use it to test/develop against either in your local development environment or 
+in any automated testing system.</p>
+<p>You can load a local schema as follows:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
+
+<span class="c1"># Either load form a single file</span>
+<span class="n">bus</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">load_local</span><span class="p">(</span><span class="s2">&quot;/path/to/local/bus-schema.json&quot;</span><span class="p">)</span>
+
+<span class="c1"># ... or load all schemas in a directory</span>
+<span class="n">bus</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">load_local</span><span class="p">(</span><span class="s2">&quot;/path/to/local/schema/&quot;</span><span class="p">)</span>
+</pre></div>
+
+<p>Your bus client will now use the specified schema to validate RPCs and events.</p>
+<p><code>bus.schema</code> also includes two validation methods which may be useful:</p>
+<ul>
+<li><code>bus.schema.validate_parameters(api_name, event_or_rpc_name, parameters)</code></li>
+<li><code>bus.schema.validate_response(api_name, rpc_name, response)</code></li>
+</ul>
+<p>You can use these methods to manually validate parameters or response values against 
+the locally loaded schema.</p>
                 
                   
                 
