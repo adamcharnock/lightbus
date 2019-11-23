@@ -126,9 +126,6 @@ class BusPath:
                 yield parent
             parent = parent.parent
 
-    def run_forever(self):
-        self.client.run_forever()
-
     @property
     def api_name(self):
         path = [node.name for node in self.ancestors(include_self=False)]
