@@ -127,10 +127,11 @@ bus.schema.load_local("/path/to/local/schema/")
 
 Your bus client will now use the specified schema to validate RPCs and events.
 
-`bus.schema` also includes two validation methods which may be useful:
+Parameters and responses may also be directly validated so you need:
 
-* `bus.schema.validate_parameters(api_name, event_or_rpc_name, parameters)`
-* `bus.schema.validate_response(api_name, rpc_name, response)`
+* Event (parameters): `bus.my_api.my_event.validate_parameters(parameters)`
+* RPC (parameters): `bus.my_api.my_rpc.validate_parameters(parameters)`
+* RPC (response): `bus.my_api.my_rpc.validate_response(response)`
 
 You can use these methods to manually validate parameters or response values against 
 the locally loaded schema.
