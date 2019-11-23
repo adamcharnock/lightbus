@@ -118,7 +118,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#1-module-loading" tabindex="1" class="md-skip">
+      <a href="#configuration" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -847,6 +847,8 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
     
+      
+    
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
         Configuration
@@ -859,6 +861,8 @@
       
 <nav class="md-nav md-nav--secondary">
   
+  
+    
   
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
@@ -1135,8 +1139,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../transports/" title="Transports*" class="md-nav__link">
-      Transports*
+    <a href="../transport-configuration/" title="Transport configuration" class="md-nav__link">
+      Transport configuration
     </a>
   </li>
 
@@ -1219,6 +1223,8 @@
                     
 <nav class="md-nav md-nav--secondary">
   
+  
+    
   
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
@@ -1377,9 +1383,8 @@
                   <a href="https://github.com/adamcharnock/lightbus/edit/master/docs/reference/configuration.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Configuration</h1>
-                
-                <p>Lightbus' configuration happens in three stages:</p>
+                <h1 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h1>
+<p>Lightbus' configuration happens in three stages:</p>
 <ol>
 <li><strong>Module loading</strong> – Lightbus discovers where your <code>bus.py</code> file can found via the <code>LIGHTBUS_MODULE</code> environment variable.</li>
 <li><strong>Service-level configuration</strong> – Your <code>bus.py</code> file specifies service-level settings (<code>service_name</code> and <code>process_name</code>)</li>
@@ -1387,6 +1392,20 @@
    This can be a local file path, or a HTTP(S) URL.</li>
 </ol>
 <p>See the <a href="../../explanation/configuration/">configuration explanation</a> for further discussion and reasoning around this approach.</p>
+<div class="admonition note">
+<p class="admonition-title">Configuration auto-complete using JSON Schema</p>
+<p>Many code editors support using a JSON schema to provide auto-complete and validation when 
+editing a JSON file. If you wish, you can write your configuration in JSON (rather than YAML),
+and load the following JSON schema into your editor: </p>
+<div class="codehilite"><pre><span></span>https://lightbus.org/static/default-config-schema.json
+</pre></div>
+
+
+<p>This will provide you with autocomplete and validation for Lightbus' various 
+configuration options.</p>
+<p>If you are using custom transports or plugins you should 
+<a href="../command-line-use/dumpconfigschema/">generate your own config schema</a>.</p>
+</div>
 <h2 id="1-module-loading">1. Module loading<a class="headerlink" href="#1-module-loading" title="Permanent link">&para;</a></h2>
 <p>The first stage in Lightbus' startup is to import your <code>bus.py</code> module.
 By default Lightbus will attempt to import a module named <code>bus</code>,
@@ -1525,10 +1544,12 @@ process name values:</p>
 <p>See the <a href="../../explanation/events/">events explanation section</a> for a discussion on how
 service &amp; process names affect event delivery.</p>
 <h2 id="3-global-bus-configuration">3. Global bus configuration<a class="headerlink" href="#3-global-bus-configuration" title="Permanent link">&para;</a></h2>
-<p>The global bus configuration specifies the bus' overall architecture.
-This takes the form of a YAML or JSON file. This file is typically
+<p>The global bus configuration specifies the bus' overall architecture.</p>
+<p>This configuration takes the form of a YAML or JSON file, and accordingly the filename 
+should end with <code>.yaml</code> or <code>.json</code>. </p>
+<p>This file is typically
 shared by all lightbus clients and can be specified as a path on 
-disk, or as a HTTP(S) URL.</p>
+disk, or as a HTTP(S) URL (<a href="../../explanation/configuration/#3-global-bus-configuration">see explanation</a>).</p>
 <p>A basic default configuration file is as follows:</p>
 <div class="codehilite"><pre><span></span><span class="c1"># Root configuration</span>
 <span class="nt">bus</span><span class="p">:</span>
@@ -1629,7 +1650,8 @@ APIs do not inherit from the default configuration.</p>
 
   <span class="c1"># Catch-all api config</span>
   <span class="nt">default</span><span class="p">:</span>
-      <span class="l l-Scalar l-Scalar-Plain">... default config as above ...</span>
+    <span class="c1"># See &#39;API config&#39;</span>
+    <span class="l l-Scalar l-Scalar-Plain">... default config as above ...</span>
 
   <span class="c1"># Specific config for the &#39;marketing.analytics&#39; API.</span>
   <span class="c1"># Use a different Redis instance for the high</span>
@@ -1655,9 +1677,10 @@ APIs do not inherit from the default configuration.</p>
 <p>See <a href="#api-config">API config</a> for further details on the API options available.</p>
 <h4 id="api-config">API config<a class="headerlink" href="#api-config" title="Permanent link">&para;</a></h4>
 <p>The API config resides under the <a href="#api-configuration-listing">API configuration listing</a>.</p>
-<p>Each API can be individually configured using the options below:</p>
+<p>APIs are configured using the options below:</p>
 <ul>
-<li><code>rpc_timeout</code> (default: <code>5</code>) – Timeout when calling RPCs on this API</li>
+<li><code>rpc_timeout</code> (default: <code>5</code>) – Timeout when calling RPCs on this API 
+   (must also be specified on the <a href="../transport-configuration/#rpc_timeout_1">RPC</a> and <a href="../transport-configuration/#rpc_timeout_2">result</a> transport)</li>
 <li><code>event_listener_setup_timeout</code> (default: <code>1</code>) – Timeout seconds when setting up event listeners
   (only applies when using the blocking api)</li>
 <li><code>event_fire_timeout</code> (default: <code>1</code>) – Timeout seconds when firing events on the bus
@@ -1683,7 +1706,7 @@ APIs do not inherit from the default configuration.</p>
 <h5 id="transport-selector">Transport selector<a class="headerlink" href="#transport-selector" title="Permanent link">&para;</a></h5>
 <p>The schema config resides under both the <a href="#api-config">API config</a> and the
 <a href="#schema-config">schema config</a>.</p>
-<p>Transports are specifed as follows:</p>
+<p>Transports are specified as follows:</p>
 <div class="codehilite"><pre><span></span>... parent yaml ...
     [transport-name]:
         option: &quot;value&quot;
@@ -1730,7 +1753,8 @@ can use different types for each of its <code>rpc</code>, <code>result</code>,
 and <code>event</code> needs.</p>
 <p>The <code>schema</code> transport is global to the bus, and is not
 configurable on a per-api level.</p>
-<p>For more information see <a href="../transports/">transports</a>.</p>
+<p><strong>For more information (including configuration options) 
+see the <a href="transports.md">transports reference</a>.</strong></p>
 <h5 id="api-validation-config">API validation config<a class="headerlink" href="#api-validation-config" title="Permanent link">&para;</a></h5>
 <p>The schema config resides under the <code>validate</code> key within
 the <a href="#api-config">API config</a>.</p>
