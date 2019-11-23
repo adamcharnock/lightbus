@@ -9,8 +9,9 @@ of transport:
 * **Schema transports** – stores and retrieves the [bus schema](schema.md)
 
 **Lightbus ships with a Redis-backed implementation of each of these transports.**
+For details see the [transport reference](../reference/transports.md).
 
 Lightbus can be [configured] to use custom transports either globally,
 or on a per-API level.
 
-[configured]: configuration.md
+[configured]: ../reference/configuration.md

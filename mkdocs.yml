@@ -81,7 +81,7 @@ nav:
       - dumpconfigschema: reference/command-line-use/dumpconfigschema.md
     - Plugins: reference/plugins.md
     - Plugin development: reference/plugins-development.md
-    - Transports*: reference/transports.md
+    - Transport configuration: reference/transport-configuration.md
     - RPC & Result Protocol (Redis): reference/rpc-and-result-protocol.md
     - Event Protocol (Redis): reference/event-protocol.md
     - Schema Protocol (Redis): reference/schema-protocol.md
@@ -114,6 +114,7 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
+  - markdown_include.include
 
 google_analytics:
   - 'UA-103655163-1'

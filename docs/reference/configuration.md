@@ -1,3 +1,4 @@
+# Configuration
 
 Lightbus' configuration happens in three stages:
 
@@ -8,6 +9,8 @@ Lightbus' configuration happens in three stages:
 
 See the [configuration explanation] for further discussion and reasoning around this approach.
 
+{!docs/includes/note-configuration-auto-complete.md!}
+ 
 ## 1. Module loading
 
 The first stage in Lightbus' startup is to import your `bus.py` module.
@@ -104,9 +107,13 @@ service & process names affect event delivery.
 ## 3. Global bus configuration
 
 The global bus configuration specifies the bus' overall architecture.
-This takes the form of a YAML or JSON file. This file is typically
+
+This configuration takes the form of a YAML or JSON file, and accordingly the filename 
+should end with `.yaml` or `.json`. 
+
+This file is typically
 shared by all lightbus clients and can be specified as a path on 
-disk, or as a HTTP(S) URL.
+disk, or as a HTTP(S) URL ([see explanation](../explanation/configuration.md#3-global-bus-configuration)).
 
 A basic default configuration file is as follows:
 
@@ -219,7 +226,8 @@ apis:
 
   # Catch-all api config
   default:
-      ... default config as above ...
+    # See 'API config'
+    ... default config as above ...
 
   # Specific config for the 'marketing.analytics' API.
   # Use a different Redis instance for the high
@@ -248,9 +256,10 @@ See [API config] for further details on the API options available.
 
 The API config resides under the [API configuration listing].
 
-Each API can be individually configured using the options below:
+APIs are configured using the options below:
 
-* `rpc_timeout` (default: `5`) – Timeout when calling RPCs on this API
+* `rpc_timeout` (default: `5`) – Timeout when calling RPCs on this API 
+   (must also be specified on the [RPC](transport-configuration.md#rpc_timeout_1) and [result](transport-configuration.md#rpc_timeout_2) transport)
 * `event_listener_setup_timeout` (default: `1`) – Timeout seconds when setting up event listeners
   (only applies when using the blocking api)
 * `event_fire_timeout` (default: `1`) – Timeout seconds when firing events on the bus
@@ -278,7 +287,7 @@ Each API can be individually configured using the options below:
 The schema config resides under both the [API config] and the
 [schema config].
 
-Transports are specifed as follows:
+Transports are specified as follows:
 
 ```
 ... parent yaml ...
@@ -308,7 +317,8 @@ and `event` needs.
 The `schema` transport is global to the bus, and is not
 configurable on a per-api level.
 
-For more information see [transports](transports.md).
+**For more information (including configuration options) 
+see the [transports reference](transports.md).**
 
 
 ##### API validation config
