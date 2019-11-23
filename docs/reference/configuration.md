@@ -3,7 +3,10 @@ Lightbus' configuration happens in three stages:
 
 1. **Module loading** – Lightbus discovers where your `bus.py` file can found via the `LIGHTBUS_MODULE` environment variable.
 2. **Service-level configuration** – Your `bus.py` file specifies service-level settings (`service_name` and `process_name`)
-3. **Global bus configuration** – Your `bus.py` provides the location to the global config for your bus.
+3. **Global bus configuration** – Your `bus.py` provides the location to the global config for your bus. 
+   This can be a local file path, or a HTTP(S) URL.
+
+See the [configuration explanation] for further discussion and reasoning around this approach.
 
 ## 1. Module loading
 
@@ -346,3 +349,4 @@ Plugin developers should see the [plugins reference] for further details.
 [process name explanation]: ../explanation/events.md#process-names
 [setup.py]: https://github.com/adamcharnock/lightbus/blob/master/setup.py
 [plugins reference]: plugins.md
+[configuration explanation]: ../explanation/configuration.md

@@ -140,8 +140,16 @@ A more **CQRS-based approach to writing data** looks like this:
 
 TODO: Pros/cons.
 
-## Use a mono-repository
+## Use a monorepository
 
-* Sharing data structures
-* Atomic commits across services
-* Easier project wide changes
+A monorepository is a repository which stores *all* your services, rather than having 
+one repository per service. There are pros and cons to this approach and you should 
+perform your own research. The relevant benefits to Lightbus (and distributed architectures in 
+general) are:
+
+* **Atomic commits across multiple services** – useful when a change to one service affects another.
+* **Easier sharing of data structures** – this provides a shared language across all of your services. 
+  These data structures can be used as type hints on your events and RPCs, which Lightbus will 
+  automatically cast data into.
+* **Sharing of global bus configuration** – similar to sharing data structures, your global bus configuration 
+  YAML file can likewise be available to all services.

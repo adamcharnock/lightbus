@@ -60,7 +60,7 @@ nav:
     - Events: explanation/events.md
     - Marshelling: explanation/marshalling.md
     - Transports: explanation/transports.md
-    - Configuration*: explanation/configuration.md
+    - Configuration: explanation/configuration.md
     - Schema: explanation/schema.md
     - Lightbus vs Celery: explanation/lightbus-vs-celery.md
     - Architecture tips: explanation/architecture-tips.md
