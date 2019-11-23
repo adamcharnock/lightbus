@@ -87,7 +87,7 @@ jobs:
       - run:
           command: |
             pipenv install --ignore-pipfile --dev
-            lightbus dumpconfigschema -b lightbus_examples.ex01_quickstart.auth_service.bus > docs/static/default-config-schema.json
+            pipenv run lightbus dumpconfigschema -b lightbus_examples.ex01_quickstart.auth_service.bus > docs/static/default-config-schema.json
             pipenv run mkdocs gh-deploy --force --message="Automated build by CircleCI [ci skip]"
 
       - save_cache:
