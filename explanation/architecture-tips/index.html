@@ -698,8 +698,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../configuration/" title="Configuration*" class="md-nav__link">
-      Configuration*
+    <a href="../configuration/" title="Configuration" class="md-nav__link">
+      Configuration
     </a>
   </li>
 
@@ -782,8 +782,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#use-a-mono-repository" class="md-nav__link">
-    Use a mono-repository
+  <a href="#use-a-monorepository" class="md-nav__link">
+    Use a monorepository
   </a>
   
 </li>
@@ -1134,8 +1134,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#use-a-mono-repository" class="md-nav__link">
-    Use a mono-repository
+  <a href="#use-a-monorepository" class="md-nav__link">
+    Use a monorepository
   </a>
   
 </li>
@@ -1276,11 +1276,18 @@ need to be propagated to all concerned services.</p>
 <li>Services (including the broadcasting service) receive &amp; apply the change</li>
 </ol>
 <p>TODO: Pros/cons.</p>
-<h2 id="use-a-mono-repository">Use a mono-repository<a class="headerlink" href="#use-a-mono-repository" title="Permanent link">&para;</a></h2>
+<h2 id="use-a-monorepository">Use a monorepository<a class="headerlink" href="#use-a-monorepository" title="Permanent link">&para;</a></h2>
+<p>A monorepository is a repository which stores <em>all</em> your services, rather than having 
+one repository per service. There are pros and cons to this approach and you should 
+perform your own research. The relevant benefits to Lightbus (and distributed architectures in 
+general) are:</p>
 <ul>
-<li>Sharing data structures</li>
-<li>Atomic commits across services</li>
-<li>Easier project wide changes</li>
+<li><strong>Atomic commits across multiple services</strong> – useful when a change to one service affects another.</li>
+<li><strong>Easier sharing of data structures</strong> – this provides a shared language across all of your services. 
+  These data structures can be used as type hints on your events and RPCs, which Lightbus will 
+  automatically cast data into.</li>
+<li><strong>Sharing of global bus configuration</strong> – similar to sharing data structures, your global bus configuration 
+  YAML file can likewise be available to all services.</li>
 </ul>
                 
                   

@@ -696,8 +696,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/configuration/" title="Configuration*" class="md-nav__link">
-      Configuration*
+    <a href="../../explanation/configuration/" title="Configuration" class="md-nav__link">
+      Configuration
     </a>
   </li>
 
@@ -1345,8 +1345,10 @@
 <ol>
 <li><strong>Module loading</strong> – Lightbus discovers where your <code>bus.py</code> file can found via the <code>LIGHTBUS_MODULE</code> environment variable.</li>
 <li><strong>Service-level configuration</strong> – Your <code>bus.py</code> file specifies service-level settings (<code>service_name</code> and <code>process_name</code>)</li>
-<li><strong>Global bus configuration</strong> – Your <code>bus.py</code> provides the location to the global config for your bus.</li>
+<li><strong>Global bus configuration</strong> – Your <code>bus.py</code> provides the location to the global config for your bus. 
+   This can be a local file path, or a HTTP(S) URL.</li>
 </ol>
+<p>See the <a href="../../explanation/configuration/">configuration explanation</a> for further discussion and reasoning around this approach.</p>
 <h2 id="1-module-loading">1. Module loading<a class="headerlink" href="#1-module-loading" title="Permanent link">&para;</a></h2>
 <p>The first stage in Lightbus' startup is to import your <code>bus.py</code> module.
 By default Lightbus will attempt to import a module named <code>bus</code>,
