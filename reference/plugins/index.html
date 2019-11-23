@@ -1199,7 +1199,7 @@ console every time a message is sent.</p>
 </ol>
 <h3 id="1-define-the-plugin">1. Define the plugin<a class="headerlink" href="#1-define-the-plugin" title="Permanent link">&para;</a></h3>
 <p>Create the following in a python module (we'll assume it is at <code>my_project.greeting_plugin</code>):</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">lightbus.plugins</span> <span class="kn">import</span> <span class="n">LightbusPlugin</span>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">lightbus.plugins</span> <span class="k">import</span> <span class="n">LightbusPlugin</span>
 
 
 <span class="k">class</span> <span class="nc">GreetingPlugin</span><span class="p">(</span><span class="n">LightbusPlugin</span><span class="p">):</span>
@@ -1207,7 +1207,7 @@ console every time a message is sent.</p>
 
     <span class="n">priority</span> <span class="o">=</span> <span class="mi">200</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">greeting</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">greeting</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">greeting</span> <span class="o">=</span> <span class="n">greeting</span>
 
     <span class="nd">@classmethod</span>
@@ -1216,9 +1216,9 @@ console every time a message is sent.</p>
         <span class="c1"># can be set in the bus&#39; yaml configuration (see below)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">greeting</span><span class="o">=</span><span class="n">greeting</span><span class="p">)</span>
 
-    <span class="n">async</span> <span class="k">def</span> <span class="nf">after_event_sent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">event_message</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_event_sent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">event_message</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
         <span class="c1"># Print a simple greeting after an event is sent</span>
-        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">greeting</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">greeting</span><span class="p">)</span>
 </pre></div>
 
 <h3 id="2-make-lightbus-aware-of-the-plugin">2. Make Lightbus aware of the plugin<a class="headerlink" href="#2-make-lightbus-aware-of-the-plugin" title="Permanent link">&para;</a></h3>
@@ -1273,7 +1273,7 @@ console every time a message is sent.</p>
 <h2 id="plugin-hooksmethods">Plugin hooks/methods<a class="headerlink" href="#plugin-hooksmethods" title="Permanent link">&para;</a></h2>
 <p>The following hooks are available. Each of these should be implemented 
 as an asynchronous method on your plugin class. </p>
-<p><strong>For full reference see the <a href="https://github.com/adamcharnock/lightbus/blob/master/lightbus/plugins/__init__.py">LightbusPlugin</a> class</strong></p>
+<p><strong>For full reference see the <a href="https://github.com/adamcharnock/lightbus/blob/master/lightbus/plugins/__init__.py">LightbusPlugin class</a></strong></p>
 <ul>
 <li><code>before_parse_args</code></li>
 <li><code>receive_args</code></li>
