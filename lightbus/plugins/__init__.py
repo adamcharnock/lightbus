@@ -66,43 +66,73 @@ class LightbusPlugin(metaclass=PluginMetaclass):
         pass
 
     async def before_server_start(self, *, client: "BusClient"):
+        """Called after the server is setup, but before any RPC or Event consumption"""
         pass
 
     async def after_server_stopped(self, *, client: "BusClient"):
+        """Called after all RPC and Event consumption has been stopped"""
         pass
 
     async def before_rpc_call(self, *, rpc_message: RpcMessage, client: "BusClient"):
+        """Called before `rpc_message` is sent to the bus
+
+        `rpc_message` is mutable and may therefore be changed prior to being sent
+        """
         pass
 
     async def after_rpc_call(
         self, *, rpc_message: RpcMessage, result_message: ResultMessage, client: "BusClient"
     ):
+        """Called after an RPC response has been received back from the bus
+
+        `result_message` is mutable and may therefore be changed prior to it being
+        passed back to the calling code
+        """
         pass
 
     async def before_rpc_execution(self, *, rpc_message: RpcMessage, client: "BusClient"):
+        """Called once an incoming RPC call is received, but before it is executed
+
+        `rpc_message` is mutable and may therefore be changed prior to being passed to the
+        handling code.
+        """
         pass
 
     async def after_rpc_execution(
         self, *, rpc_message: RpcMessage, result_message: ResultMessage, client: "BusClient"
     ):
-        pass
+        """Called after an incoming RPC call has been received and executed
+
+        `result_message` is mutable and may therefore be changed prior to being
+        sent on the bus back to the caller.
+        """
 
     async def before_event_sent(self, *, event_message: EventMessage, client: "BusClient"):
+        """Called before an event to sent onto the bus
+
+        `event_message` is mutable and may therefore be changed prior to being sent
+        """
         pass
 
     async def after_event_sent(self, *, event_message: EventMessage, client: "BusClient"):
+        """Called after an event has been sent onto the bus"""
         pass
 
     async def before_event_execution(self, *, event_message: EventMessage, client: "BusClient"):
+        """Called once an incoming event call is received, but before its handler is executed
+
+        `event_message` is mutable and may therefore be changed prior to being passed to the
+        handling code.
+        """
         pass
 
     async def after_event_execution(self, *, event_message: EventMessage, client: "BusClient"):
-        pass
+        """Called after an incoming event call has been received and its handler executed"""
 
     async def exception(self, *, e: Exception):
         """Called during the handling of Exception e
 
-        This hook will only be called when running lightbus via `lightbus run`.
+        This hook will only be called when running within a lightbus worker (ie. via `lightbus run`).
         """
         pass
 
