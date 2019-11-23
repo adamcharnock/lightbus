@@ -1413,10 +1413,11 @@ in any automated testing system.</p>
 </pre></div>
 
 <p>Your bus client will now use the specified schema to validate RPCs and events.</p>
-<p><code>bus.schema</code> also includes two validation methods which may be useful:</p>
+<p>Parameters and responses may also be directly validated so you need:</p>
 <ul>
-<li><code>bus.schema.validate_parameters(api_name, event_or_rpc_name, parameters)</code></li>
-<li><code>bus.schema.validate_response(api_name, rpc_name, response)</code></li>
+<li>Event (parameters): <code>bus.my_api.my_event.validate_parameters(parameters)</code></li>
+<li>RPC (parameters): <code>bus.my_api.my_rpc.validate_parameters(parameters)</code></li>
+<li>RPC (response): <code>bus.my_api.my_rpc.validate_response(response)</code></li>
 </ul>
 <p>You can use these methods to manually validate parameters or response values against 
 the locally loaded schema.</p>
