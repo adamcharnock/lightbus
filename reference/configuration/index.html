@@ -978,6 +978,19 @@
     Plugin configuration listing
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#plugin-configuration" class="md-nav__link">
+    Plugin configuration
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -1100,6 +1113,18 @@
   <li class="md-nav__item">
     <a href="../plugins/" title="Plugins" class="md-nav__link">
       Plugins
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../plugins-development/" title="Plugin development" class="md-nav__link">
+      Plugin development
     </a>
   </li>
 
@@ -1313,6 +1338,19 @@
     Plugin configuration listing
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#plugin-configuration" class="md-nav__link">
+    Plugin configuration
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -1492,12 +1530,12 @@ This takes the form of a YAML or JSON file. This file is typically
 shared by all lightbus clients and can be specified as a path on 
 disk, or as a HTTP(S) URL.</p>
 <p>A basic default configuration file is as follows:</p>
-<div class="codehilite"><pre><span></span><span class="c1"># Root config</span>
+<div class="codehilite"><pre><span></span><span class="c1"># Root configuration</span>
 <span class="nt">bus</span><span class="p">:</span>
-  <span class="c1"># Bus config</span>
+  <span class="c1"># Bus configuration</span>
 
   <span class="nt">schema</span><span class="p">:</span>
-    <span class="c1"># Schema config</span>
+    <span class="c1"># Schema configuration</span>
 
     <span class="nt">transport</span><span class="p">:</span>
       <span class="c1"># Transport selector config</span>
@@ -1512,17 +1550,17 @@ disk, or as a HTTP(S) URL.</p>
     <span class="c1"># Api config</span>
 
     <span class="nt">event_transport</span><span class="p">:</span>
-      <span class="c1"># Transport selector config</span>
+      <span class="c1"># Transport selector configuration</span>
       <span class="nt">redis</span><span class="p">:</span>
         <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
 
     <span class="nt">rpc_transport</span><span class="p">:</span>
-      <span class="c1"># Transport selector config</span>
+      <span class="c1"># Transport selector configuration</span>
       <span class="nt">redis</span><span class="p">:</span>
         <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
 
     <span class="nt">result_transport</span><span class="p">:</span>
-      <span class="c1"># Transport selector config</span>
+      <span class="c1"># Transport selector configuration</span>
       <span class="nt">redis</span><span class="p">:</span>
         <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
 
@@ -1531,6 +1569,10 @@ disk, or as a HTTP(S) URL.</p>
 
   <span class="c1"># These plugins ship with Lightbus</span>
   <span class="nt">internal_metrics</span><span class="p">:</span>
+    <span class="c1"># Plugin configuration</span>
+
+    <span class="c1"># Note that plugins are disabled by default, and must be enabled here </span>
+    <span class="c1"># in your bus&#39; global configuration</span>
     <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
 
   <span class="nt">internal_state</span><span class="p">:</span>
@@ -1704,11 +1746,31 @@ is not present on the bus.
 You can turn this into an error by enabling <code>strict_validation</code>
 within the <a href="#api-config">API config</a>.</p>
 <h3 id="plugin-configuration-listing">Plugin configuration listing<a class="headerlink" href="#plugin-configuration-listing" title="Permanent link">&para;</a></h3>
-<p>The plugin configuration listing config resides under the <a href="#root-config">root config</a>.</p>
+<p>The plugin configuration listing config resides under the <a href="#root-config">root config</a>. 
+This configuration section is a mapping between plugin names and their 
+configuration options.</p>
 <p>Plugins are made available to Lightbus via the <code>lightbus_plugins</code> entry 
 point (see Lightbus' <a href="https://github.com/adamcharnock/lightbus/blob/master/setup.py">setup.py</a> for an example). As a result, installing a 
 plugin should be sufficient for it to be made available for configuration.</p>
 <p>Plugin developers should see the <a href="../plugins/">plugins reference</a> for further details.</p>
+<h4 id="plugin-configuration">Plugin configuration<a class="headerlink" href="#plugin-configuration" title="Permanent link">&para;</a></h4>
+<p>The Plugin configuration resides under the <a href="#plugin-configuration-listing">Plugin configuration listing</a>.</p>
+<p>This section provides the configuration for an individual plugin. The available 
+configuration options will vary from plugin to plugin, so you should read 
+the plugin's documentation for details.</p>
+<p>However, all plugins support the <code>enabled</code> property, which defaults to <code>false</code>. 
+You must there set <code>enabled: true</code> if you wish to use the plugin. For example:</p>
+<div class="codehilite"><pre><span></span><span class="nt">bus</span><span class="p">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">...</span>
+
+<span class="nt">apis</span><span class="p">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">...</span>
+
+<span class="nt">plugins</span><span class="p">:</span>
+  <span class="nt">internal_metrics</span><span class="p">:</span>
+    <span class="c1"># Plugin configuration</span>
+    <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
                 
                   
                 

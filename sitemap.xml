@@ -216,6 +216,11 @@
      <changefreq>daily</changefreq>
     </url>
     <url>
+     <loc>http://lightbus.org/reference/plugins-development/</loc>
+     <lastmod>2019-11-23</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    <url>
      <loc>http://lightbus.org/reference/transports/</loc>
      <lastmod>2019-11-23</lastmod>
      <changefreq>daily</changefreq>

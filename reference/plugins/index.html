@@ -118,7 +118,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#example-plugin" tabindex="1" class="md-skip">
+      <a href="#state-plugin" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -973,31 +973,85 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#example-plugin" class="md-nav__link">
-    Example plugin
+  <a href="#state-plugin" class="md-nav__link">
+    State Plugin
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-define-the-plugin" class="md-nav__link">
-    1. Define the plugin
+  <a href="#events" class="md-nav__link">
+    Events
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#server_started" class="md-nav__link">
+    server_started
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-make-lightbus-aware-of-the-plugin" class="md-nav__link">
-    2. Make Lightbus aware of the plugin
+  <a href="#server_ping" class="md-nav__link">
+    server_ping
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-configure-the-plugin" class="md-nav__link">
-    3. Configure the plugin
+  <a href="#server_stopped" class="md-nav__link">
+    server_stopped
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enabled-bool" class="md-nav__link">
+    enabled (bool)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ping_enabled-bool" class="md-nav__link">
+    ping_enabled (bool)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ping_enabled-int-seconds" class="md-nav__link">
+    ping_enabled (int, seconds)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-configuration" class="md-nav__link">
+    Example configuration
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1007,9 +1061,29 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#plugin-hooksmethods" class="md-nav__link">
-    Plugin hooks/methods
+  <a href="#metrics-plugin" class="md-nav__link">
+    Metrics Plugin
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#events_1" class="md-nav__link">
+    Events
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration_1" class="md-nav__link">
+    Configuration
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1021,6 +1095,18 @@
   
 </nav>
     
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../plugins-development/" title="Plugin development" class="md-nav__link">
+      Plugin development
+    </a>
   </li>
 
         
@@ -1120,31 +1206,85 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#example-plugin" class="md-nav__link">
-    Example plugin
+  <a href="#state-plugin" class="md-nav__link">
+    State Plugin
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-define-the-plugin" class="md-nav__link">
-    1. Define the plugin
+  <a href="#events" class="md-nav__link">
+    Events
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#server_started" class="md-nav__link">
+    server_started
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-make-lightbus-aware-of-the-plugin" class="md-nav__link">
-    2. Make Lightbus aware of the plugin
+  <a href="#server_ping" class="md-nav__link">
+    server_ping
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-configure-the-plugin" class="md-nav__link">
-    3. Configure the plugin
+  <a href="#server_stopped" class="md-nav__link">
+    server_stopped
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enabled-bool" class="md-nav__link">
+    enabled (bool)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ping_enabled-bool" class="md-nav__link">
+    ping_enabled (bool)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ping_enabled-int-seconds" class="md-nav__link">
+    ping_enabled (int, seconds)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-configuration" class="md-nav__link">
+    Example configuration
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1154,9 +1294,29 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#plugin-hooksmethods" class="md-nav__link">
-    Plugin hooks/methods
+  <a href="#metrics-plugin" class="md-nav__link">
+    Metrics Plugin
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#events_1" class="md-nav__link">
+    Events
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration_1" class="md-nav__link">
+    Configuration
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1181,75 +1341,37 @@
                 
                   <h1>Plugins</h1>
                 
-                <p>Plugins provide hooks into Lightbus' inner workings.</p>
-<p>For example, the bundled <a href="https://github.com/adamcharnock/lightbus/blob/master/lightbus/plugins/state.py">StatePlugin</a>
- hooks into the <code>before_server_start</code> and <code>after_server_stopped</code> hooks. 
-The plugin uses these hooks to bus events indicating the state of the worker. 
-A <code>internal.state.server_started</code> event indicates a worker has started, and a 
-<code>internal.state.server_stopped</code> event indicates a worker has stopped. Consuming 
-these events will provide a picture of the current state of workers on the bus.</p>
-<h2 id="example-plugin">Example plugin<a class="headerlink" href="#example-plugin" title="Permanent link">&para;</a></h2>
-<p>Let's create a simple plugin which will print a configurable message to the 
-console every time a message is sent.</p>
-<p>This requires three steps:</p>
-<ol>
-<li>Define the plugin</li>
-<li>Make Lightbus aware of the plugin</li>
-<li>Configure the plugin</li>
-</ol>
-<h3 id="1-define-the-plugin">1. Define the plugin<a class="headerlink" href="#1-define-the-plugin" title="Permanent link">&para;</a></h3>
-<p>Create the following in a python module (we'll assume it is at <code>my_project.greeting_plugin</code>):</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">lightbus.plugins</span> <span class="k">import</span> <span class="n">LightbusPlugin</span>
-
-
-<span class="k">class</span> <span class="nc">GreetingPlugin</span><span class="p">(</span><span class="n">LightbusPlugin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Print a greeting after every event it sent&quot;&quot;&quot;</span>
-
-    <span class="n">priority</span> <span class="o">=</span> <span class="mi">200</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">greeting</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">greeting</span> <span class="o">=</span> <span class="n">greeting</span>
-
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="s2">&quot;Config&quot;</span><span class="p">,</span> <span class="n">greeting</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Hello world!&quot;</span><span class="p">):</span>
-        <span class="c1"># The arguments to this method define the configuration options which </span>
-        <span class="c1"># can be set in the bus&#39; yaml configuration (see below)</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">greeting</span><span class="o">=</span><span class="n">greeting</span><span class="p">)</span>
-
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_event_sent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">event_message</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
-        <span class="c1"># Print a simple greeting after an event is sent</span>
-        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">greeting</span><span class="p">)</span>
-</pre></div>
-
-<h3 id="2-make-lightbus-aware-of-the-plugin">2. Make Lightbus aware of the plugin<a class="headerlink" href="#2-make-lightbus-aware-of-the-plugin" title="Permanent link">&para;</a></h3>
-<p>Lightbus is made aware of the plugin via an entrypoint in you're project's <code>setup.py</code> file:</p>
-<div class="codehilite"><pre><span></span><span class="c1"># Your setup.py file</span>
-<span class="kn">from</span> <span class="nn">setuptools</span> <span class="kn">import</span> <span class="n">setup</span><span class="p">,</span> <span class="n">find_packages</span>
-
-<span class="n">setup</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;My Project&#39;</span><span class="p">,</span>
-    <span class="n">version</span><span class="o">=</span><span class="s1">&#39;0.1&#39;</span><span class="p">,</span>
-    <span class="n">packages</span><span class="o">=</span><span class="n">find_packages</span><span class="p">(),</span>
-    <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;lightbus_plugins&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="c1"># `greeting_plugin` defines the plugin name in the config</span>
-            <span class="c1"># `my_project.greeting_plugin` is your plugin&#39;s python module</span>
-            <span class="c1"># `GreetingPlugin` is your plugins class name</span>
-            <span class="s2">&quot;greeting_plugin = my_project.greeting_plugin:GreetingPlugin&quot;</span><span class="p">,</span>
-        <span class="p">],</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-</pre></div>
-
-<p>Once you've made this change (or for subsequent modifications) you will need to run:</p>
-<div class="codehilite"><pre><span></span>python setup.py develop
-</pre></div>
-
-
-<p>This will setup the <code>entry_points</code> you have specified</p>
-<h3 id="3-configure-the-plugin">3. Configure the plugin<a class="headerlink" href="#3-configure-the-plugin" title="Permanent link">&para;</a></h3>
-<p>You can configure your plugin in your bus' configuration YAML file 
-(see the <a href="../configuration/">configuration reference</a>). For example:</p>
+                <p>Lightbus ships with two plugins, both of which are disabled by default.</p>
+<h2 id="state-plugin">State Plugin<a class="headerlink" href="#state-plugin" title="Permanent link">&para;</a></h2>
+<p>Every Lightbus worker process which has the state plugin enabled will report it's state 
+to the bus. This state information is available as the following events on the 
+<code>internal.state</code> API.</p>
+<p>This plugin should add minimal load to the bus and may be useful in developing 
+tooling around the bus.</p>
+<h3 id="events">Events<a class="headerlink" href="#events" title="Permanent link">&para;</a></h3>
+<h4 id="server_started"><code>server_started</code><a class="headerlink" href="#server_started" title="Permanent link">&para;</a></h4>
+<p>Parameters: <code>process_name</code>, <code>metrics_enabled</code>, <code>api_names</code>, <code>listening_for</code>, <code>timestamp</code>, <code>ping_interval</code></p>
+<p>Fired when the worker starts up.</p>
+<h4 id="server_ping"><code>server_ping</code><a class="headerlink" href="#server_ping" title="Permanent link">&para;</a></h4>
+<p>Parameters: <code>process_name</code>, <code>metrics_enabled</code>, <code>api_names</code>, <code>listening_for</code>, <code>timestamp</code>, <code>ping_interval</code></p>
+<p>Fires every 60 seconds after worker startup. This indicates that the worker is still alive and has not 
+died unexpectedly. This interval is configurable (see below).</p>
+<h4 id="server_stopped"><code>server_stopped</code><a class="headerlink" href="#server_stopped" title="Permanent link">&para;</a></h4>
+<p>Parameters: <code>process_name</code>, <code>timestamp</code></p>
+<p>Fires when a worker shuts down cleanly.</p>
+<h3 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h3>
+<p>The following configuration options are available:</p>
+<h4 id="enabled-bool"><code>enabled</code> (bool)<a class="headerlink" href="#enabled-bool" title="Permanent link">&para;</a></h4>
+<p>Default: <code>False</code></p>
+<p>Should the plugin be enabled?</p>
+<h4 id="ping_enabled-bool"><code>ping_enabled</code> (bool)<a class="headerlink" href="#ping_enabled-bool" title="Permanent link">&para;</a></h4>
+<p>Default: <code>True</code></p>
+<p>Should ping messages be sent?</p>
+<h4 id="ping_enabled-int-seconds"><code>ping_enabled</code> (int, seconds)<a class="headerlink" href="#ping_enabled-int-seconds" title="Permanent link">&para;</a></h4>
+<p>Default: <code>60</code></p>
+<p>How often (in seconds) should a ping event be sent. A lower interval means more frequent messages, but reduces the 
+time it takes any listeners to discover dead workers.</p>
+<h4 id="example-configuration">Example configuration<a class="headerlink" href="#example-configuration" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><span class="nt">bus</span><span class="p">:</span>
   <span class="l l-Scalar l-Scalar-Plain">...</span>
 
@@ -1257,38 +1379,67 @@ console every time a message is sent.</p>
   <span class="l l-Scalar l-Scalar-Plain">...</span>
 
 <span class="nt">plugins</span><span class="p">:</span>
-  <span class="nt">greeting_plugin</span><span class="p">:</span>
-
-    <span class="c1"># The &#39;enabled&#39; configuration is avaialble for all plugins, </span>
-    <span class="c1"># if set to &#39;False&#39; the plugin will not be loaded.</span>
-    <span class="c1"># Optional, default is True</span>
+  <span class="nt">internal_state</span><span class="p">:</span>
     <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-
-    <span class="c1"># Lightbus is aware of our `greeting` option as it reads it </span>
-    <span class="c1"># from our `from_config()` method above.</span>
-    <span class="c1"># If we omit this it will have the default value of &quot;Hello world!&quot;</span>
-    <span class="nt">greeting</span><span class="p">:</span> <span class="s">&quot;Hello</span><span class="nv"> </span><span class="s">world,</span><span class="nv"> </span><span class="s">I</span><span class="nv"> </span><span class="s">sent</span><span class="nv"> </span><span class="s">an</span><span class="nv"> </span><span class="s">event!&quot;</span>
+    <span class="nt">ping_enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+    <span class="nt">ping_interval</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">60</span>
 </pre></div>
 
-<h2 id="plugin-hooksmethods">Plugin hooks/methods<a class="headerlink" href="#plugin-hooksmethods" title="Permanent link">&para;</a></h2>
-<p>The following hooks are available. Each of these should be implemented 
-as an asynchronous method on your plugin class. </p>
-<p><strong>For full reference see the <a href="https://github.com/adamcharnock/lightbus/blob/master/lightbus/plugins/__init__.py">LightbusPlugin class</a></strong></p>
-<ul>
-<li><code>before_parse_args</code></li>
-<li><code>receive_args</code></li>
-<li><code>before_server_start</code></li>
-<li><code>after_server_stopped</code></li>
-<li><code>before_rpc_call</code></li>
-<li><code>after_rpc_call</code></li>
-<li><code>before_rpc_execution</code></li>
-<li><code>after_rpc_execution</code></li>
-<li><code>before_event_sent</code></li>
-<li><code>after_event_sent</code></li>
-<li><code>before_event_execution</code></li>
-<li><code>after_event_execution</code></li>
-<li><code>exception</code></li>
-</ul>
+<h2 id="metrics-plugin">Metrics Plugin<a class="headerlink" href="#metrics-plugin" title="Permanent link">&para;</a></h2>
+<p>The metrics plugin sends metric events for every event &amp; RPC processes. It therefore has a much 
+bigger impact on performance than the state plugin, but also provides much more detailed information.</p>
+<h3 id="events_1">Events<a class="headerlink" href="#events_1" title="Permanent link">&para;</a></h3>
+<p>The following events will be fired on the <code>internal.metrics</code> API:</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Parameters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rpc_call_sent</code></td>
+<td><code>process_name</code>, <code>id</code>, <code>api_name</code>, <code>procedure_name</code>, <code>kwargs</code>, <code>timestamp</code></td>
+</tr>
+<tr>
+<td><code>rpc_call_received</code></td>
+<td><code>process_name</code>, <code>id</code>, <code>api_name</code>, <code>procedure_name</code>, <code>timestamp</code></td>
+</tr>
+<tr>
+<td><code>rpc_response_sent</code></td>
+<td><code>process_name</code>, <code>id</code>, <code>api_name</code>, <code>procedure_name</code>, <code>result</code>, <code>timestamp</code></td>
+</tr>
+<tr>
+<td><code>rpc_response_received</code></td>
+<td><code>process_name</code>, <code>id</code>, <code>api_name</code>, <code>procedure_name</code>, <code>timestamp</code></td>
+</tr>
+<tr>
+<td><code>event_fired</code></td>
+<td><code>process_name</code>, <code>event_id</code>, <code>api_name</code>, <code>event_name</code>, <code>kwargs</code>, <code>timestamp</code></td>
+</tr>
+<tr>
+<td><code>event_received</code></td>
+<td><code>process_name</code>, <code>event_id</code>, <code>api_name</code>, <code>event_name</code>, <code>kwargs</code>, <code>timestamp</code></td>
+</tr>
+<tr>
+<td><code>event_processed</code></td>
+<td><code>process_name</code>, <code>event_id</code>, <code>api_name</code>, <code>event_name</code>, <code>kwargs</code>, <code>timestamp</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="configuration_1">Configuration<a class="headerlink" href="#configuration_1" title="Permanent link">&para;</a></h3>
+<p>The metrics plugin only includes the <code>enabled</code> configuration option. Configuration should therefore be:</p>
+<div class="codehilite"><pre><span></span><span class="nt">bus</span><span class="p">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">...</span>
+
+<span class="nt">apis</span><span class="p">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">...</span>
+
+<span class="nt">plugins</span><span class="p">:</span>
+  <span class="nt">internal_metrics</span><span class="p">:</span>
+    <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
                 
                   
                 
@@ -1324,13 +1475,13 @@ as an asynchronous method on your plugin class. </p>
           </a>
         
         
-          <a href="../transports/" title="Transports*" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../plugins-development/" title="Plugin development" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Transports*
+                Plugin development
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
