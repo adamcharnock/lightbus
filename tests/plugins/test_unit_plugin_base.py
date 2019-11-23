@@ -20,7 +20,9 @@ def test_manually_set_plugins(plugin_registry: PluginRegistry):
 
 
 def test_autoload_plugins(plugin_registry: PluginRegistry):
-    config = Config.load_dict({})
+    config = Config.load_dict(
+        {"plugins": {"internal_state": {"enabled": True}, "internal_metrics": {"enabled": True}}}
+    )
     assert not plugin_registry._plugins
     assert plugin_registry.autoload_plugins(config)
     assert [type(p) for p in plugin_registry._plugins] == [StatePlugin, MetricsPlugin]

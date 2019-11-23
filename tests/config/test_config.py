@@ -189,7 +189,9 @@ def test_cast_to_hint_validate():
 
 
 def test_plugin_selector_config():
-    config = Config.load_dict({})
+    config = Config.load_dict(
+        {"plugins": {"internal_state": {"enabled": True}, "internal_metrics": {"enabled": True}}}
+    )
     assert hasattr(config._config.plugins, "internal_state")
     assert hasattr(config._config.plugins, "internal_metrics")
     assert config.plugin("internal_state").ping_enabled is True
