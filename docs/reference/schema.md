@@ -108,9 +108,32 @@ apis:
 
 ## Manual validation
 
-TODO
+Lightbus supports manually loading your bus' schema into your bus client. 
+For example, you may [take a dump of your production bus schema](command-line-use/dumpschema.md)
+and use it to test/develop against either in your local development environment or 
+in any automated testing system.
 
+You can load a local schema as follows:
 
+```python
+from bus import bus
+
+# Either load form a single file
+bus.schema.load_local("/path/to/local/bus-schema.json")
+
+# ... or load all schemas in a directory
+bus.schema.load_local("/path/to/local/schema/")
+```
+
+Your bus client will now use the specified schema to validate RPCs and events.
+
+`bus.schema` also includes two validation methods which may be useful:
+
+* `bus.schema.validate_parameters(api_name, event_or_rpc_name, parameters)`
+* `bus.schema.validate_response(api_name, rpc_name, response)`
+
+You can use these methods to manually validate parameters or response values against 
+the locally loaded schema.
 
 [type hints]: https://docs.python.org/3/library/typing.html
 [oneOf]: https://json-schema.org/understanding-json-schema/reference/combining.html#oneof

@@ -15,9 +15,7 @@ local development or testing environment.
 This will allow Lightbus to validate your locally emitted events and RPCs 
 against the expectations of your production environment.
 
-!!! note
-
-    This workflow has yet to be extensively tested and documented. 
+See [manual validation](../schema.md#manual-validation) for more information.
 
 ## Examples
 
