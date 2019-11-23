@@ -1195,7 +1195,7 @@
                 
                 <p>Plugins provide hooks into Lightbus' inner workings.</p>
 <p>For example, the bundled <a href="https://github.com/adamcharnock/lightbus/blob/master/lightbus/plugins/state.py">StatePlugin</a>
- hooks into the <code>before_server_start</code> and <code>after_server_stopped</code> hooks. 
+ hooks into the <code>before_worker_start</code> and <code>after_worker_stopped</code> hooks. 
 The plugin uses these hooks to bus events indicating the state of the worker. 
 A <code>internal.state.server_started</code> event indicates a worker has started, and a 
 <code>internal.state.server_stopped</code> event indicates a worker has stopped. Consuming 
@@ -1289,8 +1289,8 @@ as an asynchronous method on your plugin class. </p>
 <ul>
 <li><code>before_parse_args</code></li>
 <li><code>receive_args</code></li>
-<li><code>before_server_start</code></li>
-<li><code>after_server_stopped</code></li>
+<li><code>before_worker_start</code></li>
+<li><code>after_worker_stopped</code></li>
 <li><code>before_rpc_call</code></li>
 <li><code>after_rpc_call</code></li>
 <li><code>before_rpc_execution</code></li>

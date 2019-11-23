@@ -1680,7 +1680,7 @@ APIs do not inherit from the default configuration.</p>
 <p>APIs are configured using the options below:</p>
 <ul>
 <li><code>rpc_timeout</code> (default: <code>5</code>) – Timeout when calling RPCs on this API 
-   (must also be specified on the <a href="../transport-configuration/#rpc_timeout_1">RPC</a> and <a href="../transport-configuration/#rpc_timeout_2">result</a> transport)</li>
+   (must also be specified on the <a href="../transport-configuration/#rpc_timeout">RPC</a> and <a href="../transport-configuration/#rpc_timeout_1">result</a> transport)</li>
 <li><code>event_listener_setup_timeout</code> (default: <code>1</code>) – Timeout seconds when setting up event listeners
   (only applies when using the blocking api)</li>
 <li><code>event_fire_timeout</code> (default: <code>1</code>) – Timeout seconds when firing events on the bus
@@ -1753,8 +1753,7 @@ can use different types for each of its <code>rpc</code>, <code>result</code>,
 and <code>event</code> needs.</p>
 <p>The <code>schema</code> transport is global to the bus, and is not
 configurable on a per-api level.</p>
-<p><strong>For more information (including configuration options) 
-see the <a href="transports.md">transports reference</a>.</strong></p>
+<p><strong>For configuration details see the <a href="../transport-configuration/">transport configuration reference</a>.</strong></p>
 <h5 id="api-validation-config">API validation config<a class="headerlink" href="#api-validation-config" title="Permanent link">&para;</a></h5>
 <p>The schema config resides under the <code>validate</code> key within
 the <a href="#api-config">API config</a>.</p>
