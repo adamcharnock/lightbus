@@ -42,7 +42,7 @@
     
     
       
-        <title>Use Lightbus for event sourcing* - Lightbus</title>
+        <title>Use Lightbus for event sourcing - Lightbus</title>
       
     
     
@@ -144,7 +144,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                Use Lightbus for event sourcing*
+                Use Lightbus for event sourcing
               
             </span>
           
@@ -530,8 +530,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../metrics/" title="Use Lightbus for realtime metrics*" class="md-nav__link">
-      Use Lightbus for realtime metrics*
+    <a href="../metrics/" title="Use Lightbus for realtime metrics" class="md-nav__link">
+      Use Lightbus for realtime metrics
     </a>
   </li>
 
@@ -550,9 +550,52 @@
       
     
     
-    <a href="./" title="Use Lightbus for event sourcing*" class="md-nav__link md-nav__link--active">
-      Use Lightbus for event sourcing*
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Use Lightbus for event sourcing
+      </label>
+    
+    <a href="./" title="Use Lightbus for event sourcing" class="md-nav__link md-nav__link--active">
+      Use Lightbus for event sourcing
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-configuration" class="md-nav__link">
+    Global configuration
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-a-single-lightbus-worker" class="md-nav__link">
+    Run a single Lightbus worker
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#set-process-names" class="md-nav__link">
+    Set process names
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -1071,6 +1114,36 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-configuration" class="md-nav__link">
+    Global configuration
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-a-single-lightbus-worker" class="md-nav__link">
+    Run a single Lightbus worker
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#set-process-names" class="md-nav__link">
+    Set process names
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1085,15 +1158,85 @@
                 
                 
                 <h1 id="how-to-use-lightbus-for-event-sourcing">How to use Lightbus for event sourcing<a class="headerlink" href="#how-to-use-lightbus-for-event-sourcing" title="Permanent link">&para;</a></h1>
-<p>Notes to be expanded upon:</p>
+<p>We won't go into the details of event sourcing here, but we can roughly 
+describe our messaging needs as follows:</p>
 <ul>
-<li>We are optimising for reliability and completeness</li>
-<li>Specify consumer group to event listeners</li>
-<li>Validate outgoing messages, do not validate incoming messages</li>
-<li>Set <code>max_stream_length</code> high (or to <code>null</code>)</li>
-<li>Transactional transport where an RDBMS is written to in event handlers (experimental)</li>
-<li><code>on_error=shutdown</code></li>
+<li>We are optimising for reliability and completeness, performance is secondary</li>
+<li>Sent events must be valid</li>
+<li>Received events must be processed regardless of their validity</li>
+<li>Event history is very important</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Your needs may not precisely match this scenario, so be prepared to tweak the following configuration to your needs.</p>
+</div>
+<h2 id="global-configuration">Global configuration<a class="headerlink" href="#global-configuration" title="Permanent link">&para;</a></h2>
+<p>For the above event sourced scenario, a sample Lightbus <a href="../../reference/configuration/">configuration</a> may look like 
+something like this:</p>
+<div class="codehilite"><pre><span></span><span class="c1"># Lightbus config for event sourcing</span>
+
+<span class="nt">bus</span><span class="p">:</span>
+  <span class="nt">schema</span><span class="p">:</span>
+    <span class="nt">transport</span><span class="p">:</span>
+      <span class="nt">redis</span><span class="p">:</span>
+        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis_host:6379/0&quot;</span>
+
+<span class="nt">apis</span><span class="p">:</span>
+
+  <span class="c1"># Here we specify the default for your entire bus, but you could</span>
+  <span class="c1"># also specify the config for a specific API by using the API&#39;s name</span>
+  <span class="c1"># instead of &#39;default&#39;.</span>
+  <span class="nt">default</span><span class="p">:</span>
+
+    <span class="nt">validate</span><span class="p">:</span>
+      <span class="c1"># Sent (outgoing) events must be valid</span>
+      <span class="nt">outgoing</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+      <span class="c1"># Received (incoming) events must be processed </span>
+      <span class="c1"># regardless of their validity</span>
+      <span class="nt">incoming</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
+
+    <span class="c1"># Die on errors. Errors must be dealt with before </span>
+    <span class="c1"># continuing to processes events in order to ensure </span>
+    <span class="c1"># consistency. You may also wish to set this to &quot;stop_listener&quot;</span>
+    <span class="nt">on_error</span><span class="p">:</span> <span class="s">&quot;shutdown&quot;</span>
+
+    <span class="nt">event_transport</span><span class="p">:</span>
+      <span class="nt">redis</span><span class="p">:</span>
+        <span class="nt">url</span><span class="p">:</span> <span class="s">&#39;redis://redis_host:6379/0&#39;</span>
+
+        <span class="c1"># Load few events into order to prioritise consistency</span>
+        <span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+
+        <span class="c1"># Do not truncate the event stream. We keep all events </span>
+        <span class="c1"># as these events are our source of truth</span>
+        <span class="nt">max_stream_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
+
+        <span class="c1"># Per-API streams, as we wish to prioritise </span>
+        <span class="c1"># ordering (this is the default)</span>
+        <span class="nt">stream_use</span><span class="p">:</span> <span class="s">&quot;per_api&quot;</span>
+</pre></div>
+
+<h2 id="run-a-single-lightbus-worker">Run a single Lightbus worker<a class="headerlink" href="#run-a-single-lightbus-worker" title="Permanent link">&para;</a></h2>
+<p>Running only a single Lightbus worker process 
+(with a specific process name) will ensure messages are processed in 
+order.</p>
+<div class="codehilite"><pre><span></span>lightbus run --service-name=example_service --process-name=worker
+</pre></div>
+
+
+<h2 id="set-process-names">Set process names<a class="headerlink" href="#set-process-names" title="Permanent link">&para;</a></h2>
+<p>If your event volume requires multiple workers then ensure you set
+a deterministic per-process name for each. 
+This will allow restarted workers to immediately pickup any previously claimed messages 
+without needing to wait for a timeout.</p>
+<p>For example, if you have three Lightbus workers you can start each as follows:</p>
+<div class="codehilite"><pre><span></span>lightbus run --service-name=example_service --process-name=worker1
+lightbus run --service-name=example_service --process-name=worker2
+lightbus run --service-name=example_service --process-name=worker3
+</pre></div>
+
+
+<p><strong>Ordering will <em>not</em> be maintained when running multiple workers.</strong></p>
                 
                   
                 
@@ -1114,7 +1257,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../metrics/" title="Use Lightbus for realtime metrics*" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../metrics/" title="Use Lightbus for realtime metrics" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1123,7 +1266,7 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Use Lightbus for realtime metrics*
+                Use Lightbus for realtime metrics
               </span>
             </div>
           </a>

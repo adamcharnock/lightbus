@@ -42,7 +42,7 @@
     
     
       
-        <title>Use Lightbus for realtime metrics* - Lightbus</title>
+        <title>Use Lightbus for realtime metrics - Lightbus</title>
       
     
     
@@ -144,7 +144,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                Use Lightbus for realtime metrics*
+                Use Lightbus for realtime metrics
               
             </span>
           
@@ -538,8 +538,8 @@
       
     
     
-    <a href="./" title="Use Lightbus for realtime metrics*" class="md-nav__link md-nav__link--active">
-      Use Lightbus for realtime metrics*
+    <a href="./" title="Use Lightbus for realtime metrics" class="md-nav__link md-nav__link--active">
+      Use Lightbus for realtime metrics
     </a>
     
   </li>
@@ -551,8 +551,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../event-sourcing/" title="Use Lightbus for event sourcing*" class="md-nav__link">
-      Use Lightbus for event sourcing*
+    <a href="../event-sourcing/" title="Use Lightbus for event sourcing" class="md-nav__link">
+      Use Lightbus for event sourcing
     </a>
   </li>
 
@@ -1085,14 +1085,59 @@
                 
                 
                 <h1 id="how-to-use-lightbus-for-metrics">How to use Lightbus for metrics<a class="headerlink" href="#how-to-use-lightbus-for-metrics" title="Permanent link">&para;</a></h1>
-<p>Notes to be expanded upon:</p>
+<p>When we talk about metrics we may mean all or any of the following:</p>
 <ul>
-<li>Optimising for throughput and performance. Assuming lost messages are acceptable.</li>
-<li>Disable all validation</li>
-<li><code>on_error=ignore</code></li>
-<li>Future development: Redis PUB/SUB transport?</li>
-<li><code>cast_values=false</code> - You'll receive basic JSON values in the event listeners, but it'll be faster</li>
+<li>Current information is most important</li>
+<li>Previous events will become irrelevant as soon as new data is received</li>
+<li>Lost events are therefore tolerable, as long as we keep up with new events</li>
+<li>Events may be high volume, so optimisations may be needed</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Your needs may not precisely match this scenario, so be prepared to tweak the following configuration to your needs.</p>
+</div>
+<p>For the above metrics-based scenario, a sample Lightbus <a href="../../reference/configuration/">configuration</a> may look like 
+something like this:</p>
+<div class="codehilite"><pre><span></span><span class="c1"># Lightbus config for metrics</span>
+
+<span class="nt">bus</span><span class="p">:</span>
+  <span class="nt">schema</span><span class="p">:</span>
+    <span class="nt">transport</span><span class="p">:</span>
+      <span class="nt">redis</span><span class="p">:</span>
+        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis_host:6379/0&quot;</span>
+
+<span class="nt">apis</span><span class="p">:</span>
+
+  <span class="c1"># Here we specify the default for your entire bus, but you could</span>
+  <span class="c1"># also specify the config for a specific API by using the API&#39;s name</span>
+  <span class="c1"># instead of &#39;default&#39;.</span>
+  <span class="nt">default</span><span class="p">:</span>
+
+    <span class="c1"># Disable validation to enhance performance</span>
+    <span class="nt">validate</span><span class="p">:</span>
+      <span class="nt">outgoing</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
+      <span class="nt">incoming</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
+
+    <span class="c1"># Assume we will be transmitting simple types, so we can bypass casting for performance</span>
+    <span class="nt">cast_values</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
+
+    <span class="c1"># Keep processing new events even if one event results in an error</span>
+    <span class="c1"># (The error will still be logged)</span>
+    <span class="nt">on_error</span><span class="p">:</span> <span class="s">&quot;ignore&quot;</span>
+
+    <span class="nt">event_transport</span><span class="p">:</span>
+      <span class="nt">redis</span><span class="p">:</span>
+        <span class="nt">url</span><span class="p">:</span> <span class="s">&#39;redis://redis_host:6379/0&#39;</span>
+
+        <span class="c1"># Load in many events at once for performance improvements</span>
+        <span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
+
+        <span class="c1"># No need to keep many historical events around</span>
+        <span class="nt">max_stream_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10000</span>
+
+        <span class="c1"># Per-event streams, to allow selective consumption of metrics</span>
+        <span class="nt">stream_use</span><span class="p">:</span> <span class="s">&quot;per_event&quot;</span>
+</pre></div>
                 
                   
                 
@@ -1128,13 +1173,13 @@
           </a>
         
         
-          <a href="../event-sourcing/" title="Use Lightbus for event sourcing*" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../event-sourcing/" title="Use Lightbus for event sourcing" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Use Lightbus for event sourcing*
+                Use Lightbus for event sourcing
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
