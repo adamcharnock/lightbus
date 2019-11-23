@@ -1,9 +1,9 @@
 # Architecture tips
 
 These tips draw some core concepts from
-the [Domain Driven Design] and [CQRS] patterns. I only
+the [Domain Driven Design] and [CQRS] patterns. We only
 scape the surface of these patterns here, but the ideas covered
-below are the ones I found most useful when using Lightbus.
+below are the ones the Lightbus maintainers found most useful when using Lightbus.
 
 There is a lot more to be said on each point. The intent
 here is to provide a digestible starting point.
@@ -69,6 +69,7 @@ your services.
     Likewise, an RPC or event listener without type hints will simply
     receive a dictionary.
 
+See also [use a monorepository](#use-a-monorepository]).
 
 ## Decide on boundaries
 
@@ -109,9 +110,9 @@ Additionally:
 
 * Identify aggregates with UUIDs
 * Do not enforce foreign keys between aggregates. Your application code
-  will need to deal with inconsistencies gracefully.
+  will need to deal with inconsistencies gracefully (likely in it's user interface).
 * It is likely still a good idea to use sequential integer primary keys in your RDBMS
-* Do **not** share database-level sequential integer primary keys
+* Do **not** share database-level sequential integer primary keys with other servces
 
 ## Writes are special
 
@@ -131,14 +132,18 @@ An **initial attempt at writing data** may look like this:
 1. Broadcast the change (Lightbus event or RPC)
 1. Other services receive & apply the change
 
-TODO: Pros/cons.
+The downside of this approach is that you have two write paths (writing locally and broadcasting the change). 
+If either of these fails then your services will have an inconsistent view of the world.
 
 A more **CQRS-based approach to writing data** looks like this:
 
 1. Broadcast the change (Lightbus event)
 1. Services (including the broadcasting service) receive & apply the change
 
-TODO: Pros/cons.
+The benefit of this approach is that either the change happens or it does not. Additionally 
+all applications share the same write path, which reduces overall complexity. A downside 
+is that changes can take a moment to be applied,
+so changes made by a user may not be immediately visible.
 
 ## Use a monorepository
 

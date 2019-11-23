@@ -88,9 +88,3 @@ Format:  <deparment>.<service>.<object>
 Example: marketing.website.stats.get()
          ops.monitoring.servers.get_status()
 ```
-
-## Organising many APIs
-
-* Will lightbus recognise a bus package as well as a bus module?
-  (i.e.`bus/__init__.py`?) TODO
-    * It does now
