@@ -156,7 +156,7 @@ class RedisTransportMixin:
     async def connection_manager(self) -> Redis:
         if self._closed:
             # This was first caught when the state plugin tried to send a
-            # message to the bus on upon the after_server_stopped stopped event.
+            # message to the bus on upon the after_worker_stopped stopped event.
             raise TransportIsClosed(
                 "Transport has been closed. Connection to Redis is no longer available."
             )

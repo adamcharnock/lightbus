@@ -17,14 +17,14 @@ class TestApi(Api):
 
 
 @pytest.mark.asyncio
-async def test_before_server_start(dummy_bus: BusPath, loop, get_dummy_events):
+async def test_before_worker_start(dummy_bus: BusPath, loop, get_dummy_events):
     dummy_bus.client.register_api(TestApi())
     dummy_bus.example.test.my_event.listen(lambda *a, **kw: None, listener_name="test")
     await asyncio.sleep(0.1)  # Give the bus a moment to kick up the listener
 
     state_plugin = StatePlugin(service_name="foo", process_name="bar")
     state_plugin.ping_enabled = False
-    await state_plugin.before_server_start(client=dummy_bus.client)
+    await state_plugin.before_worker_start(client=dummy_bus.client)
 
     dummy_events = get_dummy_events()
     assert len(dummy_events) == 1
@@ -73,13 +73,13 @@ async def test_ping(dummy_bus: BusPath, loop, get_dummy_events):
 
 
 @pytest.mark.asyncio
-async def test_after_server_stopped(dummy_bus: BusPath, loop, get_dummy_events):
+async def test_after_worker_stopped(dummy_bus: BusPath, loop, get_dummy_events):
     dummy_bus.client.register_api(TestApi())
     dummy_bus.example.test.my_event.listen(lambda *a, **kw: None, listener_name="test")
 
     plugin = StatePlugin(service_name="foo", process_name="bar")
     plugin._ping_task = asyncio.Future()
-    await plugin.after_server_stopped(client=dummy_bus.client)
+    await plugin.after_worker_stopped(client=dummy_bus.client)
 
     # Give any pending coroutines coroutines a moment to be awaited
     await asyncio.sleep(0.001)

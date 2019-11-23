@@ -38,9 +38,9 @@ async def test_execute_hook(mocker, plugin_registry: PluginRegistry):
     async def dummy_coroutine(*args, **kwargs):
         pass
 
-    m = mocker.patch.object(plugin, "before_server_start", return_value=dummy_coroutine())
+    m = mocker.patch.object(plugin, "before_worker_start", return_value=dummy_coroutine())
 
-    await plugin_registry.execute_hook("before_server_start", client=None, loop=None)
+    await plugin_registry.execute_hook("before_worker_start", client=None, loop=None)
     assert m.called
 
 

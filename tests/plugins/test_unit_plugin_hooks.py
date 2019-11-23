@@ -41,7 +41,7 @@ def test_server_start_stop(mocker, called_hooks, dummy_bus: BusPath, add_base_pl
     dummy_bus.client.register_api(dummy_api)
     mocker.patch.object(BusClient, "_actually_run_forever")
     dummy_bus.client.run_forever()
-    assert called_hooks() == ["before_server_start", "after_server_stopped"]
+    assert called_hooks() == ["before_worker_start", "after_worker_stopped"]
 
 
 def test_rpc_calls(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):

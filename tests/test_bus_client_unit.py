@@ -380,10 +380,10 @@ def test_run_forever(dummy_bus: lightbus.path.BusPath, mocker, dummy_api):
 
 
 DECORATOR_HOOK_PAIRS = [
-    ("on_start", "before_server_start"),
-    ("on_stop", "before_server_start"),
-    ("before_server_start", "before_server_start"),
-    ("after_server_stopped", "after_server_stopped"),
+    ("on_start", "before_worker_start"),
+    ("on_stop", "before_worker_start"),
+    ("before_worker_start", "before_worker_start"),
+    ("after_worker_stopped", "after_worker_stopped"),
     ("before_rpc_call", "before_rpc_call"),
     ("after_rpc_call", "after_rpc_call"),
     ("before_rpc_execution", "before_rpc_execution"),

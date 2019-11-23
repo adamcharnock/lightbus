@@ -65,12 +65,12 @@ class LightbusPlugin(metaclass=PluginMetaclass):
         """
         pass
 
-    async def before_server_start(self, *, client: "BusClient"):
-        """Called after the server is setup, but before any RPC or Event consumption"""
+    async def before_worker_start(self, *, client: "BusClient"):
+        """Called after the worker process is setup, but before any RPC or Event consumption"""
         pass
 
-    async def after_server_stopped(self, *, client: "BusClient"):
-        """Called after all RPC and Event consumption has been stopped"""
+    async def after_worker_stopped(self, *, client: "BusClient"):
+        """Called during worker process shutdown (after all RPC and Event consumption has been stopped)"""
         pass
 
     async def before_rpc_call(self, *, rpc_message: RpcMessage, client: "BusClient"):

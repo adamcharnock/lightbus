@@ -1,7 +1,7 @@
 Plugins provide hooks into Lightbus' inner workings.
 
 For example, the bundled [StatePlugin]
- hooks into the `before_server_start` and `after_server_stopped` hooks. 
+ hooks into the `before_worker_start` and `after_worker_stopped` hooks. 
 The plugin uses these hooks to bus events indicating the state of the worker. 
 A `internal.state.server_started` event indicates a worker has started, and a 
 `internal.state.server_stopped` event indicates a worker has stopped. Consuming 
@@ -109,8 +109,8 @@ as an asynchronous method on your plugin class.
 
 * `before_parse_args`
 * `receive_args`
-* `before_server_start`
-* `after_server_stopped`
+* `before_worker_start`
+* `after_worker_stopped`
 * `before_rpc_call`
 * `after_rpc_call`
 * `before_rpc_execution`

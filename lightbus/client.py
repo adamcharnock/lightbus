@@ -325,9 +325,9 @@ class BusClient:
         monitor_task = asyncio.ensure_future(self.schema.monitor())
         monitor_task.add_done_callback(make_exception_checker(self, die=True))
 
-        logger.info("Executing before_server_start & on_start hooks...")
-        await self._execute_hook("before_server_start")
-        logger.info("Execution of before_server_start & on_start hooks was successful")
+        logger.info("Executing before_worker_start & on_start hooks...")
+        await self._execute_hook("before_worker_start")
+        logger.info("Execution of before_worker_start & on_start hooks was successful")
 
         # Setup RPC consumption
         if Feature.RPCS in self.features:
@@ -360,9 +360,9 @@ class BusClient:
         # Cancel the tasks we created above
         await cancel(*self._server_tasks)
 
-        logger.info("Executing after_server_stopped & on_stop hooks...")
-        await self._execute_hook("after_server_stopped")
-        logger.info("Execution of after_server_stopped & on_stop hooks was successful")
+        logger.info("Executing after_worker_stopped & on_stop hooks...")
+        await self._execute_hook("after_worker_stopped")
+        logger.info("Execution of after_worker_stopped & on_stop hooks was successful")
 
     def _actually_run_forever(self):  # pragma: no cover
         """Simply start the loop running forever
@@ -855,18 +855,18 @@ class BusClient:
             return hook_decorator
 
     def on_start(self, callback=None, *, before_plugins=False):
-        """Alias for before_server_start"""
-        return self.before_server_start(callback, before_plugins=before_plugins)
+        """Alias for before_worker_start"""
+        return self.before_worker_start(callback, before_plugins=before_plugins)
 
     def on_stop(self, callback=None, *, before_plugins=False):
-        """Alias for after_server_stopped"""
-        return self.before_server_start(callback, before_plugins=before_plugins)
+        """Alias for after_worker_stopped"""
+        return self.before_worker_start(callback, before_plugins=before_plugins)
 
-    def before_server_start(self, callback=None, *, before_plugins=False):
-        return self._make_hook_decorator("before_server_start", before_plugins, callback)
+    def before_worker_start(self, callback=None, *, before_plugins=False):
+        return self._make_hook_decorator("before_worker_start", before_plugins, callback)
 
-    def after_server_stopped(self, callback=None, *, before_plugins=False):
-        return self._make_hook_decorator("after_server_stopped", before_plugins, callback)
+    def after_worker_stopped(self, callback=None, *, before_plugins=False):
+        return self._make_hook_decorator("after_worker_stopped", before_plugins, callback)
 
     def before_rpc_call(self, callback=None, *, before_plugins=False):
         return self._make_hook_decorator("before_rpc_call", before_plugins, callback)
