@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Any
 
 from lightbus.exceptions import InvalidBusPathConfiguration, InvalidParameters
 from lightbus.utilities.async_tools import block
@@ -167,7 +167,15 @@ class BusPath:
         return self.client.schema.get_rpc_schema(self.api_name, self.name)["response"]
 
     def validate_parameters(self, parameters: dict):
+        """Validate the parameters for an event or RPC against the schema
+
+        See Also: https://lightbus.org/reference/schema/
+        """
         self.client.schema.validate_parameters(self.api_name, self.name, parameters)
 
-    def validate_response(self, response):
+    def validate_response(self, response: Any):
+        """Validate the response for an RPC against the schema
+
+        See Also: https://lightbus.org/reference/schema/
+        """
         self.client.schema.validate_parameters(self.api_name, self.name, response)
