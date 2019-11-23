@@ -24,15 +24,6 @@ class LightbusStateApi(Api):
     )
     server_stopped = Event(parameters=["process_name", "timestamp"])
 
-    metrics_enabled = Event(parameters=["process_name", "timestamp"])
-    metrics_disabled = Event(parameters=["process_name", "timestamp"])
-
-    api_registered = Event(parameters=["process_name", "api_name", "timestamp"])
-    api_deregistered = Event(parameters=["process_name", "api_name", "timestamp"])
-
-    listening_started = Event(parameters=["process_name", "api_name", "event_name", "timestamp"])
-    listening_stopped = Event(parameters=["process_name", "api_name", "event_name", "timestamp"])
-
     class Meta:
         name = "internal.state"
         internal = True

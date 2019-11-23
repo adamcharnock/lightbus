@@ -89,9 +89,9 @@ apis:
 plugins:
   greeting_plugin:
     
-    # The 'enabled' configuration is avaialble for all plugins, 
-    # if set to 'False' the plugin will not be loaded.
-    # Optional, default is True
+    # The 'enabled' configuration is available for all plugins, 
+    # if set to 'false' the plugin will not be loaded.
+    # Default is false
     enabled: true
     
     # Lightbus is aware of our `greeting` option as it reads it 

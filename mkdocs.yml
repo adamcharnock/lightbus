@@ -80,6 +80,7 @@ nav:
       - dumpschema: reference/command-line-use/dumpschema.md
       - dumpconfigschema: reference/command-line-use/dumpconfigschema.md
     - Plugins: reference/plugins.md
+    - Plugin development: reference/plugins-development.md
     - Transports*: reference/transports.md
     - RPC & Result Protocol (Redis): reference/rpc-and-result-protocol.md
     - Event Protocol (Redis): reference/event-protocol.md

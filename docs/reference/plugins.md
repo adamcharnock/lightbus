@@ -1,83 +1,59 @@
-Plugins provide hooks into Lightbus' inner workings.
+Lightbus ships with two plugins, both of which are disabled by default.
 
-For example, the bundled [StatePlugin]
- hooks into the `before_server_start` and `after_server_stopped` hooks. 
-The plugin uses these hooks to bus events indicating the state of the worker. 
-A `internal.state.server_started` event indicates a worker has started, and a 
-`internal.state.server_stopped` event indicates a worker has stopped. Consuming 
-these events will provide a picture of the current state of workers on the bus.
+## State Plugin
 
-## Example plugin
+Every Lightbus worker process which has the state plugin enabled will report it's state 
+to the bus. This state information is available as the following events on the 
+`internal.state` API.
 
-Let's create a simple plugin which will print a configurable message to the 
-console every time a message is sent.
+This plugin should add minimal load to the bus and may be useful in developing 
+tooling around the bus.
 
-This requires three steps:
+### Events
 
-1. Define the plugin
-1. Make Lightbus aware of the plugin
-1. Configure the plugin
+#### `server_started`
 
-### 1. Define the plugin
+Parameters: `process_name`, `metrics_enabled`, `api_names`, `listening_for`, `timestamp`, `ping_interval`
 
-Create the following in a python module (we'll assume it is at `my_project.greeting_plugin`):
+Fired when the worker starts up.
 
-```python3
-from lightbus.plugins import LightbusPlugin
+#### `server_ping`
 
+Parameters: `process_name`, `metrics_enabled`, `api_names`, `listening_for`, `timestamp`, `ping_interval`
 
-class GreetingPlugin(LightbusPlugin):
-    """Print a greeting after every event it sent"""
-    
-    priority = 200
+Fires every 60 seconds after worker startup. This indicates that the worker is still alive and has not 
+died unexpectedly. This interval is configurable (see below).
 
-    def __init__(self, greeting: str):
-        self.greeting = greeting
+#### `server_stopped`
 
-    @classmethod
-    def from_config(cls, config: "Config", greeting: str = "Hello world!"):
-        # The arguments to this method define the configuration options which 
-        # can be set in the bus' yaml configuration (see below)
-        return cls(greeting=greeting)
+Parameters: `process_name`, `timestamp`
 
-    async def after_event_sent(self, *, event_message, client):
-        # Print a simple greeting after an event is sent
-        print(self.greeting)
-```
+Fires when a worker shuts down cleanly.
 
-### 2. Make Lightbus aware of the plugin
+### Configuration
 
-Lightbus is made aware of the plugin via an entrypoint in you're project's `setup.py` file:
+The following configuration options are available:
 
-```python
-# Your setup.py file
-from setuptools import setup, find_packages
+#### `enabled` (bool)
 
-setup(
-    name='My Project',
-    version='0.1',
-    packages=find_packages(),
-    entry_points={
-        "lightbus_plugins": [
-            # `greeting_plugin` defines the plugin name in the config
-            # `my_project.greeting_plugin` is your plugin's python module
-            # `GreetingPlugin` is your plugins class name
-            "greeting_plugin = my_project.greeting_plugin:GreetingPlugin",
-        ],
-    }
-)
-```
+Default: `False`
 
-Once you've made this change (or for subsequent modifications) you will need to run:
+Should the plugin be enabled?
 
-    python setup.py develop
-    
-This will setup the `entry_points` you have specified
+#### `ping_enabled` (bool)
 
-### 3. Configure the plugin
+Default: `True`
 
-You can configure your plugin in your bus' configuration YAML file 
-(see the [configuration reference](configuration.md)). For example:
+Should ping messages be sent?
+
+#### `ping_enabled` (int, seconds)
+
+Default: `60`
+
+How often (in seconds) should a ping event be sent. A lower interval means more frequent messages, but reduces the 
+time it takes any listeners to discover dead workers.
+
+#### Example configuration
 
 ```yaml
 bus:
@@ -87,39 +63,43 @@ apis:
   ...
 
 plugins:
-  greeting_plugin:
-    
-    # The 'enabled' configuration is avaialble for all plugins, 
-    # if set to 'False' the plugin will not be loaded.
-    # Optional, default is True
+  internal_state:
     enabled: true
-    
-    # Lightbus is aware of our `greeting` option as it reads it 
-    # from our `from_config()` method above.
-    # If we omit this it will have the default value of "Hello world!"
-    greeting: "Hello world, I sent an event!"
+    ping_enabled: true
+    ping_interval: 60
 ```
 
-## Plugin hooks/methods
+## Metrics Plugin
 
-The following hooks are available. Each of these should be implemented 
-as an asynchronous method on your plugin class. 
+The metrics plugin sends metric events for every event & RPC processes. It therefore has a much 
+bigger impact on performance than the state plugin, but also provides much more detailed information.
 
-**For full reference see the [LightbusPlugin class]**
+### Events
 
-* `before_parse_args`
-* `receive_args`
-* `before_server_start`
-* `after_server_stopped`
-* `before_rpc_call`
-* `after_rpc_call`
-* `before_rpc_execution`
-* `after_rpc_execution`
-* `before_event_sent`
-* `after_event_sent`
-* `before_event_execution`
-* `after_event_execution`
-* `exception`
+The following events will be fired on the `internal.metrics` API:
 
-[StatePlugin]: https://github.com/adamcharnock/lightbus/blob/master/lightbus/plugins/state.py
-[LightbusPlugin class]: https://github.com/adamcharnock/lightbus/blob/master/lightbus/plugins/__init__.py
+| Event | Parameters |
+| --- | --- |
+| `rpc_call_sent` | `process_name`, `id`, `api_name`, `procedure_name`, `kwargs`, `timestamp` |
+| `rpc_call_received` | `process_name`, `id`, `api_name`, `procedure_name`, `timestamp` |
+| `rpc_response_sent` | `process_name`, `id`, `api_name`, `procedure_name`, `result`, `timestamp` |
+| `rpc_response_received` | `process_name`, `id`, `api_name`, `procedure_name`, `timestamp` |
+| `event_fired` | `process_name`, `event_id`, `api_name`, `event_name`, `kwargs`, `timestamp` |
+| `event_received` | `process_name`, `event_id`, `api_name`, `event_name`, `kwargs`, `timestamp` |
+| `event_processed` | `process_name`, `event_id`, `api_name`, `event_name`, `kwargs`, `timestamp` |
+
+### Configuration
+
+The metrics plugin only includes the `enabled` configuration option. Configuration should therefore be:
+
+```yaml
+bus:
+  ...
+
+apis:
+  ...
+
+plugins:
+  internal_metrics:
+    enabled: true
+```

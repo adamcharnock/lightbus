@@ -31,7 +31,7 @@ class PluginMetaclass(type):
             cls.Config = make_from_config_structure(
                 class_name=name,
                 from_config_method=cls.from_config,
-                extra_parameters=[Parameter("enabled", bool, default=True)],
+                extra_parameters=[Parameter("enabled", bool, default=False)],
             )
         return cls
 

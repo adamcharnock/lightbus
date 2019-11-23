@@ -111,12 +111,12 @@ disk, or as a HTTP(S) URL.
 A basic default configuration file is as follows:
 
 ```yaml
-# Root config
+# Root configuration
 bus:
-  # Bus config
+  # Bus configuration
 
   schema:
-    # Schema config
+    # Schema configuration
 
     transport:
       # Transport selector config
@@ -131,17 +131,17 @@ apis:
     # Api config
 
     event_transport:
-      # Transport selector config
+      # Transport selector configuration
       redis:
         url: "redis://redis.svc.cluster.local:6379/0"
 
     rpc_transport:
-      # Transport selector config
+      # Transport selector configuration
       redis:
         url: "redis://redis.svc.cluster.local:6379/0"
 
     result_transport:
-      # Transport selector config
+      # Transport selector configuration
       redis:
         url: "redis://redis.svc.cluster.local:6379/0"
 
@@ -150,6 +150,10 @@ plugins:
 
   # These plugins ship with Lightbus
   internal_metrics:
+    # Plugin configuration
+    
+    # Note that plugins are disabled by default, and must be enabled here 
+    # in your bus' global configuration
     enabled: true
 
   internal_state:
@@ -326,13 +330,39 @@ within the [API config].
 
 ### Plugin configuration listing
 
-The plugin configuration listing config resides under the [root config].
+The plugin configuration listing config resides under the [root config]. 
+This configuration section is a mapping between plugin names and their 
+configuration options.
 
 Plugins are made available to Lightbus via the `lightbus_plugins` entry 
 point (see Lightbus' [setup.py] for an example). As a result, installing a 
 plugin should be sufficient for it to be made available for configuration.
 
 Plugin developers should see the [plugins reference] for further details.
+
+#### Plugin configuration
+
+The Plugin configuration resides under the [Plugin configuration listing].
+
+This section provides the configuration for an individual plugin. The available 
+configuration options will vary from plugin to plugin, so you should read 
+the plugin's documentation for details.
+
+However, all plugins support the `enabled` property, which defaults to `false`. 
+You must there set `enabled: true` if you wish to use the plugin. For example:
+
+```yaml
+bus:
+  ...
+
+apis:
+  ...
+
+plugins:
+  internal_metrics:
+    # Plugin configuration
+    enabled: true
+```
 
 [service-level setup]: #2-service-level-configuration
 [global bus configuration]: #3-global-bus-configuration
@@ -350,3 +380,4 @@ Plugin developers should see the [plugins reference] for further details.
 [setup.py]: https://github.com/adamcharnock/lightbus/blob/master/setup.py
 [plugins reference]: plugins.md
 [configuration explanation]: ../explanation/configuration.md
+[Plugin configuration listing]: #plugin-configuration-listing

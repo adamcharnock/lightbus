@@ -35,9 +35,6 @@ class StatePlugin(LightbusPlugin):
       - Server started events
       - Server ping events - indicate the server is alive. Sent every 60 seconds by default
       - Server shutdown events
-      - Metrics enabled/disabled
-      - Api registered/deregistered
-      - Event listening started/stopped
 
     See `lightbus.internal_apis.LightbusStateApi` for more details on the events provided.
 
