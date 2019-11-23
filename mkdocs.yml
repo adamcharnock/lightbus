@@ -47,8 +47,8 @@ nav:
     - Run background tasks: howto/run-background-tasks.md
     - Migrate from Celery to Lightbus: howto/migrate-from-celery-to-lightbus.md
     - Write idempotent event handlers: howto/write-idempotent-event-handlers.md
-    - Use Lightbus for realtime metrics*: howto/metrics.md
-    - Use Lightbus for event sourcing*: howto/event-sourcing.md
+    - Use Lightbus for realtime metrics: howto/metrics.md
+    - Use Lightbus for event sourcing: howto/event-sourcing.md
     - Modify Lightbus: howto/modify-lightbus.md
   - Explanation:
     - Overview: explanation/index.md
