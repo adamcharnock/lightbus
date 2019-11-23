@@ -34,18 +34,17 @@ def test_config_as_json_schema_bus():
 def test_config_as_json_schema_apis():
     schema = config_as_json_schema()
     assert schema["properties"]["apis"]
-    assert ".*" in schema["properties"]["apis"]["patternProperties"]
 
     bus_config_schema = schema["properties"]["bus"]
-    api_config_schema = schema["properties"]["apis"]["patternProperties"][".*"]["properties"]
+    api_config_schema = schema["properties"]["apis"]["additionalProperties"]["properties"]
 
     assert api_config_schema["event_transport"]["oneOf"][0]["type"] == "object"
     assert api_config_schema["rpc_transport"]["oneOf"][0]["type"] == "object"
     assert api_config_schema["result_transport"]["oneOf"][0]["type"] == "object"
 
-    assert api_config_schema["rpc_timeout"]["type"] == "number"
-    assert api_config_schema["event_listener_setup_timeout"]["type"] == "number"
-    assert api_config_schema["event_fire_timeout"]["type"] == "number"
+    assert api_config_schema["rpc_timeout"]["type"] == "integer"
+    assert api_config_schema["event_listener_setup_timeout"]["type"] == "integer"
+    assert api_config_schema["event_fire_timeout"]["type"] == "integer"
     assert api_config_schema["validate"]["oneOf"]
 
     assert (
@@ -58,7 +57,7 @@ def test_config_as_json_schema_redis():
     schema = config_as_json_schema()
 
     bus_config_schema = schema["properties"]["bus"]
-    api_config_schema = schema["properties"]["apis"]["patternProperties"][".*"]["properties"]
+    api_config_schema = schema["properties"]["apis"]["additionalProperties"]["properties"]
 
     redis_rpc_transport = api_config_schema["rpc_transport"]["oneOf"][0]["properties"]["redis"][
         "oneOf"

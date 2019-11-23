@@ -44,7 +44,7 @@ Below is the schema for the example `my_company.auth` API shown above
     "events": {
       "user_registered": {
         "parameters": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "title": "Event my_company.auth.user_registered parameters",
           "type": "object",
             "username": {
@@ -72,7 +72,7 @@ Below is the schema for the example `my_company.auth` API shown above
     "rpcs": {
       "check_password": {
         "parameters": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "title": "RPC my_company.auth.check_password() parameters",
           "type": "object",
           "properties": {
@@ -91,7 +91,7 @@ Below is the schema for the example `my_company.auth` API shown above
         },
 
         "response": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "title": "RPC my_company.auth.check_password() response",
           "type": "boolean"
         }

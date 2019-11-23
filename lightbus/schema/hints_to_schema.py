@@ -20,7 +20,7 @@ empty = inspect.Parameter.empty
 logger = logging.getLogger(__name__)
 
 
-SCHEMA_URI = "http://json-schema.org/draft-04/schema#"
+SCHEMA_URI = "http://json-schema.org/draft-07/schema#"
 
 
 def make_rpc_parameter_schema(api_name, method_name, method):
@@ -171,16 +171,16 @@ def python_type_to_json_schemas(type_):
         return [{"type": "string", "pattern": r"^-?\d+(\.\d+)?$"}]
     elif issubclass_safe(type_, (bool,)):
         return [{"type": "boolean"}]
-    elif issubclass_safe(type_, (int, float)):
+    elif issubclass_safe(type_, (float,)):
         return [{"type": "number"}]
+    elif issubclass_safe(type_, (int,)):
+        return [{"type": "integer"}]
     elif issubclass_safe(type_, (Mapping,)) and hint_args and hint_args[0] == str:
         # Mapping with strings as keys
         return [
             {
                 "type": "object",
-                "patternProperties": {
-                    ".*": wrap_with_one_of(python_type_to_json_schemas(hint_args[1]))
-                },
+                "additionalProperties": wrap_with_one_of(python_type_to_json_schemas(hint_args[1])),
             }
         ]
     elif issubclass_safe(type_, (dict, Mapping)):
@@ -218,14 +218,11 @@ def python_type_to_json_schemas(type_):
     elif issubclass_safe(type_, NoneType) or type_ is None:
         return [{"type": "null"}]
     elif issubclass_safe(type_, (datetime.datetime)):
-        return [
-            {
-                "type": "string",
-                "pattern": r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|[Zz])?$",
-            }
-        ]
+        return [{"type": "string", "format": "date-time"}]
     elif issubclass_safe(type_, (datetime.date)):
-        return [{"type": "string", "pattern": r"^\d{4}-\d\d-\d\d$"}]
+        return [{"type": "string", "format": "date"}]
+    elif issubclass_safe(type_, (datetime.time)):
+        return [{"type": "string", "format": "time"}]
     elif getattr(type_, "__annotations__", None):
         # Custom class
         return [make_custom_object_schema(type_)]

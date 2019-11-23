@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 aioredis = "==1.2.0"
-jsonschema = ">=2.6.0,<3"
+jsonschema = ">=3.2"
 pyyaml = "*"
 python-dateutil = "*"
 janus = "*"

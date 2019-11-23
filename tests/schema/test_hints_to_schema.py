@@ -1,12 +1,13 @@
 import inspect
 import logging
 from decimal import Decimal
-from typing import Union, Optional, NamedTuple, Tuple, Any, Mapping, Set
+from typing import Union, Optional, NamedTuple, Tuple, Any, Mapping, Set, Dict
 from collections import namedtuple
 from uuid import UUID
 
+import jsonschema
 import pytest
-from datetime import datetime, date
+from datetime import datetime, date, time
 from enum import Enum
 
 from lightbus.schema.hints_to_schema import (
@@ -34,7 +35,7 @@ def test_default():
         pass
 
     schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
-    assert schema["properties"]["field"] == {"type": "number", "default": 123}
+    assert schema["properties"]["field"] == {"type": "integer", "default": 123}
     # Has a default value, so not required
     assert "required" not in schema
 
@@ -80,7 +81,7 @@ def test_positional_args():
 
 def test_python_type_to_json_types_union():
     json_types = python_type_to_json_schemas(Union[str, int])
-    assert json_types == [{"type": "string"}, {"type": "number"}]
+    assert json_types == [{"type": "string"}, {"type": "integer"}]
 
 
 def test_python_type_to_json_types_empty(caplog):
@@ -96,7 +97,7 @@ def test_union():
         pass
 
     schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
-    assert schema["properties"]["field"] == {"oneOf": [{"type": "string"}, {"type": "number"}]}
+    assert schema["properties"]["field"] == {"oneOf": [{"type": "string"}, {"type": "integer"}]}
     assert schema["required"] == ["field"]
 
 
@@ -108,7 +109,7 @@ def test_union_default():
     assert schema["properties"]["field"] == {
         "oneOf": [
             {"type": "string", "default": 123},  # Technically an invalid default value
-            {"type": "number", "default": 123},
+            {"type": "integer", "default": 123},
         ]
     }
     assert "required" not in schema
@@ -158,7 +159,7 @@ def test_named_tuple_enum_with_default():
 
     assert schema["properties"]["user"]["type"] == "object"
     assert schema["properties"]["user"]["properties"] == {
-        "field": {"type": "number", "enum": [1, 2], "default": 2}
+        "field": {"type": "integer", "enum": [1, 2], "default": 2}
     }
     assert "required" not in schema["properties"]["user"]
 
@@ -207,7 +208,7 @@ def test_response_typed_tuple():
 
     schema = make_response_schema("api_name", "rpc_name", func)
     assert schema["type"] == "array"
-    assert schema["items"] == [{"type": "string"}, {"type": "number"}, {"type": "boolean"}]
+    assert schema["items"] == [{"type": "string"}, {"type": "integer"}, {"type": "boolean"}]
 
 
 def test_response_named_tuple():
@@ -263,7 +264,7 @@ def test_mapping_with_types():
 
     schema = make_response_schema("api_name", "rpc_name", func)
     assert schema["type"] == "object"
-    assert schema["patternProperties"] == {".*": {"type": "number"}}
+    assert schema["additionalProperties"] == {"type": "integer"}
 
 
 def test_mapping_without_types():
@@ -283,7 +284,7 @@ def test_enum_number():
         pass
 
     schema = make_response_schema("api_name", "rpc_name", func)
-    assert schema["type"] == "number"
+    assert schema["type"] == "integer"
     assert set(schema["enum"]) == {1, 2}
 
 
@@ -338,7 +339,7 @@ def test_set_type_with_hints():
 
     schema = make_response_schema("api_name", "rpc_name", func)
     assert schema["type"] == "array"
-    assert schema["items"] == {"type": "number"}
+    assert schema["items"] == {"type": "integer"}
 
 
 def test_set_builtin():
@@ -356,7 +357,7 @@ def test_datetime():
 
     schema = make_response_schema("api_name", "rpc_name", func)
     assert schema["type"] == "string"
-    assert schema["pattern"]
+    assert schema["format"] == "date-time"
 
 
 def test_date():
@@ -365,7 +366,16 @@ def test_date():
 
     schema = make_response_schema("api_name", "rpc_name", func)
     assert schema["type"] == "string"
-    assert schema["pattern"]
+    assert schema["format"] == "date"
+
+
+def test_time():
+    def func(username) -> time:
+        pass
+
+    schema = make_response_schema("api_name", "rpc_name", func)
+    assert schema["type"] == "string"
+    assert schema["format"] == "time"
 
 
 def test_decimal():
@@ -449,3 +459,90 @@ def test_named_tuple_field_with_none_default():
 
     schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
     assert len(schema["properties"]["user"]["properties"]["foo"]["oneOf"]) == 2
+
+
+class _TestEnum(Enum):
+    a = "xxx"
+    b = "yyy"
+
+
+class CustomClass:
+    a: int
+    b: str
+
+
+@pytest.mark.parametrize(
+    "test_input,type_",
+    [
+        # Simple types first
+        ("foo", str),
+        ("foo", bytes),
+        ("(1+2j)", complex),
+        ("76f37aaf-b399-4269-8187-5831edd76bef", UUID),
+        ("1.23", Decimal),
+        (True, bool),
+        (False, bool),
+        (123, int),
+        (123.45, float),
+        ({"a": 1}, dict),
+        ({"a": 1}, Dict),
+        ({"a": 1}, Dict[str, int]),
+        ([1, 2], tuple),
+        ([1, 2], Tuple),
+        ([1, 2], Tuple[int, int]),
+        ("xxx", _TestEnum),
+        ([1, 2], set),
+        ([1, 2], Set),
+        ([1, 2], Set[int]),
+        (None, None),
+        ("2019-11-23T17:26:16+00:00", datetime),
+        ("2019-11-23", date),
+        ("10:23", time),
+        ({"a": 1, "b": "a"}, CustomClass),
+        # Unions
+        ("foo", Union[str, int]),
+        (1, Union[str, int]),
+    ],
+    ids=[
+        "str",
+        "bytes",
+        "complex",
+        "uuid",
+        "decimal",
+        "bool_true",
+        "bool_false",
+        "int",
+        "float",
+        "dict",
+        "dict_typing",
+        "dict_typed",
+        "tuple",
+        "tuple_typing",
+        "tuple_typed",
+        "enum",
+        "set",
+        "set_typing",
+        "set_typed",
+        "none",
+        "datetime",
+        "date",
+        "time",
+        "custom_class",
+        "union_str",
+        "union_int",
+    ],
+)
+def test_validation_cycle(test_input, type_):
+    schemas = python_type_to_json_schemas(type_)
+
+    for schema in schemas:
+        try:
+            jsonschema.validate(test_input, schema)
+        except jsonschema.ValidationError:
+            # Try the next schema
+            pass
+        else:
+            # Successfully validated against a schema, so stop
+            return
+
+    raise AssertionError(f"No schemas validated value {repr(test_input)}. Schemas: {schemas}")

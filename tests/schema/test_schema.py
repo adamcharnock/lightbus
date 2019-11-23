@@ -29,7 +29,7 @@ def test_api_to_schema_event_long_form():
     schema = api_to_schema(TestApi())
     assert schema["events"]["my_event"] == {
         "parameters": {
-            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "additionalProperties": False,
             "properties": {"field": {"type": "boolean"}},
@@ -49,7 +49,7 @@ def test_api_to_schema_event_short_form():
     schema = api_to_schema(TestApi())
     assert schema["events"]["my_event"] == {
         "parameters": {
-            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "additionalProperties": False,
             "properties": {"field": {}},
@@ -83,14 +83,14 @@ def test_api_to_schema_rpc():
     schema = api_to_schema(TestApi())
     assert schema["rpcs"]["my_proc"] == {
         "parameters": {
-            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "additionalProperties": False,
             "properties": {"field": {"type": "boolean", "default": True}},
             "title": "RPC my.test_api.my_proc() parameters",
         },
         "response": {
-            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$schema": "http://json-schema.org/draft-07/schema#",
             "title": "RPC my.test_api.my_proc() response",
             "type": "string",
         },

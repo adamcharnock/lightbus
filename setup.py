@@ -16,7 +16,7 @@ setup(
     long_description=open("README.rst").read() if exists("README.rst") else "",
     install_requires=[
         "aioredis>=1.2.0,<2",
-        "jsonschema>=2.6.0,<3",
+        "jsonschema>=3.2<4",
         "pyyaml",
         "python-dateutil",
         "janus",

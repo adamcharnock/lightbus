@@ -239,7 +239,7 @@ async def test_validation_rpc(loop, bus: lightbus.path.BusPath, dummy_api, mocke
     jsonschema.validate.assert_called_with(
         "value: Hello",
         {
-            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$schema": "http://json-schema.org/draft-07/schema#",
             "title": "RPC my.dummy.my_proc() response",
             "type": "string",
         },
@@ -275,7 +275,7 @@ async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, moc
     jsonschema.validate.assert_called_with(
         {"field": "Hello"},
         {
-            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "additionalProperties": False,
             "properties": {"field": {"type": "string"}},

@@ -111,9 +111,6 @@ apis:
 TODO
 
 
-!!! note
-    Lightbus will likely upgrade to a newer JSON Schema version once the [jsonschema Python library] has the [requisite support].
-
 
 [type hints]: https://docs.python.org/3/library/typing.html
 [oneOf]: https://json-schema.org/understanding-json-schema/reference/combining.html#oneof
@@ -122,6 +119,4 @@ TODO
 [specific typed properties]: https://json-schema.org/understanding-json-schema/reference/object.html#properties
 [maxItems/minItems]: https://json-schema.org/understanding-json-schema/reference/array.html#length
 [items]: https://json-schema.org/understanding-json-schema/reference/array.html#tuple-validation
-[jsonschema Python library]: https://github.com/Julian/jsonschema
-[requisite support]: https://github.com/Julian/jsonschema/issues/337
 [schema protocol reference]: schema-protocol.md
