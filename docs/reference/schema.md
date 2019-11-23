@@ -75,7 +75,7 @@ bus' `config.yaml`.
 
 You can enable/disable validation using a boolean true/false flag:
 
-```coffeescript
+```yaml
 # In config.yaml
 apis:
     default:
@@ -85,7 +85,7 @@ apis:
 For finer grained control you can specify individual flags for incoming/outgoing
 validation:
 
-```coffeescript
+```yaml
 # In config.yaml
 apis:
     default:
@@ -99,7 +99,7 @@ apis:
 If `strict_validation` is `true` then calling a procedure for which no schema exists will
 result in an error:
 
-```coffeescript
+```yaml
 # In config.yaml
 apis:
     default:

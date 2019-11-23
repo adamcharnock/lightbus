@@ -72,7 +72,7 @@ can contain periods which allow you
 to structure your bus in a suitable form for your situation.
 Some example API naming schemes may look like:
 
-```coffeescript
+```yaml
 # Example API naming schemes for use within Meta.name
 Format:  <service>
 Example: support.get_case()
