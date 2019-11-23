@@ -22,7 +22,7 @@ This requires three steps:
 
 Create the following in a python module (we'll assume it is at `my_project.greeting_plugin`):
 
-```python
+```python3
 from lightbus.plugins import LightbusPlugin
 
 
@@ -105,7 +105,7 @@ plugins:
 The following hooks are available. Each of these should be implemented 
 as an asynchronous method on your plugin class. 
 
-**For full reference see the [LightbusPlugin] class**
+**For full reference see the [LightbusPlugin class]**
 
 * `before_parse_args`
 * `receive_args`
@@ -122,4 +122,4 @@ as an asynchronous method on your plugin class.
 * `exception`
 
 [StatePlugin]: https://github.com/adamcharnock/lightbus/blob/master/lightbus/plugins/state.py
-[LightbusPlugin]: https://github.com/adamcharnock/lightbus/blob/master/lightbus/plugins/__init__.py
+[LightbusPlugin class]: https://github.com/adamcharnock/lightbus/blob/master/lightbus/plugins/__init__.py
