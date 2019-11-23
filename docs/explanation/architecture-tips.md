@@ -151,5 +151,8 @@ general) are:
 * **Easier sharing of data structures** – this provides a shared language across all of your services. 
   These data structures can be used as type hints on your events and RPCs, which Lightbus will 
   automatically cast data into.
+* **Sharing of APIs** – in some cases you may wish for multiple services fire events on the same API. 
+  In this case each of these services will need to have access to the API class. 
+  (See [API registration & authoritative/non-authoritative APIs](apis.md##api-registration-authoritativenon-authoritative-apis))
 * **Sharing of global bus configuration** – similar to sharing data structures, your global bus configuration 
   YAML file can likewise be available to all services.
