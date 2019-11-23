@@ -419,6 +419,11 @@ class BusClient:
 
     @run_in_worker_thread()
     async def consume_rpcs(self, apis: List[Api] = None):
+        """Start a background task to consume RPCs
+
+        This will consumer RPCs on APIs which have been registered with this
+        bus client.
+        """
         await self.lazy_load_now()
 
         if apis is None:
@@ -462,7 +467,7 @@ class BusClient:
 
                 await self._execute_hook("before_rpc_execution", rpc_message=rpc_message)
                 try:
-                    result = await self.call_rpc_local(
+                    result = await self._call_rpc_local(
                         api_name=rpc_message.api_name,
                         name=rpc_message.procedure_name,
                         kwargs=rpc_message.kwargs,
@@ -496,6 +501,10 @@ class BusClient:
     async def call_rpc_remote(
         self, api_name: str, name: str, kwargs: dict = frozendict(), options: dict = frozendict()
     ):
+        """ Perform an RPC call
+
+        Call an RPC and return the result.
+        """
         await self.lazy_load_now()
 
         rpc_transport = self.transport_registry.get_rpc_transport(api_name)
@@ -580,7 +589,7 @@ class BusClient:
         return result_message.result
 
     @run_in_worker_thread()
-    async def call_rpc_local(self, api_name: str, name: str, kwargs: dict = frozendict()):
+    async def _call_rpc_local(self, api_name: str, name: str, kwargs: dict = frozendict()):
         await self.lazy_load_now()
 
         api = self.api_registry.get(api_name)
