@@ -259,7 +259,7 @@ The API config resides under the [API configuration listing].
 APIs are configured using the options below:
 
 * `rpc_timeout` (default: `5`) – Timeout when calling RPCs on this API 
-   (must also be specified on the [RPC](transport-configuration.md#rpc_timeout_1) and [result](transport-configuration.md#rpc_timeout_2) transport)
+   (must also be specified on the [RPC](transport-configuration.md#rpc_timeout) and [result](transport-configuration.md#rpc_timeout_1) transport)
 * `event_listener_setup_timeout` (default: `1`) – Timeout seconds when setting up event listeners
   (only applies when using the blocking api)
 * `event_fire_timeout` (default: `1`) – Timeout seconds when firing events on the bus
@@ -317,9 +317,7 @@ and `event` needs.
 The `schema` transport is global to the bus, and is not
 configurable on a per-api level.
 
-**For more information (including configuration options) 
-see the [transports reference](transports.md).**
-
+**For configuration details see the [transport configuration reference](../reference/transport-configuration.md).**
 
 ##### API validation config
 

@@ -153,6 +153,6 @@ general) are:
   automatically cast data into.
 * **Sharing of APIs** – in some cases you may wish for multiple services fire events on the same API. 
   In this case each of these services will need to have access to the API class. 
-  (See [API registration & authoritative/non-authoritative APIs](apis.md##api-registration-authoritativenon-authoritative-apis))
+  (See [API registration & authoritative/non-authoritative APIs](apis.md#api-registration-authoritativenon-authoritative-apis))
 * **Sharing of global bus configuration** – similar to sharing data structures, your global bus configuration 
   YAML file can likewise be available to all services.

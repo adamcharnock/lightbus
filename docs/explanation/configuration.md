@@ -59,7 +59,7 @@ you may find is useful to host your configuration on an internal-only endpoint.
 
 Alternatively, you may decide to ensure your build/deploy process distributes a copy 
 of the global configuration file to every service. 
-[The discussion on monorepositories in Architecture Tips](architecture-tips.md#use-a-mono-repository) is relevant here.
+[The discussion on monorepositories in Architecture Tips](architecture-tips.md#use-a-monorepository) is relevant here.
 
 [configuration reference]: ../reference/configuration.md
 [Django]: https://www.djangoproject.com/
