@@ -41,3 +41,5 @@ if [ $EXIT_CODE -gt 1 ]; then
   # exit with codes of > 1
   exit $EXIT_CODE
 fi
+
+echo "Everything OK"
