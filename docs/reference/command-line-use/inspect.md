@@ -37,7 +37,7 @@ lightbus inspect --native-id 1572389392059-0
 
 ---
 
-You can also query by **api and/or event name**:
+You can also query by **API and/or event name**:
 
 ```
 # Event/api filtering
@@ -54,6 +54,13 @@ lightbus inspect --api my_company.auth
 lightbus inspect --event user_* 
 lightbus inspect --api my_company.*
 ```
+
+!!! note "Unexpected results when using wildcards?"
+
+    You may need to quote wilcard strings in order to prevent your shell expanding them.
+    For example:
+    
+        lightbus inspect --api "my_company.*"
 
 ---
 
