@@ -6,7 +6,7 @@ import time
 from collections import defaultdict
 from datetime import timedelta
 from itertools import chain
-from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING
+from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING, Callable
 
 import janus
 
@@ -631,6 +631,7 @@ class BusClient:
 
     @run_in_worker_thread()
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
+        """Fire an event onto the bus"""
         await self.lazy_load_now()
 
         kwargs = kwargs or {}
@@ -681,14 +682,37 @@ class BusClient:
         await event_transport.send_event(event_message, options=options, bus_client=self)
         await self._execute_hook("after_event_sent", event_message=event_message)
 
-    def listen_for_event(self, api_name, name, listener, listener_name: str, options: dict = None):
+    def listen_for_event(
+        self, api_name: str, name: str, listener: Callable, listener_name: str, options: dict = None
+    ):
+        """Listen for a single event
+
+        Wraps `listen_for_events()`
+        """
         self.listen_for_events(
             [(api_name, name)], listener, listener_name=listener_name, options=options
         )
 
     def listen_for_events(
-        self, events: List[Tuple[str, str]], listener, listener_name: str, options: dict = None
+        self,
+        events: List[Tuple[str, str]],
+        listener: Callable,
+        listener_name: str,
+        options: dict = None,
     ):
+        """Listen for a list of events
+
+        `events` is in the form:
+
+            events=[
+                ('company.first_api', 'event_name'),
+                ('company.second_api', 'event_name'),
+            ]
+
+        `listener_name` is an arbitrary string which uniquely identifies this listener.
+        This can generally be the same as the function name of the `listener` callable, but
+        it should not change once deployed.
+        """
         self._sanity_check_listener(listener)
 
         for api_name, name in events:
@@ -819,6 +843,10 @@ class BusClient:
             )
 
     def set_features(self, features: List[Union[Feature, str]]):
+        """Set the features this bus clients should serve.
+
+        Features should be a list of: `rpcs`, `events`, `tasks`
+        """
         features = list(features)
         for i, feature in enumerate(features):
             try:
@@ -864,41 +892,107 @@ class BusClient:
             return hook_decorator
 
     def on_start(self, callback=None, *, before_plugins=False):
-        """Alias for before_worker_start"""
+        """Decorator to register a function to be called before the worker starts up
+
+        Callback will be called with the following arguments:
+
+            callback(self, *, client: "BusClient")
+        """
         return self.before_worker_start(callback, before_plugins=before_plugins)
 
     def on_stop(self, callback=None, *, before_plugins=False):
-        """Alias for after_worker_stopped"""
+        """Decorator to register a function to be called after the worker stops
+
+        Callback will be called with the following arguments:
+
+            callback(self, *, client: "BusClient")
+        """
         return self.before_worker_start(callback, before_plugins=before_plugins)
 
     def before_worker_start(self, callback=None, *, before_plugins=False):
+        """Decorator to register a function to be called before the worker starts up
+
+        See `on_start()`
+        """
         return self._make_hook_decorator("before_worker_start", before_plugins, callback)
 
     def after_worker_stopped(self, callback=None, *, before_plugins=False):
+        """Decorator to register a function to be called after the worker stops
+
+        See `on_stop()`
+        """
         return self._make_hook_decorator("after_worker_stopped", before_plugins, callback)
 
     def before_rpc_call(self, callback=None, *, before_plugins=False):
+        """Decorator to register a function to be called prior to an RPC call
+
+        Callback will be called with the following arguments:
+
+            callback(self, *, rpc_message: RpcMessage, client: "BusClient")
+        """
         return self._make_hook_decorator("before_rpc_call", before_plugins, callback)
 
     def after_rpc_call(self, callback=None, *, before_plugins=False):
+        """Decorator to register a function to be called after an RPC call
+
+        Callback will be called with the following arguments:
+
+            callback(self, *, rpc_message: RpcMessage, result_message: ResultMessage, client: "BusClient")
+        """
         return self._make_hook_decorator("after_rpc_call", before_plugins, callback)
 
     def before_rpc_execution(self, callback=None, *, before_plugins=False):
+        """Decorator to register a function to be called prior to a local RPC execution
+
+        Callback will be called with the following arguments:
+
+            callback(self, *, rpc_message: RpcMessage, client: "BusClient")
+        """
         return self._make_hook_decorator("before_rpc_execution", before_plugins, callback)
 
     def after_rpc_execution(self, callback=None, *, before_plugins=False):
+        """Decorator to register a function to be called after a local RPC execution
+
+        Callback will be called with the following arguments:
+
+            callback(self, *, rpc_message: RpcMessage, result_message: ResultMessage, client: "BusClient")
+        """
         return self._make_hook_decorator("after_rpc_execution", before_plugins, callback)
 
     def before_event_sent(self, callback=None, *, before_plugins=False):
+        """Decorator to register a function to be called prior to an event being sent
+
+        Callback will be called with the following arguments:
+
+            callback(self, *, event_message: EventMessage, client: "BusClient")
+        """
         return self._make_hook_decorator("before_event_sent", before_plugins, callback)
 
     def after_event_sent(self, callback=None, *, before_plugins=False):
+        """Decorator to register a function to be called after an event was sent
+
+        Callback will be called with the following arguments:
+
+            callback(self, *, event_message: EventMessage, client: "BusClient")
+        """
         return self._make_hook_decorator("after_event_sent", before_plugins, callback)
 
     def before_event_execution(self, callback=None, *, before_plugins=False):
+        """Decorator to register a function to be called prior to a local event handler execution
+
+        Callback will be called with the following arguments:
+
+            callback(self, *, event_message: EventMessage, client: "BusClient")
+        """
         return self._make_hook_decorator("before_event_execution", before_plugins, callback)
 
     def after_event_execution(self, callback=None, *, before_plugins=False):
+        """Decorator to register a function to be called after a local event handler execution
+
+        Callback will be called with the following arguments:
+
+            callback(self, *, event_message: EventMessage, client: "BusClient")
+        """
         return self._make_hook_decorator("after_event_execution", before_plugins, callback)
 
     # Scheduling
@@ -954,6 +1048,27 @@ class BusClient:
         return wrapper
 
     def schedule(self, schedule: "Job", also_run_immediately=False):
+        """ Call a coroutine on the specified schedule
+
+        Schedule a task using the `schedule` library:
+
+            import lightbus
+            import schedule
+
+            bus = lightbus.create()
+
+            # Run the task every 1-3 seconds, varying randomly
+            @bus.client.schedule(schedule.every(1).to(3).seconds)
+            def do_it():
+                print("Hello using schedule library")
+
+        This can also be used to decorate async functions. In this case the function will be awaited.
+
+        See Also:
+
+            @bus.client.every()
+        """
+
         def wrapper(f):
             coroutine = call_on_schedule(
                 callback=f,
@@ -969,6 +1084,13 @@ class BusClient:
     # API registration
 
     def register_api(self, api: Api):
+        """Register an API with this bus client
+
+        You must register APIs which you wish this server to fire events
+        on or handle RPCs calls for.
+
+        See Also: https://lightbus.org/explanation/apis/
+        """
         self.api_registry.add(api)
 
 
