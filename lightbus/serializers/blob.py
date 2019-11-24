@@ -19,15 +19,16 @@ if TYPE_CHECKING:
 
 class BlobMessageSerializer(MessageSerializer):
     def __call__(self, message: "Message") -> str:
-        # self.encoder will typically be a json encoder, or something similar.
-        # Therefore here we just return a json encoded stricture including metadata & kwargs.
+        """Takes a message object and returns a serialised string representation"""
         return self.encoder({"metadata": message.get_metadata(), "kwargs": message.get_kwargs()})
 
 
 class BlobMessageDeserializer(MessageDeserializer):
     def __call__(self, serialized: Union[str, dict], *, native_id=None, **extra):
-        # Reverse of BlobMessageSerializer
+        """ Takes a serialised string representation and returns a Message object
 
+        Reverse of BlobMessageSerializer
+        """
         # Allow for receiving dicts on the assumption that this will be
         # json which has already been decoded.
         if isinstance(serialized, dict):

@@ -16,6 +16,7 @@ Benefits of this are:
        (smart config editing in the management UI?)
     3. Plugins and transports can be assured of reasonable sane data
 
+See Also: https://lightbus.org/reference/configuration/
 """
 import logging
 import os
