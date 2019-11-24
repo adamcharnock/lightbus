@@ -69,7 +69,7 @@ your services.
     Likewise, an RPC or event listener without type hints will simply
     receive a dictionary.
 
-See also [use a monorepository](#use-a-monorepository]).
+See also [use a monorepository](#use-a-monorepository).
 
 ## Decide on boundaries
 

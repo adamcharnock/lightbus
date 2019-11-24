@@ -143,4 +143,4 @@ the locally loaded schema.
 [specific typed properties]: https://json-schema.org/understanding-json-schema/reference/object.html#properties
 [maxItems/minItems]: https://json-schema.org/understanding-json-schema/reference/array.html#length
 [items]: https://json-schema.org/understanding-json-schema/reference/array.html#tuple-validation
-[schema protocol reference]: schema-protocol.md
+[schema protocol reference]: protocols/schema.md

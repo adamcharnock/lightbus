@@ -23,4 +23,4 @@ the transmission format.
 
 
 [JSON schema]: https://json-schema.org/
-[schema protocol]: ../reference/schema-protocol.md
+[schema protocol]: ../reference/protocols/schema.md

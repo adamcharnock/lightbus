@@ -177,4 +177,4 @@ A schema is only available if the `GET` succeeds. The data returned by the `GET`
 and will contain the structure detailed above.
 
 
-[schema explanation]: ../explanation/schema.md
+[schema explanation]: ../../explanation/schema.md

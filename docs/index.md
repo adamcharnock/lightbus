@@ -4,12 +4,14 @@
 
 # What is Lightbus?
 
-Lightbus is a powerful but intuitive messaging client for your
-backend services. Lightbus is for use with Python, but can
-communicate with services written in other languages.
+Lightbus is a powerful and intuitive messaging client for your
+backend Python services.
 
-Lightbus uses Redis 5 as its underlying transport, although support
-for other platforms may be added in future.
+Lightbus uses Redis 5 as its underlying [transport](explanation/transports.md), although support
+for other platforms will be added in future.
+
+Other languages can also communicate with Lightbus by 
+[interacting with Redis](reference/protocols/index.md).
 
 **Lightbus is under active development and is still pre-release.**
 
@@ -62,7 +64,7 @@ class AuthApi(Api):
         )
 ```
 
-This can be called as follows:
+The `check_password` procedure can be called remotely as follows:
 
 ```python3
 import lightbus
@@ -110,9 +112,9 @@ grounding in the high level **concepts and theory**.
 Start with whichever section suits you best. You should
 ultimately look through both sections for a complete understanding.
 
-In addition, the [how to] section gives solutions to common 
-use cases, and the [reference] section provides detailed 
-technical information regarding specific features.
+In addition, **the [how to] section gives solutions to common 
+use cases**, and **the [reference] section provides detailed 
+technical information** regarding specific features.
 
 ## Questions?
 

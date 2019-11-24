@@ -73,6 +73,12 @@ class ApiOptions:
 
 
 class ApiMetaclass(type):
+    """ API Metaclass
+
+    Validates options in the API's Meta class and populates the
+    API class' `meta` attribute.
+    """
+
     def __init__(cls, name, bases=None, dict_=None):
         is_api_base_class = name == "Api" and not bases
         if is_api_base_class:

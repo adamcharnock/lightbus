@@ -82,9 +82,11 @@ nav:
     - Plugins: reference/plugins.md
     - Plugin development: reference/plugins-development.md
     - Transport configuration: reference/transport-configuration.md
-    - RPC & Result Protocol (Redis): reference/rpc-and-result-protocol.md
-    - Event Protocol (Redis): reference/event-protocol.md
-    - Schema Protocol (Redis): reference/schema-protocol.md
+    - Protocols:
+      - Overview: reference/protocols/index.md
+      - RPC & Result Protocol (Redis): reference/protocols/rpc-and-result.md
+      - Event Protocol (Redis): reference/protocols/event.md
+      - Schema Protocol (Redis): reference/protocols/schema.md
     - Authors: reference/authors.md
     - Code of Conduct: reference/code-of-conduct.md
 
