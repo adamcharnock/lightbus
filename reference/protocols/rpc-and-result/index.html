@@ -13,7 +13,7 @@
         <meta name="description" content="RPC & event system for Python 3">
       
       
-        <link rel="canonical" href="http://lightbus.org/reference/code-of-conduct/">
+        <link rel="canonical" href="http://lightbus.org/reference/protocols/rpc-and-result/">
       
       
         <meta name="author" content="Adam Charnock">
@@ -37,18 +37,18 @@
       
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
-      <link rel="shortcut icon" href="../..">
+      <link rel="shortcut icon" href="../../..">
       <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
     
     
       
-        <title>Code of Conduct - Lightbus</title>
+        <title>RPC & Result Protocol (Redis) - Lightbus</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/application.1b62728e.css">
       
-        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/application-palette.a8b3c06d.css">
       
       
         
@@ -57,7 +57,7 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
+      <script src="../../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
@@ -66,10 +66,10 @@
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
-    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    <link rel="stylesheet" href="../../../assets/fonts/material-icons.css">
     
     
-      <link rel="stylesheet" href="../../static/stylesheets/extra.css">
+      <link rel="stylesheet" href="../../../static/stylesheets/extra.css">
     
     
       
@@ -118,7 +118,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#code-of-conduct" tabindex="1" class="md-skip">
+      <a href="#rpc-result-protocol-redis" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -144,7 +144,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                Code of Conduct
+                RPC & Result Protocol (Redis)
               
             </span>
           
@@ -221,7 +221,7 @@
         
   <li class="md-tabs__item">
     
-      <a href="../.." class="md-tabs__link">
+      <a href="../../.." class="md-tabs__link">
         Home
       </a>
     
@@ -233,7 +233,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../tutorial/" class="md-tabs__link">
+        <a href="../../../tutorial/" class="md-tabs__link">
           Tutorials
         </a>
       
@@ -246,7 +246,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../howto/" class="md-tabs__link">
+        <a href="../../../howto/" class="md-tabs__link">
           How to
         </a>
       
@@ -259,7 +259,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../../explanation/" class="md-tabs__link">
+        <a href="../../../explanation/" class="md-tabs__link">
           Explanation
         </a>
       
@@ -272,7 +272,7 @@
   
     <li class="md-tabs__item">
       
-        <a href="../" class="md-tabs__link md-tabs__link--active">
+        <a href="../../" class="md-tabs__link md-tabs__link--active">
           Reference
         </a>
       
@@ -329,7 +329,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../.." title="Home" class="md-nav__link">
+    <a href="../../.." title="Home" class="md-nav__link">
       Home
     </a>
   </li>
@@ -360,7 +360,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../tutorial/" title="Overview" class="md-nav__link">
+    <a href="../../../tutorial/" title="Overview" class="md-nav__link">
       Overview
     </a>
   </li>
@@ -372,7 +372,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../tutorial/installation/" title="1. Installation" class="md-nav__link">
+    <a href="../../../tutorial/installation/" title="1. Installation" class="md-nav__link">
       1. Installation
     </a>
   </li>
@@ -384,7 +384,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../tutorial/quick-start/" title="2. Quick start" class="md-nav__link">
+    <a href="../../../tutorial/quick-start/" title="2. Quick start" class="md-nav__link">
       2. Quick start
     </a>
   </li>
@@ -396,7 +396,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../tutorial/worked-example/" title="3. Worked example" class="md-nav__link">
+    <a href="../../../tutorial/worked-example/" title="3. Worked example" class="md-nav__link">
       3. Worked example
     </a>
   </li>
@@ -408,7 +408,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../tutorial/django-and-lightbus/" title="4. Django & Lightbus" class="md-nav__link">
+    <a href="../../../tutorial/django-and-lightbus/" title="4. Django & Lightbus" class="md-nav__link">
       4. Django & Lightbus
     </a>
   </li>
@@ -420,7 +420,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../tutorial/getting-involved/" title="Getting involved (even if you don't code)" class="md-nav__link">
+    <a href="../../../tutorial/getting-involved/" title="Getting involved (even if you don't code)" class="md-nav__link">
       Getting involved (even if you don't code)
     </a>
   </li>
@@ -456,7 +456,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../howto/" title="Overview" class="md-nav__link">
+    <a href="../../../howto/" title="Overview" class="md-nav__link">
       Overview
     </a>
   </li>
@@ -468,7 +468,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../howto/access-your-bus-client/" title="Access your bus client" class="md-nav__link">
+    <a href="../../../howto/access-your-bus-client/" title="Access your bus client" class="md-nav__link">
       Access your bus client
     </a>
   </li>
@@ -480,7 +480,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../howto/schedule-recurring-tasks/" title="Schedule recurring tasks" class="md-nav__link">
+    <a href="../../../howto/schedule-recurring-tasks/" title="Schedule recurring tasks" class="md-nav__link">
       Schedule recurring tasks
     </a>
   </li>
@@ -492,7 +492,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../howto/run-background-tasks/" title="Run background tasks" class="md-nav__link">
+    <a href="../../../howto/run-background-tasks/" title="Run background tasks" class="md-nav__link">
       Run background tasks
     </a>
   </li>
@@ -504,7 +504,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../howto/migrate-from-celery-to-lightbus/" title="Migrate from Celery to Lightbus" class="md-nav__link">
+    <a href="../../../howto/migrate-from-celery-to-lightbus/" title="Migrate from Celery to Lightbus" class="md-nav__link">
       Migrate from Celery to Lightbus
     </a>
   </li>
@@ -516,7 +516,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../howto/write-idempotent-event-handlers/" title="Write idempotent event handlers" class="md-nav__link">
+    <a href="../../../howto/write-idempotent-event-handlers/" title="Write idempotent event handlers" class="md-nav__link">
       Write idempotent event handlers
     </a>
   </li>
@@ -528,7 +528,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../howto/metrics/" title="Use Lightbus for realtime metrics" class="md-nav__link">
+    <a href="../../../howto/metrics/" title="Use Lightbus for realtime metrics" class="md-nav__link">
       Use Lightbus for realtime metrics
     </a>
   </li>
@@ -540,7 +540,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../howto/event-sourcing/" title="Use Lightbus for event sourcing" class="md-nav__link">
+    <a href="../../../howto/event-sourcing/" title="Use Lightbus for event sourcing" class="md-nav__link">
       Use Lightbus for event sourcing
     </a>
   </li>
@@ -552,7 +552,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../howto/modify-lightbus/" title="Modify Lightbus" class="md-nav__link">
+    <a href="../../../howto/modify-lightbus/" title="Modify Lightbus" class="md-nav__link">
       Modify Lightbus
     </a>
   </li>
@@ -588,7 +588,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/" title="Overview" class="md-nav__link">
+    <a href="../../../explanation/" title="Overview" class="md-nav__link">
       Overview
     </a>
   </li>
@@ -600,7 +600,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/anatomy-lesson/" title="Anatomy lesson" class="md-nav__link">
+    <a href="../../../explanation/anatomy-lesson/" title="Anatomy lesson" class="md-nav__link">
       Anatomy lesson
     </a>
   </li>
@@ -612,7 +612,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/services/" title="Services" class="md-nav__link">
+    <a href="../../../explanation/services/" title="Services" class="md-nav__link">
       Services
     </a>
   </li>
@@ -624,7 +624,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/bus/" title="The bus" class="md-nav__link">
+    <a href="../../../explanation/bus/" title="The bus" class="md-nav__link">
       The bus
     </a>
   </li>
@@ -636,7 +636,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/apis/" title="APIs" class="md-nav__link">
+    <a href="../../../explanation/apis/" title="APIs" class="md-nav__link">
       APIs
     </a>
   </li>
@@ -648,7 +648,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/rpcs/" title="Remote procedure calls" class="md-nav__link">
+    <a href="../../../explanation/rpcs/" title="Remote procedure calls" class="md-nav__link">
       Remote procedure calls
     </a>
   </li>
@@ -660,7 +660,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/events/" title="Events" class="md-nav__link">
+    <a href="../../../explanation/events/" title="Events" class="md-nav__link">
       Events
     </a>
   </li>
@@ -672,7 +672,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/marshalling/" title="Marshelling" class="md-nav__link">
+    <a href="../../../explanation/marshalling/" title="Marshelling" class="md-nav__link">
       Marshelling
     </a>
   </li>
@@ -684,7 +684,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/transports/" title="Transports" class="md-nav__link">
+    <a href="../../../explanation/transports/" title="Transports" class="md-nav__link">
       Transports
     </a>
   </li>
@@ -696,7 +696,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/configuration/" title="Configuration" class="md-nav__link">
+    <a href="../../../explanation/configuration/" title="Configuration" class="md-nav__link">
       Configuration
     </a>
   </li>
@@ -708,7 +708,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/schema/" title="Schema" class="md-nav__link">
+    <a href="../../../explanation/schema/" title="Schema" class="md-nav__link">
       Schema
     </a>
   </li>
@@ -720,7 +720,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/lightbus-vs-celery/" title="Lightbus vs Celery" class="md-nav__link">
+    <a href="../../../explanation/lightbus-vs-celery/" title="Lightbus vs Celery" class="md-nav__link">
       Lightbus vs Celery
     </a>
   </li>
@@ -732,7 +732,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/architecture-tips/" title="Architecture tips" class="md-nav__link">
+    <a href="../../../explanation/architecture-tips/" title="Architecture tips" class="md-nav__link">
       Architecture tips
     </a>
   </li>
@@ -744,7 +744,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../explanation/performance/" title="Performance" class="md-nav__link">
+    <a href="../../../explanation/performance/" title="Performance" class="md-nav__link">
       Performance
     </a>
   </li>
@@ -782,7 +782,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../" title="Overview" class="md-nav__link">
+    <a href="../../" title="Overview" class="md-nav__link">
       Overview
     </a>
   </li>
@@ -794,7 +794,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../apis/" title="APIs" class="md-nav__link">
+    <a href="../../apis/" title="APIs" class="md-nav__link">
       APIs
     </a>
   </li>
@@ -806,7 +806,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../rpcs/" title="Remote procedure calls" class="md-nav__link">
+    <a href="../../rpcs/" title="Remote procedure calls" class="md-nav__link">
       Remote procedure calls
     </a>
   </li>
@@ -818,7 +818,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../events/" title="Events" class="md-nav__link">
+    <a href="../../events/" title="Events" class="md-nav__link">
       Events
     </a>
   </li>
@@ -830,7 +830,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../typing/" title="Typing" class="md-nav__link">
+    <a href="../../typing/" title="Typing" class="md-nav__link">
       Typing
     </a>
   </li>
@@ -842,7 +842,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../configuration/" title="Configuration" class="md-nav__link">
+    <a href="../../configuration/" title="Configuration" class="md-nav__link">
       Configuration
     </a>
   </li>
@@ -854,7 +854,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../schema/" title="Schema" class="md-nav__link">
+    <a href="../../schema/" title="Schema" class="md-nav__link">
       Schema
     </a>
   </li>
@@ -885,7 +885,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../command-line-use/run/" title="run" class="md-nav__link">
+    <a href="../../command-line-use/run/" title="run" class="md-nav__link">
       run
     </a>
   </li>
@@ -897,7 +897,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../command-line-use/inspect/" title="inspect" class="md-nav__link">
+    <a href="../../command-line-use/inspect/" title="inspect" class="md-nav__link">
       inspect
     </a>
   </li>
@@ -909,7 +909,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../command-line-use/shell/" title="shell" class="md-nav__link">
+    <a href="../../command-line-use/shell/" title="shell" class="md-nav__link">
       shell
     </a>
   </li>
@@ -921,7 +921,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../command-line-use/dumpschema/" title="dumpschema" class="md-nav__link">
+    <a href="../../command-line-use/dumpschema/" title="dumpschema" class="md-nav__link">
       dumpschema
     </a>
   </li>
@@ -933,7 +933,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../command-line-use/dumpconfigschema/" title="dumpconfigschema" class="md-nav__link">
+    <a href="../../command-line-use/dumpconfigschema/" title="dumpconfigschema" class="md-nav__link">
       dumpconfigschema
     </a>
   </li>
@@ -950,7 +950,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../plugins/" title="Plugins" class="md-nav__link">
+    <a href="../../plugins/" title="Plugins" class="md-nav__link">
       Plugins
     </a>
   </li>
@@ -962,7 +962,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../plugins-development/" title="Plugin development" class="md-nav__link">
+    <a href="../../plugins-development/" title="Plugin development" class="md-nav__link">
       Plugin development
     </a>
   </li>
@@ -974,7 +974,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../transport-configuration/" title="Transport configuration" class="md-nav__link">
+    <a href="../../transport-configuration/" title="Transport configuration" class="md-nav__link">
       Transport configuration
     </a>
   </li>
@@ -984,10 +984,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-12" type="checkbox" id="nav-5-12">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-12" type="checkbox" id="nav-5-12" checked>
     
     <label class="md-nav__link" for="nav-5-12">
       Protocols
@@ -1005,61 +1007,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../protocols/" title="Overview" class="md-nav__link">
+    <a href="../" title="Overview" class="md-nav__link">
       Overview
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../protocols/rpc-and-result/" title="RPC & Result Protocol (Redis)" class="md-nav__link">
-      RPC & Result Protocol (Redis)
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../protocols/event/" title="Event Protocol (Redis)" class="md-nav__link">
-      Event Protocol (Redis)
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../protocols/schema/" title="Schema Protocol (Redis)" class="md-nav__link">
-      Schema Protocol (Redis)
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../authors/" title="Authors" class="md-nav__link">
-      Authors
     </a>
   </li>
 
@@ -1079,11 +1028,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        Code of Conduct
+        RPC & Result Protocol (Redis)
       </label>
     
-    <a href="./" title="Code of Conduct" class="md-nav__link md-nav__link--active">
-      Code of Conduct
+    <a href="./" title="RPC & Result Protocol (Redis)" class="md-nav__link md-nav__link--active">
+      RPC & Result Protocol (Redis)
     </a>
     
       
@@ -1097,72 +1046,16 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#our-pledge" class="md-nav__link">
-    Our Pledge
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#our-standards" class="md-nav__link">
-    Our Standards
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enforcement-responsibilities" class="md-nav__link">
-    Enforcement Responsibilities
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scope" class="md-nav__link">
-    Scope
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enforcement" class="md-nav__link">
-    Enforcement
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enforcement-guidelines" class="md-nav__link">
-    Enforcement Guidelines
+  <a href="#sending-rpc-calls-client" class="md-nav__link">
+    Sending RPC Calls (client)
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-correction" class="md-nav__link">
-    1. Correction
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-warning" class="md-nav__link">
-    2. Warning
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-temporary-ban" class="md-nav__link">
-    3. Temporary Ban
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-permanent-ban" class="md-nav__link">
-    4. Permanent Ban
+  <a href="#the-return-path" class="md-nav__link">
+    The return path
   </a>
   
 </li>
@@ -1173,8 +1066,76 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#attribution" class="md-nav__link">
-    Attribution
+  <a href="#receiving-rpc-results-client" class="md-nav__link">
+    Receiving RPC Results (client)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consuming-incoming-rpc-calls-server" class="md-nav__link">
+    Consuming incoming RPC calls (server)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#message-serialisation-encoding" class="md-nav__link">
+    Message serialisation &amp; encoding
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serialisation" class="md-nav__link">
+    Serialisation
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpc-message" class="md-nav__link">
+    RPC Message
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#result-message" class="md-nav__link">
+    Result Message
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#encoding-customisation" class="md-nav__link">
+    Encoding &amp; Customisation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-validation" class="md-nav__link">
+    Data validation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-deformation-casting" class="md-nav__link">
+    Data deformation &amp; casting
   </a>
   
 </li>
@@ -1187,6 +1148,59 @@
   
 </nav>
     
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../event/" title="Event Protocol (Redis)" class="md-nav__link">
+      Event Protocol (Redis)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../schema/" title="Schema Protocol (Redis)" class="md-nav__link">
+      Schema Protocol (Redis)
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../authors/" title="Authors" class="md-nav__link">
+      Authors
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../code-of-conduct/" title="Code of Conduct" class="md-nav__link">
+      Code of Conduct
+    </a>
   </li>
 
         
@@ -1216,72 +1230,16 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#our-pledge" class="md-nav__link">
-    Our Pledge
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#our-standards" class="md-nav__link">
-    Our Standards
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enforcement-responsibilities" class="md-nav__link">
-    Enforcement Responsibilities
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scope" class="md-nav__link">
-    Scope
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enforcement" class="md-nav__link">
-    Enforcement
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enforcement-guidelines" class="md-nav__link">
-    Enforcement Guidelines
+  <a href="#sending-rpc-calls-client" class="md-nav__link">
+    Sending RPC Calls (client)
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-correction" class="md-nav__link">
-    1. Correction
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-warning" class="md-nav__link">
-    2. Warning
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-temporary-ban" class="md-nav__link">
-    3. Temporary Ban
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-permanent-ban" class="md-nav__link">
-    4. Permanent Ban
+  <a href="#the-return-path" class="md-nav__link">
+    The return path
   </a>
   
 </li>
@@ -1292,8 +1250,76 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#attribution" class="md-nav__link">
-    Attribution
+  <a href="#receiving-rpc-results-client" class="md-nav__link">
+    Receiving RPC Results (client)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consuming-incoming-rpc-calls-server" class="md-nav__link">
+    Consuming incoming RPC calls (server)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#message-serialisation-encoding" class="md-nav__link">
+    Message serialisation &amp; encoding
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serialisation" class="md-nav__link">
+    Serialisation
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpc-message" class="md-nav__link">
+    RPC Message
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#result-message" class="md-nav__link">
+    Result Message
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#encoding-customisation" class="md-nav__link">
+    Encoding &amp; Customisation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-validation" class="md-nav__link">
+    Data validation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-deformation-casting" class="md-nav__link">
+    Data deformation &amp; casting
   </a>
   
 </li>
@@ -1314,63 +1340,141 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/adamcharnock/lightbus/edit/master/docs/reference/code-of-conduct.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/adamcharnock/lightbus/edit/master/docs/reference/protocols/rpc-and-result.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                <h1 id="code-of-conduct">Code of Conduct<a class="headerlink" href="#code-of-conduct" title="Permanent link">&para;</a></h1>
-<h2 id="our-pledge">Our Pledge<a class="headerlink" href="#our-pledge" title="Permanent link">&para;</a></h2>
-<p>We as members, contributors, and leaders pledge to make participation in our community a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation.</p>
-<p>We pledge to act and interact in ways that contribute to an open, welcoming, diverse, inclusive, and healthy community.</p>
-<h2 id="our-standards">Our Standards<a class="headerlink" href="#our-standards" title="Permanent link">&para;</a></h2>
-<p>Examples of behavior that contributes to a positive environment for our community include:</p>
+                <h1 id="rpc-result-protocol-redis">RPC &amp; result protocol (Redis)<a class="headerlink" href="#rpc-result-protocol-redis" title="Permanent link">&para;</a></h1>
+<p>Here we document the specific interactions between Lightbus and Redis. 
+The concrete implementation of this is provided by the <code>RedisRpcTransport</code> and 
+<code>RedisResultTransport</code> classes. Before reading you should be familiar with Lightbus' <a href="../../../explanation/marshalling/">data marshalling</a>.</p>
+<p>This documentation may be useful when debugging, developing third-party client libraries, 
+or simply for general interest and review. <strong>You do not need to be aware of this 
+protocol in order to use Lightbus</strong>.</p>
+<h2 id="sending-rpc-calls-client">Sending RPC Calls (client)<a class="headerlink" href="#sending-rpc-calls-client" title="Permanent link">&para;</a></h2>
+<p>The following Redis commands will send a remote procedure call:</p>
+<div class="codehilite"><pre><span></span>RPUSH &quot;{api_name}:rpc_queue&quot; &quot;{blob_serialized_message}&quot;
+SET &quot;rpc_expiry_key:{rpc_call_message_id}&quot;
+EXPIRE &quot;rpc_expiry_key:{rpc_call_message_id}&quot; {rpc_timeout_seconds:5}
+</pre></div>
+
+
+<p>See <a href="#message-serialisation-encoding">message serialisation &amp; encoding</a> for the format of 
+<code>{blob_serialized_message}</code>.</p>
+<h3 id="the-return-path">The return path<a class="headerlink" href="#the-return-path" title="Permanent link">&para;</a></h3>
+<p>Each RPC message must specify a <code>return_path</code> in its metadata. This states how the client 
+expects to receive the result of the RPC. Both the client and the server must be able to 
+comprehend and act up the provided return path, otherwise results will fail to be communicated.</p>
+<p>Assuming you are using the built-in Redis RPC result transport, the return path 
+should be in the following format:</p>
+<div class="codehilite"><pre><span></span>redis+key://{api_name}.{rpc_name}:result:{rpc_call_message_id}
+</pre></div>
+
+
+<p>The server will place the RPC result into a Redis key. The value following 
+<code>redis+key://</code> will be used as the key name.</p>
+<h2 id="receiving-rpc-results-client">Receiving RPC Results (client)<a class="headerlink" href="#receiving-rpc-results-client" title="Permanent link">&para;</a></h2>
+<p>The following Redis commands will block and await the result of an RPC call:</p>
+<div class="codehilite"><pre><span></span>BLPOP &quot;{api_name}.{rpc_name}:result:{rpc_call_message_id}&quot;
+</pre></div>
+
+
+<p>This simply waits from a value to appear within the key specified by the <code>return_path</code>
+in the sent RPC message.</p>
+<p>See <a href="#message-serialisation-encoding">message serialisation &amp; encoding</a> for the format of 
+the returned RPC result.</p>
+<h2 id="consuming-incoming-rpc-calls-server">Consuming incoming RPC calls (server)<a class="headerlink" href="#consuming-incoming-rpc-calls-server" title="Permanent link">&para;</a></h2>
+<p>RPCs are consumed as follows:</p>
+<div class="codehilite"><pre><span></span># Blocks until a RPC message is received
+BLPOP &quot;{api_name}:rpc_queue&quot;
+
+DEL &quot;rpc_expiry_key:{rpc_call_message_id}&quot;
+# If DEL returns 1 (key deleted) then execute the RPC
+# If DEL returns 0 (key did not exist) then ignore the RPC
+
+# Parse blob-serialised RPC message, Execute RPC, get result
+
+LPUSH {redis_key_specific_in_return_path} {blob_serialized_result}
+EXPIRE {redis_key_specific_in_return_path} {result_ttl_seconds}
+</pre></div>
+
+
+<h2 id="message-serialisation-encoding">Message serialisation &amp; encoding<a class="headerlink" href="#message-serialisation-encoding" title="Permanent link">&para;</a></h2>
+<p>Above we have often referred to <code>{blob_serialized_message}</code> 
+or <code>{blob_serialized_result}</code>. These are JSON blobs of data 
+in a specific format.</p>
+<h3 id="serialisation">Serialisation<a class="headerlink" href="#serialisation" title="Permanent link">&para;</a></h3>
+<p>See also: <a href="../../../explanation/marshalling/">data marshalling</a></p>
+<p>Within the Redis RPC transports all messages are serialised into a single 
+value. This value is referred to as a 'blob'. This serialisation is 
+performed by the <code>BlobMessageSerializer</code> and <code>BlobMessageDeserializer</code> classes.</p>
+<h4 id="rpc-message">RPC Message<a class="headerlink" href="#rpc-message" title="Permanent link">&para;</a></h4>
+<p>This is an outgoing RPC message body. This RPC message represents a request that an RPC be executed and a response be
+returned.</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="c1"># Unique base64-encoded UUID</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;KrXz5EUXEem2gazeSAARIg==&quot;</span><span class="p">,</span>
+        <span class="c1"># Fully qualified API name</span>
+        <span class="s2">&quot;api_name&quot;</span><span class="p">:</span> <span class="s2">&quot;my_company.auth&quot;</span><span class="p">,</span>
+        <span class="c1"># The name of the remote procedure call</span>
+        <span class="s2">&quot;procedure_name&quot;</span><span class="p">:</span> <span class="s2">&quot;check_password&quot;</span><span class="p">,</span>
+        <span class="c1"># How and where should the result be sent</span>
+        <span class="s2">&quot;return_path&quot;</span><span class="p">:</span> <span class="s2">&quot;redis+key://my_company.auth.check_password:result:KrXz5EUXEem2gazeSAARIg==&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+
+    <span class="c1"># Key/value arguments potentiually needed to execute the remote procedure call</span>
+    <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="s2">&quot;adam&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="s2">&quot;secret&quot;</span><span class="p">,</span>
+        <span class="o">...</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<h4 id="result-message">Result Message<a class="headerlink" href="#result-message" title="Permanent link">&para;</a></h4>
+<p>This is the response message indicating an RPC has been 
+(successfully or unsuccessfully) executed.</p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="c1"># The newly randomly generated ID of this RPC result message.</span>
+        <span class="c1"># (base64-encoded UUID)</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;L4iXaEUgEemnBazeSAARIg==&quot;</span><span class="p">,</span>
+        <span class="c1"># The ID of the received RPC call message</span>
+        <span class="s2">&quot;rpc_message_id&quot;</span><span class="p">:</span> <span class="s2">&quot;KrXz5EUXEem2gazeSAARIg==&quot;</span><span class="p">,</span>
+        <span class="c1"># String representation of any error which occurred</span>
+        <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="c1"># Error stack trace. Only used in event of error, may be omitted otherwise</span>
+        <span class="s2">&quot;trace&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{error_stack_trace}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+
+    <span class="c1"># The result as returned by the executed RPC</span>
+    <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+
+<h3 id="encoding-customisation">Encoding &amp; Customisation<a class="headerlink" href="#encoding-customisation" title="Permanent link">&para;</a></h3>
+<p>See also: <a href="../../../explanation/marshalling/">data marshalling</a></p>
+<p>The message must be encoded as a string once it has been serialised to 
+the above blob structure. The default implementation is to use JSON 
+as this encoding.</p>
+<p>This encoding is customisable within the Lightbus configuration. You are welcome to use 
+something custom here, but be aware that:</p>
 <ul>
-<li>Demonstrating empathy and kindness toward other people</li>
-<li>Being respectful of differing opinions, viewpoints, and experiences</li>
-<li>Giving and gracefully accepting constructive feedback</li>
-<li>Accepting responsibility and apologizing to those affected by our mistakes, and learning from the experience</li>
-<li>Focusing on what is best not just for us as individuals, but for the overall community</li>
+<li>A single API must have a single encoding for all RPCs on that API</li>
+<li>All clients accessing the bus must be configured to use the same custom encoding</li>
 </ul>
-<p>Examples of unacceptable behavior include:</p>
-<ul>
-<li>The use of sexualized language or imagery, and sexual attention or
-  advances of any kind</li>
-<li>Trolling, insulting or derogatory comments, and personal or political attacks</li>
-<li>Public or private harassment</li>
-<li>Publishing others' private information, such as a physical or email
-  address, without their explicit permission</li>
-<li>Other conduct which could reasonably be considered inappropriate in a
-  professional setting</li>
-</ul>
-<h2 id="enforcement-responsibilities">Enforcement Responsibilities<a class="headerlink" href="#enforcement-responsibilities" title="Permanent link">&para;</a></h2>
-<p>Community leaders are responsible for clarifying and enforcing our standards of acceptable behavior and will take appropriate and fair corrective action in response to any behavior that they deem inappropriate, threatening, offensive, or harmful.</p>
-<p>Community leaders have the right and responsibility to remove, edit, or reject comments, commits, code, wiki edits, issues, and other contributions that are not aligned to this Code of Conduct, and will communicate reasons for moderation decisions when appropriate.</p>
-<h2 id="scope">Scope<a class="headerlink" href="#scope" title="Permanent link">&para;</a></h2>
-<p>This Code of Conduct applies within all community spaces, and also applies when an individual is officially representing the community in public spaces. Examples of representing our community include using an official e-mail address, posting via an official social media account, or acting as an appointed representative at an online or offline event.</p>
-<h2 id="enforcement">Enforcement<a class="headerlink" href="#enforcement" title="Permanent link">&para;</a></h2>
-<p>Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible for enforcement at <a href="mailto:adam@adamcharnock.com">adam@adamcharnock.com</a>. All complaints will be reviewed and investigated promptly and fairly.</p>
-<p>All community leaders are obligated to respect the privacy and security of the reporter of any incident.</p>
-<h2 id="enforcement-guidelines">Enforcement Guidelines<a class="headerlink" href="#enforcement-guidelines" title="Permanent link">&para;</a></h2>
-<p>Community leaders will follow these Community Impact Guidelines in determining the consequences for any action they deem in violation of this Code of Conduct:</p>
-<h3 id="1-correction">1. Correction<a class="headerlink" href="#1-correction" title="Permanent link">&para;</a></h3>
-<p><strong>Community Impact</strong>: Use of inappropriate language or other behavior deemed unprofessional or unwelcome in the community.</p>
-<p><strong>Consequence</strong>: A private, written warning from community leaders, providing clarity around the nature of the violation and an explanation of why the behavior was inappropriate. A public apology may be requested.</p>
-<h3 id="2-warning">2. Warning<a class="headerlink" href="#2-warning" title="Permanent link">&para;</a></h3>
-<p><strong>Community Impact</strong>: A violation through a single incident or series of actions.</p>
-<p><strong>Consequence</strong>: A warning with consequences for continued behavior. No interaction with the people involved, including unsolicited interaction with those enforcing the Code of Conduct, for a specified period of time. This includes avoiding interactions in community spaces as well as external channels like social media. Violating these terms may lead to a temporary or permanent ban.</p>
-<h3 id="3-temporary-ban">3. Temporary Ban<a class="headerlink" href="#3-temporary-ban" title="Permanent link">&para;</a></h3>
-<p><strong>Community Impact</strong>: A serious violation of community standards, including sustained inappropriate behavior.</p>
-<p><strong>Consequence</strong>: A temporary ban from any sort of interaction or public communication with the community for a specified period of time. No public or private interaction with the people involved, including unsolicited interaction with those enforcing the Code of Conduct, is allowed during this period. Violating these terms may lead to a permanent ban.</p>
-<h3 id="4-permanent-ban">4. Permanent Ban<a class="headerlink" href="#4-permanent-ban" title="Permanent link">&para;</a></h3>
-<p><strong>Community Impact</strong>: Demonstrating a pattern of violation of community standards, including sustained inappropriate behavior,  harassment of an individual, or aggression toward or disparagement of classes of individuals.</p>
-<p><strong>Consequence</strong>: A permanent ban from any sort of public interaction within the project community.</p>
-<h2 id="attribution">Attribution<a class="headerlink" href="#attribution" title="Permanent link">&para;</a></h2>
-<p>This Code of Conduct is adapted from the <a href="https://www.contributor-covenant.org">Contributor Covenant</a>, version 2.0,
-available at <a href="https://www.contributor-covenant.org/version/2/0/code_of_conduct.html">https://www.contributor-covenant.org/version/2/0/code_of_conduct.html</a>.</p>
-<p>Community Impact Guidelines were inspired by <a href="https://github.com/mozilla/diversity">Mozilla's code of conduct enforcement ladder</a>.</p>
-<p>For answers to common questions about this code of conduct, see the FAQ at
-<a href="https://www.contributor-covenant.org/faq">https://www.contributor-covenant.org/faq</a>. Translations are available at <a href="https://www.contributor-covenant.org/translations">https://www.contributor-covenant.org/translations</a>.</p>
-<p>For answers to common questions about this code of conduct, see
-<a href="https://www.contributor-covenant.org/faq">https://www.contributor-covenant.org/faq</a></p>
+<h2 id="data-validation">Data validation<a class="headerlink" href="#data-validation" title="Permanent link">&para;</a></h2>
+<p>Validation of outgoing parameters and incoming results is optional. However, 
+validation of outgoing parameters is recommended as sending of RPC messages which fail validation may 
+result in the message being rejected by the Lightbus server.  </p>
+<p>This validation can be 
+performed using the using the schema available through the <a href="../schema/">schema protocol</a>.</p>
+<h2 id="data-deformation-casting">Data deformation &amp; casting<a class="headerlink" href="#data-deformation-casting" title="Permanent link">&para;</a></h2>
+<p>The Lightbus client provides Python-specific functionality to streamline the 
+process of moving between Python data structures and interoperable JSON data 
+structures.</p>
+<p>The level of functionality required in this regard is not specified here, and 
+is left up to individual library developers.</p>
                 
                   
                 
@@ -1391,7 +1495,7 @@ available at <a href="https://www.contributor-covenant.org/version/2/0/code_of_c
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../authors/" title="Authors" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../" title="Overview" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1400,11 +1504,25 @@ available at <a href="https://www.contributor-covenant.org/version/2/0/code_of_c
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Authors
+                Overview
               </span>
             </div>
           </a>
         
+        
+          <a href="../event/" title="Event Protocol (Redis)" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Event Protocol (Redis)
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
         
       </nav>
     </div>
@@ -1426,9 +1544,9 @@ available at <a href="https://www.contributor-covenant.org/version/2/0/code_of_c
       
     </div>
     
-      <script src="../../assets/javascripts/application.a8b5e56f.js"></script>
+      <script src="../../../assets/javascripts/application.a8b5e56f.js"></script>
       
-      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
       
     
   </body>

@@ -1094,8 +1094,39 @@
           
 
 
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-12" type="checkbox" id="nav-5-12">
+    
+    <label class="md-nav__link" for="nav-5-12">
+      Protocols
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-12">
+        Protocols
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
   <li class="md-nav__item">
-    <a href="../../reference/rpc-and-result-protocol/" title="RPC & Result Protocol (Redis)" class="md-nav__link">
+    <a href="../../reference/protocols/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/protocols/rpc-and-result/" title="RPC & Result Protocol (Redis)" class="md-nav__link">
       RPC & Result Protocol (Redis)
     </a>
   </li>
@@ -1107,7 +1138,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../../reference/event-protocol/" title="Event Protocol (Redis)" class="md-nav__link">
+    <a href="../../reference/protocols/event/" title="Event Protocol (Redis)" class="md-nav__link">
       Event Protocol (Redis)
     </a>
   </li>
@@ -1119,9 +1150,14 @@
 
 
   <li class="md-nav__item">
-    <a href="../../reference/schema-protocol/" title="Schema Protocol (Redis)" class="md-nav__link">
+    <a href="../../reference/protocols/schema/" title="Schema Protocol (Redis)" class="md-nav__link">
       Schema Protocol (Redis)
     </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1275,7 +1311,18 @@
                 
                   <h1>1. Installation</h1>
                 
-                <h2 id="11-preface-installing-python-37-or-above">1.1. Preface: Installing Python 3.7 (or above)<a class="headerlink" href="#11-preface-installing-python-37-or-above" title="Permanent link">&para;</a></h2>
+                <div class="admonition note">
+<p class="admonition-title">If you get stuck...</p>
+<p>It is really useful to hear from people who have encountered a problem 
+or got stuck. Hearing from you means we can improve our documentation 
+and error messages.</p>
+<p><strong>If you get stuck drop then please drop an email to <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#97;&#100;&#97;&#109;&#64;&#97;&#100;&#97;&#109;&#99;&#104;&#97;&#114;&#110;&#111;&#99;&#107;&#46;&#99;&#111;&#109;">&#97;&#100;&#97;&#109;&#64;&#97;&#100;&#97;&#109;&#99;&#104;&#97;&#114;&#110;&#111;&#99;&#107;&#46;&#99;&#111;&#109;</a>, 
+visit the <a href="https://discord.gg/2j594ws">Lightbus discord server</a>, or call me (Adam) on 
++442032896620.</strong> </p>
+<p>The more information 
+you can include the better (problem description, screenshots, and code are all useful)</p>
+</div>
+<h2 id="11-preface-installing-python-37-or-above">1.1. Preface: Installing Python 3.7 (or above)<a class="headerlink" href="#11-preface-installing-python-37-or-above" title="Permanent link">&para;</a></h2>
 <p>Lightbus requires Python 3.7 or newer. This is available
 for all major operating systems.</p>
 <h3 id="python-37-on-macos">Python 3.7 on macOS<a class="headerlink" href="#python-37-on-macos" title="Permanent link">&para;</a></h3>
@@ -1340,7 +1387,7 @@ if you need the latest (albeit unstable) changes, or if you wish to modify the L
 </ol>
 <p>You check check everything is setup correctly by starting up lightbus. First create a file 
 name <code>bus.py</code> which contains:</p>
-<div class="codehilite"><pre><span></span><span class="c1"># Create this in a bus.py file</span>
+<div class="codehilite"><pre><span></span><span class="c1"># Create a bus.py file with the following contents</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
@@ -1353,7 +1400,7 @@ name <code>bus.py</code> which contains:</p>
 
 <p>Lightbus should start without errors and wait for messages.
 You can exit using <span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-c">C</kbd></span>.</p>
-<p>This Lightbus process isn't setup to do anything, but its a start!</p>
+<p>This Lightbus process isn't setup to do anything yet, but its a start!</p>
 <h2 id="15-next">1.5 Next<a class="headerlink" href="#15-next" title="Permanent link">&para;</a></h2>
 <p>Now you are up and running, take a look at the <a href="../quick-start/">quick start tutorial</a>.</p>
 <!-- Seriously, the Python docs for asyncio are scary. Let's link to something nicer -->
