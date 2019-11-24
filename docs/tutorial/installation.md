@@ -1,3 +1,4 @@
+{!docs/includes/if-you-get-stuck.md!}
 
 ## 1.1. Preface: Installing Python 3.7 (or above)
 
@@ -77,7 +78,7 @@ You check check everything is setup correctly by starting up lightbus. First cre
 name `bus.py` which contains:
 
 ```python
-# Create this in a bus.py file
+# Create a bus.py file with the following contents
 import lightbus
 
 bus = lightbus.create()
@@ -90,7 +91,7 @@ Now run the command:
 Lightbus should start without errors and wait for messages.
 You can exit using ++ctrl+c++.
 
-This Lightbus process isn't setup to do anything, but its a start!
+This Lightbus process isn't setup to do anything yet, but its a start!
 
 ## 1.5 Next
 

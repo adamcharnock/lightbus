@@ -1,3 +1,5 @@
+{!docs/includes/if-you-get-stuck.md!}
+
 Lightbus is designed to work smoothly with Django. A few of additions are needed 
 to your `bus.py` file in order to setup django correctly. You should 
 perform these at the very start of your `@bus.client.on_start()` function 

@@ -1,3 +1,5 @@
+{!docs/includes/if-you-get-stuck.md!}
+
 In the following worked example we will create three services:
 
 * An image resizing service
