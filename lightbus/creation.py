@@ -122,7 +122,15 @@ def load_config(
 
 
 def import_bus_module(bus_module_name: str = None):
-    bus_module_name = bus_module_name or os.environ.get("LIGHTBUS_MODULE", "bus")
+    """Get the bus module, importing if necessary
+
+    The bus module is determined as follows:
+
+      1. The bus_module_name, if present
+      2. The `LIGHTBUS_MODULE` environment variable, if present
+      3. Otherwise, the default of `bus` will be used
+    """
+    bus_module_name = bus_module_name or os.environ.get("LIGHTBUS_MODULE", "") or "bus"
     logger.info(f"Importing bus.py from {Bold(bus_module_name)}")
     try:
         bus_module = import_module_from_string(bus_module_name)
@@ -153,4 +161,6 @@ def import_bus_module(bus_module_name: str = None):
 
 
 def get_bus(bus_module_name: str = None) -> BusPath:
+    """Get the bus, importing if necessary
+    """
     return import_bus_module(bus_module_name).bus

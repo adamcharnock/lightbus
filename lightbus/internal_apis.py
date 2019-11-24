@@ -2,6 +2,8 @@ from lightbus.api import Api, Event
 
 
 class LightbusStateApi(Api):
+    """The API for the state plugin"""
+
     server_started = Event(
         parameters=[
             "process_name",
@@ -30,6 +32,8 @@ class LightbusStateApi(Api):
 
 
 class LightbusMetricsApi(Api):
+    """The API for the metrics plugin"""
+
     rpc_call_sent = Event(
         parameters=["process_name", "id", "api_name", "procedure_name", "kwargs", "timestamp"]
     )

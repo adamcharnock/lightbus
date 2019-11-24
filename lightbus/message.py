@@ -7,6 +7,8 @@ __all__ = ["Message", "RpcMessage", "ResultMessage", "EventMessage"]
 
 
 class Message:
+    """Base representation of a Lightbus RPC/Result/Event message"""
+
     required_metadata: Sequence
 
     def __init__(self, id: str = "", native_id: str = None):
@@ -37,6 +39,8 @@ class Message:
 
 
 class RpcMessage(Message):
+    """Representation of a Lightbus RPC message"""
+
     required_metadata = ["id", "api_name", "procedure_name", "return_path"]
 
     def __init__(
@@ -84,6 +88,8 @@ class RpcMessage(Message):
 
 
 class ResultMessage(Message):
+    """Representation of a Lightbus RPC Result message"""
+
     required_metadata = ["id", "rpc_message_id"]
 
     def __init__(
@@ -138,6 +144,8 @@ class ResultMessage(Message):
 
 
 class EventMessage(Message):
+    """Representation of a Lightbus Event message"""
+
     required_metadata = ["id", "api_name", "event_name", "version"]
 
     def __init__(

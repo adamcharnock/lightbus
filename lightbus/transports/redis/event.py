@@ -176,6 +176,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,
     ) -> AsyncGenerator[List[RedisEventMessage], None]:
+        """Consume events for the given APIs"""
         self._sanity_check_listen_for(listen_for)
 
         consumer_group = f"{self.service_name}-{listener_name}"
@@ -210,7 +211,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         queue = asyncio.Queue(maxsize=1)
 
         async def consume_loop():
-            # Regular event consuming. See _fetch_new_messages()
+            """Regular event consuming. See _fetch_new_messages()"""
             while True:
                 try:
                     async for messages in self._fetch_new_messages(
@@ -229,8 +230,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     await asyncio.sleep(self.consumption_restart_delay)
 
         async def reclaim_loop():
-            # Reclaim messages which other consumers have failed to
-            # processes in reasonable time. See _reclaim_lost_messages()
+            """
+            Reclaim messages which other consumers have failed to
+            processes in reasonable time. See _reclaim_lost_messages()
+            """
 
             await asyncio.sleep(self.acknowledgement_timeout)
             async for messages in self._reclaim_lost_messages(
@@ -480,6 +483,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                                 yield event_messages
 
     async def acknowledge(self, *event_messages: RedisEventMessage, bus_client: "BusClient"):
+        """Acknowledge that a message has been successfully processed
+        """
         with await self.connection_manager() as redis:
             p = redis.pipeline()
             for event_message in event_messages:
@@ -502,6 +507,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         start_inclusive: bool = True,
         batch_size: int = 100,
     ) -> AsyncGenerator[EventMessage, None]:
+        """Retrieve historical events for the given API
+
+        Will not have any impact on existing consumer groups.
+        """
         redis_start = datetime_to_redis_steam_id(start) if start else "-"
         redis_stop = datetime_to_redis_steam_id(stop) if stop else "+"
 
@@ -537,6 +546,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         yield event_message
 
     async def _create_consumer_groups(self, streams, redis, consumer_group):
+        """Ensure the consumer groups exist
+
+        This is means we have to ensure the streams exist too
+        """
         for stream, since in streams.items():
             if not await redis.exists(stream):
                 # Add a noop to ensure the stream exists
@@ -547,7 +560,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 # Create the group (it may already exist)
                 await redis.xgroup_create(stream, consumer_group, latest_id=since)
             except ReplyError as e:
-                if "BUSYGROUP" not in str(e):
+                if "BUSYGROUP" in str(e):
+                    # Already exists
+                    pass
+                else:
                     raise
 
     async def _cleanup(self, stream_names: List[str]):
@@ -621,8 +637,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         native_id: str,
         consumer_group: Optional[str],
     ) -> Optional[RedisEventMessage]:
+        """Convert a dict of Redis message fields into a RedisEventMessage"""
+
         if tuple(fields.items()) == ((b"", b""),):
+            # Is a noop message, ignore
             return None
+
         message = self.deserializer(
             fields, stream=stream, native_id=native_id, consumer_group=consumer_group
         )
@@ -632,8 +652,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             # Only care about events we are listening for. If we have one stream
             # per API then we're probably going to receive some events we don't care about.
             logger.debug(
-                f"Ignoring message for unexpected event: {message}. "
-                f"Was only expecting {', '.join(expected_event_names)}"
+                f"Ignoring message for unneeded event: {message}. "
+                f"Only listening for {', '.join(expected_event_names)}"
             )
             return None
         return message

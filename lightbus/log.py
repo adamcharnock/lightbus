@@ -6,6 +6,7 @@ Credit to: https://github.com/borntyping/python-colorlog
 This has been vendored to minimise dependencies and allow for
 customisation in the long term.
 
+This needs some serious cleanup: https://github.com/adamcharnock/lightbus/issues/10
 """
 
 import logging

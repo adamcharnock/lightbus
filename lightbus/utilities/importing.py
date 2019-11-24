@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def import_module_from_string(name):
+    """Import a module if necessary, otherwise return it from the list of already imported modules"""
     if name in sys.modules:
         return sys.modules[name]
     else:

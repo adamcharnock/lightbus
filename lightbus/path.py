@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING, Any
+from typing import Optional, TYPE_CHECKING, Any, Generator
 
 from lightbus.exceptions import InvalidBusPathConfiguration, InvalidParameters
 from lightbus.utilities.async_tools import block
@@ -70,15 +70,26 @@ class BusPath:
     # RPC
 
     def __call__(self, *args, **kwargs):
+        """Call this BusPath node as an RPC"""
         return self.call(*args, **kwargs)
 
     def call(self, *args, bus_options: dict = None, **kwargs):
+        """Call this BusPath node as an RPC"
+
+        In contrast to __call__(), this method provides the ability to call
+        with the additional `bus_options` argument.
+        """
         # Use a larger value of `rpc_timeout` because call_rpc_remote() should
         # handle timeout
         rpc_timeout = self.client.config.api(self.api_name).rpc_timeout * 1.5
         return block(self.call_async(*args, **kwargs, bus_options=bus_options), timeout=rpc_timeout)
 
     async def call_async(self, *args, bus_options=None, **kwargs):
+        """Call this BusPath node as an RPC (asynchronous)"
+
+        In contrast to __call__(), this method provides the ability to call
+        with the additional `bus_options` argument.
+        """
         if args:
             raise InvalidParameters(
                 f"You have attempted to call the RPC {self.fully_qualified_name} using positional "
@@ -92,6 +103,7 @@ class BusPath:
     # Events
 
     def listen(self, listener, *, listener_name: str, bus_options: dict = None):
+        """Listen to events for this BusPath node"""
         return self.client.listen_for_event(
             api_name=self.api_name,
             name=self.name,
@@ -100,7 +112,15 @@ class BusPath:
             options=bus_options,
         )
 
+    def fire(self, *args, bus_options: dict = None, **kwargs):
+        """Fire an event for this BusPath node"""
+        return block(
+            self.fire_async(*args, **kwargs, bus_options=bus_options),
+            timeout=self.client.config.api(self.api_name).event_fire_timeout,
+        )
+
     async def fire_async(self, *args, bus_options: dict = None, **kwargs):
+        """Fire an event for this BusPath node (asynchronous)"""
         if args:
             raise InvalidParameters(
                 f"You have attempted to fire the event {self.fully_qualified_name} using positional "
@@ -111,15 +131,10 @@ class BusPath:
             api_name=self.api_name, name=self.name, kwargs=kwargs, options=bus_options
         )
 
-    def fire(self, *args, bus_options: dict = None, **kwargs):
-        return block(
-            self.fire_async(*args, **kwargs, bus_options=bus_options),
-            timeout=self.client.config.api(self.api_name).event_fire_timeout,
-        )
-
     # Utilities
 
-    def ancestors(self, include_self=False):
+    def ancestors(self, include_self=False) -> Generator["BusPath"]:
+        """Get all ancestors of this node"""
         parent = self
         while parent is not None:
             if parent != self or include_self:
@@ -127,13 +142,19 @@ class BusPath:
             parent = parent.parent
 
     @property
-    def api_name(self):
+    def api_name(self) -> str:
+        """Get the API name of this node
+
+        This assumes the full path to this node is a fully qualified event/rpc name
+        """
         path = [node.name for node in self.ancestors(include_self=False)]
         path.reverse()
         return ".".join(path[1:])
 
     @property
-    def fully_qualified_name(self):
+    def fully_qualified_name(self) -> str:
+        """Get the fully qualified string name of this node
+        """
         path = [node.name for node in self.ancestors(include_self=True)]
         path.reverse()
         return ".".join(path[1:])
