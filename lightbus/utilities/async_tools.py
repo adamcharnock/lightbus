@@ -24,6 +24,10 @@ PYTHON_VERSION = tuple(sys.version_info)
 
 
 def block(coroutine: Coroutine, loop=None, *, timeout=None):
+    """Call asynchronous code synchronously
+
+    Note that this cannot be used inside an event loop.
+    """
     loop = loop or get_event_loop()
     if loop.is_running():
         if hasattr(coroutine, "close"):
@@ -31,9 +35,7 @@ def block(coroutine: Coroutine, loop=None, *, timeout=None):
         raise CannotBlockHere(
             "It appears you have tried to use a blocking API method "
             "from within an event loop. Unfortunately this is unsupported. "
-            "Instead, use the async version of the method. This commonly "
-            "occurs when calling bus methods from within a bus event listener. "
-            "In this case the only option is to define you listeners as async."
+            "Instead, use the async version of the method."
         )
     try:
         if timeout is None:
