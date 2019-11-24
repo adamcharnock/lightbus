@@ -133,7 +133,7 @@ class BusPath:
 
     # Utilities
 
-    def ancestors(self, include_self=False) -> Generator["BusPath"]:
+    def ancestors(self, include_self=False) -> Generator["BusPath", None, None]:
         """Get all ancestors of this node"""
         parent = self
         while parent is not None:
