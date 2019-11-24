@@ -1,3 +1,5 @@
+"""Generation of human-friendly strings"""
+
 import logging
 import secrets
 

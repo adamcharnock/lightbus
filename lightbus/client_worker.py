@@ -132,6 +132,8 @@ def run_in_worker_thread(worker=None):
 
 
 def assert_in_worker_thread():
+    """Decorator. Raise an error if the decorated function was *not* called from the worker thread"""
+
     def decorator(fn):
         def wrapper(*args, **kwargs):
             worker = _get_worker_from_function_args(*args, **kwargs)
@@ -150,6 +152,8 @@ def assert_in_worker_thread():
 
 
 def assert_not_in_worker_thread():
+    """Decorator. Raise an error if the decorated function *was* called from the worker thread"""
+
     def decorator(fn):
         def wrapper(*args, **kwargs):
             worker = _get_worker_from_function_args(*args, **kwargs)
@@ -167,6 +171,11 @@ def assert_not_in_worker_thread():
 
 
 class WarningProxy:
+    """Utility to help displaying of a nice verbose error message
+
+    See above use of WarningProxy.
+    """
+
     def __init__(self, proxied, message):
         self.message = message
         self.proxied = proxied
@@ -207,6 +216,20 @@ class WorkerProxy:
 
 
 class ClientWorker:
+    """Management of the client worker thread
+
+    Lightbus performs the bulk of its bus interactions in its own worker thread.
+    This stems from that fact that we often have to run blocking user-specified
+    code in an async fashion (see `run_user_provided_callable()`). In order
+    to do this we offload the callable to its own thread. However, that thread then
+    often needs to access the bus (for firing events, calling RPCs). This then introduces a
+    problem because bus access requires access to global resources (such as Redis connections).
+    We therefore have this client thread which all these interactions are handed of too.
+
+    This hand-off is provided by the @run_in_worker_thread(), and is often used in the
+    BusClient class.
+    """
+
     _lock = threading.Lock()
     _TOTAL_WORKERS = 0
 
@@ -260,8 +283,9 @@ class ClientWorker:
             logger.debug("Worker thread shutdown cleanly")
 
     def worker(self, bus_client, after_shutdown: Callable = None):
-        """
+        """ Starting point for the worker thread
 
+        ---
 
         A note about error handling in the worker thread:
 
@@ -269,7 +293,7 @@ class ClientWorker:
 
             1. The bus is being used as a client. A bus method is called by the client code,
                and this call raises an exception. This exception is propagated to the client
-               code for it to deal with.1
+               code for it to deal with.
             2. The bus is being used as a server and has various coroutines running at any one
                time. In this case, if a coroutine encounters an error then it should cause the
                lightbus server to exit.

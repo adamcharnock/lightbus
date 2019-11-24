@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 def cast_to_signature(parameters: dict, callable) -> dict:
+    """Cast parameters into the type hints provided by callable's function signature.
+    """
     for key, hint in get_type_hints(callable).items():
         if key not in parameters:
             continue
@@ -36,6 +38,11 @@ H = TypeVar("A")
 
 
 def cast_to_hint(value: V, hint: H) -> Union[V, H]:
+    """Cast a value into a given type hint
+
+    If a value cannot be cast then the original value will be returned
+    and a warning emitted
+    """
     # pylint: disable=too-many-return-statements
     if value is None:
         return None

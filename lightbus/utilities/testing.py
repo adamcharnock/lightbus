@@ -21,33 +21,12 @@ from lightbus.transports.base import TransportRegistry
 _registry: Dict[str, List] = {}
 logger = logging.getLogger(__name__)
 
-# Work in progress for testing crashes
-
-
-def test_hook(hook_name: str):
-    for callback in _registry.get(hook_name, []):
-        logger.warning(f"Executing test hook {hook_name} on hook {callback}")
-        callback()
-
-
-@contextmanager
-def register_callback(hook_name, callback):
-    _registry.setdefault(hook_name, [])
-    _registry[hook_name].append(callback)
-    yield
-    _registry[hook_name].remove(callback)
-
-
-@contextmanager
-def crash_at(hook_name):
-    return register_callback(hook_name, os._exit)
-
-
-# Utility for mocking bus calls
-
 
 class MockResult:
-    # We use camel case method names here for consistency with unittest
+    """Utility for mocking bus calls
+
+    We use camel case method names here for consistency with unittest
+    """
 
     def __init__(self, rpc_transport, result_transport, event_transport, schema_transport):
         self.rpc: TestRpcTransport = rpc_transport

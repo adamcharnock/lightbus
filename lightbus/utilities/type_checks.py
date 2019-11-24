@@ -60,19 +60,31 @@ def issubclass_safe(value, type_):
 
 
 def parse_hint(hint: Type) -> Tuple[Type, Optional[List]]:
+    """ Parse a typing hint into its type and and arguments.
+
+    For example:
+
+        >>> parse_hint(Union[dict, list])
+        (typing.Union, [<class 'dict'>, <class 'list'>])
+
+        >>> parse_hint(int)
+        (<class 'int'>, None)
+
+    """
     if hasattr(hint, "__origin__"):
-        # Python 3.7, and this is a type hint (eg typing.Union)
+        # This is a type hint (eg typing.Union)
         # Filter out TypeVars such as KT & VT_co (they generally
         # indicate that no explicit hint was given)
         hint_args = [a for a in hint.__args__ if not isinstance(a, TypeVar)]
         return hint.__origin__, hint_args or None
     else:
-        # Python 3.7, but this is something other than a type hint
+        # This is something other than a type hint
         # (e.g. an int or datetime)
         return hint, None
 
 
 def get_property_default(type_: Type, property_name: str) -> ...:
+    """ Get the default value for a property with name `property_name` on class `type_`"""
     if issubclass_safe(type_, tuple):
         # namedtuple
         if hasattr(type_, "_field_defaults"):

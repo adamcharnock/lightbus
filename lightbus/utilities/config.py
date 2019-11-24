@@ -50,4 +50,5 @@ def make_from_config_structure(class_name, from_config_method, extra_parameters=
 
 
 def random_name(length: int) -> str:
+    """Get a random string suitable for a processes/consumer name"""
     return "".join(secrets.choice(string.ascii_lowercase) for _ in range(length))
