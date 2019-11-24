@@ -59,6 +59,11 @@ class StreamUse(Enum):
 
 
 class RedisEventTransport(RedisTransportMixin, EventTransport):
+    """Redis Event Transport
+
+    For a description of the protocol see https://lightbus.org/reference/protocols/event/
+    """
+
     def __init__(
         self,
         redis_pool=None,

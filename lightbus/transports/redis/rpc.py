@@ -84,6 +84,10 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         )
 
     async def call_rpc(self, rpc_message: RpcMessage, options: dict, bus_client: "BusClient"):
+        """Emit a call to a remote procedure
+
+        This only sends the request, it does not await any result (see RedisResultTransport)
+        """
         queue_key = f"{rpc_message.api_name}:rpc_queue"
         expiry_key = f"rpc_expiry_key:{rpc_message.id}"
         logger.debug(
@@ -129,6 +133,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
     async def consume_rpcs(
         self, apis: Sequence[Api], bus_client: "BusClient"
     ) -> Sequence[RpcMessage]:
+        """Consume RPCs for the given APIs"""
         while True:
             if self._closed:
                 # Triggered during shutdown

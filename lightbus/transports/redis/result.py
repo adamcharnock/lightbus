@@ -19,6 +19,11 @@ logger = logging.getLogger("lightbus.transports.redis")
 
 
 class RedisResultTransport(RedisTransportMixin, ResultTransport):
+    """ Redis result transport
+
+    For a description of the protocol see https://lightbus.org/reference/protocols/rpc-and-result/
+    """
+
     def __init__(
         self,
         *,
@@ -30,7 +35,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         result_ttl=60,
         rpc_timeout=5,
     ):
-        # NOTE: We use the blob message_serializer here, as the results come back as values in a list
+        # NOTE: We use the blob message_serializer here, as the results come back as single values in a redis list
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self.serializer = serializer
         self.deserializer = deserializer
@@ -61,9 +66,23 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         )
 
     def get_return_path(self, rpc_message: RpcMessage) -> str:
+        """Get the return path for the given message
+
+        The return path is sent with the outgoing RPC message and
+        tells the received where the caller expects to find the result.
+
+        In this case, the return patch specifies a specific key in redis
+        in which the results should be placed.
+        """
         return "redis+key://{}.{}:result:{}".format(
             rpc_message.api_name, rpc_message.procedure_name, rpc_message.id
         )
+
+    def _parse_return_path(self, return_path: str) -> str:
+        """Get the redis key specified by the given return path"""
+        if not return_path.startswith("redis+key://"):
+            raise AssertionError(f"Invalid return path specified: {return_path}")
+        return return_path[12:]
 
     async def send_result(
         self,
@@ -72,6 +91,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         return_path: str,
         bus_client: "BusClient",
     ):
+        """Send the result back to the caller"""
         logger.debug(
             L(
                 "Sending result {} into Redis using return path {}",
@@ -100,6 +120,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
     async def receive_result(
         self, rpc_message: RpcMessage, return_path: str, options: dict, bus_client: "BusClient"
     ) -> ResultMessage:
+        """Await a result from the processing worker"""
         logger.debug(L("Awaiting Redis result for RPC message: {}", Bold(rpc_message)))
         redis_key = self._parse_return_path(return_path)
 
@@ -127,8 +148,3 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         )
 
         return result_message
-
-    def _parse_return_path(self, return_path: str) -> str:
-        if not return_path.startswith("redis+key://"):
-            raise AssertionError(f"Invalid return path specified: {return_path}")
-        return return_path[12:]
