@@ -11,11 +11,6 @@ from lightbus.transports.debug import (
     DebugEventTransport,
     DebugSchemaTransport,
 )
-from lightbus.transports.direct import (
-    DirectRpcTransport,
-    DirectResultTransport,
-    DirectEventTransport,
-)
 from lightbus.transports.redis.rpc import RedisRpcTransport
 from lightbus.transports.redis.result import RedisResultTransport
 from lightbus.transports.redis.event import RedisEventTransport
