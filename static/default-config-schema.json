@@ -38,20 +38,6 @@
                       }
                     ]
                   },
-                  "direct": {
-                    "default": null,
-                    "oneOf": [
-                      {
-                        "additionalProperties": false,
-                        "properties": {},
-                        "title": "DirectEventTransportConfig",
-                        "type": "object"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
                   "redis": {
                     "default": null,
                     "oneOf": [
@@ -191,20 +177,6 @@
                       }
                     ]
                   },
-                  "direct": {
-                    "default": null,
-                    "oneOf": [
-                      {
-                        "additionalProperties": false,
-                        "properties": {},
-                        "title": "DirectResultTransportConfig",
-                        "type": "object"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
                   "redis": {
                     "default": null,
                     "oneOf": [
@@ -272,20 +244,6 @@
                         "additionalProperties": false,
                         "properties": {},
                         "title": "DebugRpcTransportConfig",
-                        "type": "object"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "direct": {
-                    "default": null,
-                    "oneOf": [
-                      {
-                        "additionalProperties": false,
-                        "properties": {},
-                        "title": "DirectRpcTransportConfig",
                         "type": "object"
                       },
                       {
