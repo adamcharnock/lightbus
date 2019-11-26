@@ -23,8 +23,6 @@ jobs:
   test-37: &test-template
     docker:
       - image: circleci/python:3.7
-        environment:
-          PIPENV_VENV_IN_PROJECT: true
       - image: postgres:9.6.2
       - image: redis:5
 
@@ -35,12 +33,12 @@ jobs:
             - deps-3-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
       - run:
           command: |
-            pipenv install --ignore-pipfile --dev
+            poetry install
             mkdir -p .coverage .test-reports
 
       - run:
           command: |
-            pipenv run pytest --cov=lightbus --junit-xml=junit.xml -v -m "not benchmark"
+            poetry run pytest --cov=lightbus --junit-xml=junit.xml -v -m "not benchmark"
 
       - run:
           command: |
@@ -63,16 +61,12 @@ jobs:
     <<: *test-template
     docker:
       - image: circleci/python:3.8.0b3
-        environment:
-          PIPENV_VENV_IN_PROJECT: true
       - image: postgres:9.6.2
       - image: redis:5
 
   docs:
     docker:
       - image: circleci/python:3.7
-        environment:
-          PIPENV_VENV_IN_PROJECT: true
 
     steps:
       - add_ssh_keys:
@@ -86,9 +80,9 @@ jobs:
             - deps-3-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
       - run:
           command: |
-            pipenv install --ignore-pipfile --dev
-            pipenv run lightbus dumpconfigschema -b lightbus_examples.ex01_quickstart.auth_service.bus > docs/static/default-config-schema.json
-            pipenv run mkdocs gh-deploy --force --message="Automated build by CircleCI [ci skip]"
+            poetry install
+            poetry run lightbus dumpconfigschema -b lightbus_examples.ex01_quickstart.auth_service.bus > docs/static/default-config-schema.json
+            poetry run mkdocs gh-deploy --force --message="Automated build by CircleCI [ci skip]"
 
       - save_cache:
           key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Pipfile.lock" }}
@@ -98,8 +92,6 @@ jobs:
   combine_coverage_reports:
     docker:
       - image: circleci/python:3.7
-        environment:
-          PIPENV_VENV_IN_PROJECT: true
 
     steps:
       - checkout
@@ -107,7 +99,7 @@ jobs:
           at: .coverage
       - run:
           command: |
-            pipenv install --skip-lock coverage codacy-coverage
-            pipenv run coverage combine .coverage/coverage*
-            pipenv run coverage xml -i
-            pipenv run python-codacy-coverage -r coverage.xml
+            poetry install
+            poetry run coverage combine .coverage/coverage*
+            poetry run coverage xml -i
+            poetry run python-codacy-coverage -r coverage.xml

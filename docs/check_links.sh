@@ -12,7 +12,7 @@ if [ ! -e "$LINKCHECK" ]; then
 fi
 
 echo "Starting mkdocs server"
-pipenv run mkdocs serve &
+poetry run mkdocs serve &
 
 
 until nc -z 127.0.0.1 8000; do
