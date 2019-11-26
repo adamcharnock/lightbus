@@ -1,0 +1,104 @@
+[tool]
+
+    [tool.dephell.main]
+    from = {format = "poetry", path = "pyproject.toml"}
+    envs = ["main"]
+    to = {format = "setuppy", path = "setup.py"}
+
+    [tool.poetry]
+    name = "lightbus"
+    version = "0.0.1"
+    authors = [
+        "Adam Charnock <adam@adamcharnock.com>",
+    ]
+    readme = "README.rst"
+    homepage = "https://lightbus.org"
+    documentation = "https://lightbus.org"
+    repository = "https://github.com/adamcharnock/lightbus/"
+    keywords = ["python", "messaging", "redis", "bus", "queue"]
+    classifiers = [
+        "Development Status :: 5 - Production/Stable",
+        "Framework :: AsyncIO",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Natural Language :: English",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: POSIX",
+        "Programming Language :: Python :: 3",
+        "Topic :: System :: Networking",
+        "Topic :: Communications",
+    ]
+    packages = [
+        { include = "lightbus" },
+        { include = "lightbus_vendored" },
+    ]
+    include = [
+        "CHANGELOG.md",
+        "VERSION",
+    ]
+
+    [tool.poetry.dependencies]
+    # If modifying this section ensure you run:
+    #   dephell deps convert
+    #   black setup.py
+    python = ">=3.7"
+    aioredis = ">=1.2.0"
+    janus = "*"
+    jsonschema = ">=3.2"
+    python-dateutil = "*"
+    pyyaml = ">=3.12"
+
+    [tool.poetry.dev-dependencies]
+    bpython = "*"
+    colorama = "*"
+    coverage = "*"
+    flake8 = "*"
+    markdown = "*"
+    markdown-include = "*"
+    mkdocs = "<2,>=1"
+    mkdocs-material = "<5,>=4"
+    pre-commit = "*"
+    pylint = "*"
+    pymdown-extensions = "*"
+    pytest = ">=5.1.1"
+    pytest-asyncio = ">=0.10.0"
+    pytest-benchmark = "*"
+    pytest-cov = "*"
+    pytest-mock = "*"
+    pytest-repeat = "*"
+    pytest-timeout = "*"
+    pytest-xdist = "*"
+    schedule = "*"
+    structlog = "*"
+    tox = "*"
+    dephell = ">=0.7.6"
+    # Remove once this is done https://github.com/dephell/dephell/issues/216
+    fissix = "==19.2b1"
+
+    [tool.poetry.scripts]
+    lightbus = 'lightbus.commands:lightbus_entry_point'
+
+    # These are our entry points (which poetry calls 'plugins')
+    [tool.poetry.plugins.lightbus_plugins]
+    internal_state = "lightbus.plugins.state:StatePlugin"
+    internal_metrics = "lightbus.plugins.metrics:MetricsPlugin"
+
+    [tool.poetry.plugins.lightbus_event_transports]
+    redis = "lightbus:RedisEventTransport"
+    debug = "lightbus:DebugEventTransport"
+
+    [tool.poetry.plugins.lightbus_rpc_transports]
+    redis = "lightbus:RedisRpcTransport"
+    debug = "lightbus:DebugRpcTransport"
+
+    [tool.poetry.plugins.lightbus_result_transports]
+    redis = "lightbus:RedisResultTransport"
+    debug = "lightbus:DebugResultTransport"
+
+    [tool.poetry.plugins.lightbus_schema_transports]
+    redis = "lightbus:RedisSchemaTransport"
+    debug = "lightbus:DebugSchemaTransport"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

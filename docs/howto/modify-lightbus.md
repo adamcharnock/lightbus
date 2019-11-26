@@ -38,9 +38,17 @@ This is set using the `REDIS_URL` and `REDIS_URL_B` environment variables:
 ## Installation
 
 You will need to install Lightbus' standard dependencies, as well as Lightbus' development 
-dependencies. You can install both of these groups as follows:
+dependencies. Note that you may need to [install poetry](https://poetry.eustace.io/docs/#installation) 
+if you do not already have it: 
 
-    pipenv install --dev
+You can install both of these groups as follows:
+    
+    # Install standard & dev dependencies into a virtual environment
+    poetry install
+    
+    # Enter the virtual environment you have created,
+    # thereby giving you access the the pytest and mkdocs commands (below)
+    poetry shell
 
 ## Running the tests
 
@@ -54,19 +62,6 @@ Note that you can run subsets of the tests as follows:
     pytest -m integration
     pytest -m reliability
     pytest -m benchmark
-
-## Using within your project
-
-You can install your development Lightbus install within your 
-project as follows:
-
-    # Within your own project
-    
-    # Make sure you remove any existing lightbus version
-    pip uninstall lightbus
-    
-    # Install your local development lightbus
-    pip install --editable /path/to/your/local/lightbus
 
 ## Viewing the Lightbus documentation locally
 
@@ -83,6 +78,19 @@ You can also check for broken links within the docs by running the
     
     # Check for broken links
     ./docs/check_links.sh
+
+## Using within your project
+
+You can install your development Lightbus install within your 
+project as follows:
+
+    # Within your own project
+    
+    # Make sure you remove any existing lightbus version
+    pip uninstall lightbus
+    
+    # Install your local development lightbus
+    pip install --editable /path/to/your/local/lightbus
 
 ## See also
 

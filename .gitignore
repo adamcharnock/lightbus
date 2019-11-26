@@ -12,3 +12,4 @@ INTEREST
 /.tox
 /.python-version
 /bin/linkcheck
+/pip-wheel-metadata
