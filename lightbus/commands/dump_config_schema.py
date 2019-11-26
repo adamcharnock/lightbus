@@ -33,14 +33,9 @@ class Command:
             ),
             metavar="FILE",
         )
-        command_utilities.setup_common_arguments(parser_dumpconfigschema)
         parser_dumpconfigschema.set_defaults(func=self.handle)
 
-    def handle(self, args, config, plugin_registry: PluginRegistry):
-        command_utilities.setup_logging(args.log_level or "warning", config)
-
-        bus_module, bus = command_utilities.import_bus(args)
-
+    def handle(self, args):
         schema = json_encode(config_as_json_schema(), indent=2, sort_keys=True)
 
         if args.out:

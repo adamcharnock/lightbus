@@ -15,6 +15,7 @@ import lightbus.commands.shell
 import lightbus.commands.dump_schema
 import lightbus.commands.dump_config_schema
 import lightbus.commands.inspect
+import lightbus.commands.version
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +43,24 @@ def run_command_from_args(args=None, **extra):
     COMMAND_PARSED_ARGS.clear()
     COMMAND_PARSED_ARGS.update(dict(parsed_args._get_kwargs()))
 
-    config = load_config(parsed_args)
-    plugin_registry = PluginRegistry()
-    plugin_registry.autoload_plugins(config)
+    if hasattr(parsed_args, "config_file"):
+        config = load_config(parsed_args)
+        plugin_registry = PluginRegistry()
+        plugin_registry.autoload_plugins(config)
+    else:
+        # Command didn't set up any of the common args (via setup_common_arguments()),
+        # which are needed to load up the config. As the command didn't set these up,
+        # then assume the command doesn't want to be passed the config & plugin_registry
+        config = None
+        plugin_registry = None
 
     try:
-        parsed_args.func(parsed_args, config, plugin_registry, **extra)
+        if config is None:
+            # Don't pass the config & plugin_registry, see above comment
+            parsed_args.func(parsed_args, **extra)
+        else:
+            parsed_args.func(parsed_args, config, plugin_registry, **extra)
+
     except FailedToImportBusModule as e:
         sys.stderr.write(f"{RED}{e}{RESET}\n")
 
@@ -64,6 +77,7 @@ def parse_args(args=None):
     lightbus.commands.dump_schema.Command().setup(parser, subparsers)
     lightbus.commands.dump_config_schema.Command().setup(parser, subparsers)
     lightbus.commands.inspect.Command().setup(parser, subparsers)
+    lightbus.commands.version.Command().setup(parser, subparsers)
 
     # Create a temporary plugin registry in order to run the before_parse_args hook
     plugin_registry = PluginRegistry()
