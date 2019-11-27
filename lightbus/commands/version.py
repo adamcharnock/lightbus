@@ -1,14 +1,9 @@
 import argparse
 import logging
-
-import sys
 from pathlib import Path
 
 import pkg_resources
 
-from lightbus.commands import utilities as command_utilities
-from lightbus.plugins import PluginRegistry
-from lightbus.utilities.async_tools import block
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +13,18 @@ class Command:
         parser_version = subparsers.add_parser(
             "version", help="Show the currently installed Lightbus version"
         )
+        # Read version directly out of pyproject.toml. Useful for the release process
+        parser_version.add_argument("--pyproject", action="store_true", help=argparse.SUPPRESS)
         parser_version.set_defaults(func=self.handle)
 
     def handle(self, args):
-        print(pkg_resources.get_distribution("lightbus").version)
+        if args.pyproject:
+            import lightbus
+            import toml
+
+            file_path = Path(lightbus.__file__).parent.parent / "pyproject.toml"
+            with file_path.open() as f:
+                version = toml.load(f)["tool"]["poetry"]["version"]
+            print(version)
+        else:
+            print(pkg_resources.get_distribution("lightbus").version)
