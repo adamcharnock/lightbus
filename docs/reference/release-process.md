@@ -20,8 +20,11 @@ git commit -m "Releasing version $(lightbus version --pyproject)"
 # Tagging and branching
 git tag "v$(lightbus version --pyproject)"
 git branch "v$(lightbus version --pyproject)"
-git push origin "v$(lightbus version --pyproject)"
-git push origin "v$(lightbus version --pyproject)"
+git push origin \
+    refs/tags/"v$(lightbus version --pyproject)" \
+    refs/heads/"v$(lightbus version --pyproject)"
+
+# Wait for CI to pass: https://circleci.com/gh/adamcharnock/lightbus
 
 # Build and publish
 poetry publish --build
