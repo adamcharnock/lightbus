@@ -1134,6 +1134,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../reference/release-process/" title="Release process" class="md-nav__link">
+      Release process
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../reference/authors/" title="Authors" class="md-nav__link">
       Authors
     </a>
@@ -1291,7 +1303,7 @@ is to allow our store to resize images prior to display:</p>
 
     <span class="k">def</span> <span class="nf">resize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
         <span class="c1"># This is a demo, so just return an animal picture of the correct size</span>
-        <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;https://placeimg.com/</span><span class="si">{width}</span><span class="s1">/</span><span class="si">{height}</span><span class="s1">/animals?_=</span><span class="si">{url}</span><span class="s1">&#39;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;https://placeimg.com/</span><span class="si">{width}</span><span class="s1">/</span><span class="si">{height}</span><span class="s1">/animals?_=</span><span class="si">{url}</span><span class="s1">&#39;</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">register_api</span><span class="p">(</span><span class="n">ImageApi</span><span class="p">)</span>
@@ -1319,10 +1331,10 @@ event whenever a page is viewed.</p>
 <p>Our store web interface uses Flask and is a little longer:</p>
 <div class="codehilite"><pre><span></span><span class="c1"># File: ./store/web.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
-<span class="kn">from</span> <span class="nn">flask</span> <span class="k">import</span> <span class="n">Flask</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
 
 <span class="c1"># Import our bus client</span>
-<span class="kn">from</span> <span class="nn">.bus</span> <span class="k">import</span> <span class="n">bus</span>
+<span class="kn">from</span> <span class="nn">.bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
 <span class="c1"># Setup flask</span>
 <span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -1343,9 +1355,9 @@ event whenever a page is viewed.</p>
         <span class="c1"># Get an image of the appropriate size</span>
         <span class="n">resized_url</span> <span class="o">=</span> <span class="n">bus</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">image_url</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
         <span class="n">html</span> <span class="o">+=</span> <span class="p">(</span>
-            <span class="n">f</span><span class="s1">&#39;&lt;a href=&quot;/pet/</span><span class="si">{pet_num}</span><span class="s1">&quot;&gt;&#39;</span>
-            <span class="n">f</span><span class="s1">&#39;&lt;img src=&quot;</span><span class="si">{resized_url}</span><span class="s1">&quot;&gt;&#39;</span>
-            <span class="n">f</span><span class="s1">&#39;&lt;/a&gt; &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;&lt;a href=&quot;/pet/</span><span class="si">{pet_num}</span><span class="s1">&quot;&gt;&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;&lt;img src=&quot;</span><span class="si">{resized_url}</span><span class="s1">&quot;&gt;&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;&lt;/a&gt; &#39;</span>
         <span class="p">)</span>
 
     <span class="c1"># Fire the page view</span>
@@ -1359,10 +1371,10 @@ event whenever a page is viewed.</p>
     <span class="n">resized_url</span> <span class="o">=</span> <span class="n">bus</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">PETS</span><span class="p">[</span><span class="n">pet_num</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
 
     <span class="c1"># Fire the page view</span>
-    <span class="n">bus</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">page_viewed</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;/pet/</span><span class="si">{pet_num}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">bus</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">page_viewed</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;/pet/</span><span class="si">{pet_num}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="n">html</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;&lt;h1&gt;Pet </span><span class="si">{pet_num}</span><span class="s1">&lt;/h1&gt;&#39;</span>
-    <span class="n">html</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;&lt;img src=&quot;</span><span class="si">{resized_url}</span><span class="s1">&quot;&gt;&lt;br /&gt;&#39;</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&lt;h1&gt;Pet </span><span class="si">{pet_num}</span><span class="s1">&lt;/h1&gt;&#39;</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&lt;img src=&quot;</span><span class="si">{resized_url}</span><span class="s1">&quot;&gt;&lt;br /&gt;&#39;</span>
     <span class="k">return</span> <span class="n">html</span>
 </pre></div>
 
@@ -1431,7 +1443,7 @@ Redis, Mongo etc). For simplicity we just store JSON to a file.</p>
 <p>Now we'll define our dashboard's web interface:</p>
 <div class="codehilite"><pre><span></span><span class="c1"># File: ./dashboard/web.py</span>
 <span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">from</span> <span class="nn">flask</span> <span class="k">import</span> <span class="n">Flask</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -1445,7 +1457,7 @@ Redis, Mongo etc). For simplicity we just store JSON to a file.</p>
 
     <span class="n">html</span> <span class="o">+=</span> <span class="s1">&#39;&lt;ul&gt;&#39;</span>
     <span class="k">for</span> <span class="n">url</span><span class="p">,</span> <span class="n">total_views</span> <span class="ow">in</span> <span class="n">page_views</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">html</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39;&lt;li&gt;URL &lt;code&gt;</span><span class="si">{url}</span><span class="s1">&lt;/code&gt;: </span><span class="si">{total_views}</span><span class="s1">&lt;/li&gt;&#39;</span>
+        <span class="n">html</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;li&gt;URL &lt;code&gt;</span><span class="si">{url}</span><span class="s1">&lt;/code&gt;: </span><span class="si">{total_views}</span><span class="s1">&lt;/li&gt;&#39;</span>
     <span class="n">html</span> <span class="o">+=</span> <span class="s1">&#39;&lt;/ul&gt;&#39;</span>
 
     <span class="k">return</span> <span class="n">html</span>

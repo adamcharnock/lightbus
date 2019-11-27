@@ -1099,6 +1099,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../reference/release-process/" title="Release process" class="md-nav__link">
+      Release process
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../reference/authors/" title="Authors" class="md-nav__link">
       Authors
     </a>
@@ -1212,7 +1224,7 @@ within your <code>bus.py</code>:</p>
 
 <span class="c1"># ...Define and register APIs here...</span>
 
-<span class="nd">@bus.client.on_start</span><span class="p">()</span>
+<span class="nd">@bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">on_start</span><span class="p">()</span>
 <span class="k">def</span> <span class="nf">on_start</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># DJANGO STEP 1: Set DJANGO_SETTINGS_MODULE\</span>
     <span class="c1"># Customise this value (if necessary) to point to your settings module. </span>
@@ -1260,7 +1272,7 @@ in the <a href="../quick-start/">quick start tutorial</a>. Here we demonstrate:<
             <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">user</span><span class="o">.</span><span class="n">check_password</span><span class="p">(</span><span class="n">password</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">User</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
 <span class="n">bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">register_api</span><span class="p">(</span><span class="n">AuthApi</span><span class="p">())</span>
 
@@ -1271,10 +1283,10 @@ in the <a href="../quick-start/">quick start tutorial</a>. Here we demonstrate:<
 <span class="k">def</span> <span class="nf">handle_new_user</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">email</span><span class="p">):</span>
     <span class="c1"># For example, we may want to create an audit log entry</span>
     <span class="kn">from</span> <span class="nn">my_app.models</span> <span class="kn">import</span> <span class="n">AuditLogEntry</span>
-    <span class="n">AuditLogEntry</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="n">f</span><span class="s2">&quot;User {username} created&quot;</span><span class="p">)</span>
+    <span class="n">AuditLogEntry</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;User </span><span class="si">{username}</span><span class="s2"> created&quot;</span><span class="p">)</span>
 
 
-<span class="nd">@bus.client.on_start</span><span class="p">()</span>
+<span class="nd">@bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">on_start</span><span class="p">()</span>
 <span class="k">def</span> <span class="nf">on_start</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;DJANGO_SETTINGS_MODULE&quot;</span><span class="p">,</span> <span class="s2">&quot;my_company.a_project.settings&quot;</span><span class="p">)</span>
     <span class="n">django</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>

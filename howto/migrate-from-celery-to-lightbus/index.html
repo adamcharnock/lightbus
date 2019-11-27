@@ -1110,6 +1110,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../reference/release-process/" title="Release process" class="md-nav__link">
+      Release process
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../reference/authors/" title="Authors" class="md-nav__link">
       Authors
     </a>
@@ -1230,7 +1242,7 @@ any response from the worker, it only needs to know that it <em>will</em> be han
 
 <span class="nd">@bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">on_start</span><span class="p">()</span>
 <span class="k">def</span> <span class="nf">bus_start</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="kn">from</span> <span class="nn">my_app.somewhere</span> <span class="k">import</span> <span class="n">send_welcome_email</span>
+    <span class="kn">from</span> <span class="nn">my_app.somewhere</span> <span class="kn">import</span> <span class="n">send_welcome_email</span>
     <span class="c1"># Listen for this event being fired.</span>
     <span class="c1"># When the event is fired, send_welcome_email will be called as follows:</span>
     <span class="c1">#     send_welcome_email(event, email, username)</span>
@@ -1241,7 +1253,7 @@ any response from the worker, it only needs to know that it <em>will</em> be han
 <div class="codehilite"><pre><span></span><span class="c1"># Your web server code</span>
 
 <span class="c1"># Import the bus client from your bus.py file</span>
-<span class="kn">from</span> <span class="nn">bus</span> <span class="k">import</span> <span class="n">bus</span>
+<span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
 <span class="c1"># Your registration view</span>
 <span class="nd">@route</span><span class="p">(</span><span class="s1">&#39;/register&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="s1">&#39;POST&#39;</span><span class="p">))</span>
@@ -1280,14 +1292,14 @@ response (the image URL) from the worker.</p>
     <span class="c1"># This is our new remote procedure</span>
     <span class="k">def</span> <span class="nf">get_avatar_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
         <span class="c1"># ... do some resizing &amp; uploading ...</span>
-        <span class="k">return</span> <span class="n">f</span><span class="s2">&quot;https://example.com/images/</span><span class="si">{width}</span><span class="s2">/</span><span class="si">{height}</span><span class="s2">/</span><span class="si">{username}</span><span class="s2">.png&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;https://example.com/images/</span><span class="si">{width}</span><span class="s2">/</span><span class="si">{height}</span><span class="s2">/</span><span class="si">{username}</span><span class="s2">.png&quot;</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">register_api</span><span class="p">(</span><span class="n">UserApi</span><span class="p">())</span>
 
 <span class="nd">@bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">on_start</span><span class="p">()</span>
 <span class="k">def</span> <span class="nf">bus_start</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="kn">from</span> <span class="nn">my_app.somewhere</span> <span class="k">import</span> <span class="n">send_welcome_email</span>
+    <span class="kn">from</span> <span class="nn">my_app.somewhere</span> <span class="kn">import</span> <span class="n">send_welcome_email</span>
     <span class="n">bus</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">user_signed_up</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">send_welcome_email</span><span class="p">,</span> <span class="n">listener_name</span><span class="o">=</span><span class="s2">&quot;send_welcome_email&quot;</span><span class="p">)</span>
 </pre></div>
 
@@ -1295,14 +1307,14 @@ response (the image URL) from the worker.</p>
 <div class="codehilite"><pre><span></span><span class="c1"># Your web server code</span>
 
 <span class="c1"># Import the bus client from your bus.py file</span>
-<span class="kn">from</span> <span class="nn">bus</span> <span class="k">import</span> <span class="n">bus</span>
+<span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
 <span class="c1"># Your registration view</span>
 <span class="nd">@route</span><span class="p">(</span><span class="s1">&#39;/user-profile/&lt;username&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,))</span>
 <span class="k">def</span> <span class="nf">user_profile</span><span class="p">(</span><span class="n">username</span><span class="p">):</span>
     <span class="c1"># Call our new remote procedure</span>
     <span class="n">image_url</span> <span class="o">=</span> <span class="n">bus</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">get_avatar_url</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">f</span><span class="s2">&quot;&lt;h1&gt;</span><span class="si">{username}</span><span class="s2">&lt;/h1&gt;&lt;img src=&#39;</span><span class="si">{image_url}</span><span class="s2">&#39;&gt;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&lt;h1&gt;</span><span class="si">{username}</span><span class="s2">&lt;/h1&gt;&lt;img src=&#39;</span><span class="si">{image_url}</span><span class="s2">&#39;&gt;&quot;</span>
 </pre></div>
 
 <p>Now, as long as our <code>lightbus run</code> process is running, the web server will be able to 

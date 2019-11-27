@@ -1147,6 +1147,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../reference/release-process/" title="Release process" class="md-nav__link">
+      Release process
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../reference/authors/" title="Authors" class="md-nav__link">
       Authors
     </a>
@@ -1354,7 +1366,7 @@ to experiment with making RPC calls:</p>
 <div class="codehilite"><pre><span></span><span class="c1"># File: ./another_service/check_password.py</span>
 
 <span class="c1"># Import our service&#39;s bus client</span>
-<span class="kn">from</span> <span class="nn">.bus</span> <span class="k">import</span> <span class="n">bus</span>
+<span class="kn">from</span> <span class="nn">.bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
 <span class="c1"># Call the check_password() procedure on our auth API</span>
 <span class="n">valid</span> <span class="o">=</span> <span class="n">bus</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">check_password</span><span class="p">(</span>
@@ -1392,7 +1404,7 @@ register it.</p>
 <div class="codehilite"><pre><span></span><span class="c1"># ./auth_service/manually_register_user.py</span>
 
 <span class="c1"># Import the service&#39;s bus client from bus.py</span>
-<span class="kn">from</span> <span class="nn">bus</span> <span class="k">import</span> <span class="n">bus</span>
+<span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;New user creation&quot;</span><span class="p">)</span>
 <span class="n">new_username</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Enter a username: &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
@@ -1426,9 +1438,9 @@ we can setup an event listener by modifying <code>./another_service/bus.py</code
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 
 <span class="k">def</span> <span class="nf">handle_new_user</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">email</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;A new user was created in the authentication service:&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;    Username: </span><span class="si">{username}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;    Email: </span><span class="si">{email}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A new user was created in the authentication service:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Username: </span><span class="si">{username}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Email: </span><span class="si">{email}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
 <span class="nd">@bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">on_start</span><span class="p">()</span>

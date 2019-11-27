@@ -1126,6 +1126,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../release-process/" title="Release process" class="md-nav__link">
+      Release process
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../authors/" title="Authors" class="md-nav__link">
       Authors
     </a>
@@ -1247,7 +1259,7 @@ console every time a message is sent.</p>
 </ol>
 <h3 id="1-define-the-plugin">1. Define the plugin<a class="headerlink" href="#1-define-the-plugin" title="Permanent link">&para;</a></h3>
 <p>Create the following in a python module (we'll assume it is at <code>my_project.greeting_plugin</code>):</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">lightbus.plugins</span> <span class="k">import</span> <span class="n">LightbusPlugin</span>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">lightbus.plugins</span> <span class="kn">import</span> <span class="n">LightbusPlugin</span>
 
 
 <span class="k">class</span> <span class="nc">GreetingPlugin</span><span class="p">(</span><span class="n">LightbusPlugin</span><span class="p">):</span>
@@ -1255,7 +1267,7 @@ console every time a message is sent.</p>
 
     <span class="n">priority</span> <span class="o">=</span> <span class="mi">200</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">greeting</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">greeting</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">greeting</span> <span class="o">=</span> <span class="n">greeting</span>
 
     <span class="nd">@classmethod</span>

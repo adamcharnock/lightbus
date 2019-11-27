@@ -1133,6 +1133,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../release-process/" title="Release process" class="md-nav__link">
+      Release process
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../authors/" title="Authors" class="md-nav__link">
       Authors
     </a>
@@ -1271,7 +1283,7 @@ regular Python type hinting:</p>
 Firstly, events do not provide return values. Secondly, event
 parameters are specified differently:</p>
 <div class="codehilite"><pre><span></span><span class="c1"># auth_service/bus.py</span>
-<span class="kn">from</span> <span class="nn">lightbus</span> <span class="k">import</span> <span class="n">Api</span><span class="p">,</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Parameter</span>
+<span class="kn">from</span> <span class="nn">lightbus</span> <span class="kn">import</span> <span class="n">Api</span><span class="p">,</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Parameter</span>
 
 
 <span class="k">class</span> <span class="nc">AuthApi</span><span class="p">(</span><span class="n">Api</span><span class="p">):</span>
@@ -1318,7 +1330,7 @@ the following data structures:</p>
     <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">is_admin</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">is_admin</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
 <span class="k">class</span> <span class="nc">AuthApi</span><span class="p">(</span><span class="n">Api</span><span class="p">):</span>
 
@@ -1333,8 +1345,8 @@ the following data structures:</p>
 <p>Lightbus supports <a href="https://www.python.org/dev/peps/pep-0557/">dataclasses</a> 
 in the same way as it supports <a href="#namedtuple-example">named tuples</a>. For example:</p>
 <div class="codehilite"><pre><span></span><span class="c1"># bus.py</span>
-<span class="kn">from</span> <span class="nn">lightbus</span> <span class="k">import</span> <span class="n">Api</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="k">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">lightbus</span> <span class="kn">import</span> <span class="n">Api</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 <span class="nd">@dataclass</span><span class="p">()</span>
 <span class="k">class</span> <span class="nc">User</span><span class="p">():</span>
@@ -1358,7 +1370,7 @@ in the same way as it supports <a href="#namedtuple-example">named tuples</a>. F
 <li>The class defines a <code>__from_bus__(self, value: dict)</code> class method, which returns an instance of the class.</li>
 <li>The class defines a <code>__to_bus__(self)</code> method, which returns a <code>dict</code>.</li>
 </ol>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">lightbus</span> <span class="k">import</span> <span class="n">Api</span>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">lightbus</span> <span class="kn">import</span> <span class="n">Api</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">():</span>

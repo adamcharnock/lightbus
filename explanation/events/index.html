@@ -1144,6 +1144,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../reference/release-process/" title="Release process" class="md-nav__link">
+      Release process
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../reference/authors/" title="Authors" class="md-nav__link">
       Authors
     </a>
@@ -1298,7 +1310,7 @@ The <em>listener name</em> is setup when you create your event listener (see bel
 given a <code>listener_name</code>, thereby ensuring each listener receives a
 copy of every <code>competitor_prices.changed</code> event.</p>
 <div class="codehilite"><pre><span></span><span class="c1"># Example of setting service and listener names</span>
-<span class="kn">from</span> <span class="nn">my_handlers</span> <span class="k">import</span> <span class="n">send_price_alerts</span><span class="p">,</span> <span class="n">update_db</span>
+<span class="kn">from</span> <span class="nn">my_handlers</span> <span class="kn">import</span> <span class="n">send_price_alerts</span><span class="p">,</span> <span class="n">update_db</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
     <span class="n">service_name</span><span class="o">=</span><span class="s1">&#39;price-monitor&#39;</span><span class="p">,</span>
