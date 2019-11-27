@@ -1151,8 +1151,11 @@ git commit -m <span class="s2">&quot;Releasing version </span><span class="k">$(
 <span class="c1"># Tagging and branching</span>
 git tag <span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
 git branch <span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
-git push origin <span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
-git push origin <span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
+git push origin <span class="se">\</span>
+    refs/tags/<span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span> <span class="se">\</span>
+    refs/heads/<span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
+
+<span class="c1"># Wait for CI to pass: https://circleci.com/gh/adamcharnock/lightbus</span>
 
 <span class="c1"># Build and publish</span>
 poetry publish --build
