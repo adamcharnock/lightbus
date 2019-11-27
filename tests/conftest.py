@@ -543,7 +543,7 @@ def run_lightbus_command(make_test_bus_module, redis_config_file):
     processes = []
 
     def inner(
-        cmd: str,
+        cmd: str = None,
         *args: str,
         env: dict = None,
         bus_module_code: str = None,

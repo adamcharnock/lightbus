@@ -48,7 +48,14 @@ def test_commands_dump_config_schema(run_lightbus_command):
     except FileNotFoundError:
         pass
 
-    run_lightbus_command("dumpconfigschema", "--out", "/tmp/test_commands_dump_config_schema.json")
+    run_lightbus_command(
+        full_args=[
+            "lightbus",
+            "dumpconfigschema",
+            "--out",
+            "/tmp/test_commands_dump_config_schema.json",
+        ]
+    )
     time.sleep(1)
 
     with open("/tmp/test_commands_dump_config_schema.json", "r") as f:
@@ -85,3 +92,15 @@ def test_commands_inspect_follow(run_lightbus_command, debug_config_file):
     for line in lines:
         event = json.loads(line)
         assert event["event_name"]
+
+
+def test_commands_version(run_lightbus_command):
+    try:
+        os.remove("/tmp/test_commands_dump_config_schema.json")
+    except FileNotFoundError:
+        pass
+
+    process: Popen = run_lightbus_command(full_args=["lightbus", "version"])
+    time.sleep(1)
+    lines = process.stdout.readlines()
+    assert len(lines) == 1
