@@ -87,6 +87,7 @@ nav:
       - RPC & Result Protocol (Redis): reference/protocols/rpc-and-result.md
       - Event Protocol (Redis): reference/protocols/event.md
       - Schema Protocol (Redis): reference/protocols/schema.md
+    - Release process: reference/release-process.md
     - Authors: reference/authors.md
     - Code of Conduct: reference/code-of-conduct.md
 
