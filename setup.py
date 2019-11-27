@@ -23,7 +23,7 @@ if os.path.exists(readme_path):
 setup(
     long_description=readme,
     name="lightbus",
-    version="0.0.1",
+    version="0.0.2-alpha.0",
     python_requires=">=3.7",
     project_urls={
         "documentation": "https://lightbus.org",
