@@ -20,7 +20,7 @@ of the following individuals and companies:
 * [Louis Pilfold](https://github.com/lpil) 
     – For being an early sounding board, and persuading Adam to take schemas seriously.
 * [Presscast](https://presscast.io/)
-    - For being an early adopter and proving invaluable feedback.
+    – For being an early adopter and proving invaluable feedback.
 
 Additional thanks to everyone (technical and non-technical) who kindly listened to Adam 
 talk about the reasons and ideas behind Lightbus.
