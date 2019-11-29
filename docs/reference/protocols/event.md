@@ -10,7 +10,7 @@ protocol in order to use Lightbus**.
 
 ## Sending events
 
-The following commands will send an event:
+The following command will send an event:
 
 ```
 XADD {stream_name} [MAXLEN ~ {max_stream_length}] * {field_name_1} {field_value_1} {field_name_2} {field_value_2}...
