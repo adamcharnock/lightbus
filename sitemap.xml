@@ -211,6 +211,11 @@
      <changefreq>daily</changefreq>
     </url>
     <url>
+     <loc>http://lightbus.org/reference/testing-and-mocking/</loc>
+     <lastmod>2019-11-29</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    <url>
      <loc>http://lightbus.org/reference/plugins/</loc>
      <lastmod>2019-11-29</lastmod>
      <changefreq>daily</changefreq>
