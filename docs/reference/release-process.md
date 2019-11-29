@@ -22,7 +22,8 @@ git tag "v$(lightbus version --pyproject)"
 git branch "v$(lightbus version --pyproject)"
 git push origin \
     refs/tags/"v$(lightbus version --pyproject)" \
-    refs/heads/"v$(lightbus version --pyproject)"
+    refs/heads/"v$(lightbus version --pyproject)" \
+    master
 
 # Wait for CI to pass: https://circleci.com/gh/adamcharnock/lightbus
 
