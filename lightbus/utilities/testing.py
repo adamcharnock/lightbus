@@ -36,21 +36,26 @@ class MockResult:
 
     def assertEventFired(self, full_event_name, *, times=None):
         event_names_fired = self.eventNamesFired
-        assert (  # nosec
-            full_event_name in event_names_fired
-        ), f"Event {full_event_name} was never fired. Fired events were: {set(event_names_fired)}"
+        if times is None or times > 0:
+            assert (  # nosec
+                full_event_name in event_names_fired
+            ), f"Event {full_event_name} was never fired. Fired events were: {set(event_names_fired)}"
 
-        if times:
+        if times is not None:
             total_times_fired = len([v for v in event_names_fired if v == full_event_name])
             assert total_times_fired == times, (  # nosec
                 f"Event fired the incorrect number of times. "
                 f"Expected {times}, actual {total_times_fired}"
             )
 
+    assert_events_fired = assertEventFired
+
     def assertEventNotFired(self, full_event_name):
         assert (
             full_event_name not in self.eventNamesFired
         ), f"Event {full_event_name} was unexpectedly fired"
+
+    assert_event_not_fired = assertEventNotFired
 
     def getEventMessages(self, full_event_name=None):
         if full_event_name is None:
@@ -58,48 +63,69 @@ class MockResult:
         else:
             return [m for m, _ in self.event.events if m.canonical_name == full_event_name]
 
-    def assertRpcCalled(self, full_rpc_name, *, times=None):
-        rpc_names_fired = self.rpcNamesFired
-        assert (
-            full_rpc_name in rpc_names_fired
-        ), f"RPC {full_rpc_name} was never called. Called RPCs were: {set(rpc_names_fired)}"
+    get_event_messages = getEventMessages
 
-        if times:
-            total_times_called = len([v for v in rpc_names_fired if v == full_rpc_name])
+    def mockEventFiring(self, full_event_name):
+        self.event.add_mock_event(full_event_name)
+
+    mock_event_firing = mockEventFiring
+
+    def assertRpcCalled(self, full_rpc_name, *, times=None):
+        rpc_names_called = self.rpcNamesCalled
+        if times is None or times > 0:
+            assert (
+                full_rpc_name in rpc_names_called
+            ), f"RPC {full_rpc_name} was never called. Called RPCs were: {set(rpc_names_called)}"
+
+        if times is not None:
+            total_times_called = len([v for v in rpc_names_called if v == full_rpc_name])
             assert total_times_called == times, (  # nosec
                 f"RPC {full_rpc_name} called the incorrect number of times. "
                 f"Expected {times}, actual {total_times_called}"
             )
 
+    assert_rpc_called = assertRpcCalled
+
     def assertRpcNotCalled(self, full_rpc_name):
         assert (
-            full_rpc_name not in self.rpcNamesFired
+            full_rpc_name not in self.rpcNamesCalled
         ), f"Event {full_rpc_name} was unexpectedly fired"
+
+    assert_rpc_not_called = assertRpcNotCalled
 
     def mockRpcCall(self, full_rpc_name, result=None, **rpc_result_message_kwargs):
         self.result.add_mock_response(
             full_rpc_name, dict(result=result, **rpc_result_message_kwargs)
         )
 
+    mock_rpc_call = mockRpcCall
+
     @property
     def eventNamesFired(self):
         return [em.canonical_name for em, options in self.event.events]
 
+    event_names_fired = eventNamesFired
+
     @property
-    def rpcNamesFired(self):
+    def rpcNamesCalled(self):
         return [rm.canonical_name for rm, options in self.rpc.rpcs]
+
+    rpc_names_called = rpcNamesCalled
 
     def __repr__(self):
         return f"<MockResult: events: {len(self.event.events)}, rpcs: {len(self.rpc.rpcs)}>"
 
 
 class BusMocker(ContextDecorator):
-    def __init__(self, bus: BusPath):
+    def __init__(self, bus: BusPath, require_mocking=True):
         self.bus = bus
         self.old_transport_registry = None
+        self.require_mocking = require_mocking
 
-    # Overriding ContextDecorator to pass the mock result to the function
     def __call__(self, func):
+        # Overriding ContextDecorator.__call__ to pass the mock
+        # result to the function. This is exactly the same as the parent
+        # implementation except we pass mock_result into func().
         @wraps(func)
         def inner(*args, **kwds):
             with self._recreate_cm() as mock_result:
@@ -108,9 +134,10 @@ class BusMocker(ContextDecorator):
         return inner
 
     def __enter__(self):
+        """Start of a context where all the bus' transports have been replaced with mocks"""
         rpc = TestRpcTransport()
-        result = TestResultTransport()
-        event = TestEventTransport()
+        result = TestResultTransport(require_mocking=self.require_mocking)
+        event = TestEventTransport(require_mocking=self.require_mocking)
         schema = TestSchemaTransport()
 
         new_registry = TransportRegistry()
@@ -133,6 +160,7 @@ class BusMocker(ContextDecorator):
         return MockResult(rpc, result, event, schema)
 
     def __exit__(self, exc_type, exc, exc_tb):
+        """Restores the bus back to its original state"""
         self.bus.client.transport_registry = self.old_transport_registry
 
 
@@ -151,8 +179,10 @@ class TestRpcTransport(RpcTransport):
 
 
 class TestResultTransport(ResultTransport):
-    def __init__(self):
+    def __init__(self, require_mocking=True):
+        super().__init__()
         self.mock_responses = {}
+        self.require_mocking = require_mocking
 
     def get_return_path(self, rpc_message):
         return "test://"
@@ -161,12 +191,17 @@ class TestResultTransport(ResultTransport):
         raise NotImplementedError("Not yet supported by mocks")
 
     async def receive_result(self, rpc_message, return_path, options, bus_client: "BusClient"):
-        assert rpc_message.canonical_name in self.mock_responses, (
-            f"RPC {rpc_message.canonical_name} unexpectedly called. "
-            f"Perhaps you need to use mockRpcCall() to ensure the mocker expects this call."
-        )
-        kwargs = self.mock_responses[rpc_message.canonical_name]
-        return ResultMessage(**kwargs)
+        if self.require_mocking:
+            assert rpc_message.canonical_name in self.mock_responses, (
+                f"RPC {rpc_message.canonical_name} unexpectedly called. "
+                f"Perhaps you need to use mockRpcCall() to ensure the mocker expects this call."
+            )
+
+        if rpc_message.canonical_name in self.mock_responses:
+            kwargs = self.mock_responses[rpc_message.canonical_name]
+            return ResultMessage(**kwargs)
+        else:
+            return ResultMessage(result=None, rpc_message_id="1")
 
     def add_mock_response(self, full_rpc_name, rpc_result_message_kwargs):
         rpc_result_message_kwargs.setdefault("rpc_message_id", 1)
@@ -174,12 +209,22 @@ class TestResultTransport(ResultTransport):
 
 
 class TestEventTransport(EventTransport):
-    def __init__(self):
-        self.events = []
+    def __init__(self, require_mocking=True):
         super().__init__()
+        self.events = []
+        self.mock_events = set()
+        self.require_mocking = require_mocking
 
     async def send_event(self, event_message, options, bus_client: "BusClient"):
+        if self.require_mocking:
+            assert event_message.canonical_name in self.mock_events, (
+                f"Event {event_message.canonical_name} unexpectedly fired. "
+                f"Perhaps you need to use mockEventFiring() to ensure the mocker expects this call."
+            )
         self.events.append((event_message, options))
+
+    def add_mock_event(self, full_rpc_name):
+        self.mock_events.add(full_rpc_name)
 
     def consume(
         self,
