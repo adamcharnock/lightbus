@@ -79,6 +79,7 @@ nav:
       - shell: reference/command-line-use/shell.md
       - dumpschema: reference/command-line-use/dumpschema.md
       - dumpconfigschema: reference/command-line-use/dumpconfigschema.md
+    - Testing & Mocking: reference/testing-and-mocking.md
     - Plugins: reference/plugins.md
     - Plugin development: reference/plugins-development.md
     - Transport configuration: reference/transport-configuration.md
