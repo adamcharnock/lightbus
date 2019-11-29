@@ -219,6 +219,34 @@ def test_mock_result_assert_rpc_not_called(mock_result: testing.MockResult, meth
 
 
 @pytest.mark.parametrize(
+    "method_name", ["get_rpc_messages", "getRpcMessages"], ids=["snake", "camel"]
+)
+def test_mock_result_get_rpc_messages(mock_result: testing.MockResult, method_name):
+    get_rpc_messages = getattr(mock_result, method_name)
+
+    rpc1 = RpcMessage(api_name="api", procedure_name="rpc1")
+    rpc2 = RpcMessage(api_name="api", procedure_name="rpc2")
+
+    mock_result.rpc.rpcs = [(rpc1, {}), (rpc2, {})]
+
+    assert get_rpc_messages() == [rpc1, rpc2]
+
+
+@pytest.mark.parametrize(
+    "method_name", ["get_rpc_messages", "getRpcMessages"], ids=["snake", "camel"]
+)
+def test_mock_result_get_rpc_messages_filtered(mock_result: testing.MockResult, method_name):
+    get_rpc_messages = getattr(mock_result, method_name)
+
+    rpc1 = RpcMessage(api_name="api", procedure_name="rpc1")
+    rpc2 = RpcMessage(api_name="api", procedure_name="rpc2")
+
+    mock_result.rpc.rpcs = [(rpc1, {}), (rpc2, {})]
+
+    assert get_rpc_messages("api.rpc2") == [rpc2]
+
+
+@pytest.mark.parametrize(
     "property_name", ["event_names_fired", "eventNamesFired"], ids=["snake", "camel"]
 )
 def test_mock_result_event_names_fired(mock_result: testing.MockResult, property_name):

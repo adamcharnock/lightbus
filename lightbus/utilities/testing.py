@@ -13,6 +13,7 @@ from lightbus import (
     ResultTransport,
     RpcMessage,
     ResultMessage,
+    EventMessage,
 )
 from lightbus.path import BusPath
 from lightbus.client import BusClient
@@ -57,7 +58,7 @@ class MockResult:
 
     assert_event_not_fired = assertEventNotFired
 
-    def getEventMessages(self, full_event_name=None):
+    def getEventMessages(self, full_event_name=None) -> List[EventMessage]:
         if full_event_name is None:
             return [m for m, _ in self.event.events]
         else:
@@ -93,6 +94,14 @@ class MockResult:
 
     assert_rpc_not_called = assertRpcNotCalled
 
+    def getRpcMessages(self, full_rpc_name=None) -> List[RpcMessage]:
+        if full_rpc_name is None:
+            return [m for m, _ in self.rpc.rpcs]
+        else:
+            return [m for m, _ in self.rpc.rpcs if m.canonical_name == full_rpc_name]
+
+    get_rpc_messages = getRpcMessages
+
     def mockRpcCall(self, full_rpc_name, result=None, **rpc_result_message_kwargs):
         self.result.add_mock_response(
             full_rpc_name, dict(result=result, **rpc_result_message_kwargs)
@@ -101,13 +110,13 @@ class MockResult:
     mock_rpc_call = mockRpcCall
 
     @property
-    def eventNamesFired(self):
+    def eventNamesFired(self) -> List[str]:
         return [em.canonical_name for em, options in self.event.events]
 
     event_names_fired = eventNamesFired
 
     @property
-    def rpcNamesCalled(self):
+    def rpcNamesCalled(self) -> List[str]:
         return [rm.canonical_name for rm, options in self.rpc.rpcs]
 
     rpc_names_called = rpcNamesCalled
