@@ -13,8 +13,6 @@ for other platforms will be added in future.
 Other languages can also communicate with Lightbus by 
 [interacting with Redis](reference/protocols/index.md).
 
-**Lightbus is under active development and is still pre-release.**
-
 ## How Lightbus works
 
 Lightbus provides you with two tools:

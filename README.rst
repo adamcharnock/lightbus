@@ -36,9 +36,6 @@ for other platforms may eventually be added.
 
 Lightbus requires Python 3.7 or above.
 
-**Lightbus is under active development and is still pre-release.**
-You can `track progress in GitHub <https://github.com/adamcharnock/lightbus/issues/1>`_.
-
 **Full documentation can be found at https://lightbus.org**
 
 Designed for ease of use

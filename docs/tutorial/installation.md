@@ -46,8 +46,6 @@ The Hitchhiker's Guide to Python covers [installing Python 3 on Windows][god-hel
 
 ### Installing using pip (recommended)
 
-**At time of writing we were yet to have an official release. Please install via git in the mean-time.**
-
     $ pip3 install lightbus
 
 ### Installing using git

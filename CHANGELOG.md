@@ -1,3 +1,13 @@
 # Lightbus Changelog
 
-Initial release pending
+## 0.10.0 - Unreleased
+
+* ...
+
+## 0.9.1 - Unreleased
+
+* ...
+
+## 0.9.0 - Initial release
+
+Changelog starts now
