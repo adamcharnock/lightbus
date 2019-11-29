@@ -1,4 +1,4 @@
-# Testing & Mocking
+# Testing & mocking
 
 Lightbus provides utilities to make testing easier. 
 These utilities allow you to:
