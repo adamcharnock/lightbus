@@ -559,6 +559,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             if not await redis.exists(stream):
                 # Add a noop to ensure the stream exists
                 # TODO: We can now use MKSTREAM, change this logic
+                #       Documented here: https://redis.io/topics/streams-intro
                 await redis.xadd(stream, fields={"": ""})
 
             try:
