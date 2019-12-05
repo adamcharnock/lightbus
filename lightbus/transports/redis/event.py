@@ -600,7 +600,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         raise
 
                 for group in groups:
-                    print(group)
                     active_consumers = 0
                     group_name = group[b"name"]
 
