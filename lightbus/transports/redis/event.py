@@ -167,7 +167,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         logger.debug(
             L(
                 "Enqueued event message {} in Redis in {} stream {}",
-                Bold(event_message),
+                Bold(event_message.canonical_name),
                 human_time(time.time() - start_time),
                 Bold(stream),
             )
