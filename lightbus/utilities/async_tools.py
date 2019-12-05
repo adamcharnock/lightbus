@@ -147,12 +147,12 @@ async def run_user_provided_callable(
 
     The callable will be called with the given args and kwargs
     """
+    if hasattr(callable_, "_parent_stack"):
+        # Used to provide helpful output in case of deadlock in client worker
+        callable_._parent_stack = traceback.extract_stack(limit=5)[:-1]
+
     if asyncio.iscoroutinefunction(callable_):
         return await callable_(*args, **kwargs)
-
-    # Used to provide helpful output in case of deadlock in client worker
-    if hasattr(callable_, "_parent_stack"):
-        callable_._parent_stack = traceback.extract_stack(limit=5)[:-1]
 
     with exception_handling_context(bus_client, die=die_on_exception):
         future = asyncio.get_event_loop().run_in_executor(

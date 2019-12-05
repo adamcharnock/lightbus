@@ -63,7 +63,7 @@ def run_in_worker_thread(worker=None):
                     traceback.extract_stack(f=worker_._current_frame, limit=5)[:-1]
                 )
 
-                if hasattr(wrapper, "_parent_stack"):
+                if getattr(wrapper, "_parent_stack", None):
                     new_stack = wrapper._parent_stack
                 else:
                     new_stack = traceback.extract_stack(f=current_frame, limit=5)
