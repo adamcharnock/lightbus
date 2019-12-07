@@ -297,9 +297,7 @@ class TransportRegistry:
         else:
             return api_transport
 
-    def _get_transports(
-        self, api_names: Sequence[str], transport_type: str
-    ) -> List[Tuple[Transport, List[str]]]:
+    def _get_transports(self, api_names: Sequence[str], transport_type: str) -> List[Transport]:
         apis_by_transport: Dict[Transport, List[str]] = {}
         for api_name in api_names:
             transport = self._get_transport(api_name, transport_type)

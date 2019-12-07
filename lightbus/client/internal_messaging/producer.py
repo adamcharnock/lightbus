@@ -30,12 +30,13 @@ import logging
 from typing import Optional, NamedTuple
 
 from lightbus.client import commands
+from lightbus.client.utilities import queue_exception_checker
 from lightbus.utilities.async_tools import cancel
 
 logger = logging.getLogger(__name__)
 
-
-class Invoker:
+# Was invoker
+class InternalProducer:
     """ Base invoker class. Puts commands onto a queue
 
     Note that commands are execute in parallel. If you wish to know when a command has
@@ -48,30 +49,27 @@ class Invoker:
     # How often should the queue sizes be monitored
     monitor_interval = 0.1
 
-    def __init__(self):
+    def __init__(self, queue: asyncio.Queue, error_queue: asyncio.Queue):
         """Initialise the invoker
 
         The callable specified by `on_exception` will be called with a single positional argument,
         which is the exception which occurred. This should take care of shutting down the invoker,
         as well as any other cleanup which needs to happen.
         """
-        self.queue: Optional[asyncio.Queue] = None
         self.exception_queue = asyncio.Queue()
         self._task: Optional[asyncio.Task] = None
         self._queue_monitor_task: Optional[asyncio.Task] = None
         self._ready = asyncio.Event()
         self._monitor_ready = asyncio.Event()
         self._running_tasks = set()
-
-    def set_queue_and_start(self, queue: asyncio.Queue):
-        """Set the handler function and start the invoker
-
-        Use `stop()` to shutdown the invoker.
-        """
         self.queue = queue
+        self.error_queue = error_queue
+
+    def start(self):
+        """ Starts the queue monitor
+        """
         self._queue_monitor_task = asyncio.ensure_future(self._queue_monitor())
-        # TODO: Handle monitoring exception
-        # self._queue_monitor_task.add_done_callback(self.handle_any_exception)
+        self._queue_monitor_task.add_done_callback(queue_exception_checker(self.error_queue))
 
     async def stop(self):
         if self._queue_monitor_task:
@@ -119,26 +117,7 @@ class Invoker:
             previous_size = current_size
             await asyncio.sleep(self.monitor_interval)
 
-
-class TransportInvoker(Invoker):
-    """ Takes commands from the client and passes them to the transports to be invoked
-    """
-
-    def send_to_transports(self, command: NamedTuple):
-        assert type(command) in commands.TRANSPORT_COMMANDS
-        self.queue.put_nowait(command)
-        logger.debug(
-            "Sending {} to transports. Queue size is now {}", command.__name__, self.queue.qsize()
-        )
-
-
-class ClientInvoker(Invoker):
-    """ Takes commands from the transports and passes them to the client to be invoked
-    """
-
-    def send_to_client(self, command: NamedTuple):
-        assert type(command) in commands.CLIENT_COMMANDS
-        self.queue.put_nowait(command)
-        logger.debug(
-            "Sending {} to transports. Queue size is now {}", command.__name__, self.queue.qsize()
-        )
+    def send(self, command) -> asyncio.Event:
+        event = asyncio.Event()
+        self.queue.put_nowait((command, event))
+        return event

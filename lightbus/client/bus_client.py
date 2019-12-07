@@ -67,6 +67,8 @@ class BusClient:
         config: "Config",
         schema: Schema,
         plugin_registry: PluginRegistry,
+        event_client: EventClient,
+        api_registry: ApiRegistry,
         features: Sequence[Union[Feature, str]] = ALL_FEATURES,
     ):
         self._consumers = []  # RPC consumers
@@ -79,7 +81,6 @@ class BusClient:
         self.config = config
         self.features: List[Union[Feature, str]] = ALL_FEATURES
         self.set_features(list(features))
-        self.api_registry = ApiRegistry()
         self.schema = None
         self._server_shutdown_queue: janus.Queue = None
         self._shutdown_monitor_task = None
@@ -90,7 +91,7 @@ class BusClient:
         self.schema = schema
         self.plugin_registry = plugin_registry
 
-        self.event_client = EventClient()
+        self.event_client = plugin_registry
 
     def close(self):
         """Close the bus client
@@ -345,7 +346,7 @@ class BusClient:
     async def _consume_rpcs_with_transport(
         self, rpc_transport: RpcTransport, apis: List[Api] = None
     ):
-        # TODO: Invoker command
+        # TODO: InternalProducer command
         await self.lazy_load_now()
 
         while True:
@@ -396,7 +397,7 @@ class BusClient:
 
         Call an RPC and return the result.
         """
-        # TODO: Invoker command
+        # TODO: InternalProducer command
         await self.lazy_load_now()
 
         rpc_transport = self.transport_registry.get_rpc_transport(api_name)
@@ -481,7 +482,7 @@ class BusClient:
         return result_message.result
 
     async def _call_rpc_local(self, api_name: str, name: str, kwargs: dict = frozendict()):
-        # TODO: Invoker command
+        # TODO: InternalProducer command
         await self.lazy_load_now()
 
         api = self.api_registry.get(api_name)
@@ -565,7 +566,7 @@ class BusClient:
     # Results
 
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
-        # TODO: Invoker command
+        # TODO: InternalProducer command
         await self.lazy_load_now()
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
         return await result_transport.send_result(
@@ -573,7 +574,7 @@ class BusClient:
         )
 
     async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict):
-        # TODO: Invoker command
+        # TODO: InternalProducer command
         await self.lazy_load_now()
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
         return await result_transport.receive_result(

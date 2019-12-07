@@ -49,7 +49,7 @@ class EventDock(BaseDock):
 
         listener_task = asyncio.gather(*tasks)
 
-        exception_checker = queue_exception_checker(queue=self.fatal_errors)
+        exception_checker = queue_exception_checker(queue=self.error_queue)
         listener_task.add_done_callback(exception_checker)
 
         # Setting is_listener lets Client.close() know that it should mop up this

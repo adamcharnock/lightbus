@@ -6,7 +6,7 @@ import pytest
 from _pytest.logging import LogCaptureFixture
 
 from lightbus.client.commands import SendEventCommand
-from lightbus.mediator.invoker import Invoker
+from lightbus.client.internal_messaging import Invoker
 from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.unit
@@ -80,7 +80,7 @@ async def test_queue_monitor(invoker: Invoker, caplog: LogCaptureFixture, fake_c
     assert len(caplog.records) == 1
     assert (
         caplog.records[0].getMessage()
-        == "Queue in Invoker now has 3 commands. Handler is NOT running."
+        == "Queue in InternalProducer now has 3 commands. InternalConsumer is NOT running."
     )
     caplog.clear()  # Clear the log messages
 
@@ -91,7 +91,7 @@ async def test_queue_monitor(invoker: Invoker, caplog: LogCaptureFixture, fake_c
     assert len(caplog.records) == 1
     assert (
         caplog.records[0].getMessage()
-        == "Queue in Invoker now has 4 commands. Handler is NOT running."
+        == "Queue in InternalProducer now has 4 commands. InternalConsumer is NOT running."
     )
     caplog.clear()  # Clear the log messages
 
@@ -102,7 +102,7 @@ async def test_queue_monitor(invoker: Invoker, caplog: LogCaptureFixture, fake_c
 
     assert len(caplog.records) == 1
     assert caplog.records[0].getMessage() == (
-        "Queue in Invoker has shrunk back down to 3 commands. Handler is NOT running."
+        "Queue in InternalProducer has shrunk back down to 3 commands. InternalConsumer is NOT running."
     )
     caplog.clear()  # Clear the log messages
 
@@ -113,8 +113,8 @@ async def test_queue_monitor(invoker: Invoker, caplog: LogCaptureFixture, fake_c
 
     assert len(caplog.records) == 1
     assert caplog.records[0].getMessage() == (
-        "Queue in Invoker has shrunk back down to 2 commands. "
-        "Handler is NOT running. Queue is now at an OK size again."
+        "Queue in InternalProducer has shrunk back down to 2 commands. "
+        "InternalConsumer is NOT running. Queue is now at an OK size again."
     )
     caplog.clear()  # Clear the log messages
 
@@ -203,7 +203,7 @@ async def test_consume_exception(invoker: Invoker):
     # wait for the invoker to be ready
     await invoker.wait_until_ready()
 
-    from lightbus.mediator import invoker as invoker_module
+    from lightbus.client.internal_messaging import invoker as invoker_module
 
     with mock.patch.object(invoker_module.sys, "exit") as mock_exit:
         command1 = SendEventCommand(message=None, on_done=asyncio.Event())

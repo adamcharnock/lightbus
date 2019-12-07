@@ -6,12 +6,15 @@ import sys
 from typing import Union, Mapping, Type, List
 
 from lightbus import Schema
-from lightbus.mediator.handlers import ClientHandler, TransportHandler
-from lightbus.mediator.invokers import TransportInvoker, ClientInvoker
+from lightbus.api import ApiRegistry
+from lightbus.client.docks.event import EventDock
+from lightbus.client.internal_messaging.consumer import InternalConsumer
+from lightbus.client.internal_messaging.producer import InternalProducer
+from lightbus.client.subclients.event import EventClient
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.features import ALL_FEATURES, Feature
 from lightbus.config.structure import RootConfig
-from lightbus.log import Bold, LBullets
+from lightbus.log import Bold
 from lightbus.path import BusPath
 from lightbus.client import BusClient
 from lightbus.config import Config
@@ -110,26 +113,41 @@ def create(
         logger.debug("Loading explicitly specified Lightbus plugins....")
         plugin_registry.set_plugins(plugins)
 
-    client = client_class(
-        config=config, plugin_registry=plugin_registry, features=features, schema=schema, **kwargs
+    error_queue = asyncio.Queue()
+
+    api_registry = ApiRegistry()
+
+    events_queue_client_to_dock = asyncio.Queue()
+    events_queue_dock_to_client = asyncio.Queue()
+
+    event_client = EventClient(
+        transport_registry=transport_registry,
+        api_registry=api_registry,
+        config=config,
+        schema=schema,
+        error_queue=error_queue,
+        consume_from=events_queue_dock_to_client,
+        produce_to=events_queue_client_to_dock,
     )
 
-    # Connect the bus client and the transport together with our internal queues
+    EventDock(
+        transport_registry=transport_registry,
+        api_registry=api_registry,
+        config=config,
+        error_queue=error_queue,
+        consume_from=events_queue_client_to_dock,
+        produce_to=events_queue_dock_to_client,
+    )
 
-    queue_client_to_transport = asyncio.Queue()
-    queue_transport_to_client = asyncio.Queue()
-
-    # These interface with the bus client
-    transport_invoker = TransportInvoker()
-    transport_invoker.set_queue_and_start(queue_client_to_transport)
-    client_handler = ClientHandler()
-    client_handler.set_queue_and_start(queue_transport_to_client)
-
-    # These interface with the transports
-    client_invoker = ClientInvoker()
-    client_invoker.set_queue_and_start(queue_transport_to_client)
-    transport_handler = TransportHandler(client_invoker, transport_registry)
-    transport_handler.set_queue_and_start(queue_client_to_transport)
+    client = client_class(
+        config=config,
+        plugin_registry=plugin_registry,
+        features=features,
+        schema=schema,
+        api_registry=api_registry,
+        event_client=event_client,
+        **kwargs,
+    )
 
     log_welcome_message(
         logger=logger,

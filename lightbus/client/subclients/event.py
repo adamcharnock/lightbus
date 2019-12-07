@@ -108,8 +108,10 @@ class EventClient(BaseSubClient):
                 )
 
         # TODO: Only do when server starts up
-        await self.send_to_event_transports(
-            ConsumeEventsCommand(events=events, destination_queue=queue)
+        await self.producer.send(
+            ConsumeEventsCommand(
+                events=events, destination_queue=queue, listener_name=listener_name
+            )
         ).wait()
 
         self._event_listeners.add(listener_name)
@@ -141,7 +143,7 @@ class EventClient(BaseSubClient):
         # thereby allowing listeners to have flexibility in the argument names.
         # (And therefore allowing listeners to use the `event` parameter themselves)
         await run_user_provided_callable(
-            listener, args=[event_message], kwargs=parameters, error_queue=self.fatal_errors
+            listener, args=[event_message], kwargs=parameters, error_queue=self.error_queue
         )
 
         # Acknowledge the successfully processed message
