@@ -1,19 +1,24 @@
 """Utility functions relating to bus creation"""
+import asyncio
 import logging
 import os
 import sys
 from typing import Union, Mapping, Type, List
 
+from lightbus import Schema
+from lightbus.mediator.handlers import ClientHandler, TransportHandler
+from lightbus.mediator.invokers import TransportInvoker, ClientInvoker
+from lightbus.plugins import PluginRegistry
 from lightbus.utilities.features import ALL_FEATURES, Feature
 from lightbus.config.structure import RootConfig
-from lightbus.log import Bold
+from lightbus.log import Bold, LBullets
 from lightbus.path import BusPath
 from lightbus.client import BusClient
 from lightbus.config import Config
 from lightbus.exceptions import FailedToImportBusModule
 from lightbus.transports.base import TransportRegistry
 from lightbus.utilities.importing import import_module_from_string
-
+from lightbus.utilities.logging import log_welcome_message
 
 __all__ = ["create", "load_config", "import_bus_module", "get_bus"]
 logger = logging.getLogger(__name__)
@@ -87,12 +92,51 @@ def create(
         config
     )
 
+    # TODO: Split out the Schema from the SchemaTransport and connect via a queue
+    #       just like everything else.
+    schema = Schema(
+        schema_transport=transport_registry.get_schema_transport(),
+        max_age_seconds=config.bus().schema.ttl,
+        human_readable=config.bus().schema.human_readable,
+    )
+
+    # Plugin registry
+
+    plugin_registry = PluginRegistry()
+    if plugins is None:
+        logger.debug("Auto-loading any installed Lightbus plugins...")
+        plugin_registry.autoload_plugins(config)
+    else:
+        logger.debug("Loading explicitly specified Lightbus plugins....")
+        plugin_registry.set_plugins(plugins)
+
     client = client_class(
+        config=config, plugin_registry=plugin_registry, features=features, schema=schema, **kwargs
+    )
+
+    # Connect the bus client and the transport together with our internal queues
+
+    queue_client_to_transport = asyncio.Queue()
+    queue_transport_to_client = asyncio.Queue()
+
+    # These interface with the bus client
+    transport_invoker = TransportInvoker()
+    transport_invoker.set_queue_and_start(queue_client_to_transport)
+    client_handler = ClientHandler()
+    client_handler.set_queue_and_start(queue_transport_to_client)
+
+    # These interface with the transports
+    client_invoker = ClientInvoker()
+    client_invoker.set_queue_and_start(queue_transport_to_client)
+    transport_handler = TransportHandler(client_invoker, transport_registry)
+    transport_handler.set_queue_and_start(queue_client_to_transport)
+
+    log_welcome_message(
+        logger=logger,
         transport_registry=transport_registry,
+        schema=schema,
+        plugin_registry=plugin_registry,
         config=config,
-        features=features,
-        plugins=plugins,
-        **kwargs,
     )
 
     return node_class(name="", parent=None, client=client)

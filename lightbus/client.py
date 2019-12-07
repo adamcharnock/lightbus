@@ -79,9 +79,9 @@ class BusClient:
     def __init__(
         self,
         config: "Config",
-        transport_registry: TransportRegistry = None,
+        schema: Schema,
+        plugin_registry: PluginRegistry,
         features: Sequence[Union[Feature, str]] = ALL_FEATURES,
-        plugins=None,
     ):
         self._event_listeners: List[_EventListener] = []  # Event listeners
         self._consumers = []  # RPC consumers
@@ -95,68 +95,15 @@ class BusClient:
         self.features: List[Union[Feature, str]] = ALL_FEATURES
         self.set_features(list(features))
         self.api_registry = ApiRegistry()
-        self.plugin_registry = PluginRegistry()
         self.schema = None
         self._server_shutdown_queue: janus.Queue = None
         self._shutdown_monitor_task = None
         self.exit_code = 0
         self._closed = False
         self._server_tasks = []
-        self._transport_invoker = TransportInvoker(on_exception=sdfasdf)
-        self._client_handler = ClientHandler(bus_client=self)
         self._lazy_load_complete = False
-
-        self.schema = Schema(
-            schema_transport=transport_registry.get_schema_transport(),
-            max_age_seconds=self.config.bus().schema.ttl,
-            human_readable=self.config.bus().schema.human_readable,
-        )
-
-        transport_registry = transport_registry or TransportRegistry().load_config(self.config)
-
-        if plugins is None:
-            logger.debug("Auto-loading any installed Lightbus plugins...")
-            self.plugin_registry.autoload_plugins(self.config)
-        else:
-            logger.debug("Loading explicitly specified Lightbus plugins....")
-            self.plugin_registry.set_plugins(plugins)
-
-        self._transport_invoker.set_handler_and_start()
-
-    def welcome_message(self, plugins: list = None):
-        """Show the server-startup welcome message
-        """
-        logger.info(
-            LBullets(
-                "Lightbus is setting up",
-                items={
-                    "service_name (set with -s or LIGHTBUS_SERVICE_NAME)": Bold(
-                        self.config.service_name
-                    ),
-                    "process_name (with with -p or LIGHTBUS_PROCESS_NAME)": Bold(
-                        self.config.process_name
-                    ),
-                },
-            )
-        )
-
-        # Log the transport information
-        rpc_transport = self.transport_registry.get_rpc_transport("default", default=None)
-        result_transport = self.transport_registry.get_result_transport("default", default=None)
-        event_transport = self.transport_registry.get_event_transport("default", default=None)
-        log_transport_information(
-            rpc_transport, result_transport, event_transport, self.schema.schema_transport, logger
-        )
-
-        if self.plugin_registry._plugins:
-            logger.info(
-                LBullets(
-                    "Loaded the following plugins ({})".format(len(self.plugin_registry._plugins)),
-                    items=self.plugin_registry._plugins,
-                )
-            )
-        else:
-            logger.info("No plugins loaded")
+        self.schema = schema
+        self.plugin_registry = plugin_registry
 
     def close(self):
         """Close the bus client
