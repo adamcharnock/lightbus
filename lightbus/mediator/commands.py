@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, List, Tuple
 
 from lightbus.api import Api
 from lightbus.message import EventMessage, RpcMessage, ResultMessage
@@ -11,22 +11,31 @@ logger = logging.getLogger(__name__)
 
 class SendEventCommand(NamedTuple):
     message: EventMessage
-    on_done: asyncio.Event
+    options: dict = {}
+
+
+class ConsumeEventsCommand(NamedTuple):
+    events: List[Tuple[str, str]]
+    listener_name: str
+    destination_queue: asyncio.Queue
+    options: dict = {}
+
+
+class AcknowledgeEventCommand(NamedTuple):
+    message: EventMessage
     options: dict = {}
 
 
 class SendRpcCommand(NamedTuple):
     message: RpcMessage
-    on_done: asyncio.Event
 
 
 class PublishApiSchemaCommand(NamedTuple):
     api: Api
-    on_done: asyncio.Event
 
 
 class CloseCommand(NamedTuple):
-    on_done: asyncio.Event
+    pass
 
 
 TRANSPORT_COMMANDS = {SendEventCommand, SendRpcCommand, PublishApiSchemaCommand, CloseCommand}
@@ -34,17 +43,15 @@ TRANSPORT_COMMANDS = {SendEventCommand, SendRpcCommand, PublishApiSchemaCommand,
 
 class ReceiveEventCommand(NamedTuple):
     message: EventMessage
-    on_done: asyncio.Event
+    listener_name: str
 
 
 class ReceiveResultCommand(NamedTuple):
     message: ResultMessage
-    on_done: asyncio.Event
 
 
 class ReceiveSchemaUpdateCommand(NamedTuple):
     schema: dict
-    on_done: asyncio.Event
 
 
 class ShutdownCommand(NamedTuple):

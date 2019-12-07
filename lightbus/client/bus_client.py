@@ -1,5 +1,4 @@
 import asyncio
-import functools
 import inspect
 import logging
 import time
@@ -11,7 +10,7 @@ from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING, Calla
 import janus
 
 from lightbus.api import Api, ApiRegistry
-from lightbus.config.structure import OnError
+from lightbus.client.event_client import _EventListener
 from lightbus.exceptions import (
     InvalidEventArguments,
     UnknownApi,
@@ -22,7 +21,6 @@ from lightbus.exceptions import (
     LightbusServerError,
     NoApisToListenOn,
     InvalidName,
-    LightbusShutdownInProgress,
     InvalidSchedule,
     BusAlreadyClosed,
     TransportIsClosed,
@@ -30,16 +28,12 @@ from lightbus.exceptions import (
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
-from lightbus.mediator.client_handler import ClientHandler
 from lightbus.mediator.commands import SendEventCommand
-from lightbus.mediator.invoker import TransportInvoker
-from lightbus.mediator.transport_handler import TransportHandler
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
 from lightbus.plugins import PluginRegistry
 from lightbus.schema import Schema
 from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport
-from lightbus.transports.base import TransportRegistry, EventTransport
 from lightbus.utilities.async_tools import (
     block,
     get_event_loop,
@@ -54,7 +48,6 @@ from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.features import Feature, ALL_FEATURES
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
-from lightbus.utilities.logging import log_transport_information
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import
@@ -536,61 +529,9 @@ class BusClient:
 
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         """Fire an event onto the bus"""
-        # TODO: Invoker command
-        await self.lazy_load_now()
-
-        kwargs = kwargs or {}
-        try:
-            api = self.api_registry.get(api_name)
-        except UnknownApi:
-            raise UnknownApi(
-                "Lightbus tried to fire the event {api_name}.{name}, but no API named {api_name} was found in the "
-                "registry. An API being in the registry implies you are an authority on that API. Therefore, "
-                "Lightbus requires the API to be in the registry as it is a bad idea to fire "
-                "events on behalf of remote APIs. However, this could also be caused by a typo in the "
-                "API name or event name, or be because the API class has not been "
-                "registered using bus.client.register_api(). ".format(**locals())
-            )
-
-        self._validate_name(api_name, "event", name)
-
-        try:
-            event = api.get_event(name)
-        except EventNotFound:
-            raise EventNotFound(
-                "Lightbus tried to fire the event {api_name}.{name}, but the API {api_name} does not "
-                "seem to contain an event named {name}. You may need to define the event, you "
-                "may also be using the incorrect API. Also check for typos.".format(**locals())
-            )
-
-        if set(kwargs.keys()) != _parameter_names(event.parameters):
-            raise InvalidEventArguments(
-                "Invalid event arguments supplied when firing event. Attempted to fire event with "
-                "{} arguments: {}. Event expected {}: {}".format(
-                    len(kwargs),
-                    sorted(kwargs.keys()),
-                    len(event.parameters),
-                    sorted(_parameter_names(event.parameters)),
-                )
-            )
-
-        kwargs = deform_to_bus(kwargs)
-        event_message = EventMessage(
-            api_name=api.meta.name, event_name=name, kwargs=kwargs, version=api.meta.version
+        return self.event_client.listen(
+            api_name=api_name, name=name, kwargs=kwargs, options=options
         )
-
-        self._validate(event_message, "outgoing")
-
-        await self._execute_hook("before_event_sent", event_message=event_message)
-        logger.info(L("📤  Sending event {}.{}".format(Bold(api_name), Bold(name))))
-
-        on_done = asyncio.Event()
-        self._transport_invoker.send_to_transports(
-            SendEventCommand(message=event_message, on_done=on_done, options=options)
-        )
-        await on_done.wait()
-
-        await self._execute_hook("after_event_sent", event_message=event_message)
 
     def listen_for_event(
         self, api_name: str, name: str, listener: Callable, listener_name: str, options: dict = None
@@ -623,23 +564,9 @@ class BusClient:
         This can generally be the same as the function name of the `listener` callable, but
         it should not change once deployed.
         """
-        # TODO: Invoker command
-        self._sanity_check_listener(listener)
-
-        for api_name, name in events:
-            self._validate_name(api_name, "event", name)
-
-        event_listener = _EventListener(
-            events=events,
-            listener_callable=listener,
-            listener_name=listener_name,
-            options=options,
-            bus_client=self,
+        return self.event_client.listen(
+            events=events, listener=listener, listener_name=listener_name, options=options
         )
-
-        # We will start up the event listeners (via start_task())
-        # when the server starts. For now we just store them away
-        self._event_listeners.append(event_listener)
 
     # Results
 
@@ -659,44 +586,6 @@ class BusClient:
             rpc_message, return_path, options, bus_client=self
         )
 
-    def _validate(self, message: Message, direction: str, api_name=None, procedure_name=None):
-        if direction not in ("incoming", "outgoing"):
-            raise AssertionError("Invalid direction specified")
-
-        # Result messages do not carry the api or procedure name, so allow them to be
-        # specified manually
-        api_name = getattr(message, "api_name", api_name)
-        event_or_rpc_name = getattr(message, "procedure_name", None) or getattr(
-            message, "event_name", procedure_name
-        )
-        api_config = self.config.api(api_name)
-        strict_validation = api_config.strict_validation
-
-        if not getattr(api_config.validate, direction):
-            return
-
-        if api_name not in self.schema:
-            if strict_validation:
-                raise UnknownApi(
-                    f"Validation is enabled for API named '{api_name}', but there is no schema present for this API. "
-                    f"Validation is therefore not possible. You are also seeing this error because the "
-                    f"'strict_validation' setting is enabled. Disabling this setting will turn this exception "
-                    f"into a warning. "
-                )
-            else:
-                logger.warning(
-                    f"Validation is enabled for API named '{api_name}', but there is no schema present for this API. "
-                    f"Validation is therefore not possible. You can force this to be an error by enabling "
-                    f"the 'strict_validation' config option. You can silence this message by disabling validation "
-                    f"for this API using the 'validate' option."
-                )
-                return
-
-        if isinstance(message, (RpcMessage, EventMessage)):
-            self.schema.validate_parameters(api_name, event_or_rpc_name, message.kwargs)
-        elif isinstance(message, ResultMessage):
-            self.schema.validate_response(api_name, event_or_rpc_name, message.result)
-
     def add_background_task(self, coroutine: Union[Coroutine, asyncio.Future]):
         """Run a coroutine in the background
 
@@ -713,45 +602,6 @@ class BusClient:
         self._background_coroutines.append(coroutine)
 
     # Utilities
-
-    def _validate_name(self, api_name: str, type_: str, name: str):
-        """Validate that the given RPC/event name is ok to use"""
-        if not name:
-            raise InvalidName(f"Empty {type_} name specified when calling API {api_name}")
-
-        if name.startswith("_"):
-            raise InvalidName(
-                f"You can not use '{api_name}.{name}' as an {type_} because it starts with an underscore. "
-                f"API attributes starting with underscores are not available on the bus."
-            )
-
-    def _sanity_check_listener(self, listener):
-        if not callable(listener):
-            raise InvalidEventListener(
-                f"The specified event listener {listener} is not callable. Perhaps you called the function rather "
-                f"than passing the function itself?"
-            )
-
-        total_positional_args = 0
-        has_variable_positional_args = False  # Eg: *args
-        for parameter in inspect.signature(listener).parameters.values():
-            if parameter.kind in (
-                inspect.Parameter.POSITIONAL_ONLY,
-                inspect.Parameter.POSITIONAL_OR_KEYWORD,
-            ):
-                total_positional_args += 1
-            elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
-                has_variable_positional_args = True
-
-        if has_variable_positional_args:
-            return
-
-        if not total_positional_args:
-            raise InvalidEventListener(
-                f"The specified event listener {listener} must take at one positional argument. "
-                f"This will be the event message. For example: "
-                f"my_listener(event_message, other, ...)"
-            )
 
     def set_features(self, features: List[Union[Feature, str]]):
         """Set the features this bus clients should serve.
@@ -1003,208 +853,3 @@ class BusClient:
         See Also: https://lightbus.org/explanation/apis/
         """
         self.api_registry.add(api)
-
-
-class _EventListener:
-    """ Logic for setting up listener tasks for 1 or more events
-
-    This class will take a list of events and a callable. Background
-    tasks will be setup to listen for the specified events
-    (see start_task()) and the provided callable will be called when the
-    event is detected.
-
-    This logic is smart enough to detect when the APIs of the events use
-    the same/different transports. See get_event_transports().
-
-    Note that this class is tightly coupled to BusClient. It has been
-    extracted for readability. For this reason is a private class,
-    the API of which should not be relied upon externally.
-    """
-
-    def __init__(
-        self,
-        *,
-        events: List[Tuple[str, str]],
-        listener_callable,
-        listener_name: str,
-        options: dict = None,
-        bus_client: "BusClient",
-    ):
-        self.events = events
-        self.listener_callable = listener_callable
-        self.listener_name = listener_name
-        self.options = options or {}
-        self.bus_client = bus_client
-        self.listener_task: asyncio.Task = None
-
-    @property
-    @functools.lru_cache()
-    def event_transports(self):
-        """ Get events grouped by transport
-
-        It is possible that the specified events will be handled
-        by different transports. Therefore group the events
-        by transport so we can setup the listeners with the
-        appropriate transport for each event.
-        """
-        return self.bus_client.transport_registry.get_event_transports(
-            api_names=[api_name for api_name, _ in self.events]
-        )
-
-    @property
-    @functools.lru_cache()
-    def on_error(self) -> "OnError":
-        """What should happen when the listener callable throws an error?
-
-        Will use the most severe form of error handling for all
-        transports in use by this listener
-        """
-        on_error_values = []
-        for *_, _api_names in self.event_transports:
-            on_error_values.extend(
-                [self.bus_client.config.api(_api_name).on_error for _api_name in _api_names]
-            )
-
-        if OnError.SHUTDOWN in on_error_values:
-            return OnError.SHUTDOWN
-        elif OnError.STOP_LISTENER in on_error_values:
-            return OnError.STOP_LISTENER
-        else:
-            return OnError.IGNORE
-
-    @property
-    def die_on_error(self) -> bool:
-        """Should the entire process die if an error occurs in a listener?"""
-        return self.on_error == OnError.SHUTDOWN
-
-    def start_task(self, bus_client: BusClient):
-        """ Create a task responsible for running the listener(s)
-
-        This will create a task for each transport (see get_event_transports()).
-        These tasks will be gathered together into a parent task, which is then
-        returned.
-
-        Any unhandled exceptions will be dealt with according to `on_error`.
-
-        See listener() for the coroutine which handles the listening.
-        """
-        tasks = []
-        for _event_transport, _api_names in self.event_transports:
-            # Create a listener task for each event transport,
-            # passing each a list of events for which it should listen
-            events = [
-                (api_name, event_name)
-                for api_name, event_name in self.events
-                if api_name in _api_names
-            ]
-
-            task = asyncio.ensure_future(self.listener(_event_transport, events, bus_client))
-            task.is_listener = True  # Used by close()
-            tasks.append(task)
-
-        listener_task = asyncio.gather(*tasks)
-
-        exception_checker = make_exception_checker(self.bus_client, die=self.die_on_error)
-        listener_task.add_done_callback(exception_checker)
-
-        # Setting is_listener lets Client.close() know that it should mop up this
-        # task automatically on shutdown
-        listener_task.is_listener = True
-
-        self.listener_task = listener_task
-
-    async def listener(
-        self, event_transport: EventTransport, events: List[Tuple[str, str]], bus_client: BusClient
-    ):
-        """ Receive events from the transport and invoke the listener callable
-
-        This is the core glue which combines the event transports' consume()
-        method and the listener callable. The bulk of this is logging,
-        validation, plugin hooks, and error handling.
-        """
-        # event_transport.consume() returns an asynchronous generator
-        # which will provide us with messages
-        consumer = event_transport.consume(
-            listen_for=events,
-            listener_name=self.listener_name,
-            bus_client=bus_client,
-            **self.options,
-        )
-
-        try:
-            async for event_messages in consumer:
-                for event_message in event_messages:
-                    # TODO: Check events match those requested
-                    # TODO: Support event name of '*', but transports should raise
-                    # TODO: an exception if it is not supported.
-                    logger.info(
-                        L(
-                            "📩  Received event {}.{} with ID {}".format(
-                                Bold(event_message.api_name),
-                                Bold(event_message.event_name),
-                                event_message.id,
-                            )
-                        )
-                    )
-
-                    self.bus_client._validate(event_message, "incoming")
-
-                    await self.bus_client._execute_hook(
-                        "before_event_execution", event_message=event_message
-                    )
-
-                    if self.bus_client.config.api(event_message.api_name).cast_values:
-                        parameters = cast_to_signature(
-                            parameters=event_message.kwargs, callable=self.listener_callable
-                        )
-                    else:
-                        parameters = event_message.kwargs
-
-                    try:
-                        # Call the listener.
-                        # Pass the event message as a positional argument,
-                        # thereby allowing listeners to have flexibility in the argument names.
-                        # (And therefore allowing listeners to use the `event` parameter themselves)
-                        await run_user_provided_callable(
-                            self.listener_callable,
-                            args=[event_message],
-                            kwargs=parameters,
-                            bus_client=self.bus_client,
-                            die_on_exception=False,
-                        )
-                    except LightbusShutdownInProgress as e:
-                        logger.info("Shutdown in progress: {}".format(e))
-                        return
-                    except Exception as e:
-                        if self.on_error == OnError.IGNORE:
-                            # We're ignore errors, so log it and move on
-                            logger.error(
-                                f"An event listener raised an exception while processing an event. Lightbus will "
-                                f"continue as normal because the on 'on_error' option is set "
-                                f"to '{OnError.IGNORE.value}'."
-                            )
-                        elif self.on_error == OnError.STOP_LISTENER:
-                            logger.error(
-                                f"An event listener raised an exception while processing an event. Lightbus will "
-                                f"stop the listener but keep on running. This is because the 'on_error' option "
-                                f"is set to '{OnError.STOP_LISTENER.value}'."
-                            )
-                            # Stop the listener by returning
-                            return
-                        else:
-                            # We're not ignoring errors, so raise it and
-                            # let the error handler callback deal with it
-                            raise
-
-                    # Acknowledge the successfully processed message
-                    await event_transport.acknowledge(event_message, bus_client=self.bus_client)
-
-                    await self.bus_client._execute_hook(
-                        "after_event_execution", event_message=event_message
-                    )
-        except asyncio.CancelledError:
-            # Close the consumer to allow it to do any cleanup
-            try:
-                await consumer.aclose()
-            except StopAsyncIteration:
-                pass

@@ -136,7 +136,9 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
                 result = await redis.blpop(redis_key, timeout=self.rpc_timeout)
             _, serialized = result
 
-        result_message = self.deserializer(serialized)
+        result_message = self.deserializer(
+            serialized, api_name=rpc_message.api_name, procedure_name=rpc_message.procedure_name
+        )
 
         logger.debug(
             L(

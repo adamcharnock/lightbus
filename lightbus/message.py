@@ -96,6 +96,8 @@ class ResultMessage(Message):
         self,
         *,
         result,
+        api_name: str,
+        procedure_name: str,
         rpc_message_id: str,
         id: str = "",
         error: bool = False,

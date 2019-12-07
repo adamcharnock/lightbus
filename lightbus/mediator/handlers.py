@@ -61,10 +61,11 @@ class Handler:
         self._ready.set()
 
         while True:
-            command = await queue.get()
-            self.handle_in_background(queue, command)
+            on_done: asyncio.Event
+            command, on_done = await queue.get()
+            self.handle_in_background(queue, command, on_done)
 
-    def handle_in_background(self, queue: asyncio.Queue, command):
+    def handle_in_background(self, queue: asyncio.Queue, command, on_done: asyncio.Event):
         """Handle a received command by calling self.handle
 
         This execution happens in the background.
@@ -73,8 +74,7 @@ class Handler:
         def when_task_finished(fut: asyncio.Future):
             self._running_commands.remove(fut)
             queue.task_done()
-            if hasattr(command, "on_done") and command.on_done:
-                command.on_done.set()
+            on_done.set()
 
         background_call_task = asyncio.ensure_future(self.handle(command))
         self._running_commands.add(background_call_task)

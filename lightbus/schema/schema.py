@@ -431,8 +431,3 @@ def api_to_schema(api: "lightbus.Api") -> dict:
             }
 
     return schema
-
-
-def _parameter_names(parameters) -> set:
-    """Take a list of parameters (as strings or Parameter) and return a list of parameter names"""
-    return {p.name if isinstance(p, Parameter) else p for p in parameters}

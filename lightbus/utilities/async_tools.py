@@ -96,44 +96,7 @@ async def cancel(*tasks):
         raise ex
 
 
-def check_for_exception(fut: asyncio.Future, bus_client: "BusClient", die=True):
-    """Check for exceptions in returned future
-
-    To be used as a callback, eg:
-
-    task.add_done_callback(check_for_exception)
-    """
-    with exception_handling_context(bus_client, die):
-        if fut.exception():
-            fut.result()
-
-
-def make_exception_checker(bus_client: "BusClient", die=True):
-    """Creates a callback handler (i.e. check_for_exception())
-    which will be called with the given arguments"""
-    return partial(check_for_exception, die=die, bus_client=bus_client)
-
-
-@contextmanager
-def exception_handling_context(bus_client: "BusClient", die=True):
-    """Handle exceptions in user code"""
-    try:
-        yield
-    except (asyncio.CancelledError, LightbusShutdownInProgress):
-        return
-    except Exception as e:
-        # Must log the exception here, otherwise exceptions that occur during
-        # listener setup will never be logged
-        logger.debug(f"Exception occurred in exception handling context. die is {die}")
-        logger.exception(e)
-        if die:
-            logger.debug("Stopping event loop and setting exit code")
-            bus_client.shutdown_server(exit_code=1)
-
-
-async def run_user_provided_callable(
-    callable_, args, kwargs, bus_client: "BusClient", die_on_exception=True
-):
+async def run_user_provided_callable(callable_, args, kwargs, error_queue: asyncio.Queue):
     """Run user provided code
 
     If the callable is blocking (i.e. a regular function) it will be
@@ -147,22 +110,27 @@ async def run_user_provided_callable(
 
     The callable will be called with the given args and kwargs
     """
-    if hasattr(callable_, "_parent_stack"):
-        # Used to provide helpful output in case of deadlock in client worker
-        callable_._parent_stack = traceback.extract_stack(limit=5)[:-1]
-
     if asyncio.iscoroutinefunction(callable_):
         return await callable_(*args, **kwargs)
-
-    with exception_handling_context(bus_client, die=die_on_exception):
-        future = asyncio.get_event_loop().run_in_executor(
-            executor=None, func=lambda: callable_(*args, **kwargs)
-        )
-    return await future
+    else:
+        try:
+            future = asyncio.get_event_loop().run_in_executor(
+                executor=None, func=lambda: callable_(*args, **kwargs)
+            )
+            return await future
+        except Exception as e:
+            logger.debug(
+                "Error in user provided callable: %s. Will be added to the provided error queue", e
+            )
+            error_queue.put_nowait(e)
 
 
 async def call_every(
-    *, callback, timedelta: datetime.timedelta, also_run_immediately: bool, bus_client: "BusClient"
+    *,
+    callback,
+    timedelta: datetime.timedelta,
+    also_run_immediately: bool,
+    error_queue: asyncio.Queue,
 ):
     """Call callback every timedelta
 
@@ -177,7 +145,7 @@ async def call_every(
     while True:
         start_time = time()
         if not first_run or also_run_immediately:
-            await run_user_provided_callable(callback, args=[], kwargs={}, bus_client=bus_client)
+            await run_user_provided_callable(callback, args=[], kwargs={}, error_queue=error_queue)
         total_execution_time = time() - start_time
         sleep_time = max(0.0, timedelta.total_seconds() - total_execution_time)
         await asyncio.sleep(sleep_time)
@@ -185,7 +153,7 @@ async def call_every(
 
 
 async def call_on_schedule(
-    callback, schedule: "Job", also_run_immediately: bool, bus_client: "BusClient"
+    callback, schedule: "Job", also_run_immediately: bool, error_queue: asyncio.Queue
 ):
     first_run = True
     while True:
@@ -193,7 +161,7 @@ async def call_on_schedule(
 
         if not first_run or also_run_immediately:
             schedule.last_run = datetime.datetime.now()
-            await run_user_provided_callable(callback, args=[], kwargs={}, bus_client=bus_client)
+            await run_user_provided_callable(callback, args=[], kwargs={}, error_queue=error_queue)
 
         td = schedule.next_run - datetime.datetime.now()
         await asyncio.sleep(td.total_seconds())
