@@ -39,12 +39,25 @@ logger = logging.getLogger(__name__)
 
 
 class Invoker:
-    """ Base invoker class. Puts commands onto a queue and executes a handler for each """
+    """ Base invoker class. Puts commands onto a queue and executes a handler for each.
 
+    Note that commands are execute in parallel. If you wish to know when a command has
+    been executed you should await the command.on_done event.
+    """
+
+    # Warnings will be displayed if a queue grows to be equal to or greater than this size
     size_warning = 5
+
+    # How often should the queue sizes be monitored
     monitor_interval = 0.1
 
     def __init__(self, on_exception: Callable):
+        """Initialise the invoker
+
+        The callable specified by `on_exception` will be called with a single positional argument,
+        which is the exception which occurred. This should take care of shutting down the invoker,
+        as well as any other cleanup which needs to happen.
+        """
         self.queue = asyncio.Queue(maxsize=10)
         self._task: Optional[asyncio.Task] = None
         self._queue_monitor_task: Optional[asyncio.Task] = None
@@ -55,6 +68,10 @@ class Invoker:
         self._running_tasks = set()
 
     def set_handler_and_start(self, fn):
+        """Set the handler function and start the invoker
+
+        Use `stop()` to shutdown the invoker.
+        """
         if not iscoroutinefunction(fn):
             raise RuntimeError(f"Handler must be an async function, got: {repr(fn)}")
 
@@ -63,13 +80,23 @@ class Invoker:
         self._task = asyncio.ensure_future(self._handle_loop(fn))
         self._task.add_done_callback(self._exception_checker)
 
-    async def stop(self):
+    async def stop(self, wait_seconds=1):
+        """Shutdown the invoker and cancel any currently running tasks
+
+        The shutdown procedure will stop any new tasks for being created,
+        then wait `wait_seconds` to allow any running tasks to finish normally.
+        Tasks still running after this period will be cancelled.
+        """
+
         # Stop consuming commands from the queue
         # (this will also stop *new* tasks being created)
         if self._task is not None:
             await cancel(self._task)
             self._task = None
             self._ready = asyncio.Event()
+
+        if wait_seconds:
+            await asyncio.sleep(wait_seconds)
 
         # Now we have stopped consuming commands we can
         # cancel any running tasks safe in the knowledge that
@@ -88,6 +115,7 @@ class Invoker:
         await self._monitor_ready.wait()
 
     async def _handle_loop(self, fn):
+        """Continually fetch commands from the queue and handle them"""
         self._ready.set()
 
         while True:
@@ -95,6 +123,11 @@ class Invoker:
             self._handle_command(fn, command)
 
     def _handle_command(self, fn, command):
+        """Handle a received command by calling fn
+
+        This execution happens in the background.
+        """
+
         def when_task_finished(fut: asyncio.Future):
             self._running_tasks.remove(fut)
             self.queue.task_done()

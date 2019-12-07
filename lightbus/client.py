@@ -11,12 +11,6 @@ from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING, Calla
 import janus
 
 from lightbus.api import Api, ApiRegistry
-from lightbus.client_worker import (
-    ClientWorker,
-    run_in_worker_thread,
-    assert_not_in_worker_thread,
-    WorkerProxy,
-)
 from lightbus.config.structure import OnError
 from lightbus.exceptions import (
     InvalidEventArguments,
@@ -36,6 +30,7 @@ from lightbus.exceptions import (
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
+from lightbus.mediator.invoker import TransportInvoker
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
 from lightbus.plugins import PluginRegistry
 from lightbus.schema import Schema
@@ -105,8 +100,18 @@ class BusClient:
         self.exit_code = 0
         self._closed = False
         self._server_tasks = []
-        self.worker = ClientWorker()
+        self._transport_invoker = TransportInvoker(on_exception=sdfasdf)
         self._lazy_load_complete = False
+
+        self.schema = Schema(
+            schema_transport=self.transport_registry.get_schema_transport(),
+            max_age_seconds=self.config.bus().schema.ttl,
+            human_readable=self.config.bus().schema.human_readable,
+        )
+
+        self.transport_registry = self.transport_registry or TransportRegistry().load_config(
+            self.config
+        )
 
         if plugins is None:
             logger.debug("Auto-loading any installed Lightbus plugins...")
@@ -115,34 +120,7 @@ class BusClient:
             logger.debug("Loading explicitly specified Lightbus plugins....")
             self.plugin_registry.set_plugins(plugins)
 
-        self.worker.start(bus_client=self, after_shutdown=self._handle_worker_shutdown)
-        self.__init_worker___()
-
-    @run_in_worker_thread()
-    def __init_worker___(self):
-        self.transport_registry = self.transport_registry or TransportRegistry().load_config(
-            self.config
-        )
-        schema = Schema(
-            schema_transport=self.transport_registry.get_schema_transport(),
-            max_age_seconds=self.config.bus().schema.ttl,
-            human_readable=self.config.bus().schema.human_readable,
-        )
-        self.schema = WorkerProxy(proxied=schema, worker=self.worker)
-
-    def _handle_worker_shutdown(self):
-        """ Cleanup the BusClient due to worker thread shutdown
-
-        This method will be called within the worker thead,
-        but after the worker thread's event loop has stopped.
-        """
-
-        try:
-            # Close _close_async_inner() because, we are in the worker thead.
-            block(self._close_async_inner())
-        except BusAlreadyClosed:
-            # In the case of a clean shutdown the bus will already be closed.
-            pass
+        self._transport_invoker.set_handler_and_start(sdfasdf)
 
     def welcome_message(self, plugins: list = None):
         """Show the server-startup welcome message
@@ -179,55 +157,39 @@ class BusClient:
         else:
             logger.info("No plugins loaded")
 
-    @assert_not_in_worker_thread()
-    def close(self, _stop_worker=True):
+    def close(self):
         """Close the bus client
 
         This will cancel all tasks and close all transports/connections
         """
-        if self._closed:
-            raise BusAlreadyClosed()
-        block(self.close_async(_stop_worker=_stop_worker))
+        block(self.close_async())
 
-    @assert_not_in_worker_thread()
-    async def close_async(self, _stop_worker=True):
+    async def close_async(self):
         """Async version of close()
         """
         try:
             if self._closed:
                 raise BusAlreadyClosed()
 
-            await self._close_async_inner()
+            listener_tasks = [
+                task for task in asyncio.all_tasks() if getattr(task, "is_listener", False)
+            ]
+
+            for task in chain(listener_tasks, self._background_tasks):
+                # pylint: disable=broad-except
+                try:
+                    await cancel(task)
+                except Exception as e:
+                    logger.exception(e)
+
+            for transport in self.transport_registry.get_all_transports():
+                await transport.close()
+
+            await self.schema.schema_transport.close()
+
+            self._closed = True
         finally:
-            # Whatever happens, make sure we stop the event loop otherwise the
-            # bus thread will keep running and prevent the process for exiting
-            if _stop_worker:
-                self.worker.shutdown()
-                await self.worker.wait_for_shutdown()
-
-    @run_in_worker_thread()
-    async def _close_async_inner(self):
-        """Handle all aspects of the closing which need to run within the bus worker thread"""
-        if self._closed:
-            raise BusAlreadyClosed()
-
-        listener_tasks = [
-            task for task in asyncio.all_tasks() if getattr(task, "is_listener", False)
-        ]
-
-        for task in chain(listener_tasks, self._background_tasks):
-            # pylint: disable=broad-except
-            try:
-                await cancel(task)
-            except Exception as e:
-                logger.exception(e)
-
-        for transport in self.transport_registry.get_all_transports():
-            await transport.close()
-
-        await self.schema.schema_transport.close()
-
-        self._closed = True
+            await self._transport_invoker.stop()
 
     @property
     def loop(self):
@@ -259,7 +221,6 @@ class BusClient:
             # put anything in the shutdown queue
             self._server_shutdown_queue.sync_q.put(exit_code)
 
-    @assert_not_in_worker_thread()
     def start_server(self):
         """Server startup procedure
 
@@ -301,7 +262,6 @@ class BusClient:
 
         block(self._setup_server())
 
-    @run_in_worker_thread()
     async def _setup_server(self):
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())
@@ -350,12 +310,10 @@ class BusClient:
 
         self._server_tasks = [consume_rpc_task, monitor_task]
 
-    @assert_not_in_worker_thread()
     def stop_server(self):
         block(cancel(self._shutdown_monitor_task))
         block(self._stop_server_inner())
 
-    @run_in_worker_thread()
     async def _stop_server_inner(self):
         # Cancel the tasks we created above
         await cancel(*self._server_tasks)
@@ -371,7 +329,6 @@ class BusClient:
         """
         self.loop.run_forever()
 
-    @run_in_worker_thread()
     async def lazy_load_now(self):
         """Perform lazy tasks immediately
 
@@ -417,7 +374,6 @@ class BusClient:
 
     # RPCs
 
-    @run_in_worker_thread()
     async def consume_rpcs(self, apis: List[Api] = None):
         """Start a background task to consume RPCs
 
@@ -497,7 +453,6 @@ class BusClient:
 
                 await self.send_result(rpc_message=rpc_message, result_message=result_message)
 
-    @run_in_worker_thread()
     async def call_rpc_remote(
         self, api_name: str, name: str, kwargs: dict = frozendict(), options: dict = frozendict()
     ):
@@ -588,7 +543,6 @@ class BusClient:
 
         return result_message.result
 
-    @run_in_worker_thread()
     async def _call_rpc_local(self, api_name: str, name: str, kwargs: dict = frozendict()):
         await self.lazy_load_now()
 
@@ -629,7 +583,6 @@ class BusClient:
 
     # Events
 
-    @run_in_worker_thread()
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         """Fire an event onto the bus"""
         await self.lazy_load_now()
@@ -732,7 +685,6 @@ class BusClient:
 
     # Results
 
-    @run_in_worker_thread()
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
         await self.lazy_load_now()
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
@@ -740,7 +692,6 @@ class BusClient:
             rpc_message, result_message, rpc_message.return_path, bus_client=self
         )
 
-    @run_in_worker_thread()
     async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict):
         await self.lazy_load_now()
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)

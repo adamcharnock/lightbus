@@ -202,11 +202,3 @@ class LightbusServerMustStartInMainThread(LightbusException):
 
 class RemoteSchemasNotLoaded(LightbusException):
     pass
-
-
-class WorkerNotReady(LightbusException):
-    pass
-
-
-class WorkerDeadlock(LightbusException):
-    pass
