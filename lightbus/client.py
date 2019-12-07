@@ -30,7 +30,10 @@ from lightbus.exceptions import (
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
+from lightbus.mediator.client_handler import ClientHandler
+from lightbus.mediator.commands import SendEventCommand
 from lightbus.mediator.invoker import TransportInvoker
+from lightbus.mediator.transport_handler import TransportHandler
 from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
 from lightbus.plugins import PluginRegistry
 from lightbus.schema import Schema
@@ -89,7 +92,6 @@ class BusClient:
         self._background_tasks = []
         self._hook_callbacks = defaultdict(list)
         self.config = config
-        self.transport_registry = transport_registry
         self.features: List[Union[Feature, str]] = ALL_FEATURES
         self.set_features(list(features))
         self.api_registry = ApiRegistry()
@@ -101,17 +103,16 @@ class BusClient:
         self._closed = False
         self._server_tasks = []
         self._transport_invoker = TransportInvoker(on_exception=sdfasdf)
+        self._client_handler = ClientHandler(bus_client=self)
         self._lazy_load_complete = False
 
         self.schema = Schema(
-            schema_transport=self.transport_registry.get_schema_transport(),
+            schema_transport=transport_registry.get_schema_transport(),
             max_age_seconds=self.config.bus().schema.ttl,
             human_readable=self.config.bus().schema.human_readable,
         )
 
-        self.transport_registry = self.transport_registry or TransportRegistry().load_config(
-            self.config
-        )
+        transport_registry = transport_registry or TransportRegistry().load_config(self.config)
 
         if plugins is None:
             logger.debug("Auto-loading any installed Lightbus plugins...")
@@ -120,7 +121,7 @@ class BusClient:
             logger.debug("Loading explicitly specified Lightbus plugins....")
             self.plugin_registry.set_plugins(plugins)
 
-        self._transport_invoker.set_handler_and_start(sdfasdf)
+        self._transport_invoker.set_handler_and_start()
 
     def welcome_message(self, plugins: list = None):
         """Show the server-startup welcome message
@@ -410,6 +411,7 @@ class BusClient:
     async def _consume_rpcs_with_transport(
         self, rpc_transport: RpcTransport, apis: List[Api] = None
     ):
+        # TODO: Invoker command
         await self.lazy_load_now()
 
         while True:
@@ -460,6 +462,7 @@ class BusClient:
 
         Call an RPC and return the result.
         """
+        # TODO: Invoker command
         await self.lazy_load_now()
 
         rpc_transport = self.transport_registry.get_rpc_transport(api_name)
@@ -544,6 +547,7 @@ class BusClient:
         return result_message.result
 
     async def _call_rpc_local(self, api_name: str, name: str, kwargs: dict = frozendict()):
+        # TODO: Invoker command
         await self.lazy_load_now()
 
         api = self.api_registry.get(api_name)
@@ -585,6 +589,7 @@ class BusClient:
 
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         """Fire an event onto the bus"""
+        # TODO: Invoker command
         await self.lazy_load_now()
 
         kwargs = kwargs or {}
@@ -629,10 +634,15 @@ class BusClient:
 
         self._validate(event_message, "outgoing")
 
-        event_transport = self.transport_registry.get_event_transport(api_name)
         await self._execute_hook("before_event_sent", event_message=event_message)
         logger.info(L("📤  Sending event {}.{}".format(Bold(api_name), Bold(name))))
-        await event_transport.send_event(event_message, options=options, bus_client=self)
+
+        on_done = asyncio.Event()
+        self._transport_invoker.send_to_transports(
+            SendEventCommand(message=event_message, on_done=on_done, options=options)
+        )
+        await on_done.wait()
+
         await self._execute_hook("after_event_sent", event_message=event_message)
 
     def listen_for_event(
@@ -666,6 +676,7 @@ class BusClient:
         This can generally be the same as the function name of the `listener` callable, but
         it should not change once deployed.
         """
+        # TODO: Invoker command
         self._sanity_check_listener(listener)
 
         for api_name, name in events:
@@ -686,6 +697,7 @@ class BusClient:
     # Results
 
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
+        # TODO: Invoker command
         await self.lazy_load_now()
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
         return await result_transport.send_result(
@@ -693,6 +705,7 @@ class BusClient:
         )
 
     async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict):
+        # TODO: Invoker command
         await self.lazy_load_now()
         result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
         return await result_transport.receive_result(
@@ -1117,7 +1130,7 @@ class _EventListener:
         """Should the entire process die if an error occurs in a listener?"""
         return self.on_error == OnError.SHUTDOWN
 
-    def start_task(self, bus_client: BusClient) -> asyncio.Task:
+    def start_task(self, bus_client: BusClient):
         """ Create a task responsible for running the listener(s)
 
         This will create a task for each transport (see get_event_transports()).

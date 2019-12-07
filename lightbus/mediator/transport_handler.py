@@ -1,3 +1,5 @@
+from lightbus.mediator.commands import ShutdownCommand
+from lightbus.mediator.invoker import ClientInvoker
 from lightbus.transports.base import TransportRegistry
 from lightbus.utilities.singledispatch import singledispatchmethod
 
@@ -11,7 +13,8 @@ class TransportHandler:
     consumption by the transport
     """
 
-    def __init__(self, transport_registry: TransportRegistry = None):
+    def __init__(self, client_invoker: ClientInvoker, transport_registry: TransportRegistry):
+        self.client_invoker = client_invoker
         self.transport_registry = transport_registry
 
     def __call__(self, command):
@@ -23,5 +26,8 @@ class TransportHandler:
 
     @handle.register
     async def handle_send_event(self, command: commands.SendEventCommand):
-        event_transport = self.transport_registry.get_event_transport(command.message.api_name)
-        await event_transport.send_event(command.message, options=command.options)
+        try:
+            event_transport = self.transport_registry.get_event_transport(command.message.api_name)
+            await event_transport.send_event(command.message, options=command.options)
+        except Exception as e:
+            self.client_invoker.send_to_client(ShutdownCommand(exception=e))
