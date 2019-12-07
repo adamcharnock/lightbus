@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from unittest import mock
 
 import pytest
 from _pytest.logging import LogCaptureFixture
@@ -202,21 +203,13 @@ async def test_consume_exception(invoker: Invoker):
     # wait for the invoker to be ready
     await invoker.wait_until_ready()
 
-    # Add some commands
-    command1 = SendEventCommand(message=None, on_done=asyncio.Event())
-    command2 = SendEventCommand(message=None, on_done=asyncio.Event())
-    invoker.queue.put_nowait(command1)
-    invoker.queue.put_nowait(command2)
+    from lightbus.mediator import invoker as invoker_module
 
-    # Wait for them to be handled
-    await asyncio.sleep(0.05)
+    with mock.patch.object(invoker_module.sys, "exit") as mock_exit:
+        command1 = SendEventCommand(message=None, on_done=asyncio.Event())
+        invoker.queue.put_nowait(command1)
 
-    # Check we have some exceptions
-    assert command1.on_done.is_set()
-    assert command2.on_done.is_set()
-    assert len(exceptions) == 2
-    assert exceptions[0].__class__ == ValueError
-    assert exceptions[1].__class__ == ValueError
+        # Wait for them to be handled
+        await asyncio.sleep(0.05)
 
-    assert len(invoker._running_tasks) == 0
-    assert invoker.queue.qsize() == 0
+    assert mock_exit.call_args[0][0] == 100

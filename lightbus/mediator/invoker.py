@@ -27,6 +27,7 @@ Notes:
 
 import asyncio
 import logging
+import sys
 from inspect import iscoroutinefunction
 from typing import Optional, NamedTuple, Callable
 
@@ -59,12 +60,12 @@ class Invoker:
         as well as any other cleanup which needs to happen.
         """
         self.queue = asyncio.Queue(maxsize=10)
+        self.exception_queue = asyncio.Queue()
         self._task: Optional[asyncio.Task] = None
         self._queue_monitor_task: Optional[asyncio.Task] = None
         self._ready = asyncio.Event()
         self._monitor_ready = asyncio.Event()
         self._on_exception = on_exception
-        self._exception_checker = check_for_exception(self.on_exception)
         self._running_tasks = set()
 
     def set_handler_and_start(self, fn):
@@ -76,9 +77,9 @@ class Invoker:
             raise RuntimeError(f"Handler must be an async function, got: {repr(fn)}")
 
         self._queue_monitor_task = asyncio.ensure_future(self._queue_monitor())
-        self._queue_monitor_task.add_done_callback(self._exception_checker)
+        self._queue_monitor_task.add_done_callback(self.handle_any_exception)
         self._task = asyncio.ensure_future(self._handle_loop(fn))
-        self._task.add_done_callback(self._exception_checker)
+        self._task.add_done_callback(self.handle_any_exception)
 
     async def stop(self, wait_seconds=1):
         """Shutdown the invoker and cancel any currently running tasks
@@ -95,8 +96,9 @@ class Invoker:
             self._task = None
             self._ready = asyncio.Event()
 
-        if wait_seconds:
-            await asyncio.sleep(wait_seconds)
+        for _ in range(100):
+            if self._running_tasks:
+                await asyncio.sleep(wait_seconds / 100)
 
         # Now we have stopped consuming commands we can
         # cancel any running tasks safe in the knowledge that
@@ -136,7 +138,7 @@ class Invoker:
 
         background_call_task = asyncio.ensure_future(fn(command))
         self._running_tasks.add(background_call_task)
-        background_call_task.add_done_callback(self._exception_checker)
+        background_call_task.add_done_callback(self.handle_any_exception)
         background_call_task.add_done_callback(when_task_finished)
 
     async def _queue_monitor(self):
@@ -188,8 +190,22 @@ class Invoker:
     def handler_is_running(self) -> bool:
         return self._task is not None and not self._task.done()
 
-    def on_exception(self, exception: BaseException):
-        self._on_exception(exception)
+    def handle_any_exception(self, fut: asyncio.Future):
+        try:
+            exception = fut.exception()
+        except asyncio.CancelledError:
+            exception = None
+
+        if not exception:
+            return
+
+        logger.exception(exception)
+        logger.error(
+            "An exception occurred while invoking a command. The invoker cannot "
+            "sensible handle this so it is exiting the process uncleanly. This "
+            "exceptions should be caught in the handlers and dealt with."
+        )
+        sys.exit(100)
 
 
 class TransportInvoker(Invoker):
@@ -214,15 +230,3 @@ class ClientInvoker(Invoker):
         logger.debug(
             "Sending {} to transports. Queue size is now {}", command.__name__, self.queue.qsize()
         )
-
-
-def check_for_exception(handler):
-    def wrapped(fut: asyncio.Future):
-        try:
-            exception = fut.exception()
-            if exception:
-                handler(exception)
-        except (asyncio.CancelledError, LightbusShutdownInProgress):
-            return
-
-    return wrapped
