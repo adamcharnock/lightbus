@@ -5,7 +5,7 @@ from unittest import mock
 import pytest
 from _pytest.logging import LogCaptureFixture
 
-from lightbus.mediator.commands import SendEventCommand
+from lightbus.client.commands import SendEventCommand
 from lightbus.mediator.invoker import Invoker
 from lightbus.utilities.async_tools import cancel
 

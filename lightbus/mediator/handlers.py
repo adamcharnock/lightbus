@@ -1,13 +1,13 @@
 import asyncio
 from typing import Optional
 
-from lightbus.mediator.commands import ShutdownCommand
+from lightbus.client.commands import ShutdownCommand
 from lightbus.mediator.invokers import ClientInvoker
 from lightbus.transports.base import TransportRegistry
 from lightbus.utilities.async_tools import cancel
 from lightbus.utilities.singledispatch import singledispatchmethod
 
-from lightbus.mediator import commands
+from lightbus.client import commands
 
 
 class Handler:

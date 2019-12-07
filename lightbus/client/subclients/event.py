@@ -1,12 +1,11 @@
 import asyncio
-import functools
 import inspect
-from typing import List, Tuple, Callable, Optional, Dict
+from typing import List, Tuple, Callable, Set
 
-from lightbus import BusClient, EventTransport, Parameter, EventMessage
-from lightbus.client.base_subclient import BaseSubClient
+from lightbus import Parameter, EventMessage
 from lightbus.client.bus_client import logger
-from lightbus.client.utilities import validate_event_or_rpc_name, queue_exception_checker
+from lightbus.client.subclients.base import BaseSubClient
+from lightbus.client.utilities import validate_event_or_rpc_name
 from lightbus.client.validator import validate_outgoing, validate_incoming
 from lightbus.exceptions import (
     UnknownApi,
@@ -15,23 +14,18 @@ from lightbus.exceptions import (
     InvalidEventListener,
 )
 from lightbus.log import L, Bold
-from lightbus.mediator import commands
-from lightbus.mediator.commands import (
-    SendEventCommand,
-    AcknowledgeEventCommand,
-    ConsumeEventsCommand,
-)
-from lightbus.transports.base import TransportRegistry
+from lightbus.client import commands
+from lightbus.client.commands import SendEventCommand, AcknowledgeEventCommand, ConsumeEventsCommand
 from lightbus.utilities.async_tools import run_user_provided_callable
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.singledispatch import singledispatchmethod
 
 
-class EventBusClient(BaseSubClient):
+class EventClient(BaseSubClient):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._event_listeners: Dict[str, EventListener] = {}
+        self._event_listeners: Set[str] = set()
 
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         await self.lazy_load_now()
@@ -98,27 +92,27 @@ class EventBusClient(BaseSubClient):
     ):
         sanity_check_listener(listener)
 
-        for api_name, name in events:
-            validate_event_or_rpc_name(api_name, "event", name)
-
-        await self.send_to_event_transports(
-            ConsumeEventsCommand(events=events, destination_queue=foo_queue)
-        ).wait()
-
-        event_listener = EventListener(
-            events=events,
-            listener_name=listener_name,
-            options=options,
-            on_message=functools.partial(self._on_message, listener=listener, options=options),
-            fatal_errors=self.fatal_errors,
-            transport_registry=self.transport_registry,
-        )
-
         if listener_name in self._event_listeners:
             # TODO: Custom exception class
             raise Exception(f"Listener with name {listener_name} already registered")
 
-        self._event_listeners[listener_name] = event_listener
+        for api_name, name in events:
+            validate_event_or_rpc_name(api_name, "event", name)
+
+        queue = asyncio.Queue()
+
+        async def listener():
+            while True:
+                await self._on_message(
+                    event_message=await queue.get(), listener=listener, options=options
+                )
+
+        # TODO: Only do when server starts up
+        await self.send_to_event_transports(
+            ConsumeEventsCommand(events=events, destination_queue=queue)
+        ).wait()
+
+        self._event_listeners.add(listener_name)
 
     async def _on_message(self, event_message: EventMessage, listener: Callable, options: dict):
 
@@ -173,116 +167,6 @@ class EventBusClient(BaseSubClient):
 
         listener = self._event_listeners[command.listener_name]
         await listener.incoming_events.put(command.message)
-
-
-class EventListener:
-    """ Logic for setting up listener tasks for 1 or more events
-
-    This class will take a list of events and a callable. Background
-    tasks will be setup to listen for the specified events
-    (see start_task()) and the provided callable will be called when the
-    event is detected.
-
-    This logic is smart enough to detect when the APIs of the events use
-    the same/different transports. See get_event_transports().
-
-    Note that this class is tightly coupled to EventBusClient. It has been
-    extracted for readability. For this reason is a private class,
-    the API of which should not be relied upon externally.
-    """
-
-    def __init__(
-        self,
-        *,
-        events: List[Tuple[str, str]],
-        listener_name: str,
-        options: dict = None,
-        transport_registry: TransportRegistry,
-        on_message: Callable,
-        fatal_errors: asyncio.Queue,
-    ):
-        self.events = events
-        self.listener_name = listener_name
-        self.options = options or {}
-        self.transport_registry = transport_registry
-        self.on_message = on_message
-        self.fatal_errors = fatal_errors
-        # TODO: Generalise the queue monitor and apply to this
-        # TODO: Replace 10 with the value from the config
-        self.incoming_events = asyncio.Queue(maxsize=10)
-
-        self.listener_task: Optional[asyncio.Task] = None
-
-    @property
-    @functools.lru_cache()
-    def event_transports(self):
-        """ Get events grouped by transport
-
-        It is possible that the specified events will be handled
-        by different transports. Therefore group the events
-        by transport so we can setup the listeners with the
-        appropriate transport for each event.
-        """
-        return self.transport_registry.get_event_transports(
-            api_names=[api_name for api_name, _ in self.events]
-        )
-
-    def start_task(self, bus_client: BusClient):
-        """ Create a task responsible for running the listener(s)
-
-        This will create a task for each transport (see get_event_transports()).
-        These tasks will be gathered together into a parent task, which is then
-        returned.
-
-        Any unhandled exceptions will be dealt with according to `on_error`.
-
-        See listener() for the coroutine which handles the listening.
-        """
-        # TODO: Move to routing layer
-        tasks = []
-        for _event_transport, _api_names in self.event_transports:
-            # Create a listener task for each event transport,
-            # passing each a list of events for which it should listen
-            events = [
-                (api_name, event_name)
-                for api_name, event_name in self.events
-                if api_name in _api_names
-            ]
-
-            task = asyncio.ensure_future(self.listener(_event_transport, events, bus_client))
-            task.is_listener = True  # Used by close()
-            tasks.append(task)
-
-        listener_task = asyncio.gather(*tasks)
-
-        exception_checker = queue_exception_checker(queue=self.fatal_errors)
-        listener_task.add_done_callback(exception_checker)
-
-        # Setting is_listener lets Client.close() know that it should mop up this
-        # task automatically on shutdown
-        listener_task.is_listener = True
-
-        self.listener_task = listener_task
-
-    async def listener(
-        self, event_transport: EventTransport, events: List[Tuple[str, str]], bus_client: BusClient
-    ):
-        """ Receive events from the transport and invoke the listener callable
-
-        This is the core glue which combines the event transports' consume()
-        method and the listener callable. The bulk of this is logging,
-        validation, plugin hooks, and error handling.
-        """
-        # consumer = event_transport.consume(
-        #     listen_for=events,
-        #     listener_name=self.listener_name,
-        #     bus_client=bus_client,
-        #     **self.options,
-        # )
-
-        while True:
-            event_message = await self.incoming_events.get()
-            await self.on_message(event_message=event_message)
 
 
 def sanity_check_listener(listener):

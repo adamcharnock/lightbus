@@ -27,9 +27,9 @@ Notes:
 
 import asyncio
 import logging
-from typing import Optional, NamedTuple, Callable
+from typing import Optional, NamedTuple
 
-from lightbus.mediator import commands
+from lightbus.client import commands
 from lightbus.utilities.async_tools import cancel
 
 logger = logging.getLogger(__name__)

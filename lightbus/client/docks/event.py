@@ -1,16 +1,18 @@
 import asyncio
 
+from lightbus.client.docks.base import BaseDock
 from lightbus.client.utilities import queue_exception_checker
-from lightbus.mediator import commands
+from lightbus.client import commands
 from lightbus.utilities.async_tools import cancel
 from lightbus.utilities.singledispatch import singledispatchmethod
 
 
-class EventDock:
+class EventDock(BaseDock):
     """ Takes internal Lightbus commands and performs interactions with the Event transport
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.listener_tasks = set()
 
     @singledispatchmethod

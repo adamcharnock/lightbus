@@ -1,5 +1,4 @@
 import asyncio
-import inspect
 import logging
 import time
 from collections import defaultdict
@@ -10,17 +9,13 @@ from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING, Calla
 import janus
 
 from lightbus.api import Api, ApiRegistry
-from lightbus.client.event_client import _EventListener
+
+from lightbus.client.subclients.event import EventClient
 from lightbus.exceptions import (
-    InvalidEventArguments,
-    UnknownApi,
-    EventNotFound,
-    InvalidEventListener,
     SuddenDeathException,
     LightbusTimeout,
     LightbusServerError,
     NoApisToListenOn,
-    InvalidName,
     InvalidSchedule,
     BusAlreadyClosed,
     TransportIsClosed,
@@ -28,11 +23,9 @@ from lightbus.exceptions import (
 )
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets, L, Bold
-from lightbus.mediator.commands import SendEventCommand
-from lightbus.message import RpcMessage, ResultMessage, EventMessage, Message
+from lightbus.message import RpcMessage, ResultMessage
 from lightbus.plugins import PluginRegistry
 from lightbus.schema import Schema
-from lightbus.schema.schema import _parameter_names
 from lightbus.transports import RpcTransport
 from lightbus.utilities.async_tools import (
     block,
@@ -76,7 +69,6 @@ class BusClient:
         plugin_registry: PluginRegistry,
         features: Sequence[Union[Feature, str]] = ALL_FEATURES,
     ):
-        self._event_listeners: List[_EventListener] = []  # Event listeners
         self._consumers = []  # RPC consumers
         # Coroutines added via schedule/every/add_background_task which should be started up
         # once the server starts
@@ -97,6 +89,8 @@ class BusClient:
         self._lazy_load_complete = False
         self.schema = schema
         self.plugin_registry = plugin_registry
+
+        self.event_client = EventClient()
 
     def close(self):
         """Close the bus client
@@ -529,7 +523,7 @@ class BusClient:
 
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         """Fire an event onto the bus"""
-        return self.event_client.listen(
+        return self.event_client.fire_event(
             api_name=api_name, name=name, kwargs=kwargs, options=options
         )
 
