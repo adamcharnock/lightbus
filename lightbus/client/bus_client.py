@@ -118,7 +118,7 @@ class BusClient:
                 except Exception as e:
                     logger.exception(e)
 
-            for transport in self.transport_registry.get_all_transports():
+            for transport in self.transport_registry.get_all_transport_pools():
                 await transport.close()
 
             await self.schema.schema_transport.close()
@@ -302,7 +302,7 @@ class BusClient:
         )
 
         # 3. Open the transports
-        for transport in self.transport_registry.get_all_transports():
+        for transport in self.transport_registry.get_all_transport_pools():
             await transport.open()
 
         # 4. Done
@@ -330,7 +330,7 @@ class BusClient:
         # Not all APIs will necessarily be served by the same transport, so group them
         # accordingly
         api_names = [api.meta.name for api in apis]
-        api_names_by_transport = self.transport_registry.get_rpc_transports(api_names)
+        api_names_by_transport = self.transport_registry.get_rpc_transport_pools(api_names)
 
         coroutines = []
         for rpc_transport, transport_api_names in api_names_by_transport:
@@ -400,8 +400,8 @@ class BusClient:
         # TODO: InternalProducer command
         await self.lazy_load_now()
 
-        rpc_transport = self.transport_registry.get_rpc_transport(api_name)
-        result_transport = self.transport_registry.get_result_transport(api_name)
+        rpc_transport = self.transport_registry.get_rpc_transport_pool(api_name)
+        result_transport = self.transport_registry.get_result_transport_pool(api_name)
 
         kwargs = deform_to_bus(kwargs)
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)
@@ -568,7 +568,7 @@ class BusClient:
     async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
         # TODO: InternalProducer command
         await self.lazy_load_now()
-        result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
+        result_transport = self.transport_registry.get_result_transport_pool(rpc_message.api_name)
         return await result_transport.send_result(
             rpc_message, result_message, rpc_message.return_path, bus_client=self
         )
@@ -576,7 +576,7 @@ class BusClient:
     async def receive_result(self, rpc_message: RpcMessage, return_path: str, options: dict):
         # TODO: InternalProducer command
         await self.lazy_load_now()
-        result_transport = self.transport_registry.get_result_transport(rpc_message.api_name)
+        result_transport = self.transport_registry.get_result_transport_pool(rpc_message.api_name)
         return await result_transport.receive_result(
             rpc_message, return_path, options, bus_client=self
         )

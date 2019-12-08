@@ -47,9 +47,9 @@ def log_welcome_message(
     )
 
     # Log the transport information
-    rpc_transport = transport_registry.get_rpc_transport("default", default=None)
-    result_transport = transport_registry.get_result_transport("default", default=None)
-    event_transport = transport_registry.get_event_transport("default", default=None)
+    rpc_transport = transport_registry.get_rpc_transport_pool("default", default=None)
+    result_transport = transport_registry.get_result_transport_pool("default", default=None)
+    event_transport = transport_registry.get_event_transport_pool("default", default=None)
     log_transport_information(
         rpc_transport, result_transport, event_transport, schema.schema_transport, logger
     )

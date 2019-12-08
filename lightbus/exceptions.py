@@ -202,3 +202,7 @@ class LightbusServerMustStartInMainThread(LightbusException):
 
 class RemoteSchemasNotLoaded(LightbusException):
     pass
+
+
+class TransportPoolIsClosed(LightbusException):
+    pass

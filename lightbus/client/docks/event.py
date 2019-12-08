@@ -21,29 +21,30 @@ class EventDock(BaseDock):
 
     @handle.register
     async def handle_consume_events(self, command: commands.ConsumeEventsCommand):
-        event_transports = self.transport_registry.get_event_transports(
+        event_transport_pools = self.transport_registry.get_event_transport_pools(
             api_names=[api_name for api_name, _ in command.events]
         )
 
-        async def listener(event_transport, events):
-            consumer = await event_transport.consume(
-                listen_for=events, listener_name=command.listener_name, **command.options
-            )
-            async for event_messages in consumer:
-                for event_message in event_messages:
-                    await command.destination_queue.put(event_message)
+        async def listener(event_transport_pool_, events_):
+            with event_transport_pool_ as event_transport:
+                consumer = await event_transport.consume(
+                    listen_for=events_, listener_name=command.listener_name, **command.options
+                )
+                async for event_messages in consumer:
+                    for event_message in event_messages:
+                        await command.destination_queue.put(event_message)
 
         tasks = []
-        for _event_transport, _api_names in event_transports:
+        for event_transport_pool, api_names in event_transport_pools:
             # Create a listener task for each event transport,
             # passing each a list of events for which it should listen
             events = [
                 (api_name, event_name)
                 for api_name, event_name in command.events
-                if api_name in _api_names
+                if api_name in api_names
             ]
 
-            task = asyncio.ensure_future(listener(_event_transport, events))
+            task = asyncio.ensure_future(listener(event_transport_pool, events))
             task.is_listener = True  # Used by close()
             tasks.append(task)
 
@@ -62,5 +63,5 @@ class EventDock(BaseDock):
     async def handle_consume_events(self, command: commands.CloseCommand):
         await cancel(*self.listener_tasks)
 
-        for event_transport in self.transport_registry.get_event_transports():
+        for event_transport in self.transport_registry.get_event_transport_pools():
             await event_transport.close()

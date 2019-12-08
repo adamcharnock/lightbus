@@ -18,6 +18,7 @@ from lightbus.api import Api
 from lightbus.exceptions import NothingToListenFor, TransportNotFound, TransportsNotInstalled
 from lightbus.message import RpcMessage, EventMessage, ResultMessage
 from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeserializer
+from lightbus.transports.pool import TransportPool
 from lightbus.utilities.config import make_from_config_structure
 from lightbus.utilities.importing import load_entrypoint_classes
 
@@ -232,7 +233,7 @@ class TransportRegistry:
         result: ResultTransport = None
         event: EventTransport = None
 
-    schema_transport: SchemaTransport = None
+    schema_transport_pool: TransportPool = None
 
     def __init__(self):
         self._registry: Dict[str, TransportRegistry._RegistryEntry] = {}
@@ -244,16 +245,16 @@ class TransportRegistry:
                 transport_config = self._get_transport_config(transport_selector)
                 if transport_config:
                     transport_name, transport_config = transport_config
-                    transport = self._instantiate_transport(
+                    transport = self._instantiate_transport_pool(
                         transport_type, transport_name, transport_config, config
                     )
-                    self._set_transport(api_name, transport, transport_type)
+                    self._set_transport_pool(api_name, transport, transport_type)
 
         # Schema transport
         transport_config = self._get_transport_config(config.bus().schema.transport)
         if transport_config:
             transport_name, transport_config = transport_config
-            self.schema_transport = self._instantiate_transport(
+            self.schema_transport_pool = self._instantiate_transport_pool(
                 "schema", transport_name, transport_config, config
             )
 
@@ -266,16 +267,23 @@ class TransportRegistry:
                 if transport_config is not None:
                     return transport_name, transport_config
 
-    def _instantiate_transport(self, type_, name, transport_config: NamedTuple, config: "Config"):
+    def _instantiate_transport_pool(
+        self, type_, name, transport_config: NamedTuple, config: "Config"
+    ):
         transport_class = get_transport(type_=type_, name=name)
-        transport = transport_class.from_config(config=config, **transport_config._asdict())
-        return transport
+        transport_pool = TransportPool(
+            transport_class=transport_class, transport_config=transport_config, config=config
+        )
+        return transport_pool
 
-    def _set_transport(self, api_name: str, transport: Transport, transport_type: str):
+    def _set_transport_pool(self, api_name: str, transport: TransportPool, transport_type: str):
+        """Set the transport pool for a specific API"""
         self._registry.setdefault(api_name, self._RegistryEntry())
         self._registry[api_name] = self._registry[api_name]._replace(**{transport_type: transport})
 
-    def _get_transport(self, api_name: str, transport_type: str, default=empty):
+    def _get_transport_pool(
+        self, api_name: str, transport_type: str, default=empty
+    ) -> TransportPool:
         registry_entry = self._registry.get(api_name)
         api_transport = None
         if registry_entry:
@@ -283,7 +291,7 @@ class TransportRegistry:
 
         if not api_transport and api_name != "default":
             try:
-                api_transport = self._get_transport("default", transport_type)
+                api_transport = self._get_transport_pool("default", transport_type)
             except TransportNotFound:
                 pass
 
@@ -297,46 +305,48 @@ class TransportRegistry:
         else:
             return api_transport
 
-    def _get_transports(self, api_names: Sequence[str], transport_type: str) -> List[Transport]:
-        apis_by_transport: Dict[Transport, List[str]] = {}
+    def _get_transport_pools(
+        self, api_names: Sequence[str], transport_type: str
+    ) -> List[TransportPool]:
+        apis_by_transport: Dict[TransportPool, List[str]] = {}
         for api_name in api_names:
-            transport = self._get_transport(api_name, transport_type)
+            transport = self._get_transport_pool(api_name, transport_type)
             apis_by_transport.setdefault(transport, [])
             apis_by_transport[transport].append(api_name)
         return list(apis_by_transport.items())
 
     def _has_transport(self, api_name: str, transport_type: str) -> bool:
         try:
-            self._get_transport(api_name, transport_type)
+            self._get_transport_pool(api_name, transport_type)
         except TransportNotFound:
             return False
         else:
             return True
 
     def set_rpc_transport(self, api_name: str, transport):
-        self._set_transport(api_name, transport, "rpc")
+        self._set_transport_pool(api_name, transport, "rpc")
 
     def set_result_transport(self, api_name: str, transport):
-        self._set_transport(api_name, transport, "result")
+        self._set_transport_pool(api_name, transport, "result")
 
     def set_event_transport(self, api_name: str, transport):
-        self._set_transport(api_name, transport, "event")
+        self._set_transport_pool(api_name, transport, "event")
 
     def set_schema_transport(self, transport):
-        self.schema_transport = transport
+        self.schema_transport_pool = transport
 
-    def get_rpc_transport(self, api_name: str, default=empty) -> RpcTransport:
-        return self._get_transport(api_name, "rpc", default=default)
+    def get_rpc_transport_pool(self, api_name: str, default=empty) -> TransportPool:
+        return self._get_transport_pool(api_name, "rpc", default=default)
 
-    def get_result_transport(self, api_name: str, default=empty) -> ResultTransport:
-        return self._get_transport(api_name, "result", default=default)
+    def get_result_transport_pool(self, api_name: str, default=empty) -> TransportPool:
+        return self._get_transport_pool(api_name, "result", default=default)
 
-    def get_event_transport(self, api_name: str, default=empty) -> EventTransport:
-        return self._get_transport(api_name, "event", default=default)
+    def get_event_transport_pool(self, api_name: str, default=empty) -> TransportPool:
+        return self._get_transport_pool(api_name, "event", default=default)
 
-    def get_schema_transport(self, default=empty) -> SchemaTransport:
-        if self.schema_transport or default != empty:
-            return self.schema_transport or default
+    def get_schema_transport(self, default=empty) -> TransportPool:
+        if self.schema_transport_pool or default != empty:
+            return self.schema_transport_pool or default
         else:
             # TODO: Link to docs
             raise TransportNotFound(
@@ -354,25 +364,23 @@ class TransportRegistry:
         return self._has_transport(api_name, "event")
 
     def has_schema_transport(self) -> bool:
-        return bool(self.schema_transport)
+        return bool(self.schema_transport_pool)
 
-    def get_rpc_transports(self, api_names: Sequence[str]) -> List[Tuple[RpcTransport, List[str]]]:
+    def get_rpc_transport_pools(self, api_names: Sequence[str]) -> List[TransportPool]:
         """Get a mapping of transports to lists of APIs
 
         This is useful when multiple APIs can be served by a single transport
         """
-        return self._get_transports(api_names, "rpc")
+        return self._get_transport_pools(api_names, "rpc")
 
-    def get_event_transports(
-        self, api_names: Sequence[str]
-    ) -> List[Tuple[EventTransport, List[str]]]:
+    def get_event_transport_pools(self, api_names: Sequence[str]) -> List[TransportPool]:
         """Get a mapping of transports to lists of APIs
 
         This is useful when multiple APIs can be served by a single transport
         """
-        return self._get_transports(api_names, "event")
+        return self._get_transport_pools(api_names, "event")
 
-    def get_all_transports(self) -> Set[Transport]:
+    def get_all_transport_pools(self) -> Set[TransportPool]:
         """Get a set of all transports irrespective of type"""
         all_transports = chain(*[entry._asdict().values() for entry in self._registry.values()])
         return set([t for t in all_transports if t is not None])

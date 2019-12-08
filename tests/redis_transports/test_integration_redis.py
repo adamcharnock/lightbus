@@ -61,7 +61,7 @@ async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
 async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
     """Full event integration test"""
     bus.client.register_api(dummy_api)
-    bus.client.transport_registry.get_event_transport("default").stream_use = stream_use
+    bus.client.transport_registry.get_event_transport_pool("default").stream_use = stream_use
     received_messages = []
 
     async def listener(event_message, **kwargs):

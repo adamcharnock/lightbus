@@ -246,7 +246,7 @@ async def dummy_listener(dummy_bus: BusPath, loop):
 @pytest.fixture
 def get_dummy_events(mocker, dummy_bus: BusPath):
     """Get events sent on the dummy bus"""
-    event_transport = dummy_bus.client.transport_registry.get_event_transport("default")
+    event_transport = dummy_bus.client.transport_registry.get_event_transport_pool("default")
     mocker.spy(event_transport, "send_event")
 
     def get_events():
