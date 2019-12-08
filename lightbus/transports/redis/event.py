@@ -19,6 +19,7 @@ from typing import (
 from aioredis import ConnectionClosedError, ReplyError
 from aioredis.util import decode
 
+from lightbus.client.utilities import queue_exception_checker
 from lightbus.transports.base import EventTransport, EventMessage
 from lightbus.log import LBullets, L, Bold
 from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeserializer
@@ -30,7 +31,7 @@ from lightbus.transports.redis.utilities import (
     redis_stream_id_add_one,
     redis_stream_id_subtract_one,
 )
-from lightbus.utilities.async_tools import make_exception_checker, cancel
+from lightbus.utilities.async_tools import cancel
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
@@ -136,7 +137,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             consumer_ttl=consumer_ttl,
         )
 
-    async def send_event(self, event_message: EventMessage, options: dict, bus_client: "BusClient"):
+    async def send_event(self, event_message: EventMessage, options: dict):
         """Publish an event"""
         stream = self._get_stream_names(
             listen_for=[(event_message.api_name, event_message.event_name)]
@@ -177,7 +178,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self,
         listen_for: List[Tuple[str, str]],
         listener_name: str,
-        bus_client: "BusClient",
+        error_queue: asyncio.Queue,
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,
     ) -> AsyncGenerator[List[RedisEventMessage], None]:
@@ -257,8 +258,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             reclaim_task = asyncio.ensure_future(reclaim_loop())
 
             # Make sure we surface any exceptions that occur in either task
-            consume_task.add_done_callback(make_exception_checker(bus_client))
-            reclaim_task.add_done_callback(make_exception_checker(bus_client))
+            consume_task.add_done_callback(queue_exception_checker(error_queue))
+            reclaim_task.add_done_callback(queue_exception_checker(error_queue))
 
             while True:
                 try:

@@ -30,6 +30,7 @@ from lightbus.api import Api, Event
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import
     from lightbus.transports.base import SchemaTransport
+    from lightbus.transports.pool import TransportPool
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +51,12 @@ class Schema:
 
     def __init__(
         self,
-        schema_transport: "SchemaTransport",
+        schema_transport_pool: "TransportPool",
         max_age_seconds: Optional[int] = 60,
         human_readable: bool = True,
     ):
-        self.schema_transport = schema_transport
+        self.schema_transport_pool = schema_transport_pool
+        self._schema_transport: Optional["SchemaTransport"] = None
         self.max_age_seconds = max_age_seconds
         self.human_readable = human_readable
 
@@ -70,11 +72,17 @@ class Schema:
     def __contains__(self, item):
         return item in self.local_schemas or item in self.remote_schemas
 
+    async def get_schema_transport(self):
+        if not self._schema_transport:
+            self._schema_transport = await self.schema_transport_pool.checkout()
+        return self._schema_transport
+
     async def add_api(self, api: "Api"):
         """Adds an API locally, and sends to the transport"""
+        schema_transport = await self.get_schema_transport()
         schema = api_to_schema(api)
         self.local_schemas[api.meta.name] = schema
-        await self.schema_transport.store(api.meta.name, schema, ttl_seconds=self.max_age_seconds)
+        await schema_transport.store(api.meta.name, schema, ttl_seconds=self.max_age_seconds)
 
     def get_api_schema(self, api_name) -> Optional[dict]:
         """Get the schema for the given API"""
@@ -254,15 +262,17 @@ class Schema:
 
         This will be done using the `schema_transport` provided to `__init__()`
         """
+        schema_transport = await self.get_schema_transport()
         for api_name, schema in self.local_schemas.items():
-            await self.schema_transport.store(api_name, schema, ttl_seconds=self.max_age_seconds)
+            await schema_transport.store(api_name, schema, ttl_seconds=self.max_age_seconds)
 
     async def load_from_bus(self):
         """Save the schema from the bus
 
         This will be done using the `schema_transport` provided to `__init__()`
         """
-        self._remote_schemas = await self.schema_transport.load()
+        schema_transport = await self.get_schema_transport()
+        self._remote_schemas = await schema_transport.load()
 
     async def ensure_loaded_from_bus(self):
         if self._remote_schemas is None:
@@ -291,16 +301,17 @@ class Schema:
         """
         interval = interval or self.max_age_seconds * 0.8
         try:
-            while True:
-                await asyncio.sleep(interval)
-                # Keep alive our local schemas
-                for api_name, schema in self.local_schemas.items():
-                    await self.schema_transport.ping(
-                        api_name, schema, ttl_seconds=self.max_age_seconds
-                    )
+            with self.schema_transport_pool as schema_transport:
+                while True:
+                    await asyncio.sleep(interval)
+                    # Keep alive our local schemas
+                    for api_name, schema in self.local_schemas.items():
+                        await schema_transport.ping(
+                            api_name, schema, ttl_seconds=self.max_age_seconds
+                        )
 
-                # Read the entire schema back from the bus
-                await self.load_from_bus()
+                    # Read the entire schema back from the bus
+                    await self.load_from_bus()
         except asyncio.CancelledError:
             return
 
@@ -378,6 +389,9 @@ class Schema:
 
         indent = 2 if self.human_readable else None
         return json_encode(schema, indent=indent)
+
+    async def close(self):
+        self.schema_transport_pool.checkin(self.get_schema_transport())
 
 
 class Parameter(inspect.Parameter):

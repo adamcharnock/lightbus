@@ -11,6 +11,7 @@ import janus
 from lightbus.api import Api, ApiRegistry
 
 from lightbus.client.subclients.event import EventClient
+from lightbus.client.utilities import queue_exception_checker
 from lightbus.exceptions import (
     SuddenDeathException,
     LightbusTimeout,
@@ -27,11 +28,11 @@ from lightbus.message import RpcMessage, ResultMessage
 from lightbus.plugins import PluginRegistry
 from lightbus.schema import Schema
 from lightbus.transports import RpcTransport
+from lightbus.transports.base import TransportRegistry
 from lightbus.utilities.async_tools import (
     block,
     get_event_loop,
     cancel,
-    make_exception_checker,
     call_every,
     call_on_schedule,
     run_user_provided_callable,
@@ -69,8 +70,14 @@ class BusClient:
         plugin_registry: PluginRegistry,
         event_client: EventClient,
         api_registry: ApiRegistry,
+        transport_registry: TransportRegistry,
+        error_queue: asyncio.Queue,
         features: Sequence[Union[Feature, str]] = ALL_FEATURES,
     ):
+        self.transport_registry = transport_registry
+        self.error_queue = error_queue
+        self.api_registry = api_registry
+        self.event_client = event_client
         self._consumers = []  # RPC consumers
         # Coroutines added via schedule/every/add_background_task which should be started up
         # once the server starts
@@ -90,8 +97,6 @@ class BusClient:
         self._lazy_load_complete = False
         self.schema = schema
         self.plugin_registry = plugin_registry
-
-        self.event_client = plugin_registry
 
     def close(self):
         """Close the bus client
@@ -121,11 +126,11 @@ class BusClient:
             for transport in self.transport_registry.get_all_transport_pools():
                 await transport.close()
 
-            await self.schema.schema_transport.close()
+            await self.schema.close()
 
             self._closed = True
         finally:
-            await self._transport_invoker.stop()
+            await self.event_client.close()
 
     @property
     def loop(self):
@@ -179,7 +184,7 @@ class BusClient:
             self._server_shutdown_queue.async_q.task_done()
 
         shutdown_monitor_task = asyncio.ensure_future(server_shutdown_monitor())
-        shutdown_monitor_task.add_done_callback(make_exception_checker(self, die=True))
+        shutdown_monitor_task.add_done_callback(queue_exception_checker(self.error_queue))
         self._shutdown_monitor_task = shutdown_monitor_task
 
         logger.info(
@@ -219,7 +224,7 @@ class BusClient:
 
         # Setup schema monitoring
         monitor_task = asyncio.ensure_future(self.schema.monitor())
-        monitor_task.add_done_callback(make_exception_checker(self, die=True))
+        monitor_task.add_done_callback(queue_exception_checker(self.error_queue))
 
         logger.info("Executing before_worker_start & on_start hooks...")
         await self._execute_hook("before_worker_start")
@@ -228,20 +233,19 @@ class BusClient:
         # Setup RPC consumption
         if Feature.RPCS in self.features:
             consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
-            consume_rpc_task.add_done_callback(make_exception_checker(self, die=True))
+            consume_rpc_task.add_done_callback(queue_exception_checker(self.error_queue))
         else:
             consume_rpc_task = None
 
         # Start off any registered event listeners
         if Feature.EVENTS in self.features:
-            for event_listener in self._event_listeners:
-                event_listener.start_task(bus_client=self)
+            await self.event_client.start_listeners()
 
         # Start off any background tasks
         if Feature.TASKS in self.features:
             for coroutine in self._background_coroutines:
                 task = asyncio.ensure_future(coroutine)
-                task.add_done_callback(make_exception_checker(self, die=True))
+                task.add_done_callback(queue_exception_checker(self.error_queue))
                 self._background_tasks.append(task)
 
         self._server_tasks = [consume_rpc_task, monitor_task]
@@ -340,7 +344,7 @@ class BusClient:
             )
 
         task = asyncio.ensure_future(asyncio.gather(*coroutines))
-        task.add_done_callback(make_exception_checker(self, die=True))
+        task.add_done_callback(queue_exception_checker(self.error_queue))
         self._consumers.append(task)
 
     async def _consume_rpcs_with_transport(
@@ -524,7 +528,7 @@ class BusClient:
 
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         """Fire an event onto the bus"""
-        return self.event_client.fire_event(
+        return await self.event_client.fire_event(
             api_name=api_name, name=name, kwargs=kwargs, options=options
         )
 

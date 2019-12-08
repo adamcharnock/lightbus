@@ -30,7 +30,7 @@ def configure_logging(log_level=logging.INFO):
 def log_welcome_message(
     logger: Logger,
     transport_registry: TransportRegistry,
-    schema: Schema,
+    schema: "Schema",
     plugin_registry: PluginRegistry,
     config: Config,
 ):
@@ -51,7 +51,7 @@ def log_welcome_message(
     result_transport = transport_registry.get_result_transport_pool("default", default=None)
     event_transport = transport_registry.get_event_transport_pool("default", default=None)
     log_transport_information(
-        rpc_transport, result_transport, event_transport, schema.schema_transport, logger
+        rpc_transport, result_transport, event_transport, schema.get_schema_transport(), logger
     )
 
     if plugin_registry._plugins:

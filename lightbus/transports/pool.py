@@ -66,6 +66,12 @@ class TransportPool:
         transport = self.context_stack.pop()
         self.checkin(transport)
 
+    async def open(self):
+        # TODO: This is used by the lazy loading, which can probably be ditched
+        #       now we have moved to using connection pools
+        if not self.pool:
+            await self.grow()
+
     async def close(self):
         with self.lock:
             self.closed = True

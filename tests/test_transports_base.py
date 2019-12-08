@@ -72,7 +72,7 @@ def test_transport_registry_get_does_not_exist_default():
     with pytest.raises(TransportNotFound):
         assert not registry.get_event_transport_pool("default")
     with pytest.raises(TransportNotFound):
-        assert not registry.get_schema_transport()
+        assert not registry.get_schema_transport_pool()
 
 
 def test_transport_registry_get_does_not_exist_default_default_value():
@@ -80,7 +80,7 @@ def test_transport_registry_get_does_not_exist_default_default_value():
     assert registry.get_rpc_transport_pool("default", default=None) is None
     assert registry.get_result_transport_pool("default", default=None) is None
     assert registry.get_event_transport_pool("default", default=None) is None
-    assert registry.get_schema_transport(default=None) is None
+    assert registry.get_schema_transport_pool(default=None) is None
 
 
 def test_transport_registry_get_does_not_exist_other():
@@ -92,7 +92,7 @@ def test_transport_registry_get_does_not_exist_other():
     with pytest.raises(TransportNotFound):
         assert not registry.get_event_transport_pool("other")
     with pytest.raises(TransportNotFound):
-        assert not registry.get_schema_transport()
+        assert not registry.get_schema_transport_pool()
 
 
 def test_transport_registry_get_fallback(redis_default_config):
@@ -100,7 +100,7 @@ def test_transport_registry_get_fallback(redis_default_config):
     assert registry.get_rpc_transport_pool("default").__class__ == RedisRpcTransport
     assert registry.get_result_transport_pool("default").__class__ == RedisResultTransport
     assert registry.get_event_transport_pool("default").__class__ == RedisEventTransport
-    assert registry.get_schema_transport("default").__class__ == RedisSchemaTransport
+    assert registry.get_schema_transport_pool("default").__class__ == RedisSchemaTransport
 
 
 def test_transport_registry_get_specific_api(redis_other_config):
@@ -108,7 +108,7 @@ def test_transport_registry_get_specific_api(redis_other_config):
     assert registry.get_rpc_transport_pool("other").__class__ == RedisRpcTransport
     assert registry.get_result_transport_pool("other").__class__ == RedisResultTransport
     assert registry.get_event_transport_pool("other").__class__ == RedisEventTransport
-    assert registry.get_schema_transport("other").__class__ == RedisSchemaTransport
+    assert registry.get_schema_transport_pool("other").__class__ == RedisSchemaTransport
 
 
 def test_transport_registry_load_config(redis_default_config):
@@ -116,7 +116,7 @@ def test_transport_registry_load_config(redis_default_config):
     assert registry.get_rpc_transport_pool("default").__class__ == RedisRpcTransport
     assert registry.get_result_transport_pool("default").__class__ == RedisResultTransport
     assert registry.get_event_transport_pool("default").__class__ == RedisEventTransport
-    assert registry.get_schema_transport("default").__class__ == RedisSchemaTransport
+    assert registry.get_schema_transport_pool("default").__class__ == RedisSchemaTransport
 
 
 def test_transport_registry_get_rpc_transports(redis_default_config):

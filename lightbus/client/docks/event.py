@@ -26,9 +26,12 @@ class EventDock(BaseDock):
         )
 
         async def listener(event_transport_pool_, events_):
-            with event_transport_pool_ as event_transport:
-                consumer = await event_transport.consume(
-                    listen_for=events_, listener_name=command.listener_name, **command.options
+            async with event_transport_pool_ as event_transport:
+                consumer = event_transport.consume(
+                    listen_for=events_,
+                    listener_name=command.listener_name,
+                    error_queue=self.error_queue,
+                    **command.options,
                 )
                 async for event_messages in consumer:
                     for event_message in event_messages:

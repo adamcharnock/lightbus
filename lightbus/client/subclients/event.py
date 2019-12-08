@@ -1,11 +1,13 @@
 import asyncio
 import inspect
-from typing import List, Tuple, Callable, Set
+import logging
+from asyncio import Task
+from typing import List, Tuple, Callable, Set, Dict, NamedTuple
 
-from lightbus import Parameter, EventMessage
-from lightbus.client.bus_client import logger
+from lightbus.schema.schema import Parameter
+from lightbus.message import EventMessage
 from lightbus.client.subclients.base import BaseSubClient
-from lightbus.client.utilities import validate_event_or_rpc_name
+from lightbus.client.utilities import validate_event_or_rpc_name, queue_exception_checker
 from lightbus.client.validator import validate_outgoing, validate_incoming
 from lightbus.exceptions import (
     UnknownApi,
@@ -16,20 +18,21 @@ from lightbus.exceptions import (
 from lightbus.log import L, Bold
 from lightbus.client import commands
 from lightbus.client.commands import SendEventCommand, AcknowledgeEventCommand, ConsumeEventsCommand
-from lightbus.utilities.async_tools import run_user_provided_callable
+from lightbus.utilities.async_tools import run_user_provided_callable, cancel
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.singledispatch import singledispatchmethod
+
+logger = logging.getLogger(__name__)
 
 
 class EventClient(BaseSubClient):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._event_listeners: Set[str] = set()
+        self._event_listeners: Dict[str, Listener] = {}
+        self._event_listener_tasks = set()
 
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
-        await self.lazy_load_now()
-
         kwargs = kwargs or {}
         try:
             api = self.api_registry.get(api_name)
@@ -74,16 +77,16 @@ class EventClient(BaseSubClient):
 
         validate_outgoing(self.config, self.schema, event_message)
 
-        await self._execute_hook("before_event_sent", event_message=event_message)
+        # TODO: Put hooks back in
+        # await self._execute_hook("before_event_sent", event_message=event_message)
         logger.info(L("📤  Sending event {}.{}".format(Bold(api_name), Bold(name))))
 
-        await self.send_to_event_transports(
-            SendEventCommand(message=event_message, options=options)
-        ).wait()
+        await self.producer.send(SendEventCommand(message=event_message, options=options)).wait()
 
-        await self._execute_hook("after_event_sent", event_message=event_message)
+        # TODO: Put hooks back in
+        # await self._execute_hook("after_event_sent", event_message=event_message)
 
-    async def listen(
+    def listen(
         self,
         events: List[Tuple[str, str]],
         listener: Callable,
@@ -99,22 +102,9 @@ class EventClient(BaseSubClient):
         for api_name, name in events:
             validate_event_or_rpc_name(api_name, "event", name)
 
-        queue = asyncio.Queue()
-
-        async def listener():
-            while True:
-                await self._on_message(
-                    event_message=await queue.get(), listener=listener, options=options
-                )
-
-        # TODO: Only do when server starts up
-        await self.producer.send(
-            ConsumeEventsCommand(
-                events=events, destination_queue=queue, listener_name=listener_name
-            )
-        ).wait()
-
-        self._event_listeners.add(listener_name)
+        self._event_listeners[listener_name] = Listener(
+            callable=listener, options=options, events=events, name=listener_name
+        )
 
     async def _on_message(self, event_message: EventMessage, listener: Callable, options: dict):
 
@@ -153,22 +143,46 @@ class EventClient(BaseSubClient):
 
         await self.bus_client._execute_hook("after_event_execution", event_message=event_message)
 
+    async def close(self):
+        await cancel(*self._event_listener_tasks)
+
     @singledispatchmethod
     async def handle(self, command):
         raise NotImplementedError(f"Did not recognise command {command.__name__}")
 
-    @handle.register
-    async def handle_receive_event(self, command: commands.ReceiveEventCommand):
-        if command.listener_name not in self._event_listeners:
-            logger.debug(
-                f"Received an event for unknown listener '%s'. Had: %s",
-                command.listener_name,
-                self._event_listeners.keys(),
-            )
-            return
+    async def start_listeners(self):
+        async def start_listener(listener: Listener):
+            queue = asyncio.Queue()
 
-        listener = self._event_listeners[command.listener_name]
-        await listener.incoming_events.put(command.message)
+            async def consume_events():
+                while True:
+                    await self._on_message(
+                        event_message=await queue.get(),
+                        listener=listener.callable,
+                        options=listener.options,
+                    )
+
+            task = asyncio.ensure_future(consume_events())
+            task.add_done_callback(queue_exception_checker(queue=self.error_queue))
+            self._event_listener_tasks.add(task)
+
+            await self.producer.send(
+                # TODO: Remove the ReceivedEventCommand because passing the queue
+                #       inside the ConsumeEventsCommand negates the need for it
+                ConsumeEventsCommand(
+                    events=listener.events, destination_queue=queue, listener_name=listener.name
+                )
+            ).wait()
+
+        for listener_ in self._event_listeners.values():
+            await start_listener(listener_)
+
+
+class Listener(NamedTuple):
+    callable: Callable
+    options: dict
+    events: List[Tuple[str, str]]
+    name: str
 
 
 def sanity_check_listener(listener):

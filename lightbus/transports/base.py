@@ -344,7 +344,7 @@ class TransportRegistry:
     def get_event_transport_pool(self, api_name: str, default=empty) -> TransportPool:
         return self._get_transport_pool(api_name, "event", default=default)
 
-    def get_schema_transport(self, default=empty) -> TransportPool:
+    def get_schema_transport_pool(self, default=empty) -> TransportPool:
         if self.schema_transport_pool or default != empty:
             return self.schema_transport_pool or default
         else:

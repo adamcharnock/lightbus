@@ -6,7 +6,7 @@ import pytest
 from _pytest.logging import LogCaptureFixture
 
 from lightbus.client.commands import SendEventCommand
-from lightbus.client.internal_messaging import Invoker
+from lightbus.client.internal_messaging.producer import InternalProducer
 from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.unit
@@ -17,7 +17,7 @@ async def invoker():
     def _on_exception(e):
         raise e
 
-    invoker = Invoker(on_exception=_on_exception)
+    invoker = InternalProducer(on_exception=_on_exception)
     yield invoker
     await invoker.stop()
 
@@ -31,8 +31,8 @@ async def fake_coroutine():
 
 
 @pytest.mark.asyncio
-async def test_set_handler_and_start(invoker: Invoker, fake_coroutine):
-    invoker.set_handler_and_start(fake_coroutine)
+async def test_set_handler_and_start(invoker: InternalProducer, fake_coroutine):
+    invoker.start(fake_coroutine)
     await invoker.wait_until_ready()
 
     assert not invoker._task.done()
@@ -45,7 +45,7 @@ async def test_set_handler_and_start(invoker: Invoker, fake_coroutine):
 
 
 @pytest.mark.asyncio
-async def test_queue_monitor(invoker: Invoker, caplog: LogCaptureFixture, fake_coroutine):
+async def test_queue_monitor(invoker: InternalProducer, caplog: LogCaptureFixture, fake_coroutine):
     """Ensure the queue monitor logs as we expect
 
     Note that something we implicitly test for here is that the monitor
@@ -120,7 +120,7 @@ async def test_queue_monitor(invoker: Invoker, caplog: LogCaptureFixture, fake_c
 
 
 @pytest.mark.asyncio
-async def test_consume_in_parallel(invoker: Invoker):
+async def test_consume_in_parallel(invoker: InternalProducer):
     call_history = []
 
     # Our handler to track the order in which things were called
@@ -150,7 +150,7 @@ async def test_consume_in_parallel(invoker: Invoker):
 
 
 @pytest.mark.asyncio
-async def test_consume_on_done(invoker: Invoker):
+async def test_consume_on_done(invoker: InternalProducer):
     calls = 0
 
     async def fn(command):
@@ -178,7 +178,7 @@ async def test_consume_on_done(invoker: Invoker):
 
 
 @pytest.mark.asyncio
-async def test_consume_not_coroutine(invoker: Invoker):
+async def test_consume_not_coroutine(invoker: InternalProducer):
     def fn(command):
         pass
 
@@ -187,7 +187,7 @@ async def test_consume_not_coroutine(invoker: Invoker):
 
 
 @pytest.mark.asyncio
-async def test_consume_exception(invoker: Invoker):
+async def test_consume_exception(invoker: InternalProducer):
     exceptions = []
 
     async def fn(command):

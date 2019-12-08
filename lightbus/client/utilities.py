@@ -24,3 +24,5 @@ def queue_exception_checker(queue: asyncio.Queue):
 
         if exception:
             queue.put_nowait(queue)
+
+    return queue_exception_checker_
