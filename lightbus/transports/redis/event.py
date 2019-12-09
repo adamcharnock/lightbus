@@ -488,7 +488,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                             if event_messages:
                                 yield event_messages
 
-    async def acknowledge(self, *event_messages: RedisEventMessage, bus_client: "BusClient"):
+    async def acknowledge(self, *event_messages: RedisEventMessage):
         """Acknowledge that a message has been successfully processed
         """
         with await self.connection_manager() as redis:
