@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 
 from lightbus.exceptions import InvalidName
 
@@ -23,6 +24,12 @@ def queue_exception_checker(queue: asyncio.Queue):
             exception = e
 
         if exception:
-            queue.put_nowait(queue)
+            if isinstance(future, asyncio.Task):
+                stack = traceback.format_stack(future.get_stack()[0])
+                error = "\n".join(stack)
+                error += f"\n{exception}"
+            else:
+                error = str(exception)
+            queue.put_nowait(error)
 
     return queue_exception_checker_

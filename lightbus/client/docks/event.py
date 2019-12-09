@@ -66,7 +66,7 @@ class EventDock(BaseDock):
     async def handle_close(self, command: commands.CloseCommand):
         await cancel(*self.listener_tasks)
 
-        for event_transport in self.transport_registry.get_event_transport_pools():
+        for event_transport in self.transport_registry.get_all_event_transport_pools():
             await event_transport.close()
 
         await self.consumer.close()

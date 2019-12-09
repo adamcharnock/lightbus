@@ -150,6 +150,7 @@ class EventClient(BaseSubClient):
     async def close(self):
         await cancel_and_log_exceptions(*self._event_listener_tasks)
         await self.producer.send(CloseCommand()).wait()
+
         await self.consumer.close()
         await self.producer.close()
 

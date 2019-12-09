@@ -119,6 +119,11 @@ class BusClient:
 
         await self.schema.close()
 
+        while not self.error_queue.empty():
+            # TODO: Task to monitor this queue
+            logger.exception(self.error_queue.get_nowait())
+            self.error_queue.task_done()
+
         self._closed = True
 
     @property

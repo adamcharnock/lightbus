@@ -239,10 +239,14 @@ class TransportRegistry:
         self._registry: Dict[str, TransportRegistry._RegistryEntry] = {}
 
     def load_config(self, config: "Config") -> "TransportRegistry":
+        # For every configured API...
         for api_name, api_config in config.apis().items():
+            # ...and for each type of transport...
             for transport_type in ("event", "rpc", "result"):
+                # ...get the transport config...
                 transport_selector = getattr(api_config, f"{transport_type}_transport")
                 transport_config = self._get_transport_config(transport_selector)
+                # ... and use it to create the transport.
                 if transport_config:
                     transport_name, transport_config = transport_config
                     transport = self._instantiate_transport_pool(
@@ -278,23 +282,34 @@ class TransportRegistry:
 
     def _set_transport_pool(self, api_name: str, transport: TransportPool, transport_type: str):
         """Set the transport pool for a specific API"""
+        # TODO: Remove after refactoring complete
+        assert isinstance(
+            transport, TransportPool
+        ), f"Must be a transport pool, was {type(transport)}"
         self._registry.setdefault(api_name, self._RegistryEntry())
         self._registry[api_name] = self._registry[api_name]._replace(**{transport_type: transport})
 
     def _get_transport_pool(
         self, api_name: str, transport_type: str, default=empty
     ) -> TransportPool:
+        # Get the registry entry for this API (if any)
         registry_entry = self._registry.get(api_name)
         api_transport = None
+
+        # If we have a registry entry for this API, then get the transport for it
         if registry_entry:
             api_transport = getattr(registry_entry, transport_type)
 
+        # Otherwise get the transport for the default API (which is always our fallback)
+        # (but don't bother if they have explicity asked for the default_api, as if they
+        # have then we've already failed to get that in the previous step)
         if not api_transport and api_name != "default":
             try:
                 api_transport = self._get_transport_pool("default", transport_type)
             except TransportNotFound:
                 pass
 
+        # If we STILL don't have a transport then show a sensible error
         if not api_transport and default == empty:
             raise TransportNotFound(
                 f"No {transport_type} transport found for API '{api_name}'. Neither was a default "
@@ -343,6 +358,15 @@ class TransportRegistry:
 
     def get_event_transport_pool(self, api_name: str, default=empty) -> TransportPool:
         return self._get_transport_pool(api_name, "event", default=default)
+
+    def get_all_rpc_transport_pools(self) -> Set[TransportPool]:
+        return {t.rpc for t in self._registry.values() if t.rpc}
+
+    def get_all_result_transport_pools(self) -> Set[TransportPool]:
+        return {t.result for t in self._registry.values() if t.result}
+
+    def get_all_event_transport_pools(self) -> Set[TransportPool]:
+        return {t.event for t in self._registry.values() if t.event}
 
     def get_schema_transport_pool(self, default=empty) -> TransportPool:
         if self.schema_transport_pool or default != empty:
