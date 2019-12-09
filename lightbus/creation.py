@@ -8,8 +8,6 @@ from typing import Union, Mapping, Type, List
 from lightbus import Schema
 from lightbus.api import ApiRegistry
 from lightbus.client.docks.event import EventDock
-from lightbus.client.internal_messaging.consumer import InternalConsumer
-from lightbus.client.internal_messaging.producer import InternalProducer
 from lightbus.client.subclients.event import EventClient
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.features import ALL_FEATURES, Feature
@@ -121,7 +119,6 @@ def create(
     events_queue_dock_to_client = asyncio.Queue()
 
     event_client = EventClient(
-        transport_registry=transport_registry,
         api_registry=api_registry,
         config=config,
         schema=schema,

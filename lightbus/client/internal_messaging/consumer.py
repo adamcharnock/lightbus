@@ -28,12 +28,11 @@ class InternalConsumer:
         self._consumer_task.add_done_callback(queue_exception_checker(self.error_queue))
         self._running_commands = set()
 
-    async def stop(self, wait_seconds=1):
+    async def close(self):
         """Shutdown the invoker and cancel any currently running tasks
 
-        The shutdown procedure will stop any new tasks for being created,
-        then wait `wait_seconds` to allow any running tasks to finish normally.
-        Tasks still running after this period will be cancelled.
+        The shutdown procedure will stop any new tasks being created
+        then shutdown all existing tasks
         """
 
         # Stop consuming commands from the queue
@@ -42,10 +41,6 @@ class InternalConsumer:
             await cancel(self._consumer_task)
             self._consumer_task = None
             self._ready = asyncio.Event()
-
-        for _ in range(100):
-            if self._running_commands:
-                await asyncio.sleep(wait_seconds / 100)
 
         # Now we have stopped consuming commands we can
         # cancel any running tasks safe in the knowledge that

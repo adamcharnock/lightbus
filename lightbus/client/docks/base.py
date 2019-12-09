@@ -2,13 +2,18 @@ import asyncio
 
 from lightbus.client.internal_messaging.consumer import InternalConsumer
 from lightbus.client.internal_messaging.producer import InternalProducer
-from lightbus.schema import Schema
 from lightbus.api import ApiRegistry
 from lightbus.config import Config
 from lightbus.transports.base import TransportRegistry
 
 
 class BaseDock:
+    """The base dock
+
+    A dock is responsible for interfacing a transport with Lightbus' internal
+    messaging system.
+    """
+
     def __init__(
         self,
         transport_registry: TransportRegistry,

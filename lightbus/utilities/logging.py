@@ -51,7 +51,7 @@ def log_welcome_message(
     result_transport = transport_registry.get_result_transport_pool("default", default=None)
     event_transport = transport_registry.get_event_transport_pool("default", default=None)
     log_transport_information(
-        rpc_transport, result_transport, event_transport, schema.get_schema_transport(), logger
+        rpc_transport, result_transport, event_transport, schema.schema_transport_pool, logger
     )
 
     if plugin_registry._plugins:

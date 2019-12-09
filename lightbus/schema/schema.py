@@ -391,7 +391,7 @@ class Schema:
         return json_encode(schema, indent=indent)
 
     async def close(self):
-        self.schema_transport_pool.checkin(self.get_schema_transport())
+        self.schema_transport_pool.checkin(await self.get_schema_transport())
 
 
 class Parameter(inspect.Parameter):

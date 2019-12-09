@@ -11,7 +11,6 @@ from lightbus.transports.base import TransportRegistry
 class BaseSubClient:
     def __init__(
         self,
-        transport_registry: TransportRegistry,
         api_registry: ApiRegistry,
         config: Config,
         schema: Schema,
@@ -19,7 +18,6 @@ class BaseSubClient:
         consume_from: asyncio.Queue,
         produce_to: asyncio.Queue,
     ):
-        self.transport_registry = transport_registry
         self.api_registry = api_registry
         self.config = config
         self.schema = schema

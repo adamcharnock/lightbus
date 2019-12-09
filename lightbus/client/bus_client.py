@@ -36,6 +36,7 @@ from lightbus.utilities.async_tools import (
     call_every,
     call_on_schedule,
     run_user_provided_callable,
+    cancel_and_log_exceptions,
 )
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
@@ -108,29 +109,17 @@ class BusClient:
     async def close_async(self):
         """Async version of close()
         """
-        try:
-            if self._closed:
-                raise BusAlreadyClosed()
+        if self._closed:
+            raise BusAlreadyClosed()
 
-            listener_tasks = [
-                task for task in asyncio.all_tasks() if getattr(task, "is_listener", False)
-            ]
+        await cancel_and_log_exceptions(*self._background_tasks)
 
-            for task in chain(listener_tasks, self._background_tasks):
-                # pylint: disable=broad-except
-                try:
-                    await cancel(task)
-                except Exception as e:
-                    logger.exception(e)
+        await self.event_client.close()
+        # TODO: Close other sub-clients once we implement them
 
-            for transport in self.transport_registry.get_all_transport_pools():
-                await transport.close()
+        await self.schema.close()
 
-            await self.schema.close()
-
-            self._closed = True
-        finally:
-            await self.event_client.close()
+        self._closed = True
 
     @property
     def loop(self):

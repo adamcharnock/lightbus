@@ -31,9 +31,10 @@ from typing import Optional, NamedTuple
 
 from lightbus.client import commands
 from lightbus.client.utilities import queue_exception_checker
-from lightbus.utilities.async_tools import cancel
+from lightbus.utilities.async_tools import cancel, cancel_and_log_exceptions
 
 logger = logging.getLogger(__name__)
+
 
 # Was invoker
 class InternalProducer:
@@ -71,7 +72,7 @@ class InternalProducer:
         self._queue_monitor_task = asyncio.ensure_future(self._queue_monitor())
         self._queue_monitor_task.add_done_callback(queue_exception_checker(self.error_queue))
 
-    async def stop(self):
+    async def close(self):
         if self._queue_monitor_task:
             await cancel(self._queue_monitor_task)
             self._queue_monitor_task = None

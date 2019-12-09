@@ -96,6 +96,24 @@ async def cancel(*tasks):
         raise ex
 
 
+async def cancel_and_log_exceptions(*tasks):
+    """Cancel tasks and log any exceptions
+
+    This is useful when shutting down, when tasks need to be cancelled any anything
+    that goes wrong should be logged but will not otherwise be dealt with.
+    """
+    for task in tasks:
+        try:
+            await cancel(task)
+        except Exception as e:
+            # pylint: disable=broad-except
+            logger.exception(e)
+            logger.error(
+                "Error encountered when shutting down task %s. Exception logged, will now move on.",
+                task,
+            )
+
+
 async def run_user_provided_callable(callable_, args, kwargs, error_queue: asyncio.Queue):
     """Run user provided code
 

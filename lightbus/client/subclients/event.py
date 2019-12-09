@@ -16,9 +16,13 @@ from lightbus.exceptions import (
     InvalidEventListener,
 )
 from lightbus.log import L, Bold
-from lightbus.client import commands
-from lightbus.client.commands import SendEventCommand, AcknowledgeEventCommand, ConsumeEventsCommand
-from lightbus.utilities.async_tools import run_user_provided_callable, cancel
+from lightbus.client.commands import (
+    SendEventCommand,
+    AcknowledgeEventCommand,
+    ConsumeEventsCommand,
+    CloseCommand,
+)
+from lightbus.utilities.async_tools import run_user_provided_callable, cancel_and_log_exceptions
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.singledispatch import singledispatchmethod
@@ -144,7 +148,10 @@ class EventClient(BaseSubClient):
         await self.bus_client._execute_hook("after_event_execution", event_message=event_message)
 
     async def close(self):
-        await cancel(*self._event_listener_tasks)
+        await cancel_and_log_exceptions(*self._event_listener_tasks)
+        await self.producer.send(CloseCommand()).wait()
+        await self.consumer.close()
+        await self.producer.close()
 
     @singledispatchmethod
     async def handle(self, command):
