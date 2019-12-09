@@ -1,8 +1,12 @@
 import asyncio
+import logging
 from typing import Optional, Callable
 
 from lightbus.client.utilities import queue_exception_checker
 from lightbus.utilities.async_tools import cancel
+
+logger = logging.getLogger(__name__)
+
 
 # Was handler
 class InternalConsumer:
@@ -24,6 +28,7 @@ class InternalConsumer:
 
         Use `stop()` to shutdown the invoker.
         """
+        logger.debug("Starting internal consumer on queue %s")
         self._consumer_task = asyncio.ensure_future(self._consumer_loop(self.queue, handler))
         self._consumer_task.add_done_callback(queue_exception_checker(self.error_queue))
         self._running_commands = set()
@@ -34,7 +39,7 @@ class InternalConsumer:
         The shutdown procedure will stop any new tasks being created
         then shutdown all existing tasks
         """
-
+        logger.debug("Shutting down internal consumer on queue %s")
         # Stop consuming commands from the queue
         # (this will also stop *new* tasks being created)
         if self._consumer_task is not None:
@@ -46,7 +51,6 @@ class InternalConsumer:
         # cancel any running tasks safe in the knowledge that
         # no new tasks will get created
         await cancel(*self._running_commands)
-        self._running_commands = set()
 
     async def _consumer_loop(self, queue, handler):
         """Continually fetch commands from the queue and handle them"""
@@ -64,7 +68,10 @@ class InternalConsumer:
         """
 
         def when_task_finished(fut: asyncio.Future):
-            self._running_commands.remove(fut)
+            try:
+                self._running_commands.remove(fut)
+            except KeyError:
+                breakpoint()
             queue.task_done()
             on_done.set()
 

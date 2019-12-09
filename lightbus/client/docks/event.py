@@ -17,7 +17,7 @@ class EventDock(BaseDock):
 
     @singledispatchmethod
     async def handle(self, command):
-        raise NotImplementedError(f"Did not recognise command {command.__name__}")
+        raise NotImplementedError(f"Did not recognise command {command.__class__.__name__}")
 
     @handle.register
     async def handle_consume_events(self, command: commands.ConsumeEventsCommand):
@@ -37,7 +37,7 @@ class EventDock(BaseDock):
                     for event_message in event_messages:
                         await command.destination_queue.put(event_message)
 
-        tasks = []
+        coroutines = []
         for event_transport_pool, api_names in event_transport_pools:
             # Create a listener task for each event transport,
             # passing each a list of events for which it should listen
@@ -47,25 +47,17 @@ class EventDock(BaseDock):
                 if api_name in api_names
             ]
 
-            task = asyncio.ensure_future(listener(event_transport_pool, events))
-            task.is_listener = True  # Used by close()
-            tasks.append(task)
+            coroutines.append(listener(event_transport_pool, events))
 
-        listener_task = asyncio.gather(*tasks)
+        listener_task = asyncio.gather(*coroutines)
 
-        exception_checker = queue_exception_checker(queue=self.error_queue)
-        listener_task.add_done_callback(exception_checker)
-
-        # Setting is_listener lets Client.close() know that it should mop up this
-        # task automatically on shutdown
-        listener_task.is_listener = True
+        listener_task.add_done_callback(queue_exception_checker(queue=self.error_queue))
 
         self.listener_tasks.add(listener_task)
 
     @handle.register
     async def handle_close(self, command: commands.CloseCommand):
         await cancel(*self.listener_tasks)
-
         for event_transport in self.transport_registry.get_all_event_transport_pools():
             await event_transport.close()
 

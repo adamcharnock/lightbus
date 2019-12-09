@@ -156,7 +156,7 @@ class EventClient(BaseSubClient):
 
     @singledispatchmethod
     async def handle(self, command):
-        raise NotImplementedError(f"Did not recognise command {command.__name__}")
+        raise NotImplementedError(f"Did not recognise command {command.__class__.__name__}")
 
     async def start_listeners(self):
         async def start_listener(listener: Listener):

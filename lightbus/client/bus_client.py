@@ -121,7 +121,7 @@ class BusClient:
 
         while not self.error_queue.empty():
             # TODO: Task to monitor this queue
-            logger.exception(self.error_queue.get_nowait())
+            logger.error(self.error_queue.get_nowait())
             self.error_queue.task_done()
 
         self._closed = True
@@ -244,11 +244,9 @@ class BusClient:
 
         self._server_tasks = [consume_rpc_task, monitor_task]
 
-    def stop_server(self):
-        block(cancel(self._shutdown_monitor_task))
-        block(self._stop_server_inner())
+    async def stop_server(self):
+        await cancel(self._shutdown_monitor_task)
 
-    async def _stop_server_inner(self):
         # Cancel the tasks we created above
         await cancel(*self._server_tasks)
 

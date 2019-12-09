@@ -72,15 +72,18 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
 
     await bus.client._setup_server()
 
-    await asyncio.sleep(0.1)
-    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
-    await asyncio.sleep(0.1)
+    try:
+        await asyncio.sleep(0.1)
+        await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+        await asyncio.sleep(0.1)
 
-    assert len(received_messages) == 1
-    assert received_messages[0].kwargs == {"field": "Hello! 😎"}
-    assert received_messages[0].api_name == "my.dummy"
-    assert received_messages[0].event_name == "my_event"
-    assert received_messages[0].native_id
+        assert len(received_messages) == 1
+        assert received_messages[0].kwargs == {"field": "Hello! 😎"}
+        assert received_messages[0].api_name == "my.dummy"
+        assert received_messages[0].event_name == "my_event"
+        assert received_messages[0].native_id
+    finally:
+        await bus.client.stop_server()
 
 
 @pytest.mark.asyncio

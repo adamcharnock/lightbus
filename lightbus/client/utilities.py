@@ -17,19 +17,28 @@ def validate_event_or_rpc_name(api_name: str, type_: str, name: str):
 
 
 def queue_exception_checker(queue: asyncio.Queue):
+    # TODO: wrap this directly around the coroutines instead. Should
+    #       allow for saner stack traces
     def queue_exception_checker_(future: asyncio.Future):
         try:
             exception = future.exception()
         except asyncio.CancelledError as e:
             exception = e
 
+        if isinstance(exception, asyncio.CancelledError):
+            exception = None
+
         if exception:
-            if isinstance(future, asyncio.Task):
+            # TODO: This trace printing needs improving to make it look more normal
+            # Gathered tasks won't provide an exception
+            if isinstance(future, asyncio.Task) and future.get_stack():
                 stack = traceback.format_stack(future.get_stack()[0])
-                error = "\n".join(stack)
-                error += f"\n{exception}"
+                error = "".join(stack)
             else:
-                error = str(exception)
-            queue.put_nowait(error)
+                error = ""
+
+            error += f"\n{exception.__class__.__name__}: {exception}"
+
+            queue.put_nowait(error.strip())
 
     return queue_exception_checker_

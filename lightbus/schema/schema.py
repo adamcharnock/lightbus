@@ -301,7 +301,7 @@ class Schema:
         """
         interval = interval or self.max_age_seconds * 0.8
         try:
-            with self.schema_transport_pool as schema_transport:
+            async with self.schema_transport_pool as schema_transport:
                 while True:
                     await asyncio.sleep(interval)
                     # Keep alive our local schemas
