@@ -1,8 +1,10 @@
 import threading
+from inspect import iscoroutinefunction
 from typing import NamedTuple, List, TypeVar, Type, TYPE_CHECKING
 
 from lightbus.config import Config
 from lightbus.exceptions import TransportPoolIsClosed
+from lightbus.utilities.casting import is_callable
 
 if TYPE_CHECKING:
     from lightbus.transports.base import Transport
@@ -81,3 +83,23 @@ class TransportPool:
         with self.lock:
             for transport in self.pool:
                 await transport.close()
+
+    def __getattr__(self, item):
+        async def pool_wrapper(*args, **kwargs):
+            async with self as transport:
+                return await getattr(transport, item)(*args, **kwargs)
+
+        attr = getattr(self.transport_class, item, None)
+
+        if item[0] != "_" and attr and callable(attr):
+            if iscoroutinefunction(attr):
+                return pool_wrapper
+            else:
+                # TODO: Proper exception
+                raise Exception(
+                    f"{self.transport_class.__name__}.{item}() is synchronous "
+                    f"and must be accessed directly and not via the pool"
+                )
+        else:
+            # Will likely raise an error
+            return getattr(self, item)
