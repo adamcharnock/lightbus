@@ -61,17 +61,16 @@ class EventDock(BaseDock):
             command.message.api_name
         )
 
-        async with event_transport_pool as event_transport:
-            await event_transport.send_event(event_message=command.message, options=command.options)
+        await event_transport_pool.send_event(
+            event_message=command.message, options=command.options
+        )
 
     @handle.register
     async def handle_acknowledge_event(self, command: commands.AcknowledgeEventCommand):
         event_transport_pool = self.transport_registry.get_event_transport_pool(
             command.message.api_name
         )
-
-        async with event_transport_pool as event_transport:
-            await event_transport.acknowledge(command.message)
+        await event_transport_pool.acknowledge(command.message)
 
     @handle.register
     async def handle_close(self, command: commands.CloseCommand):
