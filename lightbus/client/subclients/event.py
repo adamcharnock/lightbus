@@ -81,14 +81,12 @@ class EventClient(BaseSubClient):
 
         validate_outgoing(self.config, self.schema, event_message)
 
-        # TODO: Put hooks back in
-        # await self._execute_hook("before_event_sent", event_message=event_message)
+        await self._execute_hook("before_event_sent", event_message=event_message)
         logger.info(L("📤  Sending event {}.{}".format(Bold(api_name), Bold(name))))
 
         await self.producer.send(SendEventCommand(message=event_message, options=options)).wait()
 
-        # TODO: Put hooks back in
-        # await self._execute_hook("after_event_sent", event_message=event_message)
+        await self._execute_hook("after_event_sent", event_message=event_message)
 
     def listen(
         self,
@@ -128,8 +126,7 @@ class EventClient(BaseSubClient):
 
         validate_incoming(self.config, self.schema, event_message)
 
-        # TODO: Hook execution
-        # await self.bus_client._execute_hook("before_event_execution", event_message=event_message)
+        await self._execute_hook("before_event_execution", event_message=event_message)
 
         if self.config.api(event_message.api_name).cast_values:
             parameters = cast_to_signature(parameters=event_message.kwargs, callable=listener)
@@ -149,8 +146,7 @@ class EventClient(BaseSubClient):
             AcknowledgeEventCommand(message=event_message, options=options)
         ).wait()
 
-        # TODO: Hook execution
-        # await self.bus_client._execute_hook("after_event_execution", event_message=event_message)
+        await self._execute_hook("after_event_execution", event_message=event_message)
 
     async def close(self):
         await cancel_and_log_exceptions(*self._event_listener_tasks)

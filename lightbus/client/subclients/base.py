@@ -30,3 +30,7 @@ class BaseSubClient:
 
     async def handle(self, command):
         raise NotImplementedError()
+
+    async def _execute_hook(self, name, **kwargs):
+        # TODO: Implement this / refactor
+        pass
