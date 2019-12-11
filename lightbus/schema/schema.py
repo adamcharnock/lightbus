@@ -392,6 +392,7 @@ class Schema:
 
     async def close(self):
         self.schema_transport_pool.checkin(await self.get_schema_transport())
+        await self.schema_transport_pool.close()
 
 
 class Parameter(inspect.Parameter):

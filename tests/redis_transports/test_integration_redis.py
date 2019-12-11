@@ -14,6 +14,7 @@ from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
 from lightbus.transports.redis.event import StreamUse
 from lightbus.utilities.async_tools import cancel, block
+from lightbus.utilities.features import Feature
 
 pytestmark = pytest.mark.integration
 
@@ -60,6 +61,7 @@ async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
 )
 async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
     """Full event integration test"""
+    bus.client.set_features([Feature.EVENTS])
     bus.client.register_api(dummy_api)
     bus.client.transport_registry.get_event_transport_pool("default").stream_use = stream_use
     received_messages = []
