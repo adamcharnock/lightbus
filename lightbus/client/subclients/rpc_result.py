@@ -172,9 +172,7 @@ class RpcResultClient(BaseSubClient):
             method = getattr(api, name)
             if self.config.api(api_name).cast_values:
                 kwargs = cast_to_signature(kwargs, method)
-            result = await run_user_provided_callable(
-                method, args=[], kwargs=kwargs, error_queue=self.error_queue
-            )
+            result = await run_user_provided_callable(method, args=[], kwargs=kwargs)
         except (asyncio.CancelledError, SuddenDeathException):
             raise
         except Exception as e:

@@ -137,9 +137,7 @@ class EventClient(BaseSubClient):
         # Pass the event message as a positional argument,
         # thereby allowing listeners to have flexibility in the argument names.
         # (And therefore allowing listeners to use the `event` parameter themselves)
-        await run_user_provided_callable(
-            listener, args=[event_message], kwargs=parameters, error_queue=self.error_queue
-        )
+        await run_user_provided_callable(listener, args=[event_message], kwargs=parameters)
 
         # Acknowledge the successfully processed message
         await self.producer.send(

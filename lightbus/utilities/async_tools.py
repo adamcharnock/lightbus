@@ -114,7 +114,7 @@ async def cancel_and_log_exceptions(*tasks):
             )
 
 
-async def run_user_provided_callable(callable_, args, kwargs, error_queue: asyncio.Queue):
+async def run_user_provided_callable(callable_, args, kwargs):
     """Run user provided code
 
     If the callable is blocking (i.e. a regular function) it will be
@@ -129,7 +129,10 @@ async def run_user_provided_callable(callable_, args, kwargs, error_queue: async
     The callable will be called with the given args and kwargs
     """
     if asyncio.iscoroutinefunction(callable_):
-        return await callable_(*args, **kwargs)
+        try:
+            return await callable_(*args, **kwargs)
+        except Exception as e:
+            exception = e
     else:
         try:
             future = asyncio.get_event_loop().run_in_executor(
@@ -137,19 +140,13 @@ async def run_user_provided_callable(callable_, args, kwargs, error_queue: async
             )
             return await future
         except Exception as e:
-            logger.debug(
-                "Error in user provided callable: %s. Will be added to the provided error queue", e
-            )
-            error_queue.put_nowait(e)
+            exception = e
+
+    logger.debug("Error in user provided callable: %s", exception)
+    raise exception
 
 
-async def call_every(
-    *,
-    callback,
-    timedelta: datetime.timedelta,
-    also_run_immediately: bool,
-    error_queue: asyncio.Queue,
-):
+async def call_every(*, callback, timedelta: datetime.timedelta, also_run_immediately: bool):
     """Call callback every timedelta
 
     If also_run_immediately is set then the callback will be called before any waiting
@@ -163,23 +160,21 @@ async def call_every(
     while True:
         start_time = time()
         if not first_run or also_run_immediately:
-            await run_user_provided_callable(callback, args=[], kwargs={}, error_queue=error_queue)
+            await run_user_provided_callable(callback, args=[], kwargs={})
         total_execution_time = time() - start_time
         sleep_time = max(0.0, timedelta.total_seconds() - total_execution_time)
         await asyncio.sleep(sleep_time)
         first_run = False
 
 
-async def call_on_schedule(
-    callback, schedule: "Job", also_run_immediately: bool, error_queue: asyncio.Queue
-):
+async def call_on_schedule(callback, schedule: "Job", also_run_immediately: bool):
     first_run = True
     while True:
         schedule._schedule_next_run()
 
         if not first_run or also_run_immediately:
             schedule.last_run = datetime.datetime.now()
-            await run_user_provided_callable(callback, args=[], kwargs={}, error_queue=error_queue)
+            await run_user_provided_callable(callback, args=[], kwargs={})
 
         td = schedule.next_run - datetime.datetime.now()
         await asyncio.sleep(td.total_seconds())
