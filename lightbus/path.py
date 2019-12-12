@@ -96,6 +96,8 @@ class BusPath:
                 f"arguments. Lightbus requires you use keyword arguments. For example, "
                 f"instead of func(1), use func(foo=1)."
             )
+
+        bus_options = bus_options or {}
         return await self.client.call_rpc_remote(
             api_name=self.api_name, name=self.name, kwargs=kwargs, options=bus_options
         )

@@ -24,6 +24,7 @@ class RpcResultDock(BaseDock):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.consumer_tasks = set()
+        self.listener_tasks = set()
 
     @singledispatchmethod
     async def handle(self, command):
@@ -93,6 +94,7 @@ class RpcResultDock(BaseDock):
             )
         )
         task.add_done_callback(queue_exception_checker(self.error_queue))
+        self.listener_tasks.add(task)
 
     async def _result_listener(
         self,
@@ -117,11 +119,15 @@ class RpcResultDock(BaseDock):
         else:
             logger.debug("Result listener received result, putting onto result queue")
             await result_queue.put(result)
+        finally:
+            self.listener_tasks.discard(asyncio.current_task())
 
     @handle.register
     async def handle_close(self, command: commands.CloseCommand):
         """Client or worker wishes us to close down"""
         await cancel(*self.consumer_tasks)
+        await cancel(*self.listener_tasks)
+
         for rpc_transport in self.transport_registry.get_all_rpc_transport_pools():
             await rpc_transport.close()
 
