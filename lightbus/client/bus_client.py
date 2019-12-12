@@ -324,7 +324,7 @@ class BusClient:
         Call an RPC and return the result.
         """
         await self.lazy_load_now()
-        await self.rpc_result_client.call_rpc_remote(
+        return await self.rpc_result_client.call_rpc_remote(
             api_name=api_name, name=name, kwargs=kwargs, options=options
         )
 
