@@ -371,16 +371,6 @@ class BusClient:
             events=events, listener=listener, listener_name=listener_name, options=options
         )
 
-    # Results
-
-    async def send_result(self, rpc_message: RpcMessage, result_message: ResultMessage):
-        # TODO: InternalProducer command
-        await self.lazy_load_now()
-        result_transport = self.transport_registry.get_result_transport_pool(rpc_message.api_name)
-        return await result_transport.send_result(
-            rpc_message, result_message, rpc_message.return_path, bus_client=self
-        )
-
     def add_background_task(self, coroutine: Union[Coroutine, asyncio.Future]):
         """Run a coroutine in the background
 

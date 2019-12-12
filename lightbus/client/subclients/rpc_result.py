@@ -243,4 +243,6 @@ class RpcResultClient(BaseSubClient):
         if not result_message.error:
             validate_outgoing(self.config, self.schema, result_message)
 
-        await self.producer.send(commands.SendResultCommand(message=result_message)).wait()
+        await self.producer.send(
+            commands.SendResultCommand(message=result_message, rpc_message=command.message)
+        ).wait()

@@ -59,6 +59,7 @@ class ReceiveEventCommand(NamedTuple):
 
 
 class SendResultCommand(NamedTuple):
+    rpc_message: RpcMessage
     message: ResultMessage
 
 

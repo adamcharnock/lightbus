@@ -63,7 +63,12 @@ class RpcResultDock(BaseDock):
     @handle.register
     async def handle_send_result(self, command: commands.SendResultCommand):
         """Worker wishes to sent a result back to a client"""
-        raise NotImplementedError()
+        result_transport = self.transport_registry.get_result_transport_pool(
+            command.message.api_name
+        )
+        return await result_transport.send_result(
+            command.rpc_message, command.message, command.rpc_message.return_path
+        )
 
     @handle.register
     async def handle_receive_result(self, command: commands.ReceiveResultCommand):
@@ -129,6 +134,8 @@ class RpcResultDock(BaseDock):
         await cancel(*self.listener_tasks)
 
         for rpc_transport in self.transport_registry.get_all_rpc_transport_pools():
+            await rpc_transport.close()
+        for rpc_transport in self.transport_registry.get_all_result_transport_pools():
             await rpc_transport.close()
 
         await self.consumer.close()
