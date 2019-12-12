@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import time
+from asyncio import iscoroutinefunction, iscoroutine
 from typing import List
 
 from lightbus.api import Api
@@ -17,7 +18,7 @@ from lightbus.exceptions import (
 )
 from lightbus.log import L, Bold
 from lightbus.message import ResultMessage, RpcMessage
-from lightbus.utilities.async_tools import run_user_provided_callable
+from lightbus.utilities.async_tools import run_user_provided_callable, cancel
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
@@ -25,6 +26,26 @@ from lightbus.utilities.human import human_time
 from lightbus.utilities.singledispatch import singledispatchmethod
 
 logger = logging.getLogger(__name__)
+
+
+async def bail_on_error(error_queue: asyncio.Queue, co):
+
+    assert iscoroutine(co), "@bail_on_error only operates on coroutines"
+    # TODO: May need to pass a fresh error queue through to ensure
+    #       we don't compete with the bus client's event monitor
+    fn_task = asyncio.ensure_future(co)
+    monitor_task = asyncio.ensure_future(error_queue.get())
+
+    done, pending = await asyncio.wait({fn_task, monitor_task}, return_when=asyncio.FIRST_COMPLETED)
+
+    if fn_task in done:
+        # All ok
+        await cancel(monitor_task)
+        return fn_task.result()
+    else:
+        # An error appeared in the queue
+        await cancel(fn_task)
+        raise monitor_task.result()
 
 
 class RpcResultClient(BaseSubClient):
@@ -60,9 +81,6 @@ class RpcResultClient(BaseSubClient):
         Call an RPC and return the result.
         """
         # TODO: InternalProducer command
-        # rpc_transport = self.transport_registry.get_rpc_transport_pool(api_name)
-        # result_transport = self.transport_registry.get_result_transport_pool(api_name)
-
         kwargs = deform_to_bus(kwargs)
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)
         validate_event_or_rpc_name(api_name, "rpc", name)
@@ -93,7 +111,7 @@ class RpcResultClient(BaseSubClient):
 
         # Wait for the result from the listener we started.
         # The RpcResultDock will handle timeouts
-        result = await result_queue.get()
+        result = await bail_on_error(self.error_queue, result_queue.get())
 
         call_time = time.time() - start_time
 

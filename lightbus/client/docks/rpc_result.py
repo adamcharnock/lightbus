@@ -1,4 +1,7 @@
 import asyncio
+import logging
+from functools import wraps
+from inspect import iscoroutinefunction
 
 from typing import List
 
@@ -10,6 +13,8 @@ from lightbus.exceptions import TransportIsClosed
 from lightbus.transports.pool import TransportPool
 from lightbus.utilities.async_tools import cancel
 from lightbus.utilities.singledispatch import singledispatchmethod
+
+logger = logging.getLogger(__name__)
 
 
 class RpcResultDock(BaseDock):
@@ -45,13 +50,14 @@ class RpcResultDock(BaseDock):
         """Client wishes to call a remote RPC"""
         api_name = command.message.api_name
 
-        rpc_transport = self.transport_registry.get_rpc_transport_pool(api_name)
-        result_transport = self.transport_registry.get_result_transport_pool(api_name)
+        rpc_transport_pool = self.transport_registry.get_rpc_transport_pool(api_name)
+        result_transport_pool = self.transport_registry.get_result_transport_pool(api_name)
 
         # TODO: Perhaps move return_path out of RpcMessage, as this feels a little gross
-        command.message.return_path = result_transport.get_return_path(command.message)
+        async with result_transport_pool as result_transport:
+            command.message.return_path = result_transport.get_return_path(command.message)
 
-        await rpc_transport.call_rpc(command.message, options=command.options)
+        await rpc_transport_pool.call_rpc(command.message, options=command.options)
 
     @handle.register
     async def handle_send_result(self, command: commands.SendResultCommand):
@@ -75,6 +81,7 @@ class RpcResultDock(BaseDock):
 
         # TODO: Is it going to be an issue that we don't clear up this task?
         #       It may also get destroyed when it goes out of scope
+        logger.debug("Starting RPC result listener")
         task = asyncio.ensure_future(
             self._result_listener(
                 result_transport=result_transport,
@@ -97,6 +104,7 @@ class RpcResultDock(BaseDock):
         result_queue: asyncio.Queue,
     ):
         try:
+            logger.debug("Result listener is waiting")
             result = await asyncio.wait_for(
                 result_transport.receive_result(
                     rpc_message=rpc_message, return_path=return_path, options=options
@@ -104,8 +112,10 @@ class RpcResultDock(BaseDock):
                 timeout=timeout,
             )
         except asyncio.TimeoutError as e:
+            logger.debug("Result listener timed out")
             await result_queue.put(e)
         else:
+            logger.debug("Result listener received result, putting onto result queue")
             await result_queue.put(result)
 
     @handle.register

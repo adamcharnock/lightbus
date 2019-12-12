@@ -8,7 +8,9 @@ from typing import Union, Mapping, Type, List
 from lightbus import Schema
 from lightbus.api import ApiRegistry
 from lightbus.client.docks.event import EventDock
+from lightbus.client.docks.rpc_result import RpcResultDock
 from lightbus.client.subclients.event import EventClient
+from lightbus.client.subclients.rpc_result import RpcResultClient
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.features import ALL_FEATURES, Feature
 from lightbus.config.structure import RootConfig
@@ -136,6 +138,27 @@ def create(
         produce_to=events_queue_dock_to_client,
     )
 
+    rpcs_queue_client_to_dock = asyncio.Queue()
+    rpcs_queue_dock_to_client = asyncio.Queue()
+
+    rpc_result_client = RpcResultClient(
+        api_registry=api_registry,
+        config=config,
+        schema=schema,
+        error_queue=error_queue,
+        consume_from=rpcs_queue_dock_to_client,
+        produce_to=rpcs_queue_client_to_dock,
+    )
+
+    RpcResultDock(
+        transport_registry=transport_registry,
+        api_registry=api_registry,
+        config=config,
+        error_queue=error_queue,
+        consume_from=rpcs_queue_client_to_dock,
+        produce_to=rpcs_queue_dock_to_client,
+    )
+
     client = client_class(
         config=config,
         plugin_registry=plugin_registry,
@@ -143,6 +166,7 @@ def create(
         schema=schema,
         api_registry=api_registry,
         event_client=event_client,
+        rpc_result_client=rpc_result_client,
         error_queue=error_queue,
         transport_registry=transport_registry,
         **kwargs,

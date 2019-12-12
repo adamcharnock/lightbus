@@ -66,16 +66,14 @@ class InternalConsumer:
 
         This execution happens in the background.
         """
+        logger.debug(f"Handling command %s", command)
 
         def when_task_finished(fut: asyncio.Future):
-            try:
-                self._running_commands.remove(fut)
-            except KeyError:
-                breakpoint()
+            self._running_commands.remove(fut)
             queue.task_done()
             on_done.set()
 
         background_call_task = asyncio.ensure_future(handler(command))
         self._running_commands.add(background_call_task)
-        background_call_task.add_done_callback(queue_exception_checker(self.error_queue))
         background_call_task.add_done_callback(when_task_finished)
+        background_call_task.add_done_callback(queue_exception_checker(self.error_queue))

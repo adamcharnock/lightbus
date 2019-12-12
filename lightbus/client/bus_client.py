@@ -1,34 +1,21 @@
 import asyncio
 import logging
-import time
 from collections import defaultdict
 from datetime import timedelta
-from itertools import chain
 from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING, Callable
 
 import janus
 
 from lightbus.api import Api, ApiRegistry
-
 from lightbus.client.subclients.event import EventClient
 from lightbus.client.subclients.rpc_result import RpcResultClient
 from lightbus.client.utilities import queue_exception_checker
-from lightbus.exceptions import (
-    SuddenDeathException,
-    LightbusTimeout,
-    LightbusServerError,
-    NoApisToListenOn,
-    InvalidSchedule,
-    BusAlreadyClosed,
-    TransportIsClosed,
-    UnsupportedUse,
-)
+from lightbus.exceptions import InvalidSchedule, BusAlreadyClosed, UnsupportedUse
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
-from lightbus.log import LBullets, L, Bold
+from lightbus.log import LBullets
 from lightbus.message import RpcMessage, ResultMessage
 from lightbus.plugins import PluginRegistry
 from lightbus.schema import Schema
-from lightbus.transports import RpcTransport
 from lightbus.transports.base import TransportRegistry
 from lightbus.utilities.async_tools import (
     block,
@@ -39,11 +26,8 @@ from lightbus.utilities.async_tools import (
     run_user_provided_callable,
     cancel_and_log_exceptions,
 )
-from lightbus.utilities.casting import cast_to_signature
-from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.features import Feature, ALL_FEATURES
 from lightbus.utilities.frozendict import frozendict
-from lightbus.utilities.human import human_time
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import
@@ -97,10 +81,12 @@ class BusClient:
         self._shutdown_monitor_task = None
         self.exit_code = 0
         self._closed = False
-        self._server_tasks = []
+        self._server_tasks = set()
         self._lazy_load_complete = False
         self.schema = schema
         self.plugin_registry = plugin_registry
+        # Used to detect if the event monitor is running
+        self._event_monitor_lock = asyncio.Lock()
 
     def close(self):
         """Close the bus client
@@ -152,13 +138,6 @@ class BusClient:
         logger.debug("Closing bus")
         self.close()
 
-    def shutdown_server(self, exit_code):
-        if self._server_shutdown_queue is not None:
-            # If this shutdown queue *is* None, then it is safe to assume
-            # the server hasn't started up yet, so no need to
-            # put anything in the shutdown queue
-            self._server_shutdown_queue.sync_q.put(exit_code)
-
     def start_server(self):
         """Server startup procedure
 
@@ -171,18 +150,11 @@ class BusClient:
         # Ensure an event loop exists
         get_event_loop()
 
-        self._server_shutdown_queue = janus.Queue()
         self._server_tasks = set()
 
-        async def server_shutdown_monitor():
-            exit_code = await self._server_shutdown_queue.async_q.get()
-            self.exit_code = exit_code
-            self.loop.stop()
-            self._server_shutdown_queue.async_q.task_done()
-
-        shutdown_monitor_task = asyncio.ensure_future(server_shutdown_monitor())
-        shutdown_monitor_task.add_done_callback(queue_exception_checker(self.error_queue))
-        self._shutdown_monitor_task = shutdown_monitor_task
+        error_monitor_task = asyncio.ensure_future(self.error_monitor())
+        self._error_monitor_task = error_monitor_task
+        self._server_tasks.add(self._error_monitor_task)
 
         logger.info(
             LBullets(
@@ -245,7 +217,8 @@ class BusClient:
                 task.add_done_callback(queue_exception_checker(self.error_queue))
                 self._background_tasks.append(task)
 
-        self._server_tasks = [consume_rpc_task, monitor_task]
+        self._server_tasks.add(consume_rpc_task)
+        self._server_tasks.add(monitor_task)
 
     async def stop_server(self):
         await cancel(self._shutdown_monitor_task)
@@ -263,6 +236,31 @@ class BusClient:
         This just makes testing easier as we can mock out this method
         """
         self.loop.run_forever()
+
+    async def raise_errors(self):
+        # TODO: Implement error monitor elsewhere, start when the worker starts
+
+        # If the error monitor is running then just return, as that means we are
+        # running as a worker and so can rely on the error monitor to pickup the
+        # errors which an happen in the various background tasks
+        if self._event_monitor_lock.locked():
+            return
+
+        # Check queue for errors
+        try:
+            error = self.error_queue.get_nowait()
+        except asyncio.QueueEmpty:
+            # No errors, everything ok
+            return
+        else:
+            # If there is an error then raise it
+            raise error
+
+    async def error_monitor(self):
+        with self._event_monitor_lock:
+            logger.debug("Event monitor detected an error")
+            error = await self.error_queue.get()
+            raise error
 
     async def lazy_load_now(self):
         """Perform lazy tasks immediately
@@ -324,7 +322,8 @@ class BusClient:
 
         Call an RPC and return the result.
         """
-        self.rpc_result_client.call_rpc_remote(
+        await self.lazy_load_now()
+        await self.rpc_result_client.call_rpc_remote(
             api_name=api_name, name=name, kwargs=kwargs, options=options
         )
 

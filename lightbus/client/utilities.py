@@ -1,7 +1,11 @@
 import asyncio
+import logging
 import traceback
 
 from lightbus.exceptions import InvalidName
+
+
+logger = logging.getLogger(__name__)
 
 
 def validate_event_or_rpc_name(api_name: str, type_: str, name: str):
@@ -29,16 +33,6 @@ def queue_exception_checker(queue: asyncio.Queue):
             exception = None
 
         if exception:
-            # TODO: This trace printing needs improving to make it look more normal
-            # Gathered tasks won't provide an exception
-            if isinstance(future, asyncio.Task) and future.get_stack():
-                stack = traceback.format_stack(future.get_stack()[0])
-                error = "".join(stack)
-            else:
-                error = ""
-
-            error += f"\n{exception.__class__.__name__}: {exception}"
-
-            queue.put_nowait(error.strip())
+            queue.put_nowait(exception)
 
     return queue_exception_checker_
