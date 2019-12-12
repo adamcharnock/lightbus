@@ -104,6 +104,7 @@ class BusClient:
         await cancel_and_log_exceptions(*self._background_tasks)
 
         await self.event_client.close()
+        await self.rpc_result_client.close()
         # TODO: Close other sub-clients once we implement them
 
         await self.schema.close()

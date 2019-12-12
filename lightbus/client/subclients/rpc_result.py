@@ -199,6 +199,12 @@ class RpcResultClient(BaseSubClient):
             )
             return result
 
+    async def close(self):
+        await self.producer.send(commands.CloseCommand()).wait()
+
+        await self.consumer.close()
+        await self.producer.close()
+
     @singledispatchmethod
     async def handle(self, command):
         raise NotImplementedError(f"Did not recognise command {command.__class__.__name__}")
