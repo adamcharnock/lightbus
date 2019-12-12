@@ -85,11 +85,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         return return_path[12:]
 
     async def send_result(
-        self,
-        rpc_message: RpcMessage,
-        result_message: ResultMessage,
-        return_path: str,
-        bus_client: "BusClient",
+        self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: str
     ):
         """Send the result back to the caller"""
         logger.debug(
@@ -118,7 +114,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         )
 
     async def receive_result(
-        self, rpc_message: RpcMessage, return_path: str, options: dict, bus_client: "BusClient"
+        self, rpc_message: RpcMessage, return_path: str, options: dict
     ) -> ResultMessage:
         """Await a result from the processing worker"""
         logger.debug(L("Awaiting Redis result for RPC message: {}", Bold(rpc_message)))

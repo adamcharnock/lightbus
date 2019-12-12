@@ -3,14 +3,14 @@ import logging
 import time
 from typing import List
 
-from lightbus.transports.base import RpcTransport
 from lightbus.api import Api
+from lightbus.client import commands
+from lightbus.client.commands import ConsumeRpcsCommand
 from lightbus.client.subclients.base import BaseSubClient
-from lightbus.client.utilities import validate_event_or_rpc_name, queue_exception_checker
+from lightbus.client.utilities import validate_event_or_rpc_name
 from lightbus.client.validator import validate_outgoing, validate_incoming
 from lightbus.exceptions import (
     NoApisToListenOn,
-    TransportIsClosed,
     SuddenDeathException,
     LightbusServerError,
     LightbusTimeout,
@@ -22,6 +22,7 @@ from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
+from lightbus.utilities.singledispatch import singledispatchmethod
 
 logger = logging.getLogger(__name__)
 
@@ -47,63 +48,9 @@ class RpcResultClient(BaseSubClient):
                 "or the API registry is empty."
             )
 
-        # Not all APIs will necessarily be served by the same transport, so group them
-        # accordingly
         api_names = [api.meta.name for api in apis]
-        api_names_by_transport = self.transport_registry.get_rpc_transport_pools(api_names)
 
-        coroutines = []
-        for rpc_transport, transport_api_names in api_names_by_transport:
-            transport_apis = list(map(self.api_registry.get, transport_api_names))
-            coroutines.append(
-                self._consume_rpcs_with_transport(rpc_transport=rpc_transport, apis=transport_apis)
-            )
-
-        task = asyncio.ensure_future(asyncio.gather(*coroutines))
-        task.add_done_callback(queue_exception_checker(self.error_queue))
-        self._consumers.append(task)
-
-    async def _consume_rpcs_with_transport(
-        self, rpc_transport: RpcTransport, apis: List[Api] = None
-    ):
-        # TODO: InternalProducer command
-        while True:
-            try:
-                rpc_messages = await rpc_transport.consume_rpcs(apis, bus_client=self)
-            except TransportIsClosed:
-                return
-
-            for rpc_message in rpc_messages:
-                validate_incoming(self.config, self.schema, rpc_message)
-
-                await self._execute_hook("before_rpc_execution", rpc_message=rpc_message)
-                try:
-                    result = await self._call_rpc_local(
-                        api_name=rpc_message.api_name,
-                        name=rpc_message.procedure_name,
-                        kwargs=rpc_message.kwargs,
-                    )
-                except SuddenDeathException:
-                    # Used to simulate message failure for testing
-                    return
-                except asyncio.CancelledError:
-                    raise
-                except Exception as e:
-                    result = e
-                else:
-                    result = deform_to_bus(result)
-
-                result_message = ResultMessage(
-                    result=result, rpc_message_id=rpc_message.id, api_name=rpc_message.api_name
-                )
-                await self._execute_hook(
-                    "after_rpc_execution", rpc_message=rpc_message, result_message=result_message
-                )
-
-                if not result_message.error:
-                    validate_outgoing(self.config, self.schema, result_message)
-
-                await self.send_result(rpc_message=rpc_message, result_message=result_message)
+        await self.producer.send(ConsumeRpcsCommand(api_names=api_names)).wait()
 
     async def call_rpc_remote(
         self, api_name: str, name: str, kwargs: dict = frozendict(), options: dict = frozendict()
@@ -113,19 +60,11 @@ class RpcResultClient(BaseSubClient):
         Call an RPC and return the result.
         """
         # TODO: InternalProducer command
-        rpc_transport = self.transport_registry.get_rpc_transport_pool(api_name)
-        result_transport = self.transport_registry.get_result_transport_pool(api_name)
+        # rpc_transport = self.transport_registry.get_rpc_transport_pool(api_name)
+        # result_transport = self.transport_registry.get_result_transport_pool(api_name)
 
         kwargs = deform_to_bus(kwargs)
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)
-        return_path = result_transport.get_return_path(rpc_message)
-        rpc_message.return_path = return_path
-        options = options or {}
-        timeout = options.get("timeout", self.config.api(api_name).rpc_timeout)
-        # TODO: rpc_timeout is in three different places in the config!
-        #       Fix this. Really it makes most sense for the use if it goes on the
-        #       ApiConfig rather than having to repeat it on both the result & RPC
-        #       transports.
         validate_event_or_rpc_name(api_name, "rpc", name)
 
         logger.info("📞  Calling remote RPC {}.{}".format(Bold(api_name), Bold(name)))
@@ -136,32 +75,43 @@ class RpcResultClient(BaseSubClient):
 
         validate_outgoing(self.config, self.schema, rpc_message)
 
-        future = asyncio.gather(
-            self.receive_result(rpc_message, return_path, options=options),
-            rpc_transport.call_rpc(rpc_message, options=options, bus_client=self),
-        )
-
         await self._execute_hook("before_rpc_call", rpc_message=rpc_message)
 
-        try:
-            result_message, _ = await asyncio.wait_for(future, timeout=timeout)
-            future.result()
-        except asyncio.TimeoutError:
-            # Allow the future to finish, as per https://bugs.python.org/issue29432
-            try:
-                await future
-                future.result()
-            except asyncio.CancelledError:
-                pass
+        result_queue = asyncio.Queue()
 
+        # Send the RPC
+        await self.producer.send(
+            commands.CallRpcCommand(message=rpc_message, options=options)
+        ).wait()
+
+        # Start a listener which will wait for results
+        await self.producer.send(
+            commands.ReceiveResultCommand(
+                message=rpc_message, destination_queue=result_queue, options=options
+            )
+        ).wait()
+
+        # Wait for the result from the listener we started.
+        # The RpcResultDock will handle timeouts
+        result = await result_queue.get()
+
+        call_time = time.time() - start_time
+
+        try:
+            if isinstance(result, Exception):
+                raise result
+        except asyncio.TimeoutError:
             # TODO: Remove RPC from queue. Perhaps add a RpcBackend.cancel() method. Optional,
             #       as not all backends will support it. No point processing calls which have timed out.
             raise LightbusTimeout(
-                f"Timeout when calling RPC {rpc_message.canonical_name} after {timeout} seconds. "
+                f"Timeout when calling RPC {rpc_message.canonical_name} after waiting for {human_time(call_time)}. "
                 f"It is possible no Lightbus process is serving this API, or perhaps it is taking "
                 f"too long to process the request. In which case consider raising the 'rpc_timeout' "
                 f"config option."
             ) from None
+        else:
+            assert isinstance(result, ResultMessage)
+            result_message = result
 
         await self._execute_hook(
             "after_rpc_call", rpc_message=rpc_message, result_message=result_message
@@ -172,7 +122,7 @@ class RpcResultClient(BaseSubClient):
                 L(
                     "🏁  Remote call of {} completed in {}",
                     Bold(rpc_message.canonical_name),
-                    human_time(time.time() - start_time),
+                    human_time(call_time),
                 )
             )
         else:
@@ -180,7 +130,7 @@ class RpcResultClient(BaseSubClient):
                 L(
                     "⚡ Server error during remote call of {}. Took {}: {}",
                     Bold(rpc_message.canonical_name),
-                    human_time(time.time() - start_time),
+                    human_time(call_time),
                     result_message.result,
                 )
             )
@@ -230,3 +180,43 @@ class RpcResultClient(BaseSubClient):
                 )
             )
             return result
+
+    @singledispatchmethod
+    async def handle(self, command):
+        raise NotImplementedError(f"Did not recognise command {command.__class__.__name__}")
+
+    @handle.register
+    async def handle_rpc_call_received(self, command: commands.RpcCallReceived):
+        validate_incoming(self.config, self.schema, command.message)
+
+        await self._execute_hook("before_rpc_execution", rpc_message=command.message)
+        try:
+            result = await self._call_rpc_local(
+                api_name=command.message.api_name,
+                name=command.message.procedure_name,
+                kwargs=command.message.kwargs,
+            )
+        except SuddenDeathException:
+            # Used to simulate message failure for testing
+            return
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            result = e
+        else:
+            result = deform_to_bus(result)
+
+        result_message = ResultMessage(
+            result=result,
+            rpc_message_id=command.message.id,
+            api_name=command.message.api_name,
+            procedure_name=command.message.procedure_name,
+        )
+        await self._execute_hook(
+            "after_rpc_execution", rpc_message=command.message, result_message=result_message
+        )
+
+        if not result_message.error:
+            validate_outgoing(self.config, self.schema, result_message)
+
+        await self.producer.send(commands.SendResultCommand(message=result_message)).wait()

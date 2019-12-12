@@ -26,7 +26,19 @@ class AcknowledgeEventCommand(NamedTuple):
     options: dict = {}
 
 
-class SendRpcCommand(NamedTuple):
+class CallRpcCommand(NamedTuple):
+    message: RpcMessage
+    options: dict = {}
+
+
+class ConsumeRpcsCommand(NamedTuple):
+    api_names: List[str]
+    options: dict = {}
+
+
+class RpcCallReceived(NamedTuple):
+    """An RPC call has been received and must be executed locally"""
+
     message: RpcMessage
 
 
@@ -38,7 +50,7 @@ class CloseCommand(NamedTuple):
     pass
 
 
-TRANSPORT_COMMANDS = {SendEventCommand, SendRpcCommand, PublishApiSchemaCommand, CloseCommand}
+TRANSPORT_COMMANDS = {SendEventCommand, CallRpcCommand, PublishApiSchemaCommand, CloseCommand}
 
 
 class ReceiveEventCommand(NamedTuple):
@@ -46,8 +58,14 @@ class ReceiveEventCommand(NamedTuple):
     listener_name: str
 
 
-class ReceiveResultCommand(NamedTuple):
+class SendResultCommand(NamedTuple):
     message: ResultMessage
+
+
+class ReceiveResultCommand(NamedTuple):
+    message: RpcMessage
+    destination_queue: asyncio.Queue
+    options: dict
 
 
 class ReceiveSchemaUpdateCommand(NamedTuple):

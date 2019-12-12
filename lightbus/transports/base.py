@@ -65,13 +65,11 @@ class Transport(metaclass=TransportMetaclass):
 class RpcTransport(Transport):
     """Implement the sending and receiving of RPC calls"""
 
-    async def call_rpc(self, rpc_message: RpcMessage, options: dict, bus_client: "BusClient"):
+    async def call_rpc(self, rpc_message: RpcMessage, options: dict):
         """Publish a call to a remote procedure"""
         raise NotImplementedError()
 
-    async def consume_rpcs(
-        self, apis: Sequence[Api], bus_client: "BusClient"
-    ) -> Sequence[RpcMessage]:
+    async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         """Consume RPC calls for the given API"""
         raise NotImplementedError()
 
@@ -85,11 +83,7 @@ class ResultTransport(Transport):
         raise NotImplementedError()
 
     async def send_result(
-        self,
-        rpc_message: RpcMessage,
-        result_message: ResultMessage,
-        return_path: str,
-        bus_client: "BusClient",
+        self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: str
     ):
         """Send a result back to the caller
 
@@ -102,7 +96,7 @@ class ResultTransport(Transport):
         raise NotImplementedError()
 
     async def receive_result(
-        self, rpc_message: RpcMessage, return_path: str, options: dict, bus_client: "BusClient"
+        self, rpc_message: RpcMessage, return_path: str, options: dict
     ) -> ResultMessage:
         """Receive the result for the given message
 
@@ -127,16 +121,12 @@ class EventTransport(Transport):
         self.serializer = serializer
         self.deserializer = deserializer
 
-    async def send_event(self, event_message: EventMessage, options: dict, bus_client: "BusClient"):
+    async def send_event(self, event_message: EventMessage, options: dict):
         """Publish an event"""
         raise NotImplementedError()
 
     async def consume(
-        self,
-        listen_for: List[Tuple[str, str]],
-        listener_name: str,
-        bus_client: "BusClient",
-        **kwargs,
+        self, listen_for: List[Tuple[str, str]], listener_name: str, **kwargs
     ) -> AsyncGenerator[List[EventMessage], None]:
         """Consume messages for the given APIs
 
@@ -156,7 +146,7 @@ class EventTransport(Transport):
             f"Event transport {self.__class__.__name__} does not support listening for events"
         )
 
-    async def acknowledge(self, *event_messages, bus_client: "BusClient"):
+    async def acknowledge(self, *event_messages):
         """Acknowledge that one or more events were successfully processed"""
         pass
 

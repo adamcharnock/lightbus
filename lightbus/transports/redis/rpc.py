@@ -83,7 +83,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             consumption_restart_delay=consumption_restart_delay,
         )
 
-    async def call_rpc(self, rpc_message: RpcMessage, options: dict, bus_client: "BusClient"):
+    async def call_rpc(self, rpc_message: RpcMessage, options: dict):
         """Emit a call to a remote procedure
 
         This only sends the request, it does not await any result (see RedisResultTransport)
@@ -130,9 +130,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             p.expire(expiry_key, timeout=self.rpc_timeout)
             await p.execute()
 
-    async def consume_rpcs(
-        self, apis: Sequence[Api], bus_client: "BusClient"
-    ) -> Sequence[RpcMessage]:
+    async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         """Consume RPCs for the given APIs"""
         while True:
             if self._closed:
