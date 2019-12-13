@@ -174,6 +174,9 @@ class BusClient:
         block(self._setup_server())
 
     async def _setup_server(self):
+        # TODO: Probably merge this into start_server so that there is parity between
+        #       start_server and stop_server. Also, a lot of tests use this
+        #       _setup_server private method, which probably shouldn't be the case
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())
 

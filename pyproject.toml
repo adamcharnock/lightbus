@@ -45,6 +45,7 @@
     aioredis = ">=1.2.0"
     janus = "*"
     jsonschema = ">=3.2"
+    # TODO: Replace dateutil with datetime.fromisoformat() (available from python 3.7 onwards)
     python-dateutil = "*"
     pyyaml = ">=3.12"
 
