@@ -2,6 +2,8 @@ import asyncio
 import logging
 from collections import defaultdict
 from datetime import timedelta
+from functools import wraps
+from inspect import iscoroutinefunction
 from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING, Callable
 
 import janus
@@ -38,6 +40,31 @@ __all__ = ["BusClient"]
 
 
 logger = logging.getLogger(__name__)
+
+
+def raise_queued_errors(fn):
+    """Decorator to raise any errors which have appeared on the bus' error_queue during execution
+
+    There are two situations in which we can categorise errors:
+
+        1. Errors which occur from a user directly accessing the bus.
+           For example, calling an RPC or firing an event
+        2. Errors which occur within background tasks which are running as
+           part of the Lightbus worker
+
+    This decorator handles the former. The BusClient's error_monitor() handles the second
+    """
+    if not iscoroutinefunction(fn):
+        # TODO: Proper exception
+        raise Exception("@raise_queued_errors can only be used on async methods")
+
+    @wraps(fn)
+    async def _wrapped(self: "BusClient", *args, **kwargs):
+        result = await fn(self, *args, **kwargs)
+        await self.raise_errors()
+        return result
+
+    return _wrapped
 
 
 class BusClient:
@@ -125,7 +152,9 @@ class BusClient:
             logger.info("Disabling serving of RPCs as no APIs have been registered")
             self.features.remove(Feature.RPCS)
 
-        self.start_server()
+        # TODO: Move start_server() call outside of run_forever()? Leave up to calling code.
+        #       In fact, ditching run_forever() entirely may make some sense
+        block(self.start_server())
 
         self._actually_run_forever()
         logger.debug("Main thread event loop was stopped")
@@ -139,15 +168,13 @@ class BusClient:
         logger.debug("Closing bus")
         self.close()
 
-    def start_server(self):
+    async def start_server(self):
         """Server startup procedure
 
         Must be called from within the main thread. Handles the niceties around
         starting and stopping the server. The interesting setup happens in
         BusClient._setup_server()
         """
-        self.welcome_message()
-
         # Ensure an event loop exists
         get_event_loop()
 
@@ -171,12 +198,13 @@ class BusClient:
             )
         )
 
-        block(self._setup_server())
+        await self._setup_server()
 
     async def _setup_server(self):
         # TODO: Probably merge this into start_server so that there is parity between
         #       start_server and stop_server. Also, a lot of tests use this
-        #       _setup_server private method, which probably shouldn't be the case
+        #       _setup_server private method, which probably shouldn't be the case.
+        #       UPDATE: These tests should now use the worker fixture
         self.api_registry.add(LightbusStateApi())
         self.api_registry.add(LightbusMetricsApi())
 
@@ -261,9 +289,14 @@ class BusClient:
             raise error
 
     async def error_monitor(self):
-        with self._event_monitor_lock:
-            logger.debug("Event monitor detected an error")
+        async with self._event_monitor_lock:
             error = await self.error_queue.get()
+            self.error_queue.task_done()
+            logger.debug("Event monitor detected an error")
+
+            await self.stop_server()
+            await self.close_async()
+
             raise error
 
     async def lazy_load_now(self):
@@ -311,6 +344,7 @@ class BusClient:
 
     # RPCs
 
+    @raise_queued_errors
     async def consume_rpcs(self, apis: List[Api] = None):
         """Start a background task to consume RPCs
 
@@ -319,6 +353,7 @@ class BusClient:
         """
         return await self.rpc_result_client.consume_rpcs(apis)
 
+    @raise_queued_errors
     async def call_rpc_remote(
         self, api_name: str, name: str, kwargs: dict = frozendict(), options: dict = frozendict()
     ):
@@ -333,6 +368,7 @@ class BusClient:
 
     # Events
 
+    @raise_queued_errors
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         """Fire an event onto the bus"""
         return await self.event_client.fire_event(
@@ -347,7 +383,7 @@ class BusClient:
         Wraps `listen_for_events()`
         """
         self.listen_for_events(
-            [(api_name, name)], listener, listener_name=listener_name, options=options
+            [(api_name, name)], listener, listener_name=listener_name, options=options or {}
         )
 
     def listen_for_events(
