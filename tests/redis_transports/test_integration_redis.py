@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import threading
+from contextlib import contextmanager
+from unittest.mock import MagicMock
 
 import jsonschema
 import pytest
@@ -89,22 +91,92 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
 
 
 @pytest.mark.asyncio
-async def test_ids(bus: lightbus.path.BusPath, dummy_api, mocker):
+async def test_ids(bus: lightbus.path.BusPath, dummy_api, queue_mocker):
     """Ensure the id comes back correctly"""
     bus.client.register_api(dummy_api)
 
-    mocker.spy(bus.client, "send_result")
-
     await bus.client.consume_rpcs(apis=[dummy_api])
-    await bus.my.dummy.my_proc.call_async(field="foo")
 
-    _, kw = bus.client.send_result.call_args
+    with queue_mocker(bus.client.rpc_result_client.producer.queue) as q:
+        await bus.my.dummy.my_proc.call_async(field="foo")
+
+    assert q.put_commands == [123]
+
+    _, kw = bus.client.rpc_result_client.send_result.call_args
     rpc_message = kw["rpc_message"]
     result_message = kw["result_message"]
 
     assert rpc_message.id
     assert result_message.rpc_message_id
     assert rpc_message.id == result_message.rpc_message_id
+
+
+class QueueMockContext:
+    def __init__(self, queue: asyncio.Queue):
+        self.queue = queue
+        self.put_items = []
+        self.got_items = []
+        self._old_get = None
+        self._old_put = None
+
+    def __enter__(self):
+        self._old_put = self.queue.put_nowait
+        self.queue.put_nowait = self._put_nowait
+
+        self._old_get = self.queue.get_nowait
+        self.queue.get_nowait = self._get_nowait
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    def _put_nowait(self, item, *args, **kwargs):
+        self.put_items.append(item)
+        return self._old_put(item, *args, **kwargs)
+
+    def _get_nowait(self, *args, **kwargs):
+        item = self._old_get(*args, **kwargs)
+        self.got_items.append(item)
+        return item
+
+    @property
+    def put_commands(self):
+        return [i[0] for i in self.put_items]
+
+    @property
+    def got_commands(self):
+        return [i[0] for i in self.got_items]
+
+
+@pytest.fixture
+def queue_mocker():
+    return QueueMockContext
+
+
+def test_queue_mocker_sync(queue_mocker):
+    queue = asyncio.Queue()
+
+    with queue_mocker(queue) as m:
+        queue.put_nowait(1)
+        queue.put_nowait(2)
+        queue.get_nowait()
+
+    assert m.put_items == [1, 2]
+    assert m.got_items == [1]
+
+
+@pytest.mark.asyncio
+async def test_queue_mocker_async(queue_mocker):
+    queue = asyncio.Queue()
+
+    with queue_mocker(queue) as m:
+        await queue.put(1)
+        await queue.put(2)
+        await queue.get()
+
+    assert m.put_items == [1, 2]
+    assert m.got_items == [1]
 
 
 class ApiA(lightbus.Api):
@@ -340,7 +412,7 @@ async def test_listen_to_multiple_events_across_multiple_transports(
 
 @pytest.mark.asyncio
 async def test_event_exception_in_listener_realtime(
-    bus: lightbus.path.BusPath, dummy_api, redis_client
+    bus: lightbus.path.BusPath, dummy_api, redis_client, queue_mocker
 ):
     """Start a listener (which errors) and then add events to the stream.
     The listener will load them one-by-one."""
@@ -370,7 +442,7 @@ async def test_event_exception_in_listener_realtime(
     await asyncio.sleep(0.01)
 
     await bus.client.stop_server()
-    await bus.client.close()
+    await bus.client.close_async()
 
     # Died when processing first message, so we only saw one message
     assert len(received_messages) == 1
@@ -422,7 +494,7 @@ async def test_event_exception_in_listener_batch_fetch(
     await asyncio.sleep(0.1)
 
     await bus.client.stop_server()
-    await bus.client.close()
+    await bus.client.close_async()
 
     # Died when processing first message, so we only saw one message
     assert len(received_messages) == 1
