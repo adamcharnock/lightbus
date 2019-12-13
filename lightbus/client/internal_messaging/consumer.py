@@ -77,3 +77,5 @@ class InternalConsumer:
         self._running_commands.add(background_call_task)
         background_call_task.add_done_callback(when_task_finished)
         background_call_task.add_done_callback(queue_exception_checker(self.error_queue))
+        # if self.error_queue.qsize():
+        #     breakpoint()

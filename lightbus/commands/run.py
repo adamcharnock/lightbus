@@ -9,6 +9,7 @@ from lightbus.commands import utilities as command_utilities
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
 from lightbus.utilities.features import Feature, ALL_FEATURES
+from lightbus.utilities.logging import log_welcome_message
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +110,14 @@ class Command:
             asyncio.get_event_loop().add_signal_handler(
                 signal_, lambda: asyncio.ensure_future(signal_handler())
             )
+
+        log_welcome_message(
+            logger=logger,
+            transport_registry=bus.client.transport_registry,
+            schema=bus.client.schema,
+            plugin_registry=bus.client.plugin_registry,
+            config=bus.client.config,
+        )
 
         try:
             block(plugin_registry.execute_hook("receive_args", args=args), timeout=5)

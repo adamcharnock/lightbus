@@ -37,6 +37,14 @@ class EventDock(BaseDock):
                     for event_message in event_messages:
                         await command.destination_queue.put(event_message)
 
+                    # Wait for the queue to be emptied before fetching more.
+                    # We will need to make this configurable if we want to support
+                    # the pre-fetching of events. This solution is a good default
+                    # though as it will ensure events are processed in a more ordered fashion
+                    # in cases where there are multiple workers, and also ensure fewer
+                    # messages need to be reclaimed in the event of a crash
+                    await command.destination_queue.join()
+
         coroutines = []
         for event_transport_pool, api_names in event_transport_pools:
             # Create a listener task for each event transport,

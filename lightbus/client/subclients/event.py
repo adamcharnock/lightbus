@@ -159,7 +159,9 @@ class EventClient(BaseSubClient):
 
     async def start_listeners(self):
         async def start_listener(listener: Listener):
-            queue = asyncio.Queue()
+            # Setting the maxsize to 1 ensures the transport cannot load
+            # messages faster than we can consume them
+            queue = asyncio.Queue(maxsize=1)
 
             async def consume_events():
                 while True:
@@ -168,6 +170,7 @@ class EventClient(BaseSubClient):
                         listener=listener.callable,
                         options=listener.options,
                     )
+                    queue.task_done()
 
             task = asyncio.ensure_future(consume_events())
             task.add_done_callback(queue_exception_checker(queue=self.error_queue))

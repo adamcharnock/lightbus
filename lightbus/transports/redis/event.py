@@ -321,6 +321,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 if not event_message:
                     # noop message, or message an event we don't care about
                     continue
+
                 logger.debug(
                     LBullets(
                         L(
@@ -366,9 +367,11 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         native_id=message_id,
                         consumer_group=consumer_group,
                     )
+
                     if not event_message:
                         # noop message, or message an event we don't care about
                         continue
+
                     logger.debug(
                         LBullets(
                             L(
@@ -381,6 +384,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                             ),
                         )
                     )
+
                     # NOTE: YIELD ALL MESSAGES, NOT JUST ONE
                     event_messages.append(event_message)
 

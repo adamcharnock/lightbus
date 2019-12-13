@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from contextlib import contextmanager, asynccontextmanager
 
 import pytest
 from aioredis import create_redis_pool
@@ -77,6 +78,48 @@ async def bus(new_bus):
         await bus.client.close_async()
     except BusAlreadyClosed:
         pass
+
+
+class Worker:
+    def __init__(self, bus: BusPath):
+        self.bus: BusPath = bus
+
+    async def start(self):
+        await self.bus.client.start_server()
+
+    async def stop(self):
+        try:
+            await self.bus.client.stop_server()
+        finally:
+            # Stop server can raise any queued exceptions that had
+            # not previously been raised, so make sure we
+            # do the close by wrapping it in a finally
+            try:
+                await self.bus.client.close_async()
+            except BusAlreadyClosed:
+                pass
+
+    def __call__(self, raise_errors=True):
+        @asynccontextmanager
+        async def worker_context():
+            await self.start()
+
+            yield
+
+            try:
+                await self.stop()
+            except Exception as e:
+                if raise_errors:
+                    raise
+                else:
+                    logger.error(e)
+
+        return worker_context()
+
+
+@pytest.yield_fixture
+async def worker(new_bus):
+    yield Worker(new_bus())
 
 
 @pytest.fixture(name="fire_dummy_events")

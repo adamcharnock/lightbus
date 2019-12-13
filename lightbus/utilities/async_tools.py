@@ -143,7 +143,7 @@ async def run_user_provided_callable(callable_, args, kwargs):
         except Exception as e:
             exception = e
 
-    logger.debug("Error in user provided callable: %s", exception)
+    logger.debug("Error in user provided callable: %s", repr(exception))
     raise exception
 
 

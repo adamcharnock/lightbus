@@ -15,10 +15,13 @@ from lightbus.transports.redis.event import StreamUse
 from lightbus.utilities.async_tools import cancel
 from lightbus.utilities.features import Feature
 from tests.conftest import BusQueueMockerContext
+from tests.redis_transports.conftest import Worker
 
 pytestmark = pytest.mark.integration
 
 stream_use_test_data = [StreamUse.PER_EVENT, StreamUse.PER_API]
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.mark.asyncio
@@ -338,37 +341,31 @@ async def test_listen_to_multiple_events_across_multiple_transports(
 
 @pytest.mark.asyncio
 async def test_event_exception_in_listener_realtime(
-    bus: lightbus.path.BusPath, dummy_api, redis_client, queue_mocker
+    bus: lightbus.path.BusPath, worker: Worker, dummy_api, redis_client, queue_mocker
 ):
     """Start a listener (which errors) and then add events to the stream.
     The listener will load them one-by-one."""
     bus.client.register_api(dummy_api)
     received_messages = []
 
-    # Don't shutdown on error
-    bus.client.config.api("default").on_error = OnError.STOP_LISTENER
-
     async def listener(event_message, **kwargs):
         nonlocal received_messages
         received_messages.append(event_message)
         raise Exception()
 
-    bus.my.dummy.my_event.listen(
+    worker.bus.my.dummy.my_event.listen(
         listener, listener_name="test_listener", bus_options={"since": "0"}
     )
-    await bus.client._setup_server()
 
-    await asyncio.sleep(0.1)
-
-    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
-    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
-    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
-    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
-    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
-    await asyncio.sleep(0.01)
-
-    await bus.client.stop_server()
-    await bus.client.close_async()
+    async with worker(raise_errors=False):
+        await bus.client.lazy_load_now()
+        await asyncio.sleep(0.1)
+        await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+        await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+        await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+        await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+        await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+        await asyncio.sleep(0.1)
 
     # Died when processing first message, so we only saw one message
     assert len(received_messages) == 1
@@ -382,8 +379,9 @@ async def test_event_exception_in_listener_realtime(
     pending_messages = await redis_client.xpending(
         "my.dummy.my_event:stream", "test_service-test_listener", "-", "+", 10, "test_consumer"
     )
+
     pending_message_ids = [id_ for id_, *_ in pending_messages]
-    # The first 4 messages are still pending. Why 4 messages? Because:
+    # The first 2 messages are still pending. Why 2 messages? Because:
     #  - 1. The noop message used to create the stream (because we listened before we fired)
     #  - 2. The first message which caused the error
 
