@@ -310,6 +310,7 @@ class BusClient:
         (or perform them at a known point). In which case you can call this
         method to execute them immediately.
         """
+        # TODO: Remove once all transports are moved into pools
         if self._lazy_load_complete:
             return
 
@@ -371,6 +372,7 @@ class BusClient:
     @raise_queued_errors
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         """Fire an event onto the bus"""
+        await self.lazy_load_now()
         return await self.event_client.fire_event(
             api_name=api_name, name=name, kwargs=kwargs, options=options
         )
