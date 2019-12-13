@@ -59,7 +59,7 @@ async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
 @pytest.mark.parametrize(
     "stream_use", stream_use_test_data, ids=["stream_per_event", "stream_per_api"]
 )
-async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
+async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stop_me_later, stream_use):
     """Full event integration test"""
     bus.client.set_features([Feature.EVENTS])
     bus.client.register_api(dummy_api)
@@ -73,19 +73,17 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
     bus.my.dummy.my_event.listen(listener, listener_name="test")
 
     await bus.client._setup_server()
+    stop_me_later(bus.client)
 
-    try:
-        await asyncio.sleep(0.1)
-        await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
-        await asyncio.sleep(0.1)
+    await asyncio.sleep(0.1)
+    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+    await asyncio.sleep(0.1)
 
-        assert len(received_messages) == 1
-        assert received_messages[0].kwargs == {"field": "Hello! 😎"}
-        assert received_messages[0].api_name == "my.dummy"
-        assert received_messages[0].event_name == "my_event"
-        assert received_messages[0].native_id
-    finally:
-        await bus.client.stop_server()
+    assert len(received_messages) == 1
+    assert received_messages[0].kwargs == {"field": "Hello! 😎"}
+    assert received_messages[0].api_name == "my.dummy"
+    assert received_messages[0].event_name == "my_event"
+    assert received_messages[0].native_id
 
 
 @pytest.mark.asyncio
@@ -397,18 +395,18 @@ async def test_event_exception_in_listener_realtime(
 async def test_event_exception_in_listener_batch_fetch(
     bus: lightbus.path.BusPath, dummy_api, redis_client
 ):
-    """Add a number of events to a stream the startup a listener which errors.
+    """Add a number of events to a stream then startup a listener which errors.
     The listener will fetch them all at once."""
     bus.client.register_api(dummy_api)
+    bus.client.features = [Feature.EVENTS]
     received_messages = []
-
-    # Don't shutdown on error
-    bus.client.config.api("default").on_error = OnError.STOP_LISTENER
 
     async def listener(event_message, **kwargs):
         nonlocal received_messages
         received_messages.append(event_message)
         raise Exception()
+
+    await bus.client.lazy_load_now()
 
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
@@ -417,6 +415,7 @@ async def test_event_exception_in_listener_batch_fetch(
     bus.my.dummy.my_event.listen(
         listener, listener_name="test_listener", bus_options={"since": "0"}
     )
+
     await bus.client._setup_server()
 
     await asyncio.sleep(0.1)

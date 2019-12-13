@@ -721,3 +721,17 @@ class BusQueueMockerContext:
 @pytest.fixture
 def queue_mocker() -> Type[BusQueueMockerContext]:
     return BusQueueMockerContext
+
+
+@pytest.yield_fixture()
+async def stop_me_later():
+    to_stop_later = []
+
+    def _stop_me_later(*items):
+        to_stop_later.extend(items)
+
+    yield _stop_me_later
+
+    for i in to_stop_later:
+        await i.stop_server()
+        await i.close_async()

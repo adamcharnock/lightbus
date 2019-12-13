@@ -177,7 +177,10 @@ class EventClient(BaseSubClient):
                 # TODO: Remove the ReceivedEventCommand because passing the queue
                 #       inside the ConsumeEventsCommand negates the need for it
                 ConsumeEventsCommand(
-                    events=listener.events, destination_queue=queue, listener_name=listener.name
+                    events=listener.events,
+                    destination_queue=queue,
+                    listener_name=listener.name,
+                    options=listener.options,
                 )
             ).wait()
 
