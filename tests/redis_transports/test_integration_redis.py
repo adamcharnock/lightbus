@@ -152,7 +152,7 @@ async def test_multiple_rpc_transports(loop, redis_server_url, redis_server_b_ur
         }
     )
 
-    bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config))
+    bus = lightbus.create(config=config)
     bus.client.register_api(ApiA())
     bus.client.register_api(ApiB())
 
@@ -196,7 +196,7 @@ async def test_multiple_event_transports(
         }
     )
 
-    bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config))
+    bus = lightbus.create(config=config)
     bus.client.register_api(ApiA())
     bus.client.register_api(ApiB())
     await asyncio.sleep(0.1)
@@ -310,7 +310,7 @@ async def test_listen_to_multiple_events_across_multiple_transports(
         }
     )
 
-    bus = BusPath(name="", parent=None, client=lightbus.BusClient(config=config))
+    bus = lightbus.create(config=config)
     bus.client.register_api(ApiA())
     bus.client.register_api(ApiB())
     await asyncio.sleep(0.1)
@@ -332,6 +332,7 @@ async def test_listen_to_multiple_events_across_multiple_transports(
     await bus.api_b.event_b.fire_async()
     await asyncio.sleep(0.1)
 
+    await bus.client.stop_server()
     await bus.client.close_async()
 
     assert calls == 2
@@ -367,6 +368,9 @@ async def test_event_exception_in_listener_realtime(
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
     await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
     await asyncio.sleep(0.01)
+
+    await bus.client.stop_server()
+    await bus.client.close()
 
     # Died when processing first message, so we only saw one message
     assert len(received_messages) == 1
@@ -416,6 +420,9 @@ async def test_event_exception_in_listener_batch_fetch(
     await bus.client._setup_server()
 
     await asyncio.sleep(0.1)
+
+    await bus.client.stop_server()
+    await bus.client.close()
 
     # Died when processing first message, so we only saw one message
     assert len(received_messages) == 1
