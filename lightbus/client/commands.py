@@ -36,7 +36,7 @@ class ConsumeRpcsCommand(NamedTuple):
     options: dict = {}
 
 
-class RpcCallReceived(NamedTuple):
+class ExecuteRpcCommand(NamedTuple):
     """An RPC call has been received and must be executed locally"""
 
     message: RpcMessage

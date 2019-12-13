@@ -1,22 +1,20 @@
 import asyncio
 import logging
-import threading
-from contextlib import contextmanager
-from unittest.mock import MagicMock
+from typing import Type
 
 import jsonschema
 import pytest
-from aioredis.util import decode
 
 import lightbus
 import lightbus.path
+from lightbus.client.commands import SendResultCommand
 from lightbus.config.structure import OnError
-from lightbus.path import BusPath
 from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
 from lightbus.transports.redis.event import StreamUse
-from lightbus.utilities.async_tools import cancel, block
+from lightbus.utilities.async_tools import cancel
 from lightbus.utilities.features import Feature
+from tests.conftest import BusQueueMockerContext
 
 pytestmark = pytest.mark.integration
 
@@ -91,92 +89,22 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stream_use):
 
 
 @pytest.mark.asyncio
-async def test_ids(bus: lightbus.path.BusPath, dummy_api, queue_mocker):
+async def test_ids(
+    bus: lightbus.path.BusPath, dummy_api, queue_mocker: Type[BusQueueMockerContext]
+):
     """Ensure the id comes back correctly"""
     bus.client.register_api(dummy_api)
 
     await bus.client.consume_rpcs(apis=[dummy_api])
 
-    with queue_mocker(bus.client.rpc_result_client.producer.queue) as q:
+    with queue_mocker(bus.client) as q:
         await bus.my.dummy.my_proc.call_async(field="foo")
 
-    assert q.put_commands == [123]
+    send_result_command = q.rpc_result.to_transport.commands.get(SendResultCommand)
 
-    _, kw = bus.client.rpc_result_client.send_result.call_args
-    rpc_message = kw["rpc_message"]
-    result_message = kw["result_message"]
-
-    assert rpc_message.id
-    assert result_message.rpc_message_id
-    assert rpc_message.id == result_message.rpc_message_id
-
-
-class QueueMockContext:
-    def __init__(self, queue: asyncio.Queue):
-        self.queue = queue
-        self.put_items = []
-        self.got_items = []
-        self._old_get = None
-        self._old_put = None
-
-    def __enter__(self):
-        self._old_put = self.queue.put_nowait
-        self.queue.put_nowait = self._put_nowait
-
-        self._old_get = self.queue.get_nowait
-        self.queue.get_nowait = self._get_nowait
-
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    def _put_nowait(self, item, *args, **kwargs):
-        self.put_items.append(item)
-        return self._old_put(item, *args, **kwargs)
-
-    def _get_nowait(self, *args, **kwargs):
-        item = self._old_get(*args, **kwargs)
-        self.got_items.append(item)
-        return item
-
-    @property
-    def put_commands(self):
-        return [i[0] for i in self.put_items]
-
-    @property
-    def got_commands(self):
-        return [i[0] for i in self.got_items]
-
-
-@pytest.fixture
-def queue_mocker():
-    return QueueMockContext
-
-
-def test_queue_mocker_sync(queue_mocker):
-    queue = asyncio.Queue()
-
-    with queue_mocker(queue) as m:
-        queue.put_nowait(1)
-        queue.put_nowait(2)
-        queue.get_nowait()
-
-    assert m.put_items == [1, 2]
-    assert m.got_items == [1]
-
-
-@pytest.mark.asyncio
-async def test_queue_mocker_async(queue_mocker):
-    queue = asyncio.Queue()
-
-    with queue_mocker(queue) as m:
-        await queue.put(1)
-        await queue.put(2)
-        await queue.get()
-
-    assert m.put_items == [1, 2]
-    assert m.got_items == [1]
+    assert send_result_command.rpc_message.id
+    assert send_result_command.message.id
+    assert send_result_command.message.rpc_message_id == send_result_command.rpc_message.id
 
 
 class ApiA(lightbus.Api):

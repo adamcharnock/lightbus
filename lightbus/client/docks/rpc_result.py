@@ -149,4 +149,4 @@ class RpcResultDock(BaseDock):
                 return
 
             for rpc_message in rpc_messages:
-                await self.producer.send(commands.RpcCallReceived(message=rpc_message)).wait()
+                await self.producer.send(commands.ExecuteRpcCommand(message=rpc_message)).wait()
