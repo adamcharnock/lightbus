@@ -108,7 +108,7 @@ class EventClient(BaseSubClient):
         #       create the commands here and then all start_listeners() needs to
         #       do is send the commands.
         self._event_listeners[listener_name] = Listener(
-            callable=listener, options=options, events=events, name=listener_name
+            callable=listener, options=options or {}, events=events, name=listener_name
         )
 
     async def _on_message(self, event_message: EventMessage, listener: Callable, options: dict):
