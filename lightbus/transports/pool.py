@@ -1,24 +1,20 @@
 import threading
 from inspect import iscoroutinefunction
-from typing import NamedTuple, List, TypeVar, Type, TYPE_CHECKING
+from typing import NamedTuple, List, TypeVar, Type, Generic, TYPE_CHECKING
 
 from lightbus.config import Config
 from lightbus.exceptions import TransportPoolIsClosed
-from lightbus.utilities.casting import is_callable
 
 if TYPE_CHECKING:
     from lightbus.transports.base import Transport
 
-    GenericTransport = TypeVar("GenericTransport", bound=Transport)
+    VT = TypeVar("VT", bound=Transport)
+else:
+    VT = TypeVar("VT")
 
 
-class TransportPool:
-    def __init__(
-        self,
-        transport_class: Type["GenericTransport"],
-        transport_config: NamedTuple,
-        config: Config,
-    ):
+class TransportPool(Generic[VT]):
+    def __init__(self, transport_class: Type[VT], transport_config: NamedTuple, config: Config):
         # TODO: Max pool size
         # TODO: Test
         self.transport_class = transport_class
@@ -27,8 +23,8 @@ class TransportPool:
         self.closed = False
 
         self.lock = threading.RLock()
-        self.pool: List["GenericTransport"] = []
-        self.context_stack: List["GenericTransport"] = []
+        self.pool: List[VT] = []
+        self.context_stack: List[VT] = []
 
     async def grow(self):
         with self.lock:
@@ -43,7 +39,7 @@ class TransportPool:
             old_transport = self.pool.pop(0)
             await old_transport.close()
 
-    async def checkout(self) -> "GenericTransport":
+    async def checkout(self) -> VT:
         if self.closed:
             raise TransportPoolIsClosed("Cannot get a connection, transport pool is closed")
 
@@ -53,13 +49,13 @@ class TransportPool:
 
             return self.pool.pop(0)
 
-    def checkin(self, transport):
+    def checkin(self, transport: VT):
         with self.lock:
             self.pool.append(transport)
             if self.closed:
                 self._close_all()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> VT:
         transport = await self.checkout()
         self.context_stack.append(transport)
         return transport

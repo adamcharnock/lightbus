@@ -18,7 +18,7 @@ from lightbus.log import LBullets
 from lightbus.message import RpcMessage, ResultMessage
 from lightbus.plugins import PluginRegistry
 from lightbus.schema import Schema
-from lightbus.transports.base import TransportRegistry
+from lightbus.transports.registry import TransportRegistry
 from lightbus.utilities.async_tools import (
     block,
     get_event_loop,

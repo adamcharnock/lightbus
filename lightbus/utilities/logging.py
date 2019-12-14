@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from lightbus.config import Config
 from lightbus.log import LightbusFormatter, LBullets, L, Bold
 from lightbus.plugins import PluginRegistry
-from lightbus.transports.base import TransportRegistry
+from lightbus.transports.registry import TransportRegistry
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import

@@ -19,7 +19,7 @@ from lightbus.path import BusPath
 from lightbus.client import BusClient
 from lightbus.config import Config
 from lightbus.exceptions import FailedToImportBusModule
-from lightbus.transports.base import TransportRegistry
+from lightbus.transports.registry import TransportRegistry
 from lightbus.utilities.importing import import_module_from_string
 from lightbus.utilities.logging import log_welcome_message
 

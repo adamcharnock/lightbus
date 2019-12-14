@@ -25,7 +25,7 @@ from enum import Enum
 from typing import NamedTuple, Optional, Union, Dict
 
 from lightbus.plugins import find_plugins
-from lightbus.transports.base import get_available_transports
+from lightbus.transports.registry import get_available_transports
 from lightbus.utilities.config import random_name
 from lightbus.utilities.human import generate_human_friendly_name
 

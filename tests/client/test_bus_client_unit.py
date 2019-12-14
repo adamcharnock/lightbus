@@ -18,7 +18,7 @@ from lightbus.exceptions import (
     TransportNotFound,
     InvalidName,
 )
-from lightbus.transports.base import TransportRegistry
+from lightbus.transports.registry import TransportRegistry
 from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.unit

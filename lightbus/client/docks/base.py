@@ -4,7 +4,7 @@ from lightbus.client.internal_messaging.consumer import InternalConsumer
 from lightbus.client.internal_messaging.producer import InternalProducer
 from lightbus.api import ApiRegistry
 from lightbus.config import Config
-from lightbus.transports.base import TransportRegistry
+from lightbus.transports.registry import TransportRegistry
 
 
 class BaseDock:

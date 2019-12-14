@@ -17,7 +17,7 @@ from lightbus import (
 )
 from lightbus.path import BusPath
 from lightbus.client import BusClient
-from lightbus.transports.base import TransportRegistry
+from lightbus.transports.registry import TransportRegistry
 
 _registry: Dict[str, List] = {}
 logger = logging.getLogger(__name__)

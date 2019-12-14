@@ -10,7 +10,7 @@ from lightbus import (
 )
 from lightbus.config import Config
 from lightbus.exceptions import TransportNotFound
-from lightbus.transports.base import TransportRegistry, get_transport, get_transport_name
+from lightbus.transports.registry import TransportRegistry, get_transport, get_transport_name
 
 pytestmark = pytest.mark.unit
 
