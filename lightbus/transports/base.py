@@ -64,7 +64,7 @@ class ResultTransport(Transport):
 
     """
 
-    def get_return_path(self, rpc_message: RpcMessage) -> str:
+    async def get_return_path(self, rpc_message: RpcMessage) -> str:
         raise NotImplementedError()
 
     async def send_result(

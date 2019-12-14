@@ -22,7 +22,7 @@ def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
         # Use the base transport as a dummy, it only needs to have a
         # close() method on it in order to keep the client.close() method happy
         schema = Schema(
-            schema_transport_pool=TransportPool(
+            schema_transport=TransportPool(
                 transport_class=lightbus.Transport,
                 config=None,
                 transport_config=NamedTuple("DummyTransportConfig")(),

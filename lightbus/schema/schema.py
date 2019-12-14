@@ -24,6 +24,7 @@ from lightbus.schema.hints_to_schema import (
     make_rpc_parameter_schema,
     make_event_parameter_schema,
 )
+from lightbus.transports.registry import SchemaTransportPoolType
 from lightbus.utilities.io import make_file_safe_api_name
 from lightbus.api import Api, Event
 
@@ -51,11 +52,11 @@ class Schema:
 
     def __init__(
         self,
-        schema_transport_pool: "TransportPool",
+        schema_transport: "SchemaTransportPoolType",
         max_age_seconds: Optional[int] = 60,
         human_readable: bool = True,
     ):
-        self.schema_transport_pool = schema_transport_pool
+        self.schema_transport = schema_transport
         self._schema_transport: Optional["SchemaTransport"] = None
         self.max_age_seconds = max_age_seconds
         self.human_readable = human_readable
@@ -74,7 +75,7 @@ class Schema:
 
     async def get_schema_transport(self):
         if not self._schema_transport:
-            self._schema_transport = await self.schema_transport_pool.checkout()
+            self._schema_transport = await self.schema_transport.checkout()
         return self._schema_transport
 
     async def add_api(self, api: "Api"):
@@ -301,17 +302,16 @@ class Schema:
         """
         interval = interval or self.max_age_seconds * 0.8
         try:
-            async with self.schema_transport_pool as schema_transport:
-                while True:
-                    await asyncio.sleep(interval)
-                    # Keep alive our local schemas
-                    for api_name, schema in self.local_schemas.items():
-                        await schema_transport.ping(
-                            api_name, schema, ttl_seconds=self.max_age_seconds
-                        )
+            while True:
+                await asyncio.sleep(interval)
+                # Keep alive our local schemas
+                for api_name, schema in self.local_schemas.items():
+                    await self.schema_transport.ping(
+                        api_name, schema, ttl_seconds=self.max_age_seconds
+                    )
 
-                    # Read the entire schema back from the bus
-                    await self.load_from_bus()
+                # Read the entire schema back from the bus
+                await self.load_from_bus()
         except asyncio.CancelledError:
             return
 
@@ -391,8 +391,8 @@ class Schema:
         return json_encode(schema, indent=indent)
 
     async def close(self):
-        self.schema_transport_pool.checkin(await self.get_schema_transport())
-        await self.schema_transport_pool.close()
+        self.schema_transport.checkin(await self.get_schema_transport())
+        await self.schema_transport.close()
 
 
 class Parameter(inspect.Parameter):

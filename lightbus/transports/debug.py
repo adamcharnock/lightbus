@@ -36,7 +36,7 @@ class DebugRpcTransport(RpcTransport):
 
 
 class DebugResultTransport(ResultTransport):
-    def get_return_path(self, rpc_message: RpcMessage) -> str:
+    async def get_return_path(self, rpc_message: RpcMessage) -> str:
         return "debug://foo"
 
     async def send_result(

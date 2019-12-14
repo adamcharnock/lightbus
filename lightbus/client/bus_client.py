@@ -337,7 +337,7 @@ class BusClient:
         )
 
         # 3. Open the transports
-        for transport in self.transport_registry.get_all_transport_pools():
+        for transport in self.transport_registry.get_all_transports():
             await transport.open()
 
         # 4. Done

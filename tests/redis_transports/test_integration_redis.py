@@ -66,7 +66,7 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stop_me_later
     """Full event integration test"""
     bus.client.set_features([Feature.EVENTS])
     bus.client.register_api(dummy_api)
-    bus.client.transport_registry.get_event_transport_pool("default").stream_use = stream_use
+    bus.client.transport_registry.get_event_transport("default").stream_use = stream_use
     received_messages = []
 
     async def listener(event_message, **kwargs):

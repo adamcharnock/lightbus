@@ -94,7 +94,7 @@ class StatePlugin(LightbusPlugin):
             self.ping_interval = args.ping_interval or self.ping_interval
 
     async def before_worker_start(self, *, client: "BusClient"):
-        event_transport = client.transport_registry.get_event_transport_pool("internal.metrics")
+        event_transport = client.transport_registry.get_event_transport("internal.metrics")
         await event_transport.send_event(
             EventMessage(
                 api_name="internal.state",
@@ -114,7 +114,7 @@ class StatePlugin(LightbusPlugin):
             )
 
     async def after_worker_stopped(self, *, client: "BusClient"):
-        event_transport = client.transport_registry.get_event_transport_pool("internal.metrics")
+        event_transport = client.transport_registry.get_event_transport("internal.metrics")
         await event_transport.send_event(
             EventMessage(
                 api_name="internal.state",
@@ -127,7 +127,7 @@ class StatePlugin(LightbusPlugin):
         await cancel(self._ping_task)
 
     async def _send_ping(self, client: "BusClient"):
-        event_transport = client.transport_registry.get_event_transport_pool("internal.metrics")
+        event_transport = client.transport_registry.get_event_transport("internal.metrics")
         while True:
             await asyncio.sleep(self.ping_interval)
             await event_transport.send_event(

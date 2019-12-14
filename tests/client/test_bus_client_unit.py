@@ -137,8 +137,7 @@ async def test_consume_rpcs_with_transport_error(
 
     task = asyncio.ensure_future(
         dummy_bus.client._consume_rpcs_with_transport(
-            rpc_transport=dummy_bus.client.transport_registry.get_rpc_transport_pool("default"),
-            apis=[],
+            rpc_transport=dummy_bus.client.transport_registry.get_rpc_transport("default"), apis=[]
         )
     )
 
@@ -183,7 +182,7 @@ async def test_fire_event_version(dummy_bus: lightbus.path.BusPath, mocker):
     dummy_bus.client.register_api(ApiWithVersion())
 
     send_event_spy = mocker.spy(
-        dummy_bus.client.transport_registry.get_event_transport_pool("versioned_api"), "send_event"
+        dummy_bus.client.transport_registry.get_event_transport("versioned_api"), "send_event"
     )
 
     await dummy_bus.client.fire_event("versioned_api", "my_event")

@@ -193,7 +193,7 @@ class TestResultTransport(ResultTransport):
         self.mock_responses = {}
         self.require_mocking = require_mocking
 
-    def get_return_path(self, rpc_message):
+    async def get_return_path(self, rpc_message):
         return "test://"
 
     async def send_result(self, rpc_message, result_message, return_path, bus_client: "BusClient"):

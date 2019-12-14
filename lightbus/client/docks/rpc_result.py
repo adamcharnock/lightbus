@@ -35,7 +35,7 @@ class RpcResultDock(BaseDock):
         """Worker wishes for incoming RPC results to be listened for and processed"""
         # Not all APIs will necessarily be served by the same transport, so group them
         # accordingly
-        api_names_by_transport = self.transport_registry.get_rpc_transport_pools(command.api_names)
+        api_names_by_transport = self.transport_registry.get_rpc_transports(command.api_names)
 
         for rpc_transport, transport_api_names in api_names_by_transport:
             transport_apis = list(map(self.api_registry.get, transport_api_names))
@@ -51,21 +51,18 @@ class RpcResultDock(BaseDock):
         """Client wishes to call a remote RPC"""
         api_name = command.message.api_name
 
-        rpc_transport_pool = self.transport_registry.get_rpc_transport_pool(api_name)
-        result_transport_pool = self.transport_registry.get_result_transport_pool(api_name)
+        rpc_transport = self.transport_registry.get_rpc_transport(api_name)
+        result_transport = self.transport_registry.get_result_transport(api_name)
 
         # TODO: Perhaps move return_path out of RpcMessage, as this feels a little gross
-        async with result_transport_pool as result_transport:
-            command.message.return_path = result_transport.get_return_path(command.message)
+        command.message.return_path = await result_transport.get_return_path(command.message)
 
-        await rpc_transport_pool.call_rpc(command.message, options=command.options)
+        await rpc_transport.call_rpc(command.message, options=command.options)
 
     @handle.register
     async def handle_send_result(self, command: commands.SendResultCommand):
         """Worker wishes to sent a result back to a client"""
-        result_transport = self.transport_registry.get_result_transport_pool(
-            command.message.api_name
-        )
+        result_transport = self.transport_registry.get_result_transport(command.message.api_name)
         return await result_transport.send_result(
             command.rpc_message, command.message, command.rpc_message.return_path
         )
@@ -81,9 +78,7 @@ class RpcResultDock(BaseDock):
         timeout = command.options.get(
             "timeout", self.config.api(command.message.api_name).rpc_timeout
         )
-        result_transport = self.transport_registry.get_result_transport_pool(
-            command.message.api_name
-        )
+        result_transport = self.transport_registry.get_result_transport(command.message.api_name)
 
         # TODO: Is it going to be an issue that we don't clear up this task?
         #       It may also get destroyed when it goes out of scope
@@ -133,9 +128,9 @@ class RpcResultDock(BaseDock):
         await cancel(*self.consumer_tasks)
         await cancel(*self.listener_tasks)
 
-        for rpc_transport in self.transport_registry.get_all_rpc_transport_pools():
+        for rpc_transport in self.transport_registry.get_all_rpc_transports():
             await rpc_transport.close()
-        for rpc_transport in self.transport_registry.get_all_result_transport_pools():
+        for rpc_transport in self.transport_registry.get_all_result_transports():
             await rpc_transport.close()
 
         await self.consumer.close()

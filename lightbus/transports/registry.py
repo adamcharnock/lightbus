@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import NamedTuple, Dict, Sequence, List, Set, Type
+from typing import NamedTuple, Dict, Sequence, List, Set, Type, Union
 
 from lightbus import RpcTransport, ResultTransport, EventTransport
 from lightbus.config import Config
@@ -15,6 +15,9 @@ EventTransportPoolType = TransportPool["EventTransport"]
 RpcTransportPoolType = TransportPool["RpcTransport"]
 ResultTransportPoolType = TransportPool["ResultTransport"]
 SchemaTransportPoolType = TransportPool["SchemaTransport"]
+AnyTransportPoolType = Union[
+    EventTransportPoolType, RpcTransportPoolType, ResultTransportPoolType, SchemaTransportPoolType
+]
 
 
 class TransportRegistry:
@@ -34,7 +37,7 @@ class TransportRegistry:
         result: ResultTransport = None
         event: EventTransport = None
 
-    schema_transport_pool: TransportPool = None
+    schema_transport: TransportPool = None
 
     def __init__(self):
         self._registry: Dict[str, TransportRegistry._RegistryEntry] = {}
@@ -59,7 +62,7 @@ class TransportRegistry:
         transport_config = self._get_transport_config(config.bus().schema.transport)
         if transport_config:
             transport_name, transport_config = transport_config
-            self.schema_transport_pool = self._instantiate_transport_pool(
+            self.schema_transport = self._instantiate_transport_pool(
                 "schema", transport_name, transport_config, config
             )
 
@@ -92,7 +95,7 @@ class TransportRegistry:
 
     def _get_transport_pool(
         self, api_name: str, transport_type: str, default=empty
-    ) -> TransportPool:
+    ) -> AnyTransportPoolType:
         # Get the registry entry for this API (if any)
         registry_entry = self._registry.get(api_name)
         api_transport = None
@@ -123,8 +126,8 @@ class TransportRegistry:
 
     def _get_transport_pools(
         self, api_names: Sequence[str], transport_type: str
-    ) -> List[TransportPool]:
-        apis_by_transport: Dict[TransportPool, List[str]] = {}
+    ) -> List[AnyTransportPoolType]:
+        apis_by_transport: Dict[AnyTransportPoolType, List[str]] = {}
         for api_name in api_names:
             transport = self._get_transport_pool(api_name, transport_type)
             apis_by_transport.setdefault(transport, [])
@@ -149,29 +152,29 @@ class TransportRegistry:
         self._set_transport_pool(api_name, transport, "event")
 
     def set_schema_transport(self, transport: SchemaTransportPoolType):
-        self.schema_transport_pool = transport
+        self.schema_transport = transport
 
-    def get_rpc_transport_pool(self, api_name: str, default=empty) -> RpcTransportPoolType:
+    def get_rpc_transport(self, api_name: str, default=empty) -> RpcTransportPoolType:
         return self._get_transport_pool(api_name, "rpc", default=default)
 
-    def get_result_transport_pool(self, api_name: str, default=empty) -> ResultTransportPoolType:
+    def get_result_transport(self, api_name: str, default=empty) -> ResultTransportPoolType:
         return self._get_transport_pool(api_name, "result", default=default)
 
-    def get_event_transport_pool(self, api_name: str, default=empty) -> EventTransportPoolType:
+    def get_event_transport(self, api_name: str, default=empty) -> EventTransportPoolType:
         return self._get_transport_pool(api_name, "event", default=default)
 
-    def get_all_rpc_transport_pools(self) -> Set[RpcTransportPoolType]:
+    def get_all_rpc_transports(self) -> Set[RpcTransportPoolType]:
         return {t.rpc for t in self._registry.values() if t.rpc}
 
-    def get_all_result_transport_pools(self) -> Set[ResultTransportPoolType]:
+    def get_all_result_transports(self) -> Set[ResultTransportPoolType]:
         return {t.result for t in self._registry.values() if t.result}
 
-    def get_all_event_transport_pools(self) -> Set[EventTransportPoolType]:
+    def get_all_event_transports(self) -> Set[EventTransportPoolType]:
         return {t.event for t in self._registry.values() if t.event}
 
-    def get_schema_transport_pool(self, default=empty) -> SchemaTransportPoolType:
-        if self.schema_transport_pool or default != empty:
-            return self.schema_transport_pool or default
+    def get_schema_transport(self, default=empty) -> SchemaTransportPoolType:
+        if self.schema_transport or default != empty:
+            return self.schema_transport or default
         else:
             # TODO: Link to docs
             raise TransportNotFound(
@@ -189,23 +192,23 @@ class TransportRegistry:
         return self._has_transport(api_name, "event")
 
     def has_schema_transport(self) -> bool:
-        return bool(self.schema_transport_pool)
+        return bool(self.schema_transport)
 
-    def get_rpc_transport_pools(self, api_names: Sequence[str]) -> List[TransportPool]:
+    def get_rpc_transports(self, api_names: Sequence[str]) -> List[RpcTransportPoolType]:
         """Get a mapping of transports to lists of APIs
 
         This is useful when multiple APIs can be served by a single transport
         """
         return self._get_transport_pools(api_names, "rpc")
 
-    def get_event_transport_pools(self, api_names: Sequence[str]) -> List[TransportPool]:
+    def get_event_transports(self, api_names: Sequence[str]) -> List[EventTransportPoolType]:
         """Get a mapping of transports to lists of APIs
 
         This is useful when multiple APIs can be served by a single transport
         """
         return self._get_transport_pools(api_names, "event")
 
-    def get_all_transport_pools(self) -> Set[TransportPool]:
+    def get_all_transports(self) -> Set[AnyTransportPoolType]:
         """Get a set of all transports irrespective of type"""
         all_transports = chain(*[entry._asdict().values() for entry in self._registry.values()])
         return set([t for t in all_transports if t is not None])
@@ -238,7 +241,7 @@ def get_transport(type_, name):
     )
 
 
-def get_transport_name(cls: Type["Transport"]):
+def get_transport_name(cls: Type[AnyTransportPoolType]):
     for type_ in ("rpc", "result", "event"):
         for *_, name, class_ in load_entrypoint_classes(f"lightbus_{type_}_transports"):
             if cls == class_:

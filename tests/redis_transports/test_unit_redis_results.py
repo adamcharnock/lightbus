@@ -25,7 +25,7 @@ async def test_connection_manager(redis_result_transport):
 
 @pytest.mark.asyncio
 async def test_get_return_path(redis_result_transport: RedisResultTransport):
-    return_path = redis_result_transport.get_return_path(
+    return_path = await redis_result_transport.get_return_path(
         RpcMessage(
             api_name="my.api",
             procedure_name="my_proc",

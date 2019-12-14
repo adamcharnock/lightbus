@@ -63,7 +63,7 @@ async def test_remote_rpc_call(dummy_bus: BusPath, get_dummy_events):
 
 @pytest.mark.asyncio
 async def test_local_rpc_call(loop, dummy_bus: BusPath, consume_rpcs, get_dummy_events, mocker):
-    rpc_transport = dummy_bus.client.transport_registry.get_rpc_transport_pool("default")
+    rpc_transport = dummy_bus.client.transport_registry.get_rpc_transport("default")
     mocker.patch.object(
         rpc_transport,
         "_get_fake_messages",
@@ -144,7 +144,7 @@ async def test_send_event(dummy_bus: BusPath, get_dummy_events):
 
 @pytest.mark.asyncio
 async def test_execute_events(dummy_bus: BusPath, dummy_listener, get_dummy_events, mocker):
-    event_transport = dummy_bus.client.transport_registry.get_event_transport_pool("default")
+    event_transport = dummy_bus.client.transport_registry.get_event_transport("default")
     mocker.patch.object(
         event_transport,
         "_get_fake_message",

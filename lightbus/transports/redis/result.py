@@ -65,7 +65,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
             rpc_timeout=rpc_timeout,
         )
 
-    def get_return_path(self, rpc_message: RpcMessage) -> str:
+    async def get_return_path(self, rpc_message: RpcMessage) -> str:
         """Get the return path for the given message
 
         The return path is sent with the outgoing RPC message and
