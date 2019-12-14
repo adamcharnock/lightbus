@@ -6,6 +6,7 @@ import janus
 import jsonschema
 from unittest import mock
 import pytest
+from typing import NamedTuple
 
 import lightbus
 import lightbus.creation
@@ -24,6 +25,7 @@ from lightbus.exceptions import (
     SuddenDeathException,
 )
 from lightbus.transports.base import TransportRegistry
+from lightbus.transports.pool import TransportPool
 from lightbus.utilities.async_tools import cancel, run_user_provided_callable
 
 pytestmark = pytest.mark.unit
@@ -239,7 +241,13 @@ def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
     def create_bus_client_with_unhappy_schema(validate=True, strict_validation=True):
         # Use the base transport as a dummy, it only needs to have a
         # close() method on it in order to keep the client.close() method happy
-        schema = Schema(schema_transport=lightbus.Transport())
+        schema = Schema(
+            schema_transport_pool=TransportPool(
+                transport_class=lightbus.Transport,
+                config=None,
+                transport_config=NamedTuple("DummyTransportConfig")(),
+            )
+        )
         # Fake loading of remote schemas from schema transport
         schema._remote_schemas = {}
         config = Config.load_dict(
