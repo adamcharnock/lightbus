@@ -2,10 +2,11 @@ import threading
 from inspect import iscoroutinefunction
 from typing import NamedTuple, List, TypeVar, Type, Generic, TYPE_CHECKING
 
-from lightbus.config import Config
 from lightbus.exceptions import TransportPoolIsClosed
 
 if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
+    from lightbus.config import Config
     from lightbus.transports.base import Transport
 
     VT = TypeVar("VT", bound=Transport)

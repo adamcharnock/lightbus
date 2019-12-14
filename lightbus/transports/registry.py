@@ -2,11 +2,19 @@ from itertools import chain
 from typing import NamedTuple, Dict, Sequence, List, Set, Type
 
 from lightbus import RpcTransport, ResultTransport, EventTransport
+from lightbus.config import Config
 from lightbus.exceptions import TransportNotFound, TransportsNotInstalled
 from lightbus.transports.pool import TransportPool
+from lightbus.transports.base import Transport
 from lightbus.utilities.importing import load_entrypoint_classes
 
 empty = NamedTuple("Empty")
+
+
+EventTransportPoolType = TransportPool["EventTransport"]
+RpcTransportPoolType = TransportPool["RpcTransport"]
+ResultTransportPoolType = TransportPool["ResultTransport"]
+SchemaTransportPoolType = TransportPool["SchemaTransport"]
 
 
 class TransportRegistry:
@@ -131,37 +139,37 @@ class TransportRegistry:
         else:
             return True
 
-    def set_rpc_transport(self, api_name: str, transport):
+    def set_rpc_transport(self, api_name: str, transport: RpcTransportPoolType):
         self._set_transport_pool(api_name, transport, "rpc")
 
-    def set_result_transport(self, api_name: str, transport):
+    def set_result_transport(self, api_name: str, transport: ResultTransportPoolType):
         self._set_transport_pool(api_name, transport, "result")
 
-    def set_event_transport(self, api_name: str, transport):
+    def set_event_transport(self, api_name: str, transport: EventTransportPoolType):
         self._set_transport_pool(api_name, transport, "event")
 
-    def set_schema_transport(self, transport):
+    def set_schema_transport(self, transport: SchemaTransportPoolType):
         self.schema_transport_pool = transport
 
-    def get_rpc_transport_pool(self, api_name: str, default=empty) -> TransportPool:
+    def get_rpc_transport_pool(self, api_name: str, default=empty) -> RpcTransportPoolType:
         return self._get_transport_pool(api_name, "rpc", default=default)
 
-    def get_result_transport_pool(self, api_name: str, default=empty) -> TransportPool:
+    def get_result_transport_pool(self, api_name: str, default=empty) -> ResultTransportPoolType:
         return self._get_transport_pool(api_name, "result", default=default)
 
-    def get_event_transport_pool(self, api_name: str, default=empty) -> TransportPool:
+    def get_event_transport_pool(self, api_name: str, default=empty) -> EventTransportPoolType:
         return self._get_transport_pool(api_name, "event", default=default)
 
-    def get_all_rpc_transport_pools(self) -> Set[TransportPool]:
+    def get_all_rpc_transport_pools(self) -> Set[RpcTransportPoolType]:
         return {t.rpc for t in self._registry.values() if t.rpc}
 
-    def get_all_result_transport_pools(self) -> Set[TransportPool]:
+    def get_all_result_transport_pools(self) -> Set[ResultTransportPoolType]:
         return {t.result for t in self._registry.values() if t.result}
 
-    def get_all_event_transport_pools(self) -> Set[TransportPool]:
+    def get_all_event_transport_pools(self) -> Set[EventTransportPoolType]:
         return {t.event for t in self._registry.values() if t.event}
 
-    def get_schema_transport_pool(self, default=empty) -> TransportPool:
+    def get_schema_transport_pool(self, default=empty) -> SchemaTransportPoolType:
         if self.schema_transport_pool or default != empty:
             return self.schema_transport_pool or default
         else:
