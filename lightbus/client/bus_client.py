@@ -8,17 +8,10 @@ from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING, Calla
 
 import janus
 
-from lightbus.api import Api, ApiRegistry
-from lightbus.client.subclients.event import EventClient
-from lightbus.client.subclients.rpc_result import RpcResultClient
 from lightbus.client.utilities import queue_exception_checker
 from lightbus.exceptions import InvalidSchedule, BusAlreadyClosed, UnsupportedUse
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets
-from lightbus.message import RpcMessage, ResultMessage
-from lightbus.plugins import PluginRegistry
-from lightbus.schema import Schema
-from lightbus.transports.registry import TransportRegistry
 from lightbus.utilities.async_tools import (
     block,
     get_event_loop,
@@ -35,6 +28,12 @@ if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import
     from schedule import Job
     from lightbus.config import Config
+    from lightbus.client.subclients.event import EventClient
+    from lightbus.client.subclients.rpc_result import RpcResultClient
+    from lightbus.plugins import PluginRegistry
+    from lightbus.schema import Schema
+    from lightbus.api import Api, ApiRegistry
+    from lightbus.transports.registry import TransportRegistry
 
 __all__ = ["BusClient"]
 
@@ -79,12 +78,12 @@ class BusClient:
     def __init__(
         self,
         config: "Config",
-        schema: Schema,
-        plugin_registry: PluginRegistry,
-        event_client: EventClient,
-        rpc_result_client: RpcResultClient,
-        api_registry: ApiRegistry,
-        transport_registry: TransportRegistry,
+        schema: "Schema",
+        plugin_registry: "PluginRegistry",
+        event_client: "EventClient",
+        rpc_result_client: "RpcResultClient",
+        api_registry: "ApiRegistry",
+        transport_registry: "TransportRegistry",
         error_queue: asyncio.Queue,
         features: Sequence[Union[Feature, str]] = ALL_FEATURES,
     ):
@@ -346,7 +345,7 @@ class BusClient:
     # RPCs
 
     @raise_queued_errors
-    async def consume_rpcs(self, apis: List[Api] = None):
+    async def consume_rpcs(self, apis: List["Api"] = None):
         """Start a background task to consume RPCs
 
         This will consumer RPCs on APIs which have been registered with this
@@ -670,7 +669,7 @@ class BusClient:
 
     # API registration
 
-    def register_api(self, api: Api):
+    def register_api(self, api: "Api"):
         """Register an API with this bus client
 
         You must register APIs which you wish this server to fire events

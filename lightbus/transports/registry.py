@@ -1,15 +1,16 @@
 from itertools import chain
-from typing import NamedTuple, Dict, Sequence, List, Set, Type, Union
+from typing import NamedTuple, Dict, Sequence, List, Set, Type, Union, TYPE_CHECKING
 
-from lightbus import RpcTransport, ResultTransport, EventTransport
-from lightbus.config import Config
 from lightbus.exceptions import TransportNotFound, TransportsNotInstalled
 from lightbus.transports.pool import TransportPool
-from lightbus.transports.base import Transport
 from lightbus.utilities.importing import load_entrypoint_classes
 
 empty = NamedTuple("Empty")
 
+if TYPE_CHECKING:
+    # pylint: disable=unused-import,cyclic-import
+    from lightbus.config import Config
+    from lightbus import RpcTransport, ResultTransport, EventTransport
 
 EventTransportPoolType = TransportPool["EventTransport"]
 RpcTransportPoolType = TransportPool["RpcTransport"]
@@ -33,9 +34,9 @@ class TransportRegistry:
     """
 
     class _RegistryEntry(NamedTuple):
-        rpc: RpcTransport = None
-        result: ResultTransport = None
-        event: EventTransport = None
+        rpc: RpcTransportPoolType = None
+        result: ResultTransportPoolType = None
+        event: EventTransportPoolType = None
 
     schema_transport: TransportPool = None
 

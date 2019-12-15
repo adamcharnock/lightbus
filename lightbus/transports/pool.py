@@ -15,7 +15,7 @@ else:
 
 
 class TransportPool(Generic[VT]):
-    def __init__(self, transport_class: Type[VT], transport_config: NamedTuple, config: Config):
+    def __init__(self, transport_class: Type[VT], transport_config: NamedTuple, config: "Config"):
         # TODO: Max pool size
         # TODO: Test
         self.transport_class = transport_class

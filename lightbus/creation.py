@@ -16,7 +16,7 @@ from lightbus.utilities.features import ALL_FEATURES, Feature
 from lightbus.config.structure import RootConfig
 from lightbus.log import Bold
 from lightbus.path import BusPath
-from lightbus.client import BusClient
+from lightbus.client.bus_client import BusClient
 from lightbus.config import Config
 from lightbus.exceptions import FailedToImportBusModule
 from lightbus.transports.registry import TransportRegistry
