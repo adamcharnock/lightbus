@@ -14,7 +14,7 @@ from lightbus.exceptions import LightbusTimeout, LightbusServerError
 from lightbus.transports.redis.event import StreamUse
 from lightbus.utilities.async_tools import cancel
 from lightbus.utilities.features import Feature
-from tests.conftest import BusQueueMockerContext
+from lightbus.utilities.testing import BusQueueMockerContext
 from tests.redis_transports.conftest import Worker
 
 pytestmark = pytest.mark.integration

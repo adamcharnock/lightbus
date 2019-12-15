@@ -1,10 +1,11 @@
+import asyncio
 import logging
 import os
 from contextlib import contextmanager, ContextDecorator
 from copy import copy
 from functools import wraps
 
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, TypeVar, Type, NamedTuple, Optional
 
 from lightbus import (
     RpcTransport,
@@ -15,6 +16,7 @@ from lightbus import (
     ResultMessage,
     EventMessage,
 )
+from lightbus.client.commands import SendEventCommand, CallRpcCommand
 from lightbus.path import BusPath
 from lightbus.client import BusClient
 from lightbus.transports.registry import TransportRegistry
@@ -29,11 +31,8 @@ class MockResult:
     We use camel case method names here for consistency with unittest
     """
 
-    def __init__(self, rpc_transport, result_transport, event_transport, schema_transport):
-        self.rpc: TestRpcTransport = rpc_transport
-        self.result: TestResultTransport = result_transport
-        self.event: TestEventTransport = event_transport
-        self.schema: TestSchemaTransport = schema_transport
+    def __init__(self, mocker_context: "BusQueueMockerContext"):
+        self.mocker_context = mocker_context
 
     def assertEventFired(self, full_event_name, *, times=None):
         event_names_fired = self.eventNamesFired
@@ -59,14 +58,18 @@ class MockResult:
     assert_event_not_fired = assertEventNotFired
 
     def getEventMessages(self, full_event_name=None) -> List[EventMessage]:
+        commands = self.mocker_context.event.to_transport.commands.get_all(SendEventCommand)
         if full_event_name is None:
-            return [m for m, _ in self.event.events]
+            return [c.message for c in commands]
         else:
-            return [m for m, _ in self.event.events if m.canonical_name == full_event_name]
+            return [c.message for c in commands if c.message.canonical_name == full_event_name]
 
     get_event_messages = getEventMessages
 
-    def mockEventFiring(self, full_event_name):
+    def mockEventFiring(self, full_event_name: str):
+        # TODO: Argh, how do we do this given that transports can now be
+        #       created spontaneously by the pools?
+        api_name, _ = full_event_name.rsplit(".", 1)
         self.event.add_mock_event(full_event_name)
 
     mock_event_firing = mockEventFiring
@@ -95,14 +98,17 @@ class MockResult:
     assert_rpc_not_called = assertRpcNotCalled
 
     def getRpcMessages(self, full_rpc_name=None) -> List[RpcMessage]:
+        commands = self.mocker_context.rpc_result.to_transport.commands.get_all(CallRpcCommand)
         if full_rpc_name is None:
-            return [m for m, _ in self.rpc.rpcs]
+            return [c.message for c in commands]
         else:
-            return [m for m, _ in self.rpc.rpcs if m.canonical_name == full_rpc_name]
+            return [c.message for c in commands if c.message.canonical_name == full_rpc_name]
 
     get_rpc_messages = getRpcMessages
 
     def mockRpcCall(self, full_rpc_name, result=None, **rpc_result_message_kwargs):
+        # TODO: Argh, how do we do this given that transports can now be
+        #       created spontaneously by the pools?
         self.result.add_mock_response(
             full_rpc_name, dict(result=result, **rpc_result_message_kwargs)
         )
@@ -111,18 +117,18 @@ class MockResult:
 
     @property
     def eventNamesFired(self) -> List[str]:
-        return [em.canonical_name for em, options in self.event.events]
+        return [c.canonical_name for c in self.getEventMessages()]
 
     event_names_fired = eventNamesFired
 
     @property
     def rpcNamesCalled(self) -> List[str]:
-        return [rm.canonical_name for rm, options in self.rpc.rpcs]
+        return [c.canonical_name for c in self.getRpcMessages()]
 
     rpc_names_called = rpcNamesCalled
 
     def __repr__(self):
-        return f"<MockResult: events: {len(self.event.events)}, rpcs: {len(self.rpc.rpcs)}>"
+        return f"<MockResult: events: {len(self.getEventMessages())}, rpcs: {len(self.getRpcMessages())}>"
 
 
 class BusMocker(ContextDecorator):
@@ -130,6 +136,7 @@ class BusMocker(ContextDecorator):
         self.bus = bus
         self.old_transport_registry = None
         self.require_mocking = require_mocking
+        self.stack: List[BusQueueMockerContext] = []
 
     def __call__(self, func):
         # Overriding ContextDecorator.__call__ to pass the mock
@@ -144,33 +151,42 @@ class BusMocker(ContextDecorator):
 
     def __enter__(self):
         """Start of a context where all the bus' transports have been replaced with mocks"""
-        rpc = TestRpcTransport()
-        result = TestResultTransport(require_mocking=self.require_mocking)
-        event = TestEventTransport(require_mocking=self.require_mocking)
-        schema = TestSchemaTransport()
-
         new_registry = TransportRegistry()
-        new_registry.set_schema_transport(schema)
+        new_registry.set_schema_transport(
+            TestSchemaTransport, TestSchemaTransport.Config(), self.bus.client.config
+        )
 
         self.old_transport_registry = self.bus.client.transport_registry
 
         for api_name, entry in self.old_transport_registry._registry.items():
-            new_registry.set_rpc_transport(api_name, rpc)
-            new_registry.set_result_transport(api_name, result)
-
-            if hasattr(entry.event, "child_transport"):
-                parent_transport = copy(entry.event)
-                parent_transport.child_transport = event
-                new_registry.set_event_transport(api_name, parent_transport)
-            else:
-                new_registry.set_event_transport(api_name, event)
+            new_registry.set_rpc_transport(
+                api_name, TestRpcTransport, TestRpcTransport.Config(), self.bus.client.config
+            )
+            new_registry.set_result_transport(
+                api_name,
+                ResultTransport,
+                ResultTransport.Config(require_mocking=self.require_mocking),
+                self.bus.client.config,
+            )
+            new_registry.set_event_transport(
+                api_name,
+                EventTransport,
+                EventTransport.Config(require_mocking=self.require_mocking),
+                self.bus.client.config,
+            )
 
         self.bus.client.transport_registry = new_registry
-        return MockResult(rpc, result, event, schema)
+
+        queue_mocker = BusQueueMockerContext(self.bus.client)
+        bus_with_mocked_queues = queue_mocker.__enter__()
+        self.stack.append(queue_mocker)
+        return MockResult(bus_with_mocked_queues)
 
     def __exit__(self, exc_type, exc, exc_tb):
         """Restores the bus back to its original state"""
-        self.bus.client.transport_registry = self.old_transport_registry
+        bus_with_mocked_queues = self.stack.pop()
+        bus_with_mocked_queues.__exit__()
+        bus_with_mocked_queues.bus.client.transport_registry = self.old_transport_registry
 
 
 bus_mocker = BusMocker
@@ -180,10 +196,10 @@ class TestRpcTransport(RpcTransport):
     def __init__(self):
         self.rpcs: List[Tuple[RpcMessage, dict]] = []
 
-    async def call_rpc(self, rpc_message, options: dict, bus_client: "BusClient"):
-        self.rpcs.append((rpc_message, options))
+    async def call_rpc(self, rpc_message, options: dict):
+        pass
 
-    async def consume_rpcs(self, apis, bus_client: "BusClient"):
+    async def consume_rpcs(self, apis):
         raise NotImplementedError("Not yet supported by mocks")
 
 
@@ -196,10 +212,10 @@ class TestResultTransport(ResultTransport):
     async def get_return_path(self, rpc_message):
         return "test://"
 
-    async def send_result(self, rpc_message, result_message, return_path, bus_client: "BusClient"):
+    async def send_result(self, rpc_message, result_message, return_path):
         raise NotImplementedError("Not yet supported by mocks")
 
-    async def receive_result(self, rpc_message, return_path, options, bus_client: "BusClient"):
+    async def receive_result(self, rpc_message, return_path, options):
         if self.require_mocking:
             assert rpc_message.canonical_name in self.mock_responses, (
                 f"RPC {rpc_message.canonical_name} unexpectedly called. "
@@ -224,24 +240,17 @@ class TestEventTransport(EventTransport):
         self.mock_events = set()
         self.require_mocking = require_mocking
 
-    async def send_event(self, event_message, options, bus_client: "BusClient"):
+    async def send_event(self, event_message, options):
         if self.require_mocking:
             assert event_message.canonical_name in self.mock_events, (
                 f"Event {event_message.canonical_name} unexpectedly fired. "
                 f"Perhaps you need to use mockEventFiring() to ensure the mocker expects this call."
             )
-        self.events.append((event_message, options))
 
     def add_mock_event(self, full_rpc_name):
         self.mock_events.add(full_rpc_name)
 
-    def consume(
-        self,
-        listen_for: List[Tuple[str, str]],
-        listener_name: str,
-        bus_client: "BusClient",
-        **kwargs,
-    ):
+    def consume(self, listen_for: List[Tuple[str, str]], listener_name: str, **kwargs):
         """Consume RPC events for the given API"""
         raise NotImplementedError("Not yet supported by mocks")
 
@@ -258,3 +267,109 @@ class TestSchemaTransport(SchemaTransport):
 
     async def load(self) -> Dict[str, Dict]:
         return self.schemas
+
+
+T = TypeVar("T")
+
+
+class CommandList(list):
+    def types(self):
+        return [type(i for i in self)]
+
+    def get_all(self, type_: Type[T]) -> List[T]:
+        commands = []
+        for i in self:
+            if type(i) == type_:
+                commands.append(i)
+        return commands
+
+    def get(self, type_: Type[T], multiple_ok=False) -> T:
+        commands = self.get_all(type_)
+        if not commands:
+            raise ValueError(f"No command found of type {type_}")
+        elif len(commands) > 1 and not multiple_ok:
+            raise ValueError(f"Multiple ({len(commands)}) commands found of type {type_}")
+        else:
+            return commands[0]
+
+    def has(self, type_: Type[T]):
+        return any(type(i) == type_ for i in self)
+
+    def count(self, type_: Type[T]):
+        len(self.get_all(type_))
+
+
+class QueueMockContext:
+    def __init__(self, queue: asyncio.Queue):
+        self.queue = queue
+        self.put_items = []
+        self.got_items = []
+        self._old_get = None
+        self._old_put = None
+
+    def __enter__(self) -> "QueueMockContext":
+        self._old_put = self.queue.put_nowait
+        self.queue.put_nowait = self._put_nowait
+
+        self._old_get = self.queue.get_nowait
+        self.queue.get_nowait = self._get_nowait
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    def _put_nowait(self, item, *args, **kwargs):
+        self.put_items.append(item)
+        return self._old_put(item, *args, **kwargs)
+
+    def _get_nowait(self, *args, **kwargs):
+        item = self._old_get(*args, **kwargs)
+        self.got_items.append(item)
+        return item
+
+    @property
+    def put_commands(self) -> CommandList:
+        return CommandList([i[0] for i in self.put_items])
+
+    @property
+    def got_commands(self) -> CommandList:
+        return CommandList([i[0] for i in self.got_items])
+
+    @property
+    def items(self):
+        # Just a little shortcut for the common use case
+        return self.put_items
+
+    @property
+    def commands(self):
+        # Just a little shortcut for the common use case
+        return self.put_commands
+
+
+class BusQueueMockerContext:
+    class Queues(NamedTuple):
+        to_transport: QueueMockContext
+        from_transport: QueueMockContext
+
+    def __init__(self, bus: BusClient):
+        self.bus = bus
+        self.event: Optional[BusQueueMockerContext.Queues] = None
+        self.rpc_result: Optional[BusQueueMockerContext.Queues] = None
+
+    def __enter__(self):
+        self.event = BusQueueMockerContext.Queues(
+            to_transport=QueueMockContext(self.bus.event_client.producer.queue).__enter__(),
+            from_transport=QueueMockContext(self.bus.event_client.consumer.queue).__enter__(),
+        )
+        self.rpc_result = BusQueueMockerContext.Queues(
+            to_transport=QueueMockContext(self.bus.rpc_result_client.producer.queue).__enter__(),
+            from_transport=QueueMockContext(self.bus.rpc_result_client.consumer.queue).__enter__(),
+        )
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.event.to_transport.__exit__(exc_type, exc_val, exc_tb)
+        self.event.from_transport.__exit__(exc_type, exc_val, exc_tb)
+        self.rpc_result.to_transport.__exit__(exc_type, exc_val, exc_tb)
+        self.rpc_result.from_transport.__exit__(exc_type, exc_val, exc_tb)

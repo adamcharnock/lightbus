@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from tests.conftest import QueueMockContext
+from lightbus.utilities.testing import QueueMockContext
 
 
 @pytest.mark.asyncio

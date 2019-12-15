@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 from queue import Queue
 from random import randint
-from typing import TypeVar, Type, NamedTuple, Optional
+from typing import Type
 from urllib.parse import urlparse
 
 import pytest
@@ -33,7 +33,6 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 import lightbus
 import lightbus.creation
 from lightbus import (
-    BusClient,
     RedisSchemaTransport,
     DebugRpcTransport,
     DebugResultTransport,
@@ -54,7 +53,8 @@ from lightbus.exceptions import BusAlreadyClosed
 from lightbus.path import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import PluginRegistry
-from lightbus.utilities.async_tools import cancel, configure_event_loop
+from lightbus.utilities.async_tools import configure_event_loop
+from lightbus.utilities.testing import BusQueueMockerContext
 
 TCPAddress = namedtuple("TCPAddress", "host port")
 
@@ -610,112 +610,6 @@ def run_lightbus_command(make_test_bus_module, redis_config_file):
         print(f"---- 'lightbus {cmd}' stderr ----", flush=True)
         print(p.stderr.read().decode("utf8"), flush=True)
         assert p.returncode == 0, f"Child process running 'lightbus {cmd}' exited abnormally"
-
-
-T = TypeVar("T")
-
-
-class CommandList(list):
-    def types(self):
-        return [type(i for i in self)]
-
-    def get_all(self, type_: Type):
-        commands = []
-        for i in self:
-            if type(i) == type_:
-                commands.append(i)
-        return commands
-
-    def get(self, type_: Type[T], multiple_ok=False) -> T:
-        commands = self.get_all(type_)
-        if not commands:
-            raise ValueError(f"No command found of type {type_}")
-        elif len(commands) > 1 and not multiple_ok:
-            raise ValueError(f"Multiple ({len(commands)}) commands found of type {type_}")
-        else:
-            return commands[0]
-
-    def has(self, type_: Type):
-        return any(type(i) == type_ for i in self)
-
-    def count(self, type_: Type):
-        len(self.get_all(type_))
-
-
-class QueueMockContext:
-    def __init__(self, queue: asyncio.Queue):
-        self.queue = queue
-        self.put_items = []
-        self.got_items = []
-        self._old_get = None
-        self._old_put = None
-
-    def __enter__(self) -> "QueueMockContext":
-        self._old_put = self.queue.put_nowait
-        self.queue.put_nowait = self._put_nowait
-
-        self._old_get = self.queue.get_nowait
-        self.queue.get_nowait = self._get_nowait
-
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    def _put_nowait(self, item, *args, **kwargs):
-        self.put_items.append(item)
-        return self._old_put(item, *args, **kwargs)
-
-    def _get_nowait(self, *args, **kwargs):
-        item = self._old_get(*args, **kwargs)
-        self.got_items.append(item)
-        return item
-
-    @property
-    def put_commands(self) -> CommandList:
-        return CommandList([i[0] for i in self.put_items])
-
-    @property
-    def got_commands(self) -> CommandList:
-        return CommandList([i[0] for i in self.got_items])
-
-    @property
-    def items(self):
-        # Just a little shortcut for the common use case
-        return self.put_items
-
-    @property
-    def commands(self):
-        # Just a little shortcut for the common use case
-        return self.put_commands
-
-
-class BusQueueMockerContext:
-    class Queues(NamedTuple):
-        to_transport: QueueMockContext
-        from_transport: QueueMockContext
-
-    def __init__(self, bus: lightbus.BusClient):
-        self.bus = bus
-        self.event: Optional[BusQueueMockerContext.Queues] = None
-        self.rpc_result: Optional[BusQueueMockerContext.Queues] = None
-
-    def __enter__(self):
-        self.event = BusQueueMockerContext.Queues(
-            to_transport=QueueMockContext(self.bus.event_client.producer.queue).__enter__(),
-            from_transport=QueueMockContext(self.bus.event_client.consumer.queue).__enter__(),
-        )
-        self.rpc_result = BusQueueMockerContext.Queues(
-            to_transport=QueueMockContext(self.bus.rpc_result_client.producer.queue).__enter__(),
-            from_transport=QueueMockContext(self.bus.rpc_result_client.consumer.queue).__enter__(),
-        )
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.event.to_transport.__exit__(exc_type, exc_val, exc_tb)
-        self.event.from_transport.__exit__(exc_type, exc_val, exc_tb)
-        self.rpc_result.to_transport.__exit__(exc_type, exc_val, exc_tb)
-        self.rpc_result.from_transport.__exit__(exc_type, exc_val, exc_tb)
 
 
 @pytest.fixture

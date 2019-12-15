@@ -10,7 +10,13 @@ empty = NamedTuple("Empty")
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import
     from lightbus.config import Config
-    from lightbus import RpcTransport, ResultTransport, EventTransport
+    from lightbus.transports import (
+        RpcTransport,
+        ResultTransport,
+        EventTransport,
+        SchemaTransport,
+        Transport,
+    )
 
 EventTransportPoolType = TransportPool["EventTransport"]
 RpcTransportPoolType = TransportPool["RpcTransport"]
@@ -54,17 +60,18 @@ class TransportRegistry:
                 # ... and use it to create the transport.
                 if transport_config:
                     transport_name, transport_config = transport_config
-                    transport = self._instantiate_transport_pool(
-                        transport_type, transport_name, transport_config, config
+                    transport_class = get_transport(type_=transport_type, name=transport_name)
+                    self._set_transport(
+                        api_name, transport_class, transport_type, transport_config, config
                     )
-                    self._set_transport_pool(api_name, transport, transport_type)
 
         # Schema transport
         transport_config = self._get_transport_config(config.bus().schema.transport)
         if transport_config:
             transport_name, transport_config = transport_config
+            transport_class = get_transport(type_="schema", name=transport_name)
             self.schema_transport = self._instantiate_transport_pool(
-                "schema", transport_name, transport_config, config
+                transport_class, transport_config, config
             )
 
         return self
@@ -77,22 +84,33 @@ class TransportRegistry:
                     return transport_name, transport_config
 
     def _instantiate_transport_pool(
-        self, type_, name, transport_config: NamedTuple, config: "Config"
+        self, transport_class: Type["Transport"], transport_config: NamedTuple, config: "Config"
     ):
-        transport_class = get_transport(type_=type_, name=name)
         transport_pool = TransportPool(
             transport_class=transport_class, transport_config=transport_config, config=config
         )
         return transport_pool
 
-    def _set_transport_pool(self, api_name: str, transport: TransportPool, transport_type: str):
+    def _set_transport(
+        self,
+        api_name: str,
+        transport_class: Type["Transport"],
+        transport_type: str,
+        transport_config: NamedTuple,
+        config: "Config",
+    ):
         """Set the transport pool for a specific API"""
-        # TODO: Remove after refactoring complete
-        assert isinstance(
-            transport, TransportPool
-        ), f"Must be a transport pool, was {type(transport)}"
+        from lightbus.transports import Transport
+
+        assert issubclass(
+            transport_class, Transport
+        ), f"Must be a subclass for Transport, was {transport_class}"
+
         self._registry.setdefault(api_name, self._RegistryEntry())
-        self._registry[api_name] = self._registry[api_name]._replace(**{transport_type: transport})
+        transport_pool = self._instantiate_transport_pool(transport_class, transport_config, config)
+        self._registry[api_name] = self._registry[api_name]._replace(
+            **{transport_type: transport_pool}
+        )
 
     def _get_transport_pool(
         self, api_name: str, transport_type: str, default=empty
@@ -143,17 +161,42 @@ class TransportRegistry:
         else:
             return True
 
-    def set_rpc_transport(self, api_name: str, transport: RpcTransportPoolType):
-        self._set_transport_pool(api_name, transport, "rpc")
+    def set_rpc_transport(
+        self,
+        api_name: str,
+        transport_class: Type["RpcTransport"],
+        transport_config: NamedTuple,
+        config: "Config",
+    ):
+        self._set_transport(api_name, transport_class, "rpc", transport_config, config)
 
-    def set_result_transport(self, api_name: str, transport: ResultTransportPoolType):
-        self._set_transport_pool(api_name, transport, "result")
+    def set_result_transport(
+        self,
+        api_name: str,
+        transport_class: Type["ResultTransport"],
+        transport_config: NamedTuple,
+        config: "Config",
+    ):
+        self._set_transport(api_name, transport_class, "result", transport_config, config)
 
-    def set_event_transport(self, api_name: str, transport: EventTransportPoolType):
-        self._set_transport_pool(api_name, transport, "event")
+    def set_event_transport(
+        self,
+        api_name: str,
+        transport_class: Type["EventTransport"],
+        transport_config: NamedTuple,
+        config: "Config",
+    ):
+        self._set_transport(api_name, transport_class, "event", transport_config, config)
 
-    def set_schema_transport(self, transport: SchemaTransportPoolType):
-        self.schema_transport = transport
+    def set_schema_transport(
+        self,
+        transport_class: Type["SchemaTransport"],
+        transport_config: NamedTuple,
+        config: "Config",
+    ):
+        self.schema_transport = self._instantiate_transport_pool(
+            transport_class, transport_config, config
+        )
 
     def get_rpc_transport(self, api_name: str, default=empty) -> RpcTransportPoolType:
         return self._get_transport_pool(api_name, "rpc", default=default)
