@@ -51,7 +51,12 @@ class DebugResultTransport(ResultTransport):
         await asyncio.sleep(0.1)  # This is relied upon in testing
         logger.debug("Faking received result")
 
-        return ResultMessage(result="Fake result", rpc_message_id=rpc_message.id)
+        return ResultMessage(
+            result="Fake result",
+            rpc_message_id=rpc_message.id,
+            api_name=rpc_message.api_name,
+            procedure_name=rpc_message.procedure_name,
+        )
 
 
 class DebugEventTransport(EventTransport):

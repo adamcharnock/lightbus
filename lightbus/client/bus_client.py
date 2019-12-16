@@ -336,6 +336,8 @@ class BusClient:
         )
 
         # 3. Open the transports
+        # TODO: Remove transports from the BusClient as this is all the bus client
+        #       does with them now. And this should be automatic because they are in pools now anyway
         for transport in self.transport_registry.get_all_transports():
             await transport.open()
 

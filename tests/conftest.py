@@ -220,6 +220,7 @@ def dummy_bus(loop, redis_server_url):
             )
         ),
         plugins=[],
+        _testing=True,
     )
     # fmt: on
     yield dummy_bus

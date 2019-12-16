@@ -38,6 +38,7 @@ def create(
     node_class: Type[BusPath] = BusPath,
     plugins=None,
     flask: bool = False,
+    _testing: bool = False,
     **kwargs,
 ) -> BusPath:
     """
@@ -129,7 +130,7 @@ def create(
         produce_to=events_queue_client_to_dock,
     )
 
-    EventDock(
+    event_dock = EventDock(
         transport_registry=transport_registry,
         api_registry=api_registry,
         config=config,
@@ -150,7 +151,7 @@ def create(
         produce_to=rpcs_queue_client_to_dock,
     )
 
-    RpcResultDock(
+    rpc_result_dock = RpcResultDock(
         transport_registry=transport_registry,
         api_registry=api_registry,
         config=config,
@@ -171,6 +172,12 @@ def create(
         transport_registry=transport_registry,
         **kwargs,
     )
+
+    if _testing:
+        # We don't do this normally as the docs do not need to be
+        # accessed directly, but this is useful in testing
+        client.event_dock = event_dock
+        client.rpc_result_dock = rpc_result_dock
 
     log_welcome_message(
         logger=logger,

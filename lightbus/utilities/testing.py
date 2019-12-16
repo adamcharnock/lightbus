@@ -29,11 +29,23 @@ logger = logging.getLogger(__name__)
 class MockResult:
     """Utility for mocking bus calls
 
-    We use camel case method names here for consistency with unittest
+    This is the context variable provided when using the BusMocker utility.
+
+    Examples:
+
+        # bus_mock will be a MockResult
+        with bus_mocker as bus_mock:
+            # ... do stuff with the bus ...
+            bus_mock.assertEventFired()
+
     """
 
-    def __init__(self, mocker_context: "BusQueueMockerContext"):
+    def __init__(
+        self, mocker_context: "BusQueueMockerContext", mock_responses: dict, mock_events: set
+    ):
         self.mocker_context = mocker_context
+        self.mock_responses = mock_responses
+        self.mock_events = mock_events
 
     def assertEventFired(self, full_event_name, *, times=None):
         event_names_fired = self.eventNamesFired
@@ -68,10 +80,7 @@ class MockResult:
     get_event_messages = getEventMessages
 
     def mockEventFiring(self, full_event_name: str):
-        # TODO: Argh, how do we do this given that transports can now be
-        #       created spontaneously by the pools?
-        api_name, _ = full_event_name.rsplit(".", 1)
-        self.event.add_mock_event(full_event_name)
+        self.mock_events.add(full_event_name)
 
     mock_event_firing = mockEventFiring
 
@@ -108,11 +117,7 @@ class MockResult:
     get_rpc_messages = getRpcMessages
 
     def mockRpcCall(self, full_rpc_name, result=None, **rpc_result_message_kwargs):
-        # TODO: Argh, how do we do this given that transports can now be
-        #       created spontaneously by the pools?
-        self.result.add_mock_response(
-            full_rpc_name, dict(result=result, **rpc_result_message_kwargs)
-        )
+        self.mock_responses[full_rpc_name] = dict(result=result, **rpc_result_message_kwargs)
 
     mock_rpc_call = mockRpcCall
 
@@ -159,6 +164,14 @@ class BusMocker(ContextDecorator):
 
         self.old_transport_registry = self.bus.client.transport_registry
 
+        # Mutable structures which we will use this to get the mocked data into
+        # the transports
+
+        # RPC
+        mock_responses = {}
+        # Events
+        mock_events = set()
+
         for api_name, entry in self.old_transport_registry._registry.items():
             new_registry.set_rpc_transport(
                 api_name, TestRpcTransport, TestRpcTransport.Config(), self.bus.client.config
@@ -166,22 +179,30 @@ class BusMocker(ContextDecorator):
             new_registry.set_result_transport(
                 api_name,
                 TestResultTransport,
-                TestResultTransport.Config(require_mocking=self.require_mocking),
+                TestResultTransport.Config(
+                    require_mocking=self.require_mocking, mock_responses=mock_responses
+                ),
                 self.bus.client.config,
             )
             new_registry.set_event_transport(
                 api_name,
                 TestEventTransport,
-                TestEventTransport.Config(require_mocking=self.require_mocking),
+                TestEventTransport.Config(
+                    require_mocking=self.require_mocking, mock_events=mock_events
+                ),
                 self.bus.client.config,
             )
 
-        self.bus.client.transport_registry = new_registry
+        # The docs are only available on the bus client during testing
+        self.bus.client.event_dock.transport_registry = new_registry
+        self.bus.client.rpc_result_dock.transport_registry = new_registry
 
-        queue_mocker = BusQueueMockerContext(self.bus.client)
+        queue_mocker = BusQueueMockerContext(client=self.bus.client)
         bus_with_mocked_queues = queue_mocker.__enter__()
         self.stack.append(queue_mocker)
-        return MockResult(bus_with_mocked_queues)
+        return MockResult(
+            bus_with_mocked_queues, mock_responses=mock_responses, mock_events=mock_events
+        )
 
     def __exit__(self, exc_type, exc, exc_tb):
         """Restores the bus back to its original state"""
@@ -207,13 +228,16 @@ class TestRpcTransport(RpcTransport):
 
 
 class TestResultTransport(ResultTransport):
-    def __init__(self, require_mocking=True):
+    def __init__(self, mock_responses: Dict[str, dict], require_mocking=True):
         super().__init__()
-        self.mock_responses = {}
+        self.mock_responses = mock_responses
         self.require_mocking = require_mocking
 
-    def from_config(cls: Type[T], config: "Config", require_mocking: bool = True) -> T:
-        return cls(require_mocking=require_mocking)
+    @classmethod
+    def from_config(
+        cls: Type[T], config: "Config", mock_responses: dict, require_mocking: bool = True
+    ) -> T:
+        return cls(mock_responses=mock_responses, require_mocking=require_mocking)
 
     async def get_return_path(self, rpc_message):
         return "test://"
@@ -229,25 +253,32 @@ class TestResultTransport(ResultTransport):
             )
 
         if rpc_message.canonical_name in self.mock_responses:
-            kwargs = self.mock_responses[rpc_message.canonical_name]
+            kwargs = self.mock_responses[rpc_message.canonical_name].copy()
+            kwargs.setdefault("api_name", rpc_message.api_name)
+            kwargs.setdefault("procedure_name", rpc_message.procedure_name)
+            kwargs.setdefault("rpc_message_id", rpc_message.id)
             return ResultMessage(**kwargs)
         else:
-            return ResultMessage(result=None, rpc_message_id="1")
-
-    def add_mock_response(self, full_rpc_name, rpc_result_message_kwargs):
-        rpc_result_message_kwargs.setdefault("rpc_message_id", 1)
-        self.mock_responses[full_rpc_name] = rpc_result_message_kwargs
+            return ResultMessage(
+                result=None,
+                rpc_message_id="1",
+                api_name=rpc_message.api_name,
+                procedure_name=rpc_message.procedure_name,
+            )
 
 
 class TestEventTransport(EventTransport):
-    def __init__(self, require_mocking=True):
+    def __init__(self, mock_events: set, require_mocking=True):
         super().__init__()
         self.events = []
-        self.mock_events = set()
+        self.mock_events = mock_events
         self.require_mocking = require_mocking
 
-    def from_config(cls: Type[T], config: "Config", require_mocking: bool = True) -> T:
-        return cls(require_mocking=require_mocking)
+    @classmethod
+    def from_config(
+        cls: Type[T], config: "Config", mock_events: set, require_mocking: bool = True
+    ) -> T:
+        return cls(mock_events=mock_events, require_mocking=require_mocking)
 
     async def send_event(self, event_message, options):
         if self.require_mocking:
@@ -255,9 +286,6 @@ class TestEventTransport(EventTransport):
                 f"Event {event_message.canonical_name} unexpectedly fired. "
                 f"Perhaps you need to use mockEventFiring() to ensure the mocker expects this call."
             )
-
-    def add_mock_event(self, full_rpc_name):
-        self.mock_events.add(full_rpc_name)
 
     def consume(self, listen_for: List[Tuple[str, str]], listener_name: str, **kwargs):
         """Consume RPC events for the given API"""
@@ -278,7 +306,9 @@ class TestSchemaTransport(SchemaTransport):
         return self.schemas
 
 
-T = TypeVar("T")
+# Command mocking
+# These tools are not part of the public API, but are used for internal testing,
+# and to power the above BusMocker (which is part of the public API)
 
 
 class CommandList(list):
