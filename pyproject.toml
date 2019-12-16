@@ -16,6 +16,7 @@
     documentation = "https://lightbus.org"
     repository = "https://github.com/adamcharnock/lightbus/"
     keywords = ["python", "messaging", "redis", "bus", "queue"]
+    description = "RPC & event framework for Python 3"
     classifiers = [
         "Development Status :: 5 - Production/Stable",
         "Framework :: AsyncIO",
