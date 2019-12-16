@@ -17,6 +17,7 @@ from lightbus import (
     EventMessage,
 )
 from lightbus.client.commands import SendEventCommand, CallRpcCommand
+from lightbus.config import Config
 from lightbus.path import BusPath
 from lightbus.client import BusClient
 from lightbus.transports.registry import TransportRegistry
@@ -39,7 +40,7 @@ class MockResult:
         if times is None or times > 0:
             assert (  # nosec
                 full_event_name in event_names_fired
-            ), f"Event {full_event_name} was never fired. Fired events were: {set(event_names_fired)}"
+            ), f"Event {full_event_name} was never fired. Fired events were: {', '.join(event_names_fired)}"
 
         if times is not None:
             total_times_fired = len([v for v in event_names_fired if v == full_event_name])
@@ -164,14 +165,14 @@ class BusMocker(ContextDecorator):
             )
             new_registry.set_result_transport(
                 api_name,
-                ResultTransport,
-                ResultTransport.Config(require_mocking=self.require_mocking),
+                TestResultTransport,
+                TestResultTransport.Config(require_mocking=self.require_mocking),
                 self.bus.client.config,
             )
             new_registry.set_event_transport(
                 api_name,
-                EventTransport,
-                EventTransport.Config(require_mocking=self.require_mocking),
+                TestEventTransport,
+                TestEventTransport.Config(require_mocking=self.require_mocking),
                 self.bus.client.config,
             )
 
@@ -185,11 +186,13 @@ class BusMocker(ContextDecorator):
     def __exit__(self, exc_type, exc, exc_tb):
         """Restores the bus back to its original state"""
         bus_with_mocked_queues = self.stack.pop()
-        bus_with_mocked_queues.__exit__()
-        bus_with_mocked_queues.bus.client.transport_registry = self.old_transport_registry
+        bus_with_mocked_queues.__exit__(exc_type, exc, exc_tb)
+        bus_with_mocked_queues.client.transport_registry = self.old_transport_registry
 
 
 bus_mocker = BusMocker
+
+T = TypeVar("T")
 
 
 class TestRpcTransport(RpcTransport):
@@ -208,6 +211,9 @@ class TestResultTransport(ResultTransport):
         super().__init__()
         self.mock_responses = {}
         self.require_mocking = require_mocking
+
+    def from_config(cls: Type[T], config: "Config", require_mocking: bool = True) -> T:
+        return cls(require_mocking=require_mocking)
 
     async def get_return_path(self, rpc_message):
         return "test://"
@@ -239,6 +245,9 @@ class TestEventTransport(EventTransport):
         self.events = []
         self.mock_events = set()
         self.require_mocking = require_mocking
+
+    def from_config(cls: Type[T], config: "Config", require_mocking: bool = True) -> T:
+        return cls(require_mocking=require_mocking)
 
     async def send_event(self, event_message, options):
         if self.require_mocking:
@@ -299,11 +308,14 @@ class CommandList(list):
         len(self.get_all(type_))
 
 
+Command = TypeVar("Command", bound=NamedTuple)
+
+
 class QueueMockContext:
     def __init__(self, queue: asyncio.Queue):
         self.queue = queue
-        self.put_items = []
-        self.got_items = []
+        self.put_items: List[Tuple[Command, asyncio.Event]] = []
+        self.got_items: List[Tuple[Command, asyncio.Event]] = []
         self._old_get = None
         self._old_put = None
 
@@ -352,19 +364,21 @@ class BusQueueMockerContext:
         to_transport: QueueMockContext
         from_transport: QueueMockContext
 
-    def __init__(self, bus: BusClient):
-        self.bus = bus
+    def __init__(self, client: BusClient):
+        self.client = client
         self.event: Optional[BusQueueMockerContext.Queues] = None
         self.rpc_result: Optional[BusQueueMockerContext.Queues] = None
 
     def __enter__(self):
         self.event = BusQueueMockerContext.Queues(
-            to_transport=QueueMockContext(self.bus.event_client.producer.queue).__enter__(),
-            from_transport=QueueMockContext(self.bus.event_client.consumer.queue).__enter__(),
+            to_transport=QueueMockContext(self.client.event_client.producer.queue).__enter__(),
+            from_transport=QueueMockContext(self.client.event_client.consumer.queue).__enter__(),
         )
         self.rpc_result = BusQueueMockerContext.Queues(
-            to_transport=QueueMockContext(self.bus.rpc_result_client.producer.queue).__enter__(),
-            from_transport=QueueMockContext(self.bus.rpc_result_client.consumer.queue).__enter__(),
+            to_transport=QueueMockContext(self.client.rpc_result_client.producer.queue).__enter__(),
+            from_transport=QueueMockContext(
+                self.client.rpc_result_client.consumer.queue
+            ).__enter__(),
         )
         return self
 
