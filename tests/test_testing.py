@@ -329,8 +329,8 @@ def test_mock_result_get_rpc_messages_filtered(mock_result: testing.MockResult, 
     "property_name", ["event_names_fired", "eventNamesFired"], ids=["snake", "camel"]
 )
 def test_mock_result_event_names_fired(mock_result: testing.MockResult, property_name):
-    event1 = EventMessage(api_name="api", event_name="event1")
-    event2 = EventMessage(api_name="api", event_name="event2")
+    event1 = EventMessage(api_name="api1", event_name="event1")
+    event2 = EventMessage(api_name="api2", event_name="event2")
     # fmt: off
     mock_result.mocker_context.event.to_transport.put_items = [
         (
@@ -342,13 +342,13 @@ def test_mock_result_event_names_fired(mock_result: testing.MockResult, property
         ),
     ]
     # fmt: on
-    assert getattr(mock_result, property_name) == ["api.event1", "api2.event2"]
+    assert getattr(mock_result, property_name) == ["api1.event1", "api2.event2"]
 
 
 @pytest.mark.parametrize(
-    "property_name", ["event_names_fired", "eventNamesFired"], ids=["snake", "camel"]
+    "property_name", ["rpc_names_called", "rpcNamesCalled"], ids=["snake", "camel"]
 )
-def test_mock_result_rpc_names_fired(mock_result: testing.MockResult, property_name):
+def test_mock_result_rpc_names_called(mock_result: testing.MockResult, property_name):
     rpc_message1 = RpcMessage(api_name="api", procedure_name="rpc")
     rpc_message2 = RpcMessage(api_name="api2", procedure_name="rpc2")
     # fmt: off
