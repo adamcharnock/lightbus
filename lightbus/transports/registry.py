@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import NamedTuple, Dict, Sequence, List, Set, Type, Union, TYPE_CHECKING
+from typing import NamedTuple, Dict, Sequence, List, Set, Type, Union, TYPE_CHECKING, Tuple
 
 from lightbus.exceptions import TransportNotFound, TransportsNotInstalled
 from lightbus.transports.pool import TransportPool
@@ -145,13 +145,13 @@ class TransportRegistry:
 
     def _get_transport_pools(
         self, api_names: Sequence[str], transport_type: str
-    ) -> List[AnyTransportPoolType]:
+    ) -> Dict[AnyTransportPoolType, List[str]]:
         apis_by_transport: Dict[AnyTransportPoolType, List[str]] = {}
         for api_name in api_names:
             transport = self._get_transport_pool(api_name, transport_type)
             apis_by_transport.setdefault(transport, [])
             apis_by_transport[transport].append(api_name)
-        return list(apis_by_transport.items())
+        return apis_by_transport
 
     def _has_transport(self, api_name: str, transport_type: str) -> bool:
         try:
@@ -238,14 +238,16 @@ class TransportRegistry:
     def has_schema_transport(self) -> bool:
         return bool(self.schema_transport)
 
-    def get_rpc_transports(self, api_names: Sequence[str]) -> List[RpcTransportPoolType]:
+    def get_rpc_transports(self, api_names: Sequence[str]) -> Dict[RpcTransportPoolType, List[str]]:
         """Get a mapping of transports to lists of APIs
 
         This is useful when multiple APIs can be served by a single transport
         """
         return self._get_transport_pools(api_names, "rpc")
 
-    def get_event_transports(self, api_names: Sequence[str]) -> List[EventTransportPoolType]:
+    def get_event_transports(
+        self, api_names: Sequence[str]
+    ) -> Dict[EventTransportPoolType, List[str]]:
         """Get a mapping of transports to lists of APIs
 
         This is useful when multiple APIs can be served by a single transport

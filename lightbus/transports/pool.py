@@ -27,6 +27,15 @@ class TransportPool(Generic[VT]):
         self.pool: List[VT] = []
         self.context_stack: List[VT] = []
 
+    def __repr__(self):
+        return f"<Pool of {self.transport_class.__name__} at 0x{id(self):02x}>"
+
+    def __hash__(self):
+        return hash((self.transport_class, self.transport_config))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
     async def grow(self):
         with self.lock:
             new_transport = self.transport_class.from_config(

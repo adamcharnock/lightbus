@@ -58,6 +58,10 @@ class StreamUse(Enum):
         else:
             return super().__eq__(other)
 
+    # Need to define this manually because we also
+    # defined __eq__
+    __hash__ = Enum.__hash__
+
 
 class RedisEventTransport(RedisTransportMixin, EventTransport):
     """Redis Event Transport
