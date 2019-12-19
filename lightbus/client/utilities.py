@@ -78,9 +78,17 @@ def queue_exception_checker(coroutine: Coroutine, error_queue: asyncio.Queue):
         try:
             await coroutine
         except asyncio.CancelledError:
+            # Was cancelled by the caller, so just return as this is an expected error
             pass
         except Exception as e:
+            # This is an exception which is going to need to be dealt with
+
+            # We set a flag on each exception we add to the queue to indicate
+            # that it has been enqueued. This prevents an exception being added to the
+            # queue multiple times as it propagates up potentially multiple levels
+            # of asyncio tasks (which of which would presumably be wrapped up in queue_exception_checker())
             if not getattr(e, "enqueued", False):
+                # Flag not set, so add this error to the queue, and set the flag on it
                 e.enqueued = True
                 error = Error(*sys.exc_info(), invoking_stack)
                 await error_queue.put(error)
