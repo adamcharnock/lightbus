@@ -275,12 +275,6 @@ APIs are configured using the options below:
 * `cast_values` (default: `true`) – If enabled, incoming values will be best-effort
   casted based on the annotations of the RPC method signature or event listener.
   See [typing](typing.md).
-* `on_error` (default: `shutdown`) – How should errors in event handlers be
-  dealt with. Must be one of `ignore`, `stop_listener`, or `shutdown`.
-  In all cases the exception will be logged. `ignore` will simply log the error and
-  continue processing events. `stop_listener` will consume no further events
-  for that listener, but other event listeners will continue as normal.
-  `shutdown` will cause the Lightbus process to exit with a non-zero exit code.
 
 ##### Transport selector
 

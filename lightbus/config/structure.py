@@ -103,7 +103,6 @@ class ApiConfig:
     strict_validation: bool = False
     #: Cast values before calling event listeners and RPCs
     cast_values: bool = True
-    on_error: OnError = OnError.SHUTDOWN
 
     def __init__(self, **kw):
         for k, v in kw.items():

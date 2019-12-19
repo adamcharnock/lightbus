@@ -1,9 +1,7 @@
 import asyncio
 import logging
-from contextlib import contextmanager, asynccontextmanager
 
 import pytest
-from aioredis import create_redis_pool
 
 import lightbus
 import lightbus.creation
@@ -11,24 +9,7 @@ import lightbus.transports.redis.event
 import lightbus.transports.redis.result
 import lightbus.transports.redis.rpc
 import lightbus.transports.redis.schema
-from lightbus import (
-    RedisRpcTransport,
-    RedisSchemaTransport,
-    RedisResultTransport,
-    RedisEventTransport,
-)
-from lightbus.config.structure import (
-    RootConfig,
-    ApiConfig,
-    RpcTransportSelector,
-    ResultTransportSelector,
-    EventTransportSelector,
-    SchemaTransportSelector,
-    SchemaConfig,
-    BusConfig,
-)
 from lightbus.exceptions import BusAlreadyClosed
-from lightbus.path import BusPath
 from lightbus.transports.redis.event import StreamUse
 
 logger = logging.getLogger(__name__)
@@ -80,48 +61,6 @@ async def bus(new_bus):
         pass
 
 
-class Worker:
-    def __init__(self, bus: BusPath):
-        self.bus: BusPath = bus
-
-    async def start(self):
-        await self.bus.client.start_server()
-
-    async def stop(self):
-        try:
-            await self.bus.client.stop_server()
-        finally:
-            # Stop server can raise any queued exceptions that had
-            # not previously been raised, so make sure we
-            # do the close by wrapping it in a finally
-            try:
-                await self.bus.client.close_async()
-            except BusAlreadyClosed:
-                pass
-
-    def __call__(self, raise_errors=True):
-        @asynccontextmanager
-        async def worker_context():
-            await self.start()
-
-            yield
-
-            try:
-                await self.stop()
-            except Exception as e:
-                if raise_errors:
-                    raise
-                else:
-                    logger.error(e)
-
-        return worker_context()
-
-
-@pytest.yield_fixture
-async def worker(new_bus):
-    yield Worker(new_bus())
-
-
 @pytest.fixture(name="fire_dummy_events")
 def fire_dummy_events_fixture(bus):
     async def fire_dummy_events(total, initial_delay=0.1):
@@ -131,42 +70,6 @@ def fire_dummy_events_fixture(bus):
         logger.warning("TEST: fire_dummy_events() completed")
 
     return fire_dummy_events
-
-
-# fmt: off
-@pytest.fixture
-def new_bus(loop, redis_server_url):
-    def _new_bus(service_name="{friendly}"):
-        bus = lightbus.creation.create(
-            config=RootConfig(
-                apis={
-                    'default': ApiConfig(
-                        rpc_transport=RpcTransportSelector(
-                            redis=RedisRpcTransport.Config(url=redis_server_url)
-                        ),
-                        result_transport=ResultTransportSelector(
-                            redis=RedisResultTransport.Config(url=redis_server_url)
-                        ),
-                        event_transport=EventTransportSelector(redis=RedisEventTransport.Config(
-                            url=redis_server_url,
-                            stream_use=StreamUse.PER_EVENT,
-                            service_name="test_service",
-                            consumer_name="test_consumer",
-                        )),
-                    )
-                },
-                bus=BusConfig(
-                    schema=SchemaConfig(
-                        transport=SchemaTransportSelector(redis=RedisSchemaTransport.Config(url=redis_server_url)),
-                    )
-                ),
-                service_name=service_name
-            ),
-            plugins=[],
-        )
-        return bus
-    return _new_bus
-# fmt: on
 
 
 @pytest.fixture

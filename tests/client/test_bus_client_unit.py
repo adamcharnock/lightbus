@@ -9,9 +9,9 @@ from typing import Type
 import lightbus
 import lightbus.creation
 import lightbus.path
-from lightbus.client.commands import SendResultCommand
+from lightbus import EventMessage
+from lightbus.client.commands import SendResultCommand, ConsumeEventsCommand
 from lightbus.config import Config
-from lightbus.config.structure import OnError
 from lightbus.exceptions import (
     UnknownApi,
     EventNotFound,
@@ -21,8 +21,8 @@ from lightbus.exceptions import (
     InvalidName,
 )
 from lightbus.transports.registry import TransportRegistry
-from lightbus.utilities.async_tools import cancel
 from lightbus.utilities.testing import BusQueueMockerContext
+from tests.conftest import Worker
 
 pytestmark = pytest.mark.unit
 
@@ -303,82 +303,34 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
 
 
 @pytest.mark.asyncio
-async def test_exception_in_listener_shutdown(dummy_bus: lightbus.path.BusPath, caplog):
-    dummy_bus.client.config.api("default").on_error = OnError.SHUTDOWN
-
+async def test_exception_in_listener_shutdown(
+    worker: Worker, queue_mocker: Type[BusQueueMockerContext]
+):
     # This is normally only set on server startup, so set it here so it can be used
-    dummy_bus.client._server_shutdown_queue = janus.Queue()
+
+    class TestException(Exception):
+        pass
 
     def listener(*args, **kwargs):
-        raise Exception()
+        raise TestException()
 
+    worker.bus.client._server_shutdown_queue = janus.Queue()
     # Start the listener
-    dummy_bus.client.listen_for_events(
-        events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
+    worker.bus.client.listen_for_events(
+        events=[("my_api", "my_event")], listener=listener, listener_name="test"
     )
+    with queue_mocker(worker.bus.client) as q:
+        async with worker():
+            consume_command = q.event.to_transport.commands.get(ConsumeEventsCommand)
+            consume_command.destination_queue.put_nowait(
+                EventMessage(api_name="my_api", event_name="my_event")
+            )
+            await asyncio.sleep(0.1)
+            assert len(q.errors.put_items) == 1, f"Expected one error, got: {q.errors.put_items}"
+            error = q.errors.put_items[0]
+            assert isinstance(error, TestException)
 
-    await dummy_bus.client._setup_server()
-
-    # Check we have something in the shutdown queue
-    await asyncio.wait_for(dummy_bus.client._server_shutdown_queue.async_q.get(), timeout=5)
-
-    # Note that this hasn't actually shut the bus down, we'll test that in test_server_shutdown
-
-
-@pytest.mark.asyncio
-async def test_exception_in_listener_stop_listener(dummy_bus: lightbus.path.BusPath, loop, caplog):
-    dummy_bus.client.config.api("default").on_error = OnError.STOP_LISTENER
-
-    class SomeException(Exception):
-        pass
-
-    def listener(*args, **kwargs):
-        raise SomeException()
-
-    dummy_bus.client.listen_for_events(
-        events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
-    )
-
-    await dummy_bus.client._setup_server()
-
-    # Don't let the event loop be stopped as it is needed to run the tests!
-    # (although stop() shouldn't actually be called here)
-    with mock.patch.object(loop, "stop") as m:
-        # Dummy event transport fires events every 0.1 seconds
-        await asyncio.sleep(0.15)
-        assert not m.called
-
-    log_levels = {r.levelname for r in caplog.records}
-    # Ensure the error was logged
-    assert "ERROR" in log_levels
-
-
-@pytest.mark.asyncio
-async def test_exception_in_listener_ignore(dummy_bus: lightbus.path.BusPath, loop, caplog):
-    dummy_bus.client.config.api("default").on_error = OnError.IGNORE
-
-    class SomeException(Exception):
-        pass
-
-    def listener(*args, **kwargs):
-        raise SomeException()
-
-    dummy_bus.client.listen_for_events(
-        events=[("my_company.auth", "user_registered")], listener=listener, listener_name="test"
-    )
-
-    await dummy_bus.client._setup_server()
-
-    # Don't let the event loop be stopped as it is needed to run the tests!
-    # (although stop() shouldn't actually be called here)
-    with mock.patch.object(loop, "stop") as m:
-        # Dummy event transport fires events every 0.1 seconds
-        await asyncio.sleep(0.15)
-        assert not m.called
-
-    log_levels = {r.levelname for r in caplog.records}
-    # Ensure the error was logged
-    assert "ERROR" in log_levels
+            # Note that this hasn't actually shut the bus down, we'll test that in test_server_shutdown
 
 
 def test_add_background_task(dummy_bus: lightbus.path.BusPath, event_loop):

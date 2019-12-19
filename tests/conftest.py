@@ -10,6 +10,7 @@ import resource
 import signal
 import threading
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 from queue import Queue
 from random import randint
@@ -37,6 +38,10 @@ from lightbus import (
     DebugRpcTransport,
     DebugResultTransport,
     DebugEventTransport,
+    BusPath,
+    RedisRpcTransport,
+    RedisResultTransport,
+    RedisEventTransport,
 )
 from lightbus.commands import COMMAND_PARSED_ARGS
 from lightbus.config.structure import (
@@ -53,8 +58,10 @@ from lightbus.exceptions import BusAlreadyClosed
 from lightbus.path import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import PluginRegistry
+from lightbus.transports.redis.event import StreamUse
 from lightbus.utilities.async_tools import configure_event_loop
 from lightbus.utilities.testing import BusQueueMockerContext
+from tests.redis_transports.conftest import logger
 
 TCPAddress = namedtuple("TCPAddress", "host port")
 
@@ -630,3 +637,82 @@ async def stop_me_later():
     for i in to_stop_later:
         await i.stop_server()
         await i.close_async()
+
+
+class Worker:
+    def __init__(self, bus: BusPath):
+        self.bus: BusPath = bus
+
+    async def start(self):
+        await self.bus.client.start_server()
+
+    async def stop(self):
+        try:
+            await self.bus.client.stop_server()
+        finally:
+            # Stop server can raise any queued exceptions that had
+            # not previously been raised, so make sure we
+            # do the close by wrapping it in a finally
+            try:
+                await self.bus.client.close_async()
+            except BusAlreadyClosed:
+                pass
+
+    def __call__(self, raise_errors=True):
+        @asynccontextmanager
+        async def worker_context():
+            await self.start()
+
+            yield
+
+            try:
+                await self.stop()
+            except Exception as e:
+                if raise_errors:
+                    raise
+                else:
+                    logger.error(e)
+
+        return worker_context()
+
+
+@pytest.yield_fixture
+async def worker(new_bus):
+    yield Worker(new_bus())
+
+
+# fmt: off
+@pytest.fixture
+def new_bus(loop, redis_server_url):
+    def _new_bus(service_name="{friendly}"):
+        bus = lightbus.creation.create(
+            config=RootConfig(
+                apis={
+                    'default': ApiConfig(
+                        rpc_transport=RpcTransportSelector(
+                            redis=RedisRpcTransport.Config(url=redis_server_url)
+                        ),
+                        result_transport=ResultTransportSelector(
+                            redis=RedisResultTransport.Config(url=redis_server_url)
+                        ),
+                        event_transport=EventTransportSelector(redis=RedisEventTransport.Config(
+                            url=redis_server_url,
+                            stream_use=StreamUse.PER_EVENT,
+                            service_name="test_service",
+                            consumer_name="test_consumer",
+                        )),
+                    )
+                },
+                bus=BusConfig(
+                    schema=SchemaConfig(
+                        transport=SchemaTransportSelector(redis=RedisSchemaTransport.Config(url=redis_server_url)),
+                    )
+                ),
+                service_name=service_name
+            ),
+            plugins=[],
+            _testing=True,
+        )
+        return bus
+    return _new_bus
+# fmt: on

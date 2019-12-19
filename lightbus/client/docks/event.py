@@ -45,7 +45,7 @@ class EventDock(BaseDock):
                 await command.destination_queue.join()
 
         coroutines = []
-        for event_transport_pool, api_names in event_transports:
+        for event_transport_pool, api_names in event_transports.items():
             # Create a listener task for each event transport,
             # passing each a list of events for which it should listen
             events = [

@@ -37,10 +37,6 @@ apis:
     
     # Assume we will be transmitting simple types, so we can bypass casting for performance
     cast_values: false
-  
-    # Keep processing new events even if one event results in an error
-    # (The error will still be logged)
-    on_error: "ignore"
 
     event_transport:
       redis:

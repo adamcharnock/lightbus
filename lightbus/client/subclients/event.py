@@ -95,6 +95,8 @@ class EventClient(BaseSubClient):
         listener_name: str,
         options: dict = None,
     ):
+        # TODO: Raise exception if we've already started all the listeners,
+        #       because any subsequent listeners will not be setup (unless we fix that)
         sanity_check_listener(listener)
 
         if listener_name in self._event_listeners:
@@ -133,18 +135,28 @@ class EventClient(BaseSubClient):
         else:
             parameters = event_message.kwargs
 
-        # Call the listener.
-        # Pass the event message as a positional argument,
-        # thereby allowing listeners to have flexibility in the argument names.
-        # (And therefore allowing listeners to use the `event` parameter themselves)
-        await run_user_provided_callable(listener, args=[event_message], kwargs=parameters)
+        try:
+            # Call the listener.
+            # Pass the event message as a positional argument,
+            # thereby allowing listeners to have flexibility in the argument names.
+            # (And therefore allowing listeners to use the `event` parameter themselves)
+            await run_user_provided_callable(listener, args=[event_message], kwargs=parameters)
+        except Exception as e:
+            # Put the exception on the error queue so the bus client can start
+            # shutting down
+            logger.debug(
+                f"Error encountered when calling event listener, putting on the error queue: {e}"
+            )
+            self.error_queue.put_nowait(e)
+            # Raise the exception here to ensure this listener stops consuming events
+            raise
+        else:
+            # Acknowledge the successfully processed message
+            await self.producer.send(
+                AcknowledgeEventCommand(message=event_message, options=options)
+            ).wait()
 
-        # Acknowledge the successfully processed message
-        await self.producer.send(
-            AcknowledgeEventCommand(message=event_message, options=options)
-        ).wait()
-
-        await self._execute_hook("after_event_execution", event_message=event_message)
+            await self._execute_hook("after_event_execution", event_message=event_message)
 
     async def close(self):
         await cancel_and_log_exceptions(*self._event_listener_tasks)
@@ -165,8 +177,9 @@ class EventClient(BaseSubClient):
 
             async def consume_events():
                 while True:
+                    event_message = await queue.get()
                     await self._on_message(
-                        event_message=await queue.get(),
+                        event_message=event_message,
                         listener=listener.callable,
                         options=listener.options,
                     )

@@ -252,6 +252,7 @@ class BusClient:
         self._server_tasks.add(monitor_task)
 
     async def stop_server(self):
+        logger.debug("Stopping server")
         await cancel(self._shutdown_monitor_task)
 
         # Cancel the tasks we created above
@@ -291,7 +292,9 @@ class BusClient:
         async with self._event_monitor_lock:
             error = await self.error_queue.get()
             self.error_queue.task_done()
-            logger.debug("Event monitor detected an error")
+            logger.debug(
+                f"Bus client event monitor detected an error, will shutdown. Error was: {error}"
+            )
 
             await self.stop_server()
             await self.close_async()

@@ -398,6 +398,7 @@ class BusQueueMockerContext:
         self.client = client
         self.event: Optional[BusQueueMockerContext.Queues] = None
         self.rpc_result: Optional[BusQueueMockerContext.Queues] = None
+        self.errors: Optional[QueueMockContext] = None
 
     def __enter__(self):
         self.event = BusQueueMockerContext.Queues(
@@ -410,6 +411,7 @@ class BusQueueMockerContext:
                 self.client.rpc_result_client.consumer.queue
             ).__enter__(),
         )
+        self.errors = QueueMockContext(self.client.error_queue).__enter__()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
