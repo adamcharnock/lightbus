@@ -187,8 +187,17 @@ def test_transport_registry_get_event_transports(redis_default_config):
 
 def test_get_all_transports(redis_default_config):
     registry = TransportRegistry().load_config(redis_default_config)
-    registry.set_event_transport("another", registry.get_event_transport("default"))
-    registry.set_event_transport("foo", DebugEventTransport())
+
+    # Is equal to the default transport, so will not be included
+    # in the get_all_transports() return value
+    registry.set_event_transport(
+        "another", RedisEventTransport, RedisEventTransport.Config(), Config.default()
+    )
+    registry.set_event_transport(
+        "foo", DebugEventTransport, DebugEventTransport.Config(), Config.default()
+    )
+
+    # redis rpc + redis result + redis event + foo debug transport (above) = 4
     assert len(registry.get_all_transports()) == 4
 
 
