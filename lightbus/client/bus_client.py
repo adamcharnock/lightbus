@@ -450,17 +450,13 @@ class BusClient:
     async def _execute_hook(self, name, **kwargs):
         # Hooks that need to run before plugins
         for callback in self._hook_callbacks[(name, True)]:
-            await run_user_provided_callable(
-                callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
-            )
+            await run_user_provided_callable(callback, args=[], kwargs=dict(client=self, **kwargs))
 
         await self.plugin_registry.execute_hook(name, client=self, **kwargs)
 
         # Hooks that need to run after plugins
         for callback in self._hook_callbacks[(name, False)]:
-            await run_user_provided_callable(
-                callback, args=[], kwargs=dict(client=self, **kwargs), bus_client=self
-            )
+            await run_user_provided_callable(callback, args=[], kwargs=dict(client=self, **kwargs))
 
     def _register_hook_callback(self, name, fn, before_plugins=False):
         self._hook_callbacks[(name, bool(before_plugins))].append(fn)
