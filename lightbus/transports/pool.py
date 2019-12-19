@@ -1,5 +1,5 @@
 import threading
-from inspect import iscoroutinefunction
+from inspect import iscoroutinefunction, isasyncgenfunction
 from typing import NamedTuple, List, TypeVar, Type, Generic, TYPE_CHECKING
 
 from lightbus.exceptions import TransportPoolIsClosed
@@ -91,15 +91,22 @@ class TransportPool(Generic[VT]):
                 await transport.close()
 
     def __getattr__(self, item):
-        async def pool_wrapper(*args, **kwargs):
+        async def fn_pool_wrapper(*args, **kwargs):
             async with self as transport:
                 return await getattr(transport, item)(*args, **kwargs)
+
+        async def gen_pool_wrapper(*args, **kwargs):
+            async with self as transport:
+                async for value in getattr(transport, item)(*args, **kwargs):
+                    yield value
 
         attr = getattr(self.transport_class, item, None)
 
         if item[0] != "_" and attr and callable(attr):
             if iscoroutinefunction(attr):
-                return pool_wrapper
+                return fn_pool_wrapper
+            elif isasyncgenfunction(attr):
+                return gen_pool_wrapper
             else:
                 # TODO: Proper exception
                 raise Exception(

@@ -287,7 +287,7 @@ class TestEventTransport(EventTransport):
                 f"Perhaps you need to use mockEventFiring() to ensure the mocker expects this call."
             )
 
-    def consume(self, listen_for: List[Tuple[str, str]], listener_name: str, **kwargs):
+    async def consume(self, listen_for: List[Tuple[str, str]], listener_name: str, **kwargs):
         """Consume RPC events for the given API"""
         raise NotImplementedError("Not yet supported by mocks")
 

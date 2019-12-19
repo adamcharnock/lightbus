@@ -79,9 +79,12 @@ def queue_exception_checker(coroutine: Coroutine, error_queue: asyncio.Queue):
             await coroutine
         except asyncio.CancelledError:
             pass
-        except Exception:
-            error = Error(*sys.exc_info(), invoking_stack)
-            await error_queue.put(error)
+        except Exception as e:
+            if not getattr(e, "enqueued", False):
+                e.enqueued = True
+                error = Error(*sys.exc_info(), invoking_stack)
+                await error_queue.put(error)
+
             raise
 
     return coroutine_()

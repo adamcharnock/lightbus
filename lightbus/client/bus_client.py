@@ -8,7 +8,7 @@ from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING, Calla
 
 import janus
 
-from lightbus.client.utilities import queue_exception_checker
+from lightbus.client.utilities import queue_exception_checker, Error
 from lightbus.exceptions import InvalidSchedule, BusAlreadyClosed, UnsupportedUse
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets
@@ -136,7 +136,6 @@ class BusClient:
         await self.schema.close()
 
         while not self.error_queue.empty():
-            # TODO: Task to monitor this queue
             logger.error(self.error_queue.get_nowait())
             self.error_queue.task_done()
 
@@ -291,16 +290,13 @@ class BusClient:
 
     async def error_monitor(self):
         async with self._event_monitor_lock:
-            error = await self.error_queue.get()
+            error: Error = await self.error_queue.get()
             self.error_queue.task_done()
-            logger.debug(
-                f"Bus client event monitor detected an error, will shutdown. Error was: {error}"
-            )
+            logger.debug(f"Bus client event monitor detected an error, will shutdown.")
+            logger.error(str(error))
 
             await self.stop_server()
             await self.close_async()
-
-            raise error
 
     async def lazy_load_now(self):
         """Perform lazy tasks immediately

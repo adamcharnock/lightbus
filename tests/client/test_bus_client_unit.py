@@ -10,6 +10,7 @@ import lightbus.creation
 import lightbus.path
 from lightbus import EventMessage
 from lightbus.client.commands import SendResultCommand, ConsumeEventsCommand
+from lightbus.client.utilities import Error
 from lightbus.config import Config
 from lightbus.exceptions import (
     UnknownApi,
@@ -325,9 +326,11 @@ async def test_exception_in_listener_shutdown(
                 EventMessage(api_name="my_api", event_name="my_event")
             )
             await asyncio.sleep(0.1)
+
             assert len(q.errors.put_items) == 1, f"Expected one error, got: {q.errors.put_items}"
-            error = q.errors.put_items[0]
-            assert isinstance(error, TestException)
+            error: Error = q.errors.put_items[0]
+            assert isinstance(error.value, TestException)
+            assert worker.bus.client._closed
 
             # Note that this hasn't actually shut the bus down, we'll test that in test_server_shutdown
 
