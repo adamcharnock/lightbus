@@ -29,8 +29,9 @@ class InternalConsumer:
         Use `stop()` to shutdown the invoker.
         """
         logger.debug("Starting internal consumer on queue %s", self.queue)
-        self._consumer_task = asyncio.ensure_future(self._consumer_loop(self.queue, handler))
-        self._consumer_task.add_done_callback(queue_exception_checker(self.error_queue))
+        self._consumer_task = asyncio.ensure_future(
+            queue_exception_checker(self._consumer_loop(self.queue, handler), self.error_queue)
+        )
         self._running_commands = set()
 
     async def close(self):
@@ -73,9 +74,11 @@ class InternalConsumer:
             queue.task_done()
             on_done.set()
 
-        background_call_task = asyncio.ensure_future(handler(command))
-        self._running_commands.add(background_call_task)
+        # fmt: off
+        background_call_task = asyncio.ensure_future(queue_exception_checker(
+            handler(command),
+            self.error_queue,
+        ))
+        # fmt: on
         background_call_task.add_done_callback(when_task_finished)
-        background_call_task.add_done_callback(queue_exception_checker(self.error_queue))
-        # if self.error_queue.qsize():
-        #     breakpoint()
+        self._running_commands.add(background_call_task)

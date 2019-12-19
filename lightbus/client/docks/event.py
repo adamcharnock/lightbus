@@ -44,7 +44,6 @@ class EventDock(BaseDock):
                 # messages need to be reclaimed in the event of a crash
                 await command.destination_queue.join()
 
-        coroutines = []
         for event_transport_pool, api_names in event_transports.items():
             # Create a listener task for each event transport,
             # passing each a list of events for which it should listen
@@ -54,13 +53,13 @@ class EventDock(BaseDock):
                 if api_name in api_names
             ]
 
-            coroutines.append(listener(event_transport_pool, events))
-
-        listener_task = asyncio.gather(*coroutines)
-
-        listener_task.add_done_callback(queue_exception_checker(queue=self.error_queue))
-
-        self.listener_tasks.add(listener_task)
+            # fmt: off
+            listener_task = asyncio.ensure_future(queue_exception_checker(
+                listener(event_transport_pool, events),
+                self.error_queue,
+            ))
+            # fmt: on
+            self.listener_tasks.add(listener_task)
 
     @handle.register
     async def handle_send_event(self, command: commands.SendEventCommand):

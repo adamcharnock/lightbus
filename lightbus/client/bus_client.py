@@ -223,8 +223,9 @@ class BusClient:
         await self.lazy_load_now()
 
         # Setup schema monitoring
-        monitor_task = asyncio.ensure_future(self.schema.monitor())
-        monitor_task.add_done_callback(queue_exception_checker(self.error_queue))
+        monitor_task = asyncio.ensure_future(
+            queue_exception_checker(self.schema.monitor(), self.error_queue)
+        )
 
         logger.info("Executing before_worker_start & on_start hooks...")
         await self._execute_hook("before_worker_start")
@@ -232,8 +233,9 @@ class BusClient:
 
         # Setup RPC consumption
         if Feature.RPCS in self.features:
-            consume_rpc_task = asyncio.ensure_future(self.consume_rpcs())
-            consume_rpc_task.add_done_callback(queue_exception_checker(self.error_queue))
+            consume_rpc_task = asyncio.ensure_future(
+                queue_exception_checker(self.consume_rpcs(), self.error_queue)
+            )
         else:
             consume_rpc_task = None
 
@@ -244,8 +246,7 @@ class BusClient:
         # Start off any background tasks
         if Feature.TASKS in self.features:
             for coroutine in self._background_coroutines:
-                task = asyncio.ensure_future(coroutine)
-                task.add_done_callback(queue_exception_checker(self.error_queue))
+                task = asyncio.ensure_future(queue_exception_checker(coroutine, self.error_queue))
                 self._background_tasks.append(task)
 
         self._server_tasks.add(consume_rpc_task)

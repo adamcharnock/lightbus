@@ -69,8 +69,12 @@ class InternalProducer:
     def start(self):
         """ Starts the queue monitor
         """
-        self._queue_monitor_task = asyncio.ensure_future(self._queue_monitor())
-        self._queue_monitor_task.add_done_callback(queue_exception_checker(self.error_queue))
+        # fmt: off
+        self._queue_monitor_task = asyncio.ensure_future(queue_exception_checker(
+            self._queue_monitor(),
+            self.error_queue,
+        ))
+        # fmt: on
 
     async def close(self):
         if self._queue_monitor_task:

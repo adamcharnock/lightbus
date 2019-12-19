@@ -1,11 +1,54 @@
 import asyncio
 import logging
-import traceback
+import sys
+from functools import wraps
+from traceback import extract_stack, StackSummary, format_exception, format_list
+
+from types import TracebackType
+from typing import Coroutine, NamedTuple, Type
 
 from lightbus.exceptions import InvalidName
 
 
 logger = logging.getLogger(__name__)
+
+
+class Error(NamedTuple):
+    """An error within a coroutine.
+
+    Specifically, this is typically used to represent errors which
+    occurred in child tasks.
+
+    This stores both the data from sys.exc_info(), as well as an additional
+    `invoking_stack` value. This `invoking_stack` stores the stack at the point
+    where the coroutine was created, whereas the error's traceback is typically local
+    to a child asyncio task.
+
+    As a result, we can display a more useful error message. This error message
+    can show both the exception and traceback for the error, and also the tracback
+    for the location where the coroutine was created.
+    """
+
+    type: Type[Exception]
+    value: Exception
+    traceback: TracebackType
+    invoking_stack: StackSummary
+
+    @property
+    def invoking_traceback_str(self) -> str:
+        return "".join(format_list(self.invoking_stack)).strip()
+
+    @property
+    def exception_str(self) -> str:
+        return "".join(format_exception(self.type, self.value, self.traceback)).strip()
+
+    def __str__(self):
+        return (
+            f"A coroutine raised an error, it was invoked at:\n\n"
+            f"{self.invoking_traceback_str}\n\n"
+            f"The exception was:\n\n"
+            f"{self.exception_str}"
+        )
 
 
 def validate_event_or_rpc_name(api_name: str, type_: str, name: str):
@@ -20,19 +63,25 @@ def validate_event_or_rpc_name(api_name: str, type_: str, name: str):
         )
 
 
-def queue_exception_checker(queue: asyncio.Queue):
-    # TODO: wrap this directly around the coroutines instead. Should
-    #       allow for saner stack traces
-    def queue_exception_checker_(future: asyncio.Future):
+def queue_exception_checker(coroutine: Coroutine, error_queue: asyncio.Queue):
+    """Await a coroutine and place any errors into the provided queue
+
+    Items added to the queue will be of the `Error` type. This `Error` type
+    allows for more informative error messages.
+
+    See Also: Error
+    """
+    invoking_stack = extract_stack()[:-1]
+
+    @wraps(coroutine)
+    async def coroutine_():
         try:
-            exception = future.exception()
-        except asyncio.CancelledError as e:
-            exception = e
+            await coroutine
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            error = Error(*sys.exc_info(), invoking_stack)
+            await error_queue.put(error)
+            raise
 
-        if isinstance(exception, asyncio.CancelledError):
-            exception = None
-
-        if exception:
-            queue.put_nowait(exception)
-
-    return queue_exception_checker_
+    return coroutine_()

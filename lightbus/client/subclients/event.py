@@ -185,8 +185,10 @@ class EventClient(BaseSubClient):
                     )
                     queue.task_done()
 
-            task = asyncio.ensure_future(consume_events())
-            task.add_done_callback(queue_exception_checker(queue=self.error_queue))
+            # Star the consume_events() consumer running
+            task = asyncio.ensure_future(
+                queue_exception_checker(consume_events(), self.error_queue)
+            )
             self._event_listener_tasks.add(task)
 
             await self.producer.send(

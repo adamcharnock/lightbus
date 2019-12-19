@@ -40,10 +40,12 @@ class RpcResultDock(BaseDock):
         for rpc_transport, transport_api_names in api_names_by_transport.items():
             transport_apis = list(map(self.api_registry.get, transport_api_names))
 
-            task = asyncio.ensure_future(
-                self._consume_rpcs_with_transport(rpc_transport=rpc_transport, apis=transport_apis)
-            )
-            task.add_done_callback(queue_exception_checker(self.error_queue))
+            # fmt: off
+            task = asyncio.ensure_future(queue_exception_checker(
+                self._consume_rpcs_with_transport(rpc_transport=rpc_transport, apis=transport_apis),
+                self.error_queue,
+            ))
+            # fmt: on
             self.consumer_tasks.add(task)
 
     @handle.register
@@ -84,16 +86,18 @@ class RpcResultDock(BaseDock):
         #       It may also get destroyed when it goes out of scope
         logger.debug("Starting RPC result listener")
         task = asyncio.ensure_future(
-            self._result_listener(
-                result_transport=result_transport,
-                timeout=timeout,
-                rpc_message=command.message,
-                return_path=command.message.return_path,
-                options=command.options,
-                result_queue=command.destination_queue,
+            queue_exception_checker(
+                self._result_listener(
+                    result_transport=result_transport,
+                    timeout=timeout,
+                    rpc_message=command.message,
+                    return_path=command.message.return_path,
+                    options=command.options,
+                    result_queue=command.destination_queue,
+                ),
+                self.error_queue,
             )
         )
-        task.add_done_callback(queue_exception_checker(self.error_queue))
         self.listener_tasks.add(task)
 
     async def _result_listener(

@@ -2,7 +2,6 @@ import asyncio
 import threading
 
 import janus
-from unittest import mock
 import pytest
 from typing import Type
 

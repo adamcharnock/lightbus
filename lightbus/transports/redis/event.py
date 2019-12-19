@@ -258,12 +258,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         try:
             # Run the two above coroutines in their own tasks
-            consume_task = asyncio.ensure_future(consume_loop())
-            reclaim_task = asyncio.ensure_future(reclaim_loop())
-
-            # Make sure we surface any exceptions that occur in either task
-            consume_task.add_done_callback(queue_exception_checker(error_queue))
-            reclaim_task.add_done_callback(queue_exception_checker(error_queue))
+            consume_task = asyncio.ensure_future(
+                queue_exception_checker(consume_loop(), error_queue)
+            )
+            reclaim_task = asyncio.ensure_future(
+                queue_exception_checker(reclaim_loop(), error_queue)
+            )
 
             while True:
                 try:
