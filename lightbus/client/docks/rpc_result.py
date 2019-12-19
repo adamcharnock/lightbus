@@ -37,7 +37,7 @@ class RpcResultDock(BaseDock):
         # accordingly
         api_names_by_transport = self.transport_registry.get_rpc_transports(command.api_names)
 
-        for rpc_transport, transport_api_names in api_names_by_transport:
+        for rpc_transport, transport_api_names in api_names_by_transport.items():
             transport_apis = list(map(self.api_registry.get, transport_api_names))
 
             task = asyncio.ensure_future(

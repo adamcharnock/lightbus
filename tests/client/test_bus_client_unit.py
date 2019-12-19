@@ -4,10 +4,12 @@ import threading
 import janus
 from unittest import mock
 import pytest
+from typing import Type
 
 import lightbus
 import lightbus.creation
 import lightbus.path
+from lightbus.client.commands import SendResultCommand
 from lightbus.config import Config
 from lightbus.config.structure import OnError
 from lightbus.exceptions import (
@@ -20,6 +22,7 @@ from lightbus.exceptions import (
 )
 from lightbus.transports.registry import TransportRegistry
 from lightbus.utilities.async_tools import cancel
+from lightbus.utilities.testing import BusQueueMockerContext
 
 pytestmark = pytest.mark.unit
 
@@ -119,42 +122,37 @@ async def test_call_rpc_local_starts_with_underscore(dummy_bus: lightbus.path.Bu
 
 @pytest.mark.asyncio
 async def test_consume_rpcs_with_transport_error(
-    mocker, dummy_bus: lightbus.path.BusPath, dummy_api
+    mocker, dummy_bus: lightbus.path.BusPath, dummy_api, queue_mocker: Type[BusQueueMockerContext]
 ):
     class TestException(Exception):
         pass
 
-    async def co(e=None):
-        if e:
-            raise e
+    async def co(*a, **kw):
+        raise TestException()
 
     dummy_bus.client.register_api(dummy_api)
 
-    mocker.patch.object(
-        dummy_bus.client.rpc_result_client, "_call_rpc_local", return_value=co(TestException())
-    )
+    mocker.patch.object(dummy_bus.client.rpc_result_client, "_call_rpc_local", side_effect=co)
     fut = asyncio.Future()
     fut.set_result(None)
-    send_result = mocker.patch.object(dummy_bus.client, "send_result", return_value=fut)
 
-    task = asyncio.ensure_future(
-        dummy_bus.client._consume_rpcs_with_transport(
-            rpc_transport=dummy_bus.client.transport_registry.get_rpc_transport("default"), apis=[]
-        )
-    )
+    await dummy_bus.client.lazy_load_now()
 
-    # Wait for the consumer to send the result
-    for _ in range(0, 10):
-        if send_result.called:
-            break
-        await asyncio.sleep(0.1)
-    await cancel(task)
+    with queue_mocker(dummy_bus.client) as q:
+        await dummy_bus.client.consume_rpcs(apis=[dummy_api])
 
-    assert send_result.called
-    result_kwargs = send_result.call_args[1]
-    assert result_kwargs["result_message"].error
-    assert result_kwargs["result_message"].result
-    assert result_kwargs["result_message"].trace
+        # Wait for the consumer to send the result
+        for _ in range(0, 20):
+            if q.rpc_result.to_transport.commands.has(SendResultCommand):
+                break
+            await asyncio.sleep(0.05)
+
+    send_result_command = q.rpc_result.to_transport.commands.get(SendResultCommand)
+    result_message = send_result_command.message
+
+    assert result_message.error
+    assert result_message.result
+    assert result_message.trace
 
 
 @pytest.mark.asyncio
