@@ -8,7 +8,7 @@ from lightbus.api import Api
 from lightbus.client import commands
 from lightbus.client.commands import ConsumeRpcsCommand
 from lightbus.client.subclients.base import BaseSubClient
-from lightbus.client.utilities import validate_event_or_rpc_name
+from lightbus.client.utilities import validate_event_or_rpc_name, Error
 from lightbus.client.validator import validate_outgoing, validate_incoming
 from lightbus.exceptions import (
     NoApisToListenOn,
@@ -45,7 +45,8 @@ async def bail_on_error(error_queue: asyncio.Queue, co):
     else:
         # An error appeared in the queue
         await cancel(fn_task)
-        raise monitor_task.result()
+        error: Error = monitor_task.result()
+        raise error.value
 
 
 class RpcResultClient(BaseSubClient):

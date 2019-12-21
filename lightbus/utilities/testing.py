@@ -157,12 +157,6 @@ class BusMocker(ContextDecorator):
 
     def __enter__(self):
         """Start of a context where all the bus' transports have been replaced with mocks"""
-        new_registry = TransportRegistry()
-        new_registry.set_schema_transport(
-            TestSchemaTransport, TestSchemaTransport.Config(), self.bus.client.config
-        )
-
-        self.old_transport_registry = self.bus.client.transport_registry
 
         # Mutable structures which we will use this to get the mocked data into
         # the transports
@@ -172,6 +166,19 @@ class BusMocker(ContextDecorator):
         # Events
         mock_events = set()
 
+        # Create our transport classes, into which we inject our mutable structures
+        TestRpcTransport = make_test_rpc_transport()
+        TestResultTransport = make_test_result_transport(mock_responses)
+        TestEventTransport = make_test_event_transport(mock_events)
+        TestSchemaTransport = make_test_schema_transport()
+
+        new_registry = TransportRegistry()
+        new_registry.set_schema_transport(
+            TestSchemaTransport, TestSchemaTransport.Config(), self.bus.client.config
+        )
+
+        self.old_transport_registry = self.bus.client.transport_registry
+
         for api_name, entry in self.old_transport_registry._registry.items():
             new_registry.set_rpc_transport(
                 api_name, TestRpcTransport, TestRpcTransport.Config(), self.bus.client.config
@@ -179,17 +186,13 @@ class BusMocker(ContextDecorator):
             new_registry.set_result_transport(
                 api_name,
                 TestResultTransport,
-                TestResultTransport.Config(
-                    require_mocking=self.require_mocking, mock_responses=mock_responses
-                ),
+                TestResultTransport.Config(require_mocking=self.require_mocking),
                 self.bus.client.config,
             )
             new_registry.set_event_transport(
                 api_name,
                 TestEventTransport,
-                TestEventTransport.Config(
-                    require_mocking=self.require_mocking, mock_events=mock_events
-                ),
+                TestEventTransport.Config(require_mocking=self.require_mocking),
                 self.bus.client.config,
             )
 
@@ -216,94 +219,106 @@ bus_mocker = BusMocker
 T = TypeVar("T")
 
 
-class TestRpcTransport(RpcTransport):
-    def __init__(self):
-        self.rpcs: List[Tuple[RpcMessage, dict]] = []
+def make_test_rpc_transport():
+    class TestRpcTransport(RpcTransport):
+        def __init__(self):
+            self.rpcs: List[Tuple[RpcMessage, dict]] = []
 
-    async def call_rpc(self, rpc_message, options: dict):
-        pass
+        async def call_rpc(self, rpc_message, options: dict):
+            pass
 
-    async def consume_rpcs(self, apis):
-        raise NotImplementedError("Not yet supported by mocks")
+        async def consume_rpcs(self, apis):
+            raise NotImplementedError("Not yet supported by mocks")
 
-
-class TestResultTransport(ResultTransport):
-    def __init__(self, mock_responses: Dict[str, dict], require_mocking=True):
-        super().__init__()
-        self.mock_responses = mock_responses
-        self.require_mocking = require_mocking
-
-    @classmethod
-    def from_config(
-        cls: Type[T], config: "Config", mock_responses: dict, require_mocking: bool = True
-    ) -> T:
-        return cls(mock_responses=mock_responses, require_mocking=require_mocking)
-
-    async def get_return_path(self, rpc_message):
-        return "test://"
-
-    async def send_result(self, rpc_message, result_message, return_path):
-        raise NotImplementedError("Not yet supported by mocks")
-
-    async def receive_result(self, rpc_message, return_path, options):
-        if self.require_mocking:
-            assert rpc_message.canonical_name in self.mock_responses, (
-                f"RPC {rpc_message.canonical_name} unexpectedly called. "
-                f"Perhaps you need to use mockRpcCall() to ensure the mocker expects this call."
-            )
-
-        if rpc_message.canonical_name in self.mock_responses:
-            kwargs = self.mock_responses[rpc_message.canonical_name].copy()
-            kwargs.setdefault("api_name", rpc_message.api_name)
-            kwargs.setdefault("procedure_name", rpc_message.procedure_name)
-            kwargs.setdefault("rpc_message_id", rpc_message.id)
-            return ResultMessage(**kwargs)
-        else:
-            return ResultMessage(
-                result=None,
-                rpc_message_id="1",
-                api_name=rpc_message.api_name,
-                procedure_name=rpc_message.procedure_name,
-            )
+    return TestRpcTransport
 
 
-class TestEventTransport(EventTransport):
-    def __init__(self, mock_events: set, require_mocking=True):
-        super().__init__()
-        self.events = []
-        self.mock_events = mock_events
-        self.require_mocking = require_mocking
+def make_test_result_transport(mock_responses: Dict[str, dict]):
+    class TestResultTransport(ResultTransport):
+        _mock_responses: Dict[str, dict] = mock_responses
 
-    @classmethod
-    def from_config(
-        cls: Type[T], config: "Config", mock_events: set, require_mocking: bool = True
-    ) -> T:
-        return cls(mock_events=mock_events, require_mocking=require_mocking)
+        def __init__(self, require_mocking=True):
+            super().__init__()
+            self.mock_responses = mock_responses
+            self.require_mocking = require_mocking
 
-    async def send_event(self, event_message, options):
-        if self.require_mocking:
-            assert event_message.canonical_name in self.mock_events, (
-                f"Event {event_message.canonical_name} unexpectedly fired. "
-                f"Perhaps you need to use mockEventFiring() to ensure the mocker expects this call."
-            )
+        @classmethod
+        def from_config(cls: Type[T], config: "Config", require_mocking: bool = True) -> T:
+            return cls(require_mocking=require_mocking)
 
-    async def consume(self, listen_for: List[Tuple[str, str]], listener_name: str, **kwargs):
-        """Consume RPC events for the given API"""
-        raise NotImplementedError("Not yet supported by mocks")
+        async def get_return_path(self, rpc_message):
+            return "test://"
+
+        async def send_result(self, rpc_message, result_message, return_path):
+            raise NotImplementedError("Not yet supported by mocks")
+
+        async def receive_result(self, rpc_message, return_path, options):
+            if self.require_mocking:
+                assert rpc_message.canonical_name in self.mock_responses, (
+                    f"RPC {rpc_message.canonical_name} unexpectedly called. "
+                    f"Perhaps you need to use mockRpcCall() to ensure the mocker expects this call."
+                )
+
+            if rpc_message.canonical_name in self.mock_responses:
+                kwargs = self.mock_responses[rpc_message.canonical_name].copy()
+                kwargs.setdefault("api_name", rpc_message.api_name)
+                kwargs.setdefault("procedure_name", rpc_message.procedure_name)
+                kwargs.setdefault("rpc_message_id", rpc_message.id)
+                return ResultMessage(**kwargs)
+            else:
+                return ResultMessage(
+                    result=None,
+                    rpc_message_id="1",
+                    api_name=rpc_message.api_name,
+                    procedure_name=rpc_message.procedure_name,
+                )
+
+    return TestResultTransport
 
 
-class TestSchemaTransport(SchemaTransport):
-    def __init__(self):
-        self.schemas = {}
+def make_test_event_transport(mock_events: set):
+    class TestEventTransport(EventTransport):
+        _mock_events: set = mock_events
 
-    async def store(self, api_name: str, schema: Dict, ttl_seconds: int):
-        self.schemas[api_name] = schema
+        def __init__(self, require_mocking=True):
+            super().__init__()
+            self.events = []
+            self.mock_events = mock_events
+            self.require_mocking = require_mocking
 
-    async def ping(self, api_name: str, schema: Dict, ttl_seconds: int):
-        pass
+        @classmethod
+        def from_config(cls: Type[T], config: "Config", require_mocking: bool = True) -> T:
+            return cls(require_mocking=require_mocking)
 
-    async def load(self) -> Dict[str, Dict]:
-        return self.schemas
+        async def send_event(self, event_message, options):
+            if self.require_mocking:
+                assert event_message.canonical_name in self.mock_events, (
+                    f"Event {event_message.canonical_name} unexpectedly fired. "
+                    f"Perhaps you need to use mockEventFiring() to ensure the mocker expects this call."
+                )
+
+        async def consume(self, listen_for: List[Tuple[str, str]], listener_name: str, **kwargs):
+            """Consume RPC events for the given API"""
+            raise NotImplementedError("Not yet supported by mocks")
+
+    return TestEventTransport
+
+
+def make_test_schema_transport():
+    class TestSchemaTransport(SchemaTransport):
+        def __init__(self):
+            self.schemas = {}
+
+        async def store(self, api_name: str, schema: Dict, ttl_seconds: int):
+            self.schemas[api_name] = schema
+
+        async def ping(self, api_name: str, schema: Dict, ttl_seconds: int):
+            pass
+
+        async def load(self) -> Dict[str, Dict]:
+            return self.schemas
+
+    return TestSchemaTransport
 
 
 # Command mocking

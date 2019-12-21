@@ -280,13 +280,13 @@ class BusClient:
 
         # Check queue for errors
         try:
-            error = self.error_queue.get_nowait()
+            error: Error = self.error_queue.get_nowait()
         except asyncio.QueueEmpty:
             # No errors, everything ok
             return
         else:
             # If there is an error then raise it
-            raise error
+            raise error.value
 
     async def error_monitor(self):
         async with self._event_monitor_lock:
