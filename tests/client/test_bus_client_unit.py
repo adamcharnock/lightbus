@@ -188,8 +188,8 @@ async def test_fire_event_version(dummy_bus: lightbus.path.BusPath, mocker):
 
     await dummy_bus.client.fire_event("versioned_api", "my_event")
     assert send_event_spy.called
-    (message,), _ = send_event_spy.call_args
-    assert message.version == 5
+    args, kwargs = send_event_spy.call_args
+    assert kwargs["event_message"].version == 5
 
 
 @pytest.mark.asyncio
