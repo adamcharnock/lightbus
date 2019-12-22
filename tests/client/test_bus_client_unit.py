@@ -307,17 +307,12 @@ async def test_exception_in_listener_shutdown(
     worker: Worker, queue_mocker: Type[BusQueueMockerContext]
 ):
     # This is normally only set on server startup, so set it here so it can be used
-    assert (
-        False
-    ), "_server_shutdown_queue has been removed from the bus client, this test needs fixing"
-
     class TestException(Exception):
         pass
 
     def listener(*args, **kwargs):
         raise TestException()
 
-    worker.bus.client._server_shutdown_queue = janus.Queue()
     # Start the listener
     worker.bus.client.listen_for_events(
         events=[("my_api", "my_event")], listener=listener, listener_name="test"
