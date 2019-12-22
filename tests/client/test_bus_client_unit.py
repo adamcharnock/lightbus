@@ -337,7 +337,6 @@ def test_add_background_task(dummy_bus: lightbus.path.BusPath, event_loop):
     dummy_bus.client.run_forever()
 
     assert dummy_bus.client.exit_code
-    assert dummy_bus.client.stop_loop.called
 
     assert calls == 5
 
