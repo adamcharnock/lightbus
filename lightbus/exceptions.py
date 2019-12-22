@@ -206,3 +206,7 @@ class RemoteSchemasNotLoaded(LightbusException):
 
 class TransportPoolIsClosed(LightbusException):
     pass
+
+
+class AsyncFunctionOrMethodRequired(LightbusException):
+    pass

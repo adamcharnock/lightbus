@@ -9,7 +9,12 @@ from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING, Calla
 import janus
 
 from lightbus.client.utilities import queue_exception_checker, Error
-from lightbus.exceptions import InvalidSchedule, BusAlreadyClosed, UnsupportedUse
+from lightbus.exceptions import (
+    InvalidSchedule,
+    BusAlreadyClosed,
+    UnsupportedUse,
+    AsyncFunctionOrMethodRequired,
+)
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets
 from lightbus.utilities.async_tools import (
@@ -54,8 +59,9 @@ def raise_queued_errors(fn):
     This decorator handles the former. The BusClient's error_monitor() handles the second
     """
     if not iscoroutinefunction(fn):
-        # TODO: Proper exception
-        raise Exception("@raise_queued_errors can only be used on async methods")
+        raise AsyncFunctionOrMethodRequired(
+            "@raise_queued_errors can only be used on async methods"
+        )
 
     @wraps(fn)
     async def _wrapped(self: "BusClient", *args, **kwargs):

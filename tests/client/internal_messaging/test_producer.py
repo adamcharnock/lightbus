@@ -5,27 +5,8 @@ import pytest
 from _pytest.logging import LogCaptureFixture
 
 from lightbus.client.internal_messaging.producer import InternalProducer
-from lightbus.utilities.async_tools import cancel
 
 pytestmark = pytest.mark.unit
-
-
-@pytest.yield_fixture
-async def producer():
-    def _on_exception(e):
-        raise e
-
-    producer = InternalProducer(queue=asyncio.Queue(), error_queue=asyncio.Queue())
-    yield producer
-    await producer.close()
-
-
-@pytest.fixture
-async def fake_coroutine():
-    async def fake_coroutine_(*args, **kwargs):
-        pass
-
-    return fake_coroutine_
 
 
 @pytest.mark.asyncio

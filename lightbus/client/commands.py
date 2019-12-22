@@ -50,9 +50,6 @@ class CloseCommand(NamedTuple):
     pass
 
 
-TRANSPORT_COMMANDS = {SendEventCommand, CallRpcCommand, PublishApiSchemaCommand, CloseCommand}
-
-
 class SendResultCommand(NamedTuple):
     rpc_message: RpcMessage
     message: ResultMessage
@@ -70,6 +67,3 @@ class ReceiveSchemaUpdateCommand(NamedTuple):
 
 class ShutdownCommand(NamedTuple):
     exception: Optional[BaseException]
-
-
-CLIENT_COMMANDS = {ReceiveResultCommand, ReceiveSchemaUpdateCommand, ShutdownCommand}
