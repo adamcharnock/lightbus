@@ -75,6 +75,10 @@ def create(
             # Flask has a reloader process that shouldn't start a lightbus client
             return
 
+    # Ensure an event loop exists, as creating asyncio.Queue
+    # objects requires that we have one.
+    get_event_loop()
+
     # If were are running via the Lightbus CLI then we may have
     # some command line arguments we need to apply.
     # pylint: disable=cyclic-import,import-outside-toplevel
@@ -124,10 +128,6 @@ def create(
     hook_registry = HookRegistry(
         error_queue=error_queue, execute_plugin_hooks=plugin_registry.execute_hook
     )
-
-    # Ensure an event loop exists, as creating asyncio.Queue
-    # objects requires that we have one.
-    get_event_loop()
 
     api_registry = ApiRegistry()
 

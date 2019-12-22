@@ -19,9 +19,7 @@ def called_hooks(mocker, dummy_bus: BusPath):
     async def dummy_coroutine(*args, **kwargs):
         pass
 
-    m = mocker.patch.object(
-        dummy_bus.client.plugin_registry, "execute_hook", side_effect=dummy_coroutine
-    )
+    m = mocker.patch.object(dummy_bus.client.hook_registry, "execute", side_effect=dummy_coroutine)
     return lambda: [kwargs.get("name") or args[0] for args, kwargs in m.call_args_list]
 
 
