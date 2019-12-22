@@ -103,8 +103,6 @@ class BusClient:
         self.features: List[Union[Feature, str]] = ALL_FEATURES
         self.set_features(list(features))
         self.schema = None
-        self._server_shutdown_queue: janus.Queue = None
-        self._shutdown_monitor_task = None
         self.exit_code = 0
         self._closed = False
         self._server_tasks = set()
@@ -255,7 +253,6 @@ class BusClient:
 
     async def stop_server(self):
         logger.debug("Stopping server")
-        await cancel(self._shutdown_monitor_task)
 
         # Cancel the tasks we created above
         await cancel(*self._server_tasks)
@@ -626,7 +623,7 @@ class BusClient:
         #       has happened in cases where also_run_immediately=True.
         def wrapper(f):
             coroutine = call_every(  # pylint: assignment-from-no-return
-                callback=f, timedelta=td, also_run_immediately=also_run_immediately, bus_client=self
+                callback=f, timedelta=td, also_run_immediately=also_run_immediately
             )
             self.add_background_task(coroutine)
             return f
@@ -657,10 +654,7 @@ class BusClient:
 
         def wrapper(f):
             coroutine = call_on_schedule(
-                callback=f,
-                schedule=schedule,
-                also_run_immediately=also_run_immediately,
-                bus_client=self,
+                callback=f, schedule=schedule, also_run_immediately=also_run_immediately
             )
             self.add_background_task(coroutine)
             return f

@@ -307,6 +307,9 @@ async def test_exception_in_listener_shutdown(
     worker: Worker, queue_mocker: Type[BusQueueMockerContext]
 ):
     # This is normally only set on server startup, so set it here so it can be used
+    assert (
+        False
+    ), "_server_shutdown_queue has been removed from the bus client, this test needs fixing"
 
     class TestException(Exception):
         pass
