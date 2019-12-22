@@ -11,6 +11,7 @@ from lightbus.client.docks.event import EventDock
 from lightbus.client.docks.rpc_result import RpcResultDock
 from lightbus.client.subclients.event import EventClient
 from lightbus.client.subclients.rpc_result import RpcResultClient
+from lightbus.hooks import HookRegistry
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import get_event_loop
 from lightbus.utilities.features import ALL_FEATURES, Feature
@@ -105,6 +106,9 @@ def create(
         human_readable=config.bus().schema.human_readable,
     )
 
+    # TODO: All these queues need to become threadsafe
+    error_queue = asyncio.Queue()
+
     # Plugin registry
 
     plugin_registry = PluginRegistry()
@@ -115,11 +119,15 @@ def create(
         logger.debug("Loading explicitly specified Lightbus plugins....")
         plugin_registry.set_plugins(plugins)
 
+    # Hook registry
+
+    hook_registry = HookRegistry(
+        error_queue=error_queue, execute_plugin_hooks=plugin_registry.execute_hook
+    )
+
     # Ensure an event loop exists, as creating asyncio.Queue
     # objects requires that we have one.
     get_event_loop()
-
-    error_queue = asyncio.Queue()
 
     api_registry = ApiRegistry()
 
@@ -128,6 +136,7 @@ def create(
 
     event_client = EventClient(
         api_registry=api_registry,
+        hook_registry=hook_registry,
         config=config,
         schema=schema,
         error_queue=error_queue,
@@ -149,6 +158,7 @@ def create(
 
     rpc_result_client = RpcResultClient(
         api_registry=api_registry,
+        hook_registry=hook_registry,
         config=config,
         schema=schema,
         error_queue=error_queue,
@@ -167,6 +177,7 @@ def create(
 
     client = client_class(
         config=config,
+        hook_registry=hook_registry,
         plugin_registry=plugin_registry,
         features=features,
         schema=schema,
@@ -177,6 +188,10 @@ def create(
         transport_registry=transport_registry,
         **kwargs,
     )
+
+    # Pass the client to any hooks
+    # TODO: Use a weakref (or a weakref proxy)
+    hook_registry.set_extra_parameter("client", client)
 
     if _testing:
         # We don't do this normally as the docs do not need to be

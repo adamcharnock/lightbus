@@ -2,6 +2,7 @@ import asyncio
 
 from lightbus.client.internal_messaging.consumer import InternalConsumer
 from lightbus.client.internal_messaging.producer import InternalProducer
+from lightbus.hooks import HookRegistry
 from lightbus.schema import Schema
 from lightbus.api import ApiRegistry
 from lightbus.config import Config
@@ -12,6 +13,7 @@ class BaseSubClient:
     def __init__(
         self,
         api_registry: ApiRegistry,
+        hook_registry: HookRegistry,
         config: Config,
         schema: Schema,
         error_queue: asyncio.Queue,
@@ -19,6 +21,7 @@ class BaseSubClient:
         produce_to: asyncio.Queue,
     ):
         self.api_registry = api_registry
+        self.hook_registry: HookRegistry = hook_registry
         self.config = config
         self.schema = schema
         self.error_queue = error_queue
@@ -30,7 +33,3 @@ class BaseSubClient:
 
     async def handle(self, command):
         raise NotImplementedError()
-
-    async def _execute_hook(self, name, **kwargs):
-        # TODO: Implement this / refactor
-        pass

@@ -23,7 +23,6 @@ from lightbus.utilities.async_tools import (
     cancel,
     call_every,
     call_on_schedule,
-    run_user_provided_callable,
     cancel_and_log_exceptions,
 )
 from lightbus.utilities.features import Feature, ALL_FEATURES
@@ -39,6 +38,7 @@ if TYPE_CHECKING:
     from lightbus.schema import Schema
     from lightbus.api import Api, ApiRegistry
     from lightbus.transports.registry import TransportRegistry
+    from lightbus.hooks import HookRegistry
 
 __all__ = ["BusClient"]
 
@@ -86,6 +86,7 @@ class BusClient:
         config: "Config",
         schema: "Schema",
         plugin_registry: "PluginRegistry",
+        hook_registry: "HookRegistry",
         event_client: "EventClient",
         rpc_result_client: "RpcResultClient",
         api_registry: "ApiRegistry",
@@ -93,6 +94,7 @@ class BusClient:
         error_queue: asyncio.Queue,
         features: Sequence[Union[Feature, str]] = ALL_FEATURES,
     ):
+        # TODO: self.transport_registry is no longer used, except for by the bus mocker. Remove.
         self.transport_registry = transport_registry
         self.error_queue = error_queue
         self.api_registry = api_registry
@@ -104,7 +106,6 @@ class BusClient:
         self._background_coroutines = []
         # Tasks produced from the values in self._background_coroutines. Will be closed on bus shutdown
         self._background_tasks = []
-        self._hook_callbacks = defaultdict(list)
         self.config = config
         self.features: List[Union[Feature, str]] = ALL_FEATURES
         self.set_features(list(features))
@@ -115,6 +116,7 @@ class BusClient:
         self._lazy_load_complete = False
         self.schema = schema
         self.plugin_registry = plugin_registry
+        self.hook_registry = hook_registry
         # Used to detect if the event monitor is running
         self._event_monitor_lock = asyncio.Lock()
 
@@ -233,7 +235,7 @@ class BusClient:
         )
 
         logger.info("Executing before_worker_start & on_start hooks...")
-        await self._execute_hook("before_worker_start")
+        await self.hook_registry.execute("before_worker_start")
         logger.info("Execution of before_worker_start & on_start hooks was successful")
 
         # Setup RPC consumption
@@ -264,7 +266,7 @@ class BusClient:
         await cancel(*self._server_tasks)
 
         logger.info("Executing after_worker_stopped & on_stop hooks...")
-        await self._execute_hook("after_worker_stopped")
+        await self.hook_registry.execute("after_worker_stopped")
         logger.info("Execution of after_worker_stopped & on_stop hooks was successful")
 
     def _actually_run_forever(self):  # pragma: no cover
@@ -452,30 +454,17 @@ class BusClient:
 
     # Hooks
 
-    async def _execute_hook(self, name, **kwargs):
-        # Hooks that need to run before plugins
-        for callback in self._hook_callbacks[(name, True)]:
-            await run_user_provided_callable(callback, args=[], kwargs=dict(client=self, **kwargs))
-
-        await self.plugin_registry.execute_hook(name, client=self, **kwargs)
-
-        # Hooks that need to run after plugins
-        for callback in self._hook_callbacks[(name, False)]:
-            await run_user_provided_callable(callback, args=[], kwargs=dict(client=self, **kwargs))
-
-    def _register_hook_callback(self, name, fn, before_plugins=False):
-        self._hook_callbacks[(name, bool(before_plugins))].append(fn)
-
     def _make_hook_decorator(self, name, before_plugins=False, callback=None):
         if callback and not callable(callback):
             raise AssertionError("The provided callback is not callable")
+
         if callback:
-            self._register_hook_callback(name, callback, before_plugins)
+            self.hook_registry.register_callback(name, callback, before_plugins)
             return None
         else:
 
             def hook_decorator(fn):
-                self._register_hook_callback(name, fn, before_plugins)
+                self.hook_registry.register_callback(name, fn, before_plugins)
                 return fn
 
             return hook_decorator

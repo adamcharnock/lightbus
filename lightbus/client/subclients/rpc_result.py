@@ -94,7 +94,7 @@ class RpcResultClient(BaseSubClient):
 
         validate_outgoing(self.config, self.schema, rpc_message)
 
-        await self._execute_hook("before_rpc_call", rpc_message=rpc_message)
+        await self.hook_registry.execute("before_rpc_call", rpc_message=rpc_message)
 
         result_queue = asyncio.Queue()
 
@@ -132,7 +132,7 @@ class RpcResultClient(BaseSubClient):
             assert isinstance(result, ResultMessage)
             result_message = result
 
-        await self._execute_hook(
+        await self.hook_registry.execute(
             "after_rpc_call", rpc_message=rpc_message, result_message=result_message
         )
 
@@ -212,7 +212,7 @@ class RpcResultClient(BaseSubClient):
     async def handle_rpc_call_received(self, command: commands.ExecuteRpcCommand):
         validate_incoming(self.config, self.schema, command.message)
 
-        await self._execute_hook("before_rpc_execution", rpc_message=command.message)
+        await self.hook_registry.execute("before_rpc_execution", rpc_message=command.message)
         try:
             result = await self._call_rpc_local(
                 api_name=command.message.api_name,
@@ -235,7 +235,7 @@ class RpcResultClient(BaseSubClient):
             api_name=command.message.api_name,
             procedure_name=command.message.procedure_name,
         )
-        await self._execute_hook(
+        await self.hook_registry.execute(
             "after_rpc_execution", rpc_message=command.message, result_message=result_message
         )
 

@@ -267,7 +267,7 @@ async def test_hook_decorator(dummy_bus: lightbus.path.BusPath, decorator, hook,
         nonlocal count
         count += 1
 
-    await dummy_bus.client._execute_hook(hook)
+    await dummy_bus.client.hook_registry.execute(hook)
 
     assert count == 1
 
@@ -284,7 +284,7 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
         count += 1
 
     decorator(callback, before_plugins=before_plugins)
-    await dummy_bus.client._execute_hook(hook)
+    await dummy_bus.client.hook_registry.execute(hook)
 
     assert count == 1
 
