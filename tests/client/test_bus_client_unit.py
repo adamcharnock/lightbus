@@ -9,7 +9,7 @@ from typing import Type
 import lightbus
 import lightbus.creation
 import lightbus.path
-from lightbus import EventMessage
+from lightbus import EventMessage, BusPath
 from lightbus.client.commands import SendResultCommand, ConsumeEventsCommand
 from lightbus.client.utilities import Error
 from lightbus.config import Config
@@ -21,7 +21,7 @@ from lightbus.exceptions import (
     TransportNotFound,
     InvalidName,
 )
-from lightbus.transports.registry import TransportRegistry
+from lightbus.transports.registry import TransportRegistry, SchemaTransportPoolType
 from lightbus.utilities.testing import BusQueueMockerContext
 from tests.conftest import Worker
 
@@ -223,27 +223,13 @@ async def test_no_transport_type(dummy_bus):
         await dummy_bus.client.call_rpc_remote("my_api", "test", kwargs={}, options={})
 
 
-def test_setup_transports_opened(mocker):
-    rpc_transport = lightbus.DebugRpcTransport()
+@pytest.mark.asyncio
+async def test_setup_transports_opened(dummy_bus: BusPath, mocker):
+    schema_transport_pool: SchemaTransportPoolType = dummy_bus.client.transport_registry.get_schema_transport()
 
-    # TODO: There has to be a cleaner way of patching a coroutine.
-    #       Do a global search for 'dummy_coroutine' if you find it
-    async def dummy_coroutine(*args, **kwargs):
-        pass
-
-    m = mocker.patch.object(rpc_transport, "open", autospec=True, return_value=dummy_coroutine())
-
-    transport_registry = TransportRegistry().load_config(Config.load_dict({}))
-    transport_registry.set_rpc_transport("default", rpc_transport)
-
-    bus = lightbus.creation.create(transport_registry=transport_registry, plugins=[])
-    try:
-        assert m.call_count == 0
-
-        bus.client.lazy_load_now()
-        assert m.call_count == 1
-    finally:
-        bus.client.close()
+    assert schema_transport_pool.total == 0
+    await dummy_bus.client.lazy_load_now()
+    assert schema_transport_pool.total == 1
 
 
 def test_run_forever(dummy_bus: lightbus.path.BusPath, mocker, dummy_api):

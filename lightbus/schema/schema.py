@@ -73,17 +73,11 @@ class Schema:
     def __contains__(self, item):
         return item in self.local_schemas or item in self.remote_schemas
 
-    async def get_schema_transport(self):
-        if not self._schema_transport:
-            self._schema_transport = await self.schema_transport.checkout()
-        return self._schema_transport
-
     async def add_api(self, api: "Api"):
         """Adds an API locally, and sends to the transport"""
-        schema_transport = await self.get_schema_transport()
         schema = api_to_schema(api)
         self.local_schemas[api.meta.name] = schema
-        await schema_transport.store(api.meta.name, schema, ttl_seconds=self.max_age_seconds)
+        await self.schema_transport.store(api.meta.name, schema, ttl_seconds=self.max_age_seconds)
 
     def get_api_schema(self, api_name) -> Optional[dict]:
         """Get the schema for the given API"""
@@ -263,17 +257,15 @@ class Schema:
 
         This will be done using the `schema_transport` provided to `__init__()`
         """
-        schema_transport = await self.get_schema_transport()
         for api_name, schema in self.local_schemas.items():
-            await schema_transport.store(api_name, schema, ttl_seconds=self.max_age_seconds)
+            await self.schema_transport.store(api_name, schema, ttl_seconds=self.max_age_seconds)
 
     async def load_from_bus(self):
         """Save the schema from the bus
 
         This will be done using the `schema_transport` provided to `__init__()`
         """
-        schema_transport = await self.get_schema_transport()
-        self._remote_schemas = await schema_transport.load()
+        self._remote_schemas = await self.schema_transport.load()
 
     async def ensure_loaded_from_bus(self):
         if self._remote_schemas is None:
@@ -391,7 +383,6 @@ class Schema:
         return json_encode(schema, indent=indent)
 
     async def close(self):
-        self.schema_transport.checkin(await self.get_schema_transport())
         await self.schema_transport.close()
 
 

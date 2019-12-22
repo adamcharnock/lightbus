@@ -25,6 +25,7 @@ class TransportPool(Generic[VT]):
 
         self.lock = threading.RLock()
         self.pool: List[VT] = []
+        self.checked_out = set()
         self.context_stack: List[VT] = []
 
     def __repr__(self):
@@ -57,13 +58,28 @@ class TransportPool(Generic[VT]):
             if not self.pool:
                 await self.grow()
 
-            return self.pool.pop(0)
+            transport = self.pool.pop(0)
+            self.checked_out.add(transport)
+            return transport
 
     def checkin(self, transport: VT):
         with self.lock:
+            self.checked_out.discard(transport)
             self.pool.append(transport)
             if self.closed:
                 self._close_all()
+
+    @property
+    def free(self) -> int:
+        return len(self.pool)
+
+    @property
+    def in_use(self) -> int:
+        return len(self.checked_out)
+
+    @property
+    def total(self) -> int:
+        return self.free + self.in_use
 
     async def __aenter__(self) -> VT:
         transport = await self.checkout()

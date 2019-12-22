@@ -317,7 +317,6 @@ class BusClient:
         (or perform them at a known point). In which case you can call this
         method to execute them immediately.
         """
-        # TODO: Remove once all transports are moved into pools
         if self._lazy_load_complete:
             return
 
@@ -332,7 +331,11 @@ class BusClient:
             )
         )
 
-        # 2. Add any local APIs to the schema
+        # 2. Ensure the schema transport is loaded (other transports will be
+        #    loaded as the need arises, but we need schema information from the get-go)
+        await self.schema.ensure_loaded_from_bus()
+
+        # 3. Add any local APIs to the schema
         for api in self.api_registry.all():
             await self.schema.add_api(api)
 
@@ -342,12 +345,6 @@ class BusClient:
                 items=self.schema.local_schemas.keys(),
             )
         )
-
-        # 3. Open the transports
-        # TODO: Remove transports from the BusClient as this is all the bus client
-        #       does with them now. And this should be automatic because they are in pools now anyway
-        for transport in self.transport_registry.get_all_transports():
-            await transport.open()
 
         # 4. Done
         self._lazy_load_complete = True
