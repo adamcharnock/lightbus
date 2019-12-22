@@ -30,11 +30,6 @@ class InternalConsumer:
 
         Use `stop()` to shutdown the invoker.
         """
-        if not iscoroutinefunction(handler):
-            raise AsyncFunctionOrMethodRequired(
-                f"Handler function {handler.__name__} must be asynchronous"
-            )
-
         logger.debug("Starting internal consumer on queue %s", self.queue)
         self._consumer_task = asyncio.ensure_future(
             queue_exception_checker(self._consumer_loop(self.queue, handler), self.error_queue)

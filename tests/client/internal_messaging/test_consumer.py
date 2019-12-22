@@ -80,15 +80,6 @@ async def test_consume_on_done(consumer: InternalConsumer):
 
 
 @pytest.mark.asyncio
-async def test_consume_not_coroutine(consumer: InternalConsumer):
-    def fn(command):
-        pass
-
-    with pytest.raises(AsyncFunctionOrMethodRequired):
-        consumer.start(fn)
-
-
-@pytest.mark.asyncio
 async def test_consume_exception(consumer: InternalConsumer):
     exceptions = []
 
