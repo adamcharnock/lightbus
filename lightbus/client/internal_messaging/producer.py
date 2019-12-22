@@ -57,12 +57,8 @@ class InternalProducer:
         which is the exception which occurred. This should take care of shutting down the invoker,
         as well as any other cleanup which needs to happen.
         """
-        self.exception_queue = asyncio.Queue()
-        self._task: Optional[asyncio.Task] = None
         self._queue_monitor_task: Optional[asyncio.Task] = None
-        self._ready = asyncio.Event()
         self._monitor_ready = asyncio.Event()
-        self._running_tasks = set()
         self.queue = queue
         self.error_queue = error_queue
 
@@ -109,7 +105,7 @@ class InternalProducer:
                         everything_ok = ""
 
                     logger.warning(
-                        "Queue in %s has shrunk back down to %s commands. %s.",
+                        "Queue in %s has shrunk back down to %s commands.%s",
                         self.__class__.__name__,
                         current_size,
                         everything_ok,
