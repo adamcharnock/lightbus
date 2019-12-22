@@ -160,11 +160,13 @@ class BusClient:
         # Stopping the server requires access to the worker,
         # so do this first
         logger.debug("Stopping server")
-        self.stop_server()
+        block(self.stop_server())
 
         # Here we close connections and shutdown the worker thread
         logger.debug("Closing bus")
-        self.close()
+        block(self.close_async())
+
+        return self.exit_code
 
     async def start_server(self):
         """Server startup procedure
@@ -295,8 +297,8 @@ class BusClient:
             logger.debug(f"Bus client event monitor detected an error, will shutdown.")
             logger.error(str(error))
 
-            await self.stop_server()
-            await self.close_async()
+            self.exit_code = 1
+            self.loop.stop()
 
     async def lazy_load_now(self):
         """Perform lazy tasks immediately
