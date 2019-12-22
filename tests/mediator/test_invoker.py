@@ -17,9 +17,9 @@ async def invoker():
     def _on_exception(e):
         raise e
 
-    invoker = InternalProducer(on_exception=_on_exception)
+    invoker = InternalProducer(queue=asyncio.Queue(), error_queue=asyncio.Queue())
     yield invoker
-    await invoker.stop()
+    await invoker.close()
 
 
 @pytest.fixture

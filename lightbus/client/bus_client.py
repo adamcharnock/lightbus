@@ -295,7 +295,10 @@ class BusClient:
             logger.error(str(error))
 
             self.exit_code = 1
-            self.loop.stop()
+            self.stop_loop()
+
+    def stop_loop(self):
+        self.loop.stop()
 
     async def lazy_load_now(self):
         """Perform lazy tasks immediately

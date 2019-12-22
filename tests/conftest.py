@@ -15,6 +15,8 @@ from pathlib import Path
 from queue import Queue
 from random import randint
 from typing import Type
+from unittest import mock
+from unittest.mock import MagicMock
 from urllib.parse import urlparse
 
 import pytest

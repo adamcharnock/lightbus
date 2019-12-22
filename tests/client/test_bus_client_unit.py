@@ -1,5 +1,6 @@
 import asyncio
 import threading
+from unittest.mock import MagicMock
 
 import janus
 import pytest
@@ -306,12 +307,13 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
 async def test_exception_in_listener_shutdown(
     worker: Worker, queue_mocker: Type[BusQueueMockerContext]
 ):
-    # This is normally only set on server startup, so set it here so it can be used
     class TestException(Exception):
         pass
 
     def listener(*args, **kwargs):
         raise TestException()
+
+    worker.bus.client.stop_loop = MagicMock()
 
     # Start the listener
     worker.bus.client.listen_for_events(
@@ -328,7 +330,7 @@ async def test_exception_in_listener_shutdown(
             assert len(q.errors.put_items) == 1, f"Expected one error, got: {q.errors.put_items}"
             error: Error = q.errors.put_items[0]
             assert isinstance(error.value, TestException)
-            assert worker.bus.client._closed
+            assert worker.bus.client.stop_loop.called
 
             # Note that this hasn't actually shut the bus down, we'll test that in test_server_shutdown
 
@@ -349,6 +351,7 @@ def test_add_background_task(dummy_bus: lightbus.path.BusPath, event_loop):
     dummy_bus.client.run_forever()
 
     assert dummy_bus.client.exit_code
+    assert dummy_bus.client.stop_loop.called
 
     assert calls == 5
 
@@ -373,7 +376,7 @@ def test_every(dummy_bus: lightbus.path.BusPath, event_loop):
     assert calls == 5
 
 
-def test_schedule(dummy_bus: lightbus.path.BusPath, event_loop):
+def test_schedule(dummy_bus: lightbus.path.BusPath):
     import schedule
 
     calls = 0
@@ -393,19 +396,3 @@ def test_schedule(dummy_bus: lightbus.path.BusPath, event_loop):
     assert dummy_bus.client.exit_code
 
     assert calls == 5
-
-
-@pytest.mark.asyncio
-async def test_server_shutdown(dummy_bus: lightbus.path.BusPath, caplog):
-    thread = threading.Thread(target=dummy_bus.client.run_forever, name="TestLightbusServerThread")
-    thread.start()
-
-    await asyncio.sleep(0.1)
-    dummy_bus.client.shutdown_server(exit_code=1)
-    await asyncio.sleep(1)
-
-    assert (
-        not dummy_bus.client.worker._thread.is_alive()
-    ), "Bus worker thread is still running but should have stopped"
-    # Make sure will pull out any exceptions
-    dummy_bus.client.worker._thread.join()

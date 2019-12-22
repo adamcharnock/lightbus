@@ -12,6 +12,7 @@ from lightbus.client.docks.rpc_result import RpcResultDock
 from lightbus.client.subclients.event import EventClient
 from lightbus.client.subclients.rpc_result import RpcResultClient
 from lightbus.plugins import PluginRegistry
+from lightbus.utilities.async_tools import get_event_loop
 from lightbus.utilities.features import ALL_FEATURES, Feature
 from lightbus.config.structure import RootConfig
 from lightbus.log import Bold
@@ -113,6 +114,10 @@ def create(
     else:
         logger.debug("Loading explicitly specified Lightbus plugins....")
         plugin_registry.set_plugins(plugins)
+
+    # Ensure an event loop exists, as creating asyncio.Queue
+    # objects requires that we have one.
+    get_event_loop()
 
     error_queue = asyncio.Queue()
 
