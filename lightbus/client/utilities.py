@@ -78,8 +78,9 @@ def queue_exception_checker(coroutine: Coroutine, error_queue: asyncio.Queue):
         try:
             await coroutine
         except asyncio.CancelledError:
-            # Was cancelled by the caller, so just return as this is an expected error
-            pass
+            # Was cancelled by the caller, so just re-raise the cancelled error and
+            # let the coroutine finish as requested
+            raise
         except Exception as e:
             # This is an exception which is going to need to be dealt with
 
