@@ -210,6 +210,7 @@ class RpcResultClient(BaseSubClient):
 
     @handle.register
     async def handle_execute_rpc(self, command: commands.ExecuteRpcCommand):
+        await self.schema.ensure_loaded_from_bus()
         validate_incoming(self.config, self.schema, command.message)
 
         await self._execute_hook("before_rpc_execution", rpc_message=command.message)
