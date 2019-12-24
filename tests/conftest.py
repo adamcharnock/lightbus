@@ -106,16 +106,24 @@ def create_redis_connection(_closable):
 
 
 @pytest.fixture
-def redis_server_url():
+async def redis_server_url():
     # We use 127.0.0.1 rather than 'localhost' as this bypasses some
     # problems we encounter with getaddrinfo when performing tests
     # which create a lot of connections (e.g. the reliability tests)
-    return os.environ.get("REDIS_URL", "") or "redis://127.0.0.1:6379/10"
+    url = os.environ.get("REDIS_URL", "") or "redis://127.0.0.1:6379/10"
+    redis = await aioredis.create_redis(url)
+    await redis.flushdb()
+    redis.close()
+    return url
 
 
 @pytest.fixture
-def redis_server_b_url():
-    return os.environ.get("REDIS_URL_B", "") or "redis://127.0.0.1:6379/11"
+async def redis_server_b_url():
+    url = os.environ.get("REDIS_URL_B", "") or "redis://127.0.0.1:6379/11"
+    redis = await aioredis.create_redis(url)
+    await redis.flushdb()
+    await redis.close()
+    return url
 
 
 @pytest.fixture
@@ -175,7 +183,6 @@ async def redis_pool(create_redis_pool, loop):
 async def redis_client(create_redis_client, loop):
     """Returns Redis client instance."""
     redis = await create_redis_client()
-    await redis.flushall()
     return redis
 
 
