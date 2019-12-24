@@ -158,7 +158,7 @@ class Schema:
                     f"Validation error when using JSON schema to validate parameters for \n"
                     f"{api_name}.{event_or_rpc_name}.\n"
                     f"\n"
-                    f"It is likely that you have passed in invalid value for the \n"
+                    f"It is likely that you have passed in an invalid value for the \n"
                     f"'{path[0]}' parameter.\n"
                     f"\n"
                     f"The error given was: {e.message}\n"
