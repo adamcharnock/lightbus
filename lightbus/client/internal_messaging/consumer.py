@@ -65,7 +65,7 @@ class InternalConsumer:
             self.handle_in_background(queue, handler, command, on_done)
 
     def handle_in_background(self, queue: asyncio.Queue, handler, command, on_done: asyncio.Event):
-        """Handle a received command by calling self.handle
+        """Handle a received command by calling the provided handler
 
         This execution happens in the background.
         """
@@ -73,6 +73,15 @@ class InternalConsumer:
 
         def when_task_finished(fut: asyncio.Future):
             self._running_commands.remove(fut)
+            try:
+                # Retrieve any error which may have occurred.
+                # We ignore the error because we assume any exceptions which the
+                # handler threw will have already been placed into the error queue
+                # by the queue_exception_checker().
+                # Regardless, we must retrieve the result in order to keep Python happy.
+                fut.result()
+            except:
+                pass
             queue.task_done()
             on_done.set()
 

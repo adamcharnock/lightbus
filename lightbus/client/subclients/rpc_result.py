@@ -209,7 +209,7 @@ class RpcResultClient(BaseSubClient):
         raise NotImplementedError(f"Did not recognise command {command.__class__.__name__}")
 
     @handle.register
-    async def handle_rpc_call_received(self, command: commands.ExecuteRpcCommand):
+    async def handle_execute_rpc(self, command: commands.ExecuteRpcCommand):
         validate_incoming(self.config, self.schema, command.message)
 
         await self._execute_hook("before_rpc_execution", rpc_message=command.message)
