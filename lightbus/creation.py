@@ -12,6 +12,7 @@ from lightbus.client.docks.rpc_result import RpcResultDock
 from lightbus.client.subclients.event import EventClient
 from lightbus.client.subclients.rpc_result import RpcResultClient
 from lightbus.hooks import HookRegistry
+from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import get_event_loop
 from lightbus.utilities.features import ALL_FEATURES, Feature
@@ -129,7 +130,11 @@ def create(
         error_queue=error_queue, execute_plugin_hooks=plugin_registry.execute_hook
     )
 
+    # API registry
+
     api_registry = ApiRegistry()
+    api_registry.add(LightbusStateApi())
+    api_registry.add(LightbusMetricsApi())
 
     events_queue_client_to_dock = asyncio.Queue()
     events_queue_dock_to_client = asyncio.Queue()

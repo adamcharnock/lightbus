@@ -1,12 +1,9 @@
 import asyncio
 import logging
-from collections import defaultdict
 from datetime import timedelta
 from functools import wraps
 from inspect import iscoroutinefunction
 from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING, Callable
-
-import janus
 
 from lightbus.client.utilities import queue_exception_checker, Error
 from lightbus.exceptions import (
@@ -15,7 +12,6 @@ from lightbus.exceptions import (
     UnsupportedUse,
     AsyncFunctionOrMethodRequired,
 )
-from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.log import LBullets
 from lightbus.utilities.async_tools import (
     block,
@@ -211,9 +207,6 @@ class BusClient:
         #       start_server and stop_server. Also, a lot of tests use this
         #       _setup_server private method, which probably shouldn't be the case.
         #       UPDATE: These tests should now use the worker fixture
-        self.api_registry.add(LightbusStateApi())
-        self.api_registry.add(LightbusMetricsApi())
-
         logger.info(
             LBullets(
                 "APIs in registry ({})".format(len(self.api_registry.all())),

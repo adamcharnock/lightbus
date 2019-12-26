@@ -26,25 +26,27 @@ class TestApi(Api):
 
 
 @pytest.mark.asyncio
-async def test_remote_rpc_call(dummy_bus: BusPath, get_dummy_events):
+async def test_remote_rpc_call(dummy_bus: BusPath, queue_mocker: Type[BusQueueMockerContext]):
     # Setup the bus and do the call
     dummy_bus.client.plugin_registry.set_plugins(
         plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
     )
+
     dummy_bus.client.register_api(TestApi())
-    await dummy_bus.example.test.my_method.call_async(f=123)
+
+    with queue_mocker(dummy_bus.client) as q:
+        await dummy_bus.example.test.my_method.call_async(f=123)
 
     # What events were fired?
-    event_messages = get_dummy_events()
-    assert len(event_messages) == 2
+    event_commands = q.event.to_transport.commands.get_all(SendEventCommand)
 
     # rpc_call_sent
-    assert event_messages[0].api_name == "internal.metrics"
-    assert event_messages[0].event_name == "rpc_call_sent"
+    assert event_commands[0].message.api_name == "internal.metrics"
+    assert event_commands[0].message.event_name == "rpc_call_sent"
     # Pop these next two as the values are variable
-    assert event_messages[0].kwargs.pop("timestamp")
-    assert event_messages[0].kwargs.pop("id")
-    assert event_messages[0].kwargs == {
+    assert event_commands[0].message.kwargs.pop("timestamp")
+    assert event_commands[0].message.kwargs.pop("id")
+    assert event_commands[0].message.kwargs == {
         "api_name": "example.test",
         "procedure_name": "my_method",
         "kwargs": {"f": 123},
@@ -53,12 +55,12 @@ async def test_remote_rpc_call(dummy_bus: BusPath, get_dummy_events):
     }
 
     # rpc_response_received
-    assert event_messages[1].api_name == "internal.metrics"
-    assert event_messages[1].event_name == "rpc_response_received"
+    assert event_commands[1].message.api_name == "internal.metrics"
+    assert event_commands[1].message.event_name == "rpc_response_received"
     # Pop these next two as the values are variable
-    assert event_messages[1].kwargs.pop("timestamp")
-    assert event_messages[1].kwargs.pop("id")
-    assert event_messages[1].kwargs == {
+    assert event_commands[1].message.kwargs.pop("timestamp")
+    assert event_commands[1].message.kwargs.pop("id")
+    assert event_commands[1].message.kwargs == {
         "api_name": "example.test",
         "procedure_name": "my_method",
         "service_name": "foo",
