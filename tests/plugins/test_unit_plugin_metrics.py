@@ -1,14 +1,11 @@
-import asyncio
 import pytest
 from typing import Type
 
-from lightbus import BusClient
 from lightbus.api import Api, Event
 from lightbus.client.commands import SendEventCommand
 from lightbus.path import BusPath
 from lightbus.message import RpcMessage, EventMessage
 from lightbus.plugins.metrics import MetricsPlugin
-from lightbus.utilities.async_tools import cancel
 from lightbus.utilities.testing import BusQueueMockerContext
 from tests.conftest import Worker
 
@@ -26,86 +23,69 @@ class TestApi(Api):
 
 
 @pytest.mark.asyncio
-async def test_remote_rpc_call(dummy_bus: BusPath, queue_mocker: Type[BusQueueMockerContext]):
+async def test_rpc_call(
+    dummy_bus: BusPath, worker: Worker, queue_mocker: Type[BusQueueMockerContext]
+):
     # Setup the bus and do the call
     dummy_bus.client.plugin_registry.set_plugins(
         plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
     )
-
     dummy_bus.client.register_api(TestApi())
 
-    with queue_mocker(dummy_bus.client) as q:
-        await dummy_bus.example.test.my_method.call_async(f=123)
+    async with worker(dummy_bus):
+        with queue_mocker(dummy_bus.client) as q:
+            await dummy_bus.my_company.auth.check_password.call_async(username="a", password="b")
 
-    # What events were fired?
     event_commands = q.event.to_transport.commands.get_all(SendEventCommand)
 
+    assert len(event_commands) == 4, event_commands
+
+    # Arrange messages in a dict indexed by name (makes checking results)
+    event_messages = {}
+    for event_command in q.event.to_transport.commands.get_all(SendEventCommand):
+        event_messages[event_command.message.event_name] = event_command.message
+
     # rpc_call_sent
-    assert event_commands[0].message.api_name == "internal.metrics"
-    assert event_commands[0].message.event_name == "rpc_call_sent"
-    # Pop these next two as the values are variable
-    assert event_commands[0].message.kwargs.pop("timestamp")
-    assert event_commands[0].message.kwargs.pop("id")
-    assert event_commands[0].message.kwargs == {
-        "api_name": "example.test",
-        "procedure_name": "my_method",
-        "kwargs": {"f": 123},
-        "service_name": "foo",
-        "process_name": "bar",
-    }
+    assert event_messages["rpc_call_sent"].api_name == "internal.metrics"
+    assert event_messages["rpc_call_sent"].event_name == "rpc_call_sent"
+    assert event_messages["rpc_call_sent"].kwargs["timestamp"]
+    assert event_messages["rpc_call_sent"].kwargs["api_name"] == "my_company.auth"
+    assert event_messages["rpc_call_sent"].kwargs["procedure_name"] == "check_password"
+    assert event_messages["rpc_call_sent"].kwargs["id"]
+    assert event_messages["rpc_call_sent"].kwargs["kwargs"] == {"username": "a", "password": "b"}
+    assert event_messages["rpc_call_sent"].kwargs["service_name"] == "foo"
+    assert event_messages["rpc_call_sent"].kwargs["process_name"] == "bar"
+
+    # rpc_call_received
+    assert event_messages["rpc_call_received"].api_name == "internal.metrics"
+    assert event_messages["rpc_call_received"].event_name == "rpc_call_received"
+    assert event_messages["rpc_call_received"].kwargs["timestamp"]
+    assert event_messages["rpc_call_received"].kwargs["api_name"] == "my_company.auth"
+    assert event_messages["rpc_call_received"].kwargs["procedure_name"] == "check_password"
+    assert event_messages["rpc_call_received"].kwargs["id"]
+    assert event_messages["rpc_call_received"].kwargs["service_name"] == "foo"
+    assert event_messages["rpc_call_received"].kwargs["process_name"] == "bar"
+
+    # rpc_response_sent
+    assert event_messages["rpc_response_sent"].api_name == "internal.metrics"
+    assert event_messages["rpc_response_sent"].event_name == "rpc_response_sent"
+    assert event_messages["rpc_response_sent"].kwargs["timestamp"]
+    assert event_messages["rpc_response_sent"].kwargs["api_name"] == "my_company.auth"
+    assert event_messages["rpc_response_sent"].kwargs["procedure_name"] == "check_password"
+    assert event_messages["rpc_response_sent"].kwargs["id"]
+    assert event_messages["rpc_response_sent"].kwargs["service_name"] == "foo"
+    assert event_messages["rpc_response_sent"].kwargs["process_name"] == "bar"
+    assert event_messages["rpc_response_sent"].kwargs["result"] == True
 
     # rpc_response_received
-    assert event_commands[1].message.api_name == "internal.metrics"
-    assert event_commands[1].message.event_name == "rpc_response_received"
-    # Pop these next two as the values are variable
-    assert event_commands[1].message.kwargs.pop("timestamp")
-    assert event_commands[1].message.kwargs.pop("id")
-    assert event_commands[1].message.kwargs == {
-        "api_name": "example.test",
-        "procedure_name": "my_method",
-        "service_name": "foo",
-        "process_name": "bar",
-    }
-
-
-@pytest.mark.asyncio
-async def test_local_rpc_call(loop, dummy_bus: BusPath, consume_rpcs, get_dummy_events, mocker):
-    # Setup the bus and do the call
-    dummy_bus.client.plugin_registry.set_plugins(
-        plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
-    )
-    dummy_bus.client.register_api(TestApi())
-
-    task = asyncio.ensure_future(consume_rpcs(dummy_bus), loop=loop)
-
-    # The dummy transport will fire an every every 0.1 seconds
-    await asyncio.sleep(0.15)
-
-    await cancel(task)
-
-    event_messages = get_dummy_events()
-    assert len(event_messages) == 2, event_messages
-
-    # before_rpc_execution
-    assert event_messages[0].api_name == "internal.metrics"
-    assert event_messages[0].event_name == "rpc_call_received"
-    assert event_messages[0].kwargs.pop("timestamp")
-    assert event_messages[0].kwargs["api_name"] == "my_company.auth"
-    assert event_messages[0].kwargs["procedure_name"] == "check_password"
-    assert event_messages[0].kwargs["id"]
-    assert event_messages[0].kwargs["service_name"] == "foo"
-    assert event_messages[0].kwargs["process_name"] == "bar"
-
-    # after_rpc_execution
-    assert event_messages[1].api_name == "internal.metrics"
-    assert event_messages[1].event_name == "rpc_response_sent"
-    assert event_messages[1].kwargs.pop("timestamp")
-    assert event_messages[1].kwargs["api_name"] == "my_company.auth"
-    assert event_messages[1].kwargs["procedure_name"] == "check_password"
-    assert event_messages[1].kwargs["id"]
-    assert event_messages[1].kwargs["service_name"] == "foo"
-    assert event_messages[1].kwargs["process_name"] == "bar"
-    assert event_messages[1].kwargs["result"] == True
+    assert event_messages["rpc_response_received"].api_name == "internal.metrics"
+    assert event_messages["rpc_response_received"].event_name == "rpc_response_received"
+    assert event_messages["rpc_response_received"].kwargs["timestamp"]
+    assert event_messages["rpc_response_received"].kwargs["api_name"] == "my_company.auth"
+    assert event_messages["rpc_response_received"].kwargs["procedure_name"] == "check_password"
+    assert event_messages["rpc_response_received"].kwargs["id"]
+    assert event_messages["rpc_response_received"].kwargs["service_name"] == "foo"
+    assert event_messages["rpc_response_received"].kwargs["process_name"] == "bar"
 
 
 @pytest.mark.asyncio
@@ -123,7 +103,7 @@ async def test_send_event(dummy_bus: BusPath, get_dummy_events):
     # rpc_response_received
     assert event_messages[1].api_name == "internal.metrics"
     assert event_messages[1].event_name == "event_fired"
-    assert event_messages[1].kwargs.pop("timestamp")
+    assert event_messages[1].kwargs["timestamp"]
     assert event_messages[1].kwargs == {
         "api_name": "my_company.auth",
         "event_name": "my_event",
