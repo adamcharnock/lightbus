@@ -143,10 +143,11 @@ class Command:
             logger.info("Stopped by user")
 
     async def search_in_api(self, args, api_name: str, bus: BusPath):
-        transport = bus.client.transport_registry.get_event_transport(api_name)
-        async for message in self.get_messages(args, api_name, args.event, transport, bus):
-            if self.match_message(args, message):
-                self.output(args, transport, message)
+        transport_pool = bus.client.transport_registry.get_event_transport(api_name)
+        async with transport_pool as transport:
+            async for message in self.get_messages(args, api_name, args.event, transport, bus):
+                if self.match_message(args, message):
+                    self.output(args, transport, message)
 
     async def get_messages(
         self,
