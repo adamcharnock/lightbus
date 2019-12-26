@@ -637,6 +637,13 @@ def queue_mocker() -> Type[BusQueueMockerContext]:
 
 
 @pytest.yield_fixture()
+def error_queue():
+    queue = asyncio.Queue()
+    yield queue
+    assert queue.qsize() == 0, f"Errors found in error queue: {queue._queue}"
+
+
+@pytest.yield_fixture()
 async def stop_me_later():
     to_stop_later = []
 
