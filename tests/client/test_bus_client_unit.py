@@ -291,7 +291,7 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
 
 @pytest.mark.asyncio
 async def test_exception_in_listener_shutdown(
-    worker: Worker, queue_mocker: Type[BusQueueMockerContext]
+    new_bus, worker: Worker, queue_mocker: Type[BusQueueMockerContext]
 ):
     class TestException(Exception):
         pass
@@ -299,14 +299,15 @@ async def test_exception_in_listener_shutdown(
     def listener(*args, **kwargs):
         raise TestException()
 
-    worker.bus.client.stop_loop = MagicMock()
+    bus = new_bus()
+    bus.client.stop_loop = MagicMock()
 
     # Start the listener
-    worker.bus.client.listen_for_events(
+    bus.client.listen_for_events(
         events=[("my_api", "my_event")], listener=listener, listener_name="test"
     )
-    with queue_mocker(worker.bus.client) as q:
-        async with worker():
+    with queue_mocker(bus.client) as q:
+        async with worker(bus):
             consume_command = q.event.to_transport.commands.get(ConsumeEventsCommand)
             consume_command.destination_queue.put_nowait(
                 EventMessage(api_name="my_api", event_name="my_event")
@@ -316,7 +317,7 @@ async def test_exception_in_listener_shutdown(
             assert len(q.errors.put_items) == 1, f"Expected one error, got: {q.errors.put_items}"
             error: Error = q.errors.put_items[0]
             assert isinstance(error.value, TestException)
-            assert worker.bus.client.stop_loop.called
+            assert bus.client.stop_loop.called
 
             # Note that this hasn't actually shut the bus down, we'll test that in test_server_shutdown
 
