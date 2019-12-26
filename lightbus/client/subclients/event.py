@@ -116,8 +116,6 @@ class EventClient(BaseSubClient):
     async def _on_message(self, event_message: EventMessage, listener: Callable, options: dict):
 
         # TODO: Check events match those requested
-        # TODO: Support event name of '*', but transports should raise
-        # TODO: an exception if it is not supported.
         logger.info(
             L(
                 "📩  Received event {}.{} with ID {}".format(
