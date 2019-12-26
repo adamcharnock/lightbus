@@ -130,5 +130,7 @@ class TransportPool(Generic[VT]):
                     f"and must be accessed directly and not via the pool"
                 )
         else:
-            # Will likely raise an error
-            return getattr(self, item)
+            raise AttributeError(
+                f"Neither the transport pool {repr(self)} nor the transport with class "
+                f"{repr(self.transport_class)} has an attribute named {item}"
+            )

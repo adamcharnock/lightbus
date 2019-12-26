@@ -126,7 +126,7 @@ class Schema:
         raise SchemaNotFound(
             "No schema found for '{}' on API '{}'. You should either, a) ensure this "
             "API is being served by another lightbus process, or b) load this schema manually."
-            "".format(api_name, name)
+            "".format(name, api_name)
         )
 
     def validate_parameters(self, api_name, event_or_rpc_name, parameters):

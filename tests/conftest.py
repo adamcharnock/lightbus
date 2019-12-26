@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from queue import Queue
 from random import randint
-from typing import Type
+from typing import Type, Optional, Callable, Callable
 from unittest import mock
 from unittest.mock import MagicMock
 from urllib.parse import urlparse
@@ -270,11 +270,13 @@ def get_dummy_events(mocker, dummy_bus: BusPath):
     def get_events():
         events = []
         send_event_calls = event_transport.send_event.call_args_list
+
         for args, kwargs in send_event_calls:
+            event = args[0] if args else kwargs["event_message"]
             assert isinstance(
-                args[0], EventMessage
+                event, EventMessage
             ), "Argument passed to send_event was not an EventMessage"
-            events.append(args[0])
+            events.append(event)
         return events
 
     return get_events
@@ -649,45 +651,47 @@ async def stop_me_later():
 
 
 class Worker:
-    def __init__(self, bus: BusPath):
-        self.bus: BusPath = bus
+    def __init__(self, bus_factory: Callable):
+        self.bus_factory = bus_factory
 
-    async def start(self):
-        await self.bus.client.start_server()
+    async def start(self, bus: BusPath):
+        await bus.client.start_server()
 
-    async def stop(self):
+    async def stop(self, bus: BusPath):
         try:
-            await self.bus.client.stop_server()
+            await bus.client.stop_server()
         finally:
             # Stop server can raise any queued exceptions that had
             # not previously been raised, so make sure we
             # do the close by wrapping it in a finally
             try:
-                await self.bus.client.close_async()
+                await bus.client.close_async()
             except BusAlreadyClosed:
                 pass
 
-    def __call__(self, raise_errors=True):
+    def __call__(self, bus: Optional[BusPath] = None, raise_errors=True):
+        bus = bus or self.bus_factory()
+
         @asynccontextmanager
-        async def worker_context():
-            await self.start()
+        async def worker_context(bus):
+            await self.start(bus)
 
             yield
 
             try:
-                await self.stop()
+                await self.stop(bus)
             except Exception as e:
                 if raise_errors:
                     raise
                 else:
                     logger.error(e)
 
-        return worker_context()
+        return worker_context(bus)
 
 
 @pytest.yield_fixture
 async def worker(new_bus):
-    yield Worker(new_bus())
+    yield Worker(bus_factory=new_bus)
 
 
 # fmt: off

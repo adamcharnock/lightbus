@@ -191,6 +191,7 @@ class PluginRegistry:
             )
 
         return_values = []
+
         for plugin in self._plugins:
             handler = getattr(plugin, name, None)
             if handler:
