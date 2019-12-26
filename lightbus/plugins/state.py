@@ -102,7 +102,6 @@ class StatePlugin(LightbusPlugin):
                 kwargs=self.get_state_kwargs(client),
             ),
             options={},
-            bus_client=client,
         )
         if self.ping_enabled:
             logger.info("Ping messages will be sent every {} seconds".format(self.ping_interval))
@@ -122,7 +121,6 @@ class StatePlugin(LightbusPlugin):
                 kwargs=dict(process_name=self.process_name, service_name=self.service_name),
             ),
             options={},
-            bus_client=client,
         )
         await cancel(self._ping_task)
 
@@ -137,14 +135,16 @@ class StatePlugin(LightbusPlugin):
                     kwargs=self.get_state_kwargs(client),
                 ),
                 options={},
-                bus_client=client,
             )
 
     def get_state_kwargs(self, client: "BusClient"):
         """Get the kwargs for a server_started or ping message"""
         max_memory_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         event_listeners = chain(
-            *[event_listener.events for event_listener in client._event_listeners]
+            *[
+                event_listener.events
+                for event_listener in client.event_client._event_listeners.values()
+            ]
         )
         return dict(
             process_name=self.process_name,
