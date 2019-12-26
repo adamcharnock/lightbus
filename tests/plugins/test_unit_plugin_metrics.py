@@ -89,29 +89,30 @@ async def test_rpc_call(
 
 
 @pytest.mark.asyncio
-async def test_send_event(dummy_bus: BusPath, get_dummy_events):
+async def test_send_event(dummy_bus: BusPath, queue_mocker: Type[BusQueueMockerContext]):
     dummy_bus.client.plugin_registry.set_plugins(
         plugins=[MetricsPlugin(service_name="foo", process_name="bar")]
     )
     dummy_bus.client.register_api(TestApi())
-    await dummy_bus.my_company.auth.my_event.fire_async(f=123)
 
-    # What events were fired?
-    event_messages = get_dummy_events()
-    assert len(event_messages) == 2  # First is the actual event, followed by the metrics event
+    with queue_mocker(dummy_bus.client) as q:
+        await dummy_bus.my_company.auth.my_event.fire_async(f=123)
+
+    event_commands = q.event.to_transport.commands.get_all(SendEventCommand)
+
+    # First is the actual event, followed by the metrics event
+    assert len(event_commands) == 2, event_commands
 
     # rpc_response_received
-    assert event_messages[1].api_name == "internal.metrics"
-    assert event_messages[1].event_name == "event_fired"
-    assert event_messages[1].kwargs["timestamp"]
-    assert event_messages[1].kwargs == {
-        "api_name": "my_company.auth",
-        "event_name": "my_event",
-        "event_id": "event_id",
-        "kwargs": {"f": 123},
-        "service_name": "foo",
-        "process_name": "bar",
-    }
+    assert event_commands[1].message.api_name == "internal.metrics"
+    assert event_commands[1].message.event_name == "event_fired"
+    assert event_commands[1].message.kwargs["timestamp"]
+    assert event_commands[1].message.kwargs["api_name"] == "my_company.auth"
+    assert event_commands[1].message.kwargs["event_name"] == "my_event"
+    assert event_commands[1].message.kwargs["event_id"] == "event_id"
+    assert event_commands[1].message.kwargs["kwargs"] == {"f": 123}
+    assert event_commands[1].message.kwargs["service_name"] == "foo"
+    assert event_commands[1].message.kwargs["process_name"] == "bar"
 
 
 @pytest.mark.asyncio
