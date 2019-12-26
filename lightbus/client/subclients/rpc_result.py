@@ -29,10 +29,15 @@ logger = logging.getLogger(__name__)
 
 
 async def bail_on_error(error_queue: asyncio.Queue, co):
+    """Cancel the provided coroutine if an error appears on the error queue
+
+    If no error appears on the queue, then the result of the
+    coroutine will be returned.
+
+    If an error does appear then the error will be raised
+    """
 
     assert iscoroutine(co), "@bail_on_error only operates on coroutines"
-    # TODO: May need to pass a fresh error queue through to ensure
-    #       we don't compete with the bus client's event monitor
     fn_task = asyncio.ensure_future(co)
     monitor_task = asyncio.ensure_future(error_queue.get())
 
@@ -46,6 +51,10 @@ async def bail_on_error(error_queue: asyncio.Queue, co):
         # An error appeared in the queue
         await cancel(fn_task)
         error: Error = monitor_task.result()
+        error_queue.task_done()
+        # Put the error back on the queue so it can be picked up
+        # by the bus client
+        error_queue.put_nowait(error)
         raise error.value
 
 
