@@ -82,8 +82,6 @@ class RpcResultDock(BaseDock):
         )
         result_transport = self.transport_registry.get_result_transport(command.message.api_name)
 
-        # TODO: Is it going to be an issue that we don't clear up this task?
-        #       It may also get destroyed when it goes out of scope
         logger.debug("Starting RPC result listener")
         task = asyncio.ensure_future(
             queue_exception_checker(
