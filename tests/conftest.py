@@ -122,7 +122,7 @@ async def redis_server_b_url():
     url = os.environ.get("REDIS_URL_B", "") or "redis://127.0.0.1:6379/11"
     redis = await aioredis.create_redis(url)
     await redis.flushdb()
-    await redis.close()
+    redis.close()
     return url
 
 

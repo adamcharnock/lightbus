@@ -46,7 +46,7 @@ async def test_random_failures(
         await asyncio.sleep(0.02)
         if n % 5 == 0:
             # Cancel 1 in every 5 attempts at handling the event
-            cursed_bus.client._event_listeners[0].listener_task.cancel()
+            cursed_bus.client.event_client._event_listeners[0].listener_task.cancel()
         await asyncio.sleep(0.05)
         await cursed_bus.client.close_async()
 
