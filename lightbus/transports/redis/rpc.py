@@ -56,6 +56,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         self.rpc_timeout = rpc_timeout
         self.rpc_retry_delay = rpc_retry_delay
         self.consumption_restart_delay = consumption_restart_delay
+        super().__init__()
 
     @classmethod
     def from_config(

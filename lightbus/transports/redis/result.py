@@ -41,6 +41,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         self.deserializer = deserializer
         self.result_ttl = result_ttl
         self.rpc_timeout = rpc_timeout
+        super().__init__()
 
     @classmethod
     def from_config(
