@@ -257,9 +257,7 @@ async def test_validation_rpc(loop, bus: lightbus.path.BusPath, dummy_api, mocke
 async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, mocker):
     """Check validation happens when firing an event"""
     bus.client.register_api(dummy_api)
-    config = Config.load_dict(
-        {"apis": {"default": {"validate": True, "strict_validation": True, "on_error": "ignore"}}}
-    )
+    config = Config.load_dict({"apis": {"default": {"validate": True, "strict_validation": True}}})
     bus.client.config = config
     mocker.patch("jsonschema.validate", autospec=True)
 
