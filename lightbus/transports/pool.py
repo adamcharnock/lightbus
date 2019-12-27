@@ -62,12 +62,12 @@ class TransportPool(Generic[VT]):
             self.checked_out.add(transport)
             return transport
 
-    def checkin(self, transport: VT):
+    async def checkin(self, transport: VT):
         with self.lock:
             self.checked_out.discard(transport)
             self.pool.append(transport)
             if self.closed:
-                self._close_all()
+                await self._close_all()
 
     @property
     def free(self) -> int:
@@ -88,7 +88,7 @@ class TransportPool(Generic[VT]):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         transport = self.context_stack.pop()
-        self.checkin(transport)
+        await self.checkin(transport)
 
     async def open(self):
         # TODO: This is used by the lazy loading, which can probably be ditched

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from typing import Type
+from unittest.mock import MagicMock
 
 import jsonschema
 import pytest
@@ -341,7 +342,7 @@ async def test_listen_to_multiple_events_across_multiple_transports(
 
 @pytest.mark.asyncio
 async def test_event_exception_in_listener_realtime(
-    bus: lightbus.path.BusPath, worker: Worker, dummy_api, redis_client, queue_mocker
+    bus: lightbus.path.BusPath, new_bus, worker: Worker, dummy_api, redis_client
 ):
     """Start a listener (which errors) and then add events to the stream.
     The listener will load them one-by-one."""
@@ -353,11 +354,13 @@ async def test_event_exception_in_listener_realtime(
         received_messages.append(event_message)
         raise Exception()
 
-    worker.bus.my.dummy.my_event.listen(
+    worker_bus = new_bus()
+    worker_bus.client.stop_loop = MagicMock()
+    worker_bus.my.dummy.my_event.listen(
         listener, listener_name="test_listener", bus_options={"since": "0"}
     )
 
-    async with worker(raise_errors=False):
+    async with worker(worker_bus, raise_errors=False):
         await bus.client.lazy_load_now()
         await asyncio.sleep(0.1)
         await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
@@ -366,6 +369,10 @@ async def test_event_exception_in_listener_realtime(
         await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
         await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
         await asyncio.sleep(0.1)
+
+    # Ensure the server stopped the loop (we've mocked this otherwise this
+    # test would be stopped too)
+    assert worker_bus.client.stop_loop.called
 
     # Died when processing first message, so we only saw one message
     assert len(received_messages) == 1
