@@ -1,8 +1,6 @@
 import asyncio
-import threading
 from unittest.mock import MagicMock
 
-import janus
 import pytest
 from typing import Type
 
@@ -12,7 +10,6 @@ import lightbus.path
 from lightbus import EventMessage, BusPath
 from lightbus.client.commands import SendResultCommand, ConsumeEventsCommand
 from lightbus.client.utilities import Error
-from lightbus.config import Config
 from lightbus.exceptions import (
     UnknownApi,
     EventNotFound,
@@ -21,7 +18,7 @@ from lightbus.exceptions import (
     TransportNotFound,
     InvalidName,
 )
-from lightbus.transports.registry import TransportRegistry, SchemaTransportPoolType
+from lightbus.transports.registry import SchemaTransportPoolType
 from lightbus.utilities.testing import BusQueueMockerContext
 from tests.conftest import Worker
 

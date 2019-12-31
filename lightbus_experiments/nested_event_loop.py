@@ -1,7 +1,7 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
-import janus
+from lightbus_vendored import janus
 
 from lightbus.utilities.async_tools import block, cancel, make_exception_checker, get_event_loop
 
