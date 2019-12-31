@@ -1,7 +1,6 @@
-import asyncio
 import threading
 from inspect import iscoroutinefunction, isasyncgenfunction
-from typing import NamedTuple, List, TypeVar, Type, Generic, TYPE_CHECKING, Dict
+from typing import NamedTuple, List, TypeVar, Type, Generic, TYPE_CHECKING
 
 from lightbus.exceptions import (
     TransportPoolIsClosed,
