@@ -22,7 +22,11 @@ from lightbus.client.commands import (
     ConsumeEventsCommand,
     CloseCommand,
 )
-from lightbus.utilities.async_tools import run_user_provided_callable, cancel_and_log_exceptions
+from lightbus.utilities.async_tools import (
+    run_user_provided_callable,
+    cancel_and_log_exceptions,
+    InternalQueue,
+)
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.singledispatch import singledispatchmethod
@@ -150,6 +154,7 @@ class EventClient(BaseSubClient):
         await self.hook_registry.execute("after_event_execution", event_message=event_message)
 
     async def close(self):
+        await super().close()
         await cancel_and_log_exceptions(*self._event_listener_tasks)
         await self.producer.send(CloseCommand()).wait()
 
@@ -164,7 +169,8 @@ class EventClient(BaseSubClient):
         async def start_listener(listener: Listener):
             # Setting the maxsize to 1 ensures the transport cannot load
             # messages faster than we can consume them
-            queue = asyncio.Queue(maxsize=1)
+            # TODO: Close queue
+            queue = InternalQueue(maxsize=1)
 
             async def consume_events():
                 while True:

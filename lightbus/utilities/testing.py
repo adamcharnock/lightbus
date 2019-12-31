@@ -21,6 +21,7 @@ from lightbus.config import Config
 from lightbus.path import BusPath
 from lightbus.client import BusClient
 from lightbus.transports.registry import TransportRegistry
+from lightbus.utilities.async_tools import InternalQueueType
 
 _registry: Dict[str, List] = {}
 logger = logging.getLogger(__name__)
@@ -357,7 +358,7 @@ Command = TypeVar("Command", bound=NamedTuple)
 
 
 class QueueMockContext:
-    def __init__(self, queue: asyncio.Queue):
+    def __init__(self, queue: InternalQueueType):
         self.queue = queue
         self.put_items: List[Tuple[Command, asyncio.Event]] = []
         self.got_items: List[Tuple[Command, asyncio.Event]] = []
@@ -365,22 +366,22 @@ class QueueMockContext:
         self._old_put = None
 
     def __enter__(self) -> "QueueMockContext":
-        self._old_put = self.queue.put_nowait
-        self.queue.put_nowait = self._put_nowait
+        self._old_put = self.queue._parent._put_internal
+        self.queue._parent._put_internal = self._put
 
-        self._old_get = self.queue.get_nowait
-        self.queue.get_nowait = self._get_nowait
+        self._old_get = self.queue._parent._get
+        self.queue._parent._get = self._get
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    def _put_nowait(self, item, *args, **kwargs):
+    def _put(self, item, *args, **kwargs):
         self.put_items.append(item)
         return self._old_put(item, *args, **kwargs)
 
-    def _get_nowait(self, *args, **kwargs):
+    def _get(self, *args, **kwargs):
         item = self._old_get(*args, **kwargs)
         self.got_items.append(item)
         return item

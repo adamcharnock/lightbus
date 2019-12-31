@@ -5,7 +5,7 @@ from functools import wraps
 from inspect import iscoroutinefunction
 from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING, Callable
 
-from lightbus.client.utilities import queue_exception_checker, Error
+from lightbus.client.utilities import queue_exception_checker, Error, ErrorQueueType
 from lightbus.exceptions import (
     InvalidSchedule,
     BusAlreadyClosed,
@@ -20,6 +20,7 @@ from lightbus.utilities.async_tools import (
     call_every,
     call_on_schedule,
     cancel_and_log_exceptions,
+    close_internal_queue,
 )
 from lightbus.utilities.features import Feature, ALL_FEATURES
 from lightbus.utilities.frozendict import frozendict
@@ -87,7 +88,7 @@ class BusClient:
         rpc_result_client: "RpcResultClient",
         api_registry: "ApiRegistry",
         transport_registry: "TransportRegistry",
-        error_queue: asyncio.Queue,
+        error_queue: ErrorQueueType,
         features: Sequence[Union[Feature, str]] = ALL_FEATURES,
     ):
         # TODO: self.transport_registry is no longer used, except for by the bus mocker. Remove.
@@ -140,6 +141,8 @@ class BusClient:
         while not self.error_queue.empty():
             logger.error(self.error_queue.get_nowait())
             self.error_queue.task_done()
+
+        await close_internal_queue(self.error_queue)
 
         self._closed = True
 

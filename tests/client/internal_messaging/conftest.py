@@ -4,6 +4,7 @@ import pytest
 
 from lightbus.client.internal_messaging.consumer import InternalConsumer
 from lightbus.client.internal_messaging.producer import InternalProducer
+from lightbus.utilities.async_tools import InternalQueue
 
 
 @pytest.yield_fixture
@@ -11,7 +12,8 @@ async def consumer():
     def _on_exception(e):
         raise e
 
-    consumer = InternalConsumer(queue=asyncio.Queue(), error_queue=asyncio.Queue())
+    # TODO: Close queue
+    consumer = InternalConsumer(queue=InternalQueue(), error_queue=InternalQueue())
     yield consumer
     await consumer.close()
 
@@ -21,7 +23,8 @@ async def producer():
     def _on_exception(e):
         raise e
 
-    producer = InternalProducer(queue=asyncio.Queue(), error_queue=asyncio.Queue())
+    # TODO: Close queue
+    producer = InternalProducer(queue=InternalQueue(), error_queue=InternalQueue())
     yield producer
     await producer.close()
 

@@ -17,7 +17,6 @@ from lightbus.exceptions import (
     CannotProxyProperty,
 )
 from lightbus.transports.pool import TransportPool
-from lightbus.utilities.async_tools import cancel, block
 
 pytestmark = pytest.mark.unit
 

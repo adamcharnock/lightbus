@@ -2,16 +2,14 @@ import sys
 import asyncio
 import logging
 import threading
-import traceback
-from contextlib import contextmanager
-from functools import partial
 from time import time
 from typing import Coroutine, TYPE_CHECKING
 import datetime
 
 import aioredis
 
-from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
+from lightbus.exceptions import CannotBlockHere
+from lightbus_vendored import janus
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import,cyclic-import
@@ -202,3 +200,18 @@ class LightbusEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
 def configure_event_loop():
     asyncio.set_event_loop_policy(LightbusEventLoopPolicy())
+
+
+InternalQueueType = janus._AsyncQueueProxy
+
+
+def InternalQueue(maxsize=0, loop=None) -> InternalQueueType:
+    return janus.Queue(maxsize=maxsize, loop=loop).async_q
+
+
+async def close_internal_queue(*queues: InternalQueueType):
+    for queue in queues:
+        queue._parent.close()
+
+    for queue in queues:
+        await queue._parent.wait_closed()

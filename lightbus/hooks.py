@@ -2,7 +2,7 @@ import asyncio
 from collections import defaultdict
 from typing import Dict, NamedTuple, List, Callable, Optional
 
-from lightbus.client.utilities import queue_exception_checker
+from lightbus.client.utilities import queue_exception_checker, ErrorQueueType
 from lightbus.utilities.async_tools import run_user_provided_callable
 
 
@@ -14,7 +14,7 @@ class CallbackKey(NamedTuple):
 class HookRegistry:
     def __init__(
         self,
-        error_queue: asyncio.Queue,
+        error_queue: ErrorQueueType,
         execute_plugin_hooks: Callable,
         extra_parameters: Optional[dict] = None,
     ):

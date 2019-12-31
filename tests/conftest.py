@@ -58,7 +58,7 @@ from lightbus.path import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import PluginRegistry
 from lightbus.transports.redis.event import StreamUse
-from lightbus.utilities.async_tools import configure_event_loop
+from lightbus.utilities.async_tools import configure_event_loop, InternalQueue
 from lightbus.utilities.testing import BusQueueMockerContext
 
 TCPAddress = namedtuple("TCPAddress", "host port")
@@ -643,7 +643,8 @@ def queue_mocker() -> Type[BusQueueMockerContext]:
 
 @pytest.yield_fixture()
 def error_queue():
-    queue = asyncio.Queue()
+    # TODO: Close queue
+    queue = InternalQueue()
     yield queue
     assert queue.qsize() == 0, f"Errors found in error queue: {queue._queue}"
 

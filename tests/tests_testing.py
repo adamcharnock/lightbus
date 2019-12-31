@@ -2,12 +2,14 @@ import asyncio
 
 import pytest
 
+from lightbus.utilities.async_tools import InternalQueue
 from lightbus.utilities.testing import QueueMockContext
 
 
 @pytest.mark.asyncio
 def test_queue_mock_context_sync():
-    queue = asyncio.Queue()
+    # TODO: Close queue
+    queue = InternalQueue()
 
     with QueueMockContext(queue) as m:
         queue.put_nowait(1)
@@ -20,7 +22,8 @@ def test_queue_mock_context_sync():
 
 @pytest.mark.asyncio
 async def test_queue_mock_context_async():
-    queue = asyncio.Queue()
+    # TODO: Close queue
+    queue = InternalQueue()
 
     with QueueMockContext(queue) as m:
         await queue.put(1)

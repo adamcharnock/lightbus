@@ -2,11 +2,13 @@ import asyncio
 
 from lightbus.client.internal_messaging.consumer import InternalConsumer
 from lightbus.client.internal_messaging.producer import InternalProducer
+from lightbus.client.utilities import ErrorQueueType
 from lightbus.hooks import HookRegistry
 from lightbus.schema import Schema
 from lightbus.api import ApiRegistry
 from lightbus.config import Config
 from lightbus.transports.registry import TransportRegistry
+from lightbus.utilities.async_tools import InternalQueueType, close_internal_queue
 
 
 class BaseSubClient:
@@ -16,9 +18,9 @@ class BaseSubClient:
         hook_registry: HookRegistry,
         config: Config,
         schema: Schema,
-        error_queue: asyncio.Queue,
-        consume_from: asyncio.Queue,
-        produce_to: asyncio.Queue,
+        error_queue: ErrorQueueType,
+        consume_from: InternalQueueType,
+        produce_to: InternalQueueType,
     ):
         self.api_registry = api_registry
         self.hook_registry: HookRegistry = hook_registry
@@ -33,3 +35,6 @@ class BaseSubClient:
 
     async def handle(self, command):
         raise NotImplementedError()
+
+    async def close(self):
+        pass

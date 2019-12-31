@@ -3,7 +3,8 @@ import traceback
 
 import pytest
 
-from lightbus.client.utilities import queue_exception_checker, Error
+from lightbus.client.utilities import queue_exception_checker, Error, ErrorQueueType
+from lightbus.utilities.async_tools import InternalQueue
 
 pytestmark = pytest.mark.unit
 
@@ -30,11 +31,12 @@ def ok_coroutine():
 
 @pytest.fixture
 def error_queue():
-    return asyncio.Queue()
+    # TODO: Close queue
+    return InternalQueue()
 
 
 @pytest.mark.asyncio
-async def test_queue_exception_checker_directly(erroring_coroutine, error_queue: asyncio.Queue):
+async def test_queue_exception_checker_directly(erroring_coroutine, error_queue: ErrorQueueType):
     coroutine = queue_exception_checker(erroring_coroutine(), error_queue)
 
     with pytest.raises(ExampleException):
@@ -49,7 +51,7 @@ async def test_queue_exception_checker_directly(erroring_coroutine, error_queue:
     assert "ExampleException" in str(error)
 
 
-def test_queue_exception_checker_in_task(erroring_coroutine, error_queue: asyncio.Queue):
+def test_queue_exception_checker_in_task(erroring_coroutine, error_queue: ErrorQueueType):
     coroutine = queue_exception_checker(erroring_coroutine(), error_queue)
 
     with pytest.raises(ExampleException):

@@ -19,7 +19,7 @@ from typing import (
 from aioredis import ConnectionClosedError, ReplyError
 from aioredis.util import decode
 
-from lightbus.client.utilities import queue_exception_checker
+from lightbus.client.utilities import queue_exception_checker, ErrorQueueType
 from lightbus.transports.base import EventTransport, EventMessage
 from lightbus.log import LBullets, L, Bold
 from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeserializer
@@ -31,7 +31,7 @@ from lightbus.transports.redis.utilities import (
     redis_stream_id_add_one,
     redis_stream_id_subtract_one,
 )
-from lightbus.utilities.async_tools import cancel
+from lightbus.utilities.async_tools import cancel, InternalQueue
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
@@ -182,7 +182,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self,
         listen_for: List[Tuple[str, str]],
         listener_name: str,
-        error_queue: asyncio.Queue,
+        error_queue: ErrorQueueType,
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,
     ) -> AsyncGenerator[List[RedisEventMessage], None]:
@@ -218,7 +218,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         # Here we use a queue to combine messages coming from both the
         # fetch messages loop and the reclaim messages loop.
-        queue = asyncio.Queue(maxsize=1)
+        # TODO: Close queue
+        queue = InternalQueue(maxsize=1)
 
         async def consume_loop():
             """Regular event consuming. See _fetch_new_messages()"""

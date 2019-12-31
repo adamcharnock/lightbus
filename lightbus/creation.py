@@ -1,5 +1,4 @@
 """Utility functions relating to bus creation"""
-import asyncio
 import logging
 import os
 import sys
@@ -14,7 +13,7 @@ from lightbus.client.subclients.rpc_result import RpcResultClient
 from lightbus.hooks import HookRegistry
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.plugins import PluginRegistry
-from lightbus.utilities.async_tools import get_event_loop
+from lightbus.utilities.async_tools import get_event_loop, InternalQueue
 from lightbus.utilities.features import ALL_FEATURES, Feature
 from lightbus.config.structure import RootConfig
 from lightbus.log import Bold
@@ -76,7 +75,7 @@ def create(
             # Flask has a reloader process that shouldn't start a lightbus client
             return
 
-    # Ensure an event loop exists, as creating asyncio.Queue
+    # Ensure an event loop exists, as creating InternalQueue
     # objects requires that we have one.
     get_event_loop()
 
@@ -111,8 +110,7 @@ def create(
         human_readable=config.bus().schema.human_readable,
     )
 
-    # TODO: All these queues need to become threadsafe
-    error_queue = asyncio.Queue()
+    error_queue = InternalQueue()
 
     # Plugin registry
 
@@ -136,8 +134,8 @@ def create(
     api_registry.add(LightbusStateApi())
     api_registry.add(LightbusMetricsApi())
 
-    events_queue_client_to_dock = asyncio.Queue()
-    events_queue_dock_to_client = asyncio.Queue()
+    events_queue_client_to_dock = InternalQueue()
+    events_queue_dock_to_client = InternalQueue()
 
     event_client = EventClient(
         api_registry=api_registry,
@@ -158,8 +156,8 @@ def create(
         produce_to=events_queue_dock_to_client,
     )
 
-    rpcs_queue_client_to_dock = asyncio.Queue()
-    rpcs_queue_dock_to_client = asyncio.Queue()
+    rpcs_queue_client_to_dock = InternalQueue()
+    rpcs_queue_dock_to_client = InternalQueue()
 
     rpc_result_client = RpcResultClient(
         api_registry=api_registry,

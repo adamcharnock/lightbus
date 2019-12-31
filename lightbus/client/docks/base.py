@@ -3,8 +3,10 @@ import asyncio
 from lightbus.client.internal_messaging.consumer import InternalConsumer
 from lightbus.client.internal_messaging.producer import InternalProducer
 from lightbus.api import ApiRegistry
+from lightbus.client.utilities import ErrorQueueType
 from lightbus.config import Config
 from lightbus.transports.registry import TransportRegistry
+from lightbus.utilities.async_tools import InternalQueueType
 
 
 class BaseDock:
@@ -19,9 +21,9 @@ class BaseDock:
         transport_registry: TransportRegistry,
         api_registry: ApiRegistry,
         config: Config,
-        error_queue: asyncio.Queue,
-        consume_from: asyncio.Queue,
-        produce_to: asyncio.Queue,
+        error_queue: ErrorQueueType,
+        consume_from: InternalQueueType,
+        produce_to: InternalQueueType,
     ):
         self.transport_registry = transport_registry
         self.api_registry = api_registry

@@ -3,9 +3,9 @@ import logging
 from inspect import iscoroutinefunction
 from typing import Optional, Callable
 
-from lightbus.client.utilities import queue_exception_checker
+from lightbus.client.utilities import queue_exception_checker, ErrorQueueType
 from lightbus.exceptions import AsyncFunctionOrMethodRequired
-from lightbus.utilities.async_tools import cancel
+from lightbus.utilities.async_tools import cancel, InternalQueueType
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class InternalConsumer:
     consumption by the transport
     """
 
-    def __init__(self, queue: asyncio.Queue, error_queue: asyncio.Queue):
+    def __init__(self, queue: InternalQueueType, error_queue: ErrorQueueType):
         self._consumer_task: Optional[asyncio.Task] = None
         self._running_commands = set()
         self._ready = asyncio.Event()
@@ -64,7 +64,9 @@ class InternalConsumer:
             command, on_done = await queue.get()
             self.handle_in_background(queue, handler, command, on_done)
 
-    def handle_in_background(self, queue: asyncio.Queue, handler, command, on_done: asyncio.Event):
+    def handle_in_background(
+        self, queue: InternalQueueType, handler, command, on_done: asyncio.Event
+    ):
         """Handle a received command by calling the provided handler
 
         This execution happens in the background.

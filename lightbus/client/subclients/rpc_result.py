@@ -8,7 +8,7 @@ from lightbus.api import Api
 from lightbus.client import commands
 from lightbus.client.commands import ConsumeRpcsCommand
 from lightbus.client.subclients.base import BaseSubClient
-from lightbus.client.utilities import validate_event_or_rpc_name, Error
+from lightbus.client.utilities import validate_event_or_rpc_name, Error, ErrorQueueType
 from lightbus.client.validator import validate_outgoing, validate_incoming
 from lightbus.exceptions import (
     NoApisToListenOn,
@@ -18,7 +18,7 @@ from lightbus.exceptions import (
 )
 from lightbus.log import L, Bold
 from lightbus.message import ResultMessage, RpcMessage
-from lightbus.utilities.async_tools import run_user_provided_callable, cancel
+from lightbus.utilities.async_tools import run_user_provided_callable, cancel, InternalQueue
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict
@@ -28,7 +28,7 @@ from lightbus.utilities.singledispatch import singledispatchmethod
 logger = logging.getLogger(__name__)
 
 
-async def bail_on_error(error_queue: asyncio.Queue, co):
+async def bail_on_error(error_queue: ErrorQueueType, co):
     """Cancel the provided coroutine if an error appears on the error queue
 
     If no error appears on the queue, then the result of the
@@ -105,7 +105,8 @@ class RpcResultClient(BaseSubClient):
 
         await self.hook_registry.execute("before_rpc_call", rpc_message=rpc_message)
 
-        result_queue = asyncio.Queue()
+        # TODO: Close queue
+        result_queue = InternalQueue()
 
         # Send the RPC
         await self.producer.send(
@@ -208,6 +209,7 @@ class RpcResultClient(BaseSubClient):
             return result
 
     async def close(self):
+        await super().close()
         await self.producer.send(commands.CloseCommand()).wait()
 
         await self.consumer.close()
