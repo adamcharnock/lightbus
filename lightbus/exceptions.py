@@ -208,5 +208,25 @@ class TransportPoolIsClosed(LightbusException):
     pass
 
 
+class CannotShrinkEmptyPool(LightbusException):
+    pass
+
+
+class PoolProxyError(LightbusException):
+    pass
+
+
+class CannotProxyPrivateMethod(PoolProxyError):
+    pass
+
+
+class CannotProxyProperty(PoolProxyError):
+    pass
+
+
+class CannotProxySynchronousMethod(PoolProxyError):
+    pass
+
+
 class AsyncFunctionOrMethodRequired(LightbusException):
     pass

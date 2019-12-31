@@ -2,7 +2,13 @@ import threading
 from inspect import iscoroutinefunction, isasyncgenfunction
 from typing import NamedTuple, List, TypeVar, Type, Generic, TYPE_CHECKING
 
-from lightbus.exceptions import TransportPoolIsClosed
+from lightbus.exceptions import (
+    TransportPoolIsClosed,
+    CannotShrinkEmptyPool,
+    CannotProxySynchronousMethod,
+    CannotProxyPrivateMethod,
+    CannotProxyProperty,
+)
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import
@@ -47,7 +53,12 @@ class TransportPool(Generic[VT]):
 
     async def shrink(self):
         with self.lock:
-            old_transport = self.pool.pop(0)
+            try:
+                old_transport = self.pool.pop(0)
+            except IndexError:
+                raise CannotShrinkEmptyPool(
+                    "Transport pool is already empty, cannot shrink it further"
+                )
             await old_transport.close()
 
     async def checkout(self) -> VT:
@@ -93,8 +104,9 @@ class TransportPool(Generic[VT]):
     async def open(self):
         # TODO: This is used by the lazy loading, which can probably be ditched
         #       now we have moved to using connection pools
-        if not self.pool:
-            await self.grow()
+        with self.lock:
+            if not self.pool:
+                await self.grow()
 
     async def close(self):
         with self.lock:
@@ -103,8 +115,8 @@ class TransportPool(Generic[VT]):
 
     async def _close_all(self):
         with self.lock:
-            for transport in self.pool:
-                await transport.close()
+            while self.pool:
+                await self.pool.pop().close()
 
     def __getattr__(self, item):
         async def fn_pool_wrapper(*args, **kwargs):
@@ -118,19 +130,29 @@ class TransportPool(Generic[VT]):
 
         attr = getattr(self.transport_class, item, None)
 
-        if item[0] != "_" and attr and callable(attr):
+        if not attr:
+            raise AttributeError(
+                f"Neither the transport pool {repr(self)} nor the transport with class "
+                f"{repr(self.transport_class)} has an attribute named {item}"
+            )
+        elif item[0] == "_":
+            raise CannotProxyPrivateMethod(
+                f"Cannot proxy private method calls to transport. Use the pool's async context or "
+                f"checkout() method if you really need to access private methods. (Private methods "
+                f"are ones whose name starts with an underscore)"
+            )
+        elif not callable(attr):
+            raise CannotProxyProperty(
+                f"Cannot proxy property access on transports. Use the pool's async context or "
+                f"checkout() method to get access to a transport directly."
+            )
+        else:
             if iscoroutinefunction(attr):
                 return fn_pool_wrapper
             elif isasyncgenfunction(attr):
                 return gen_pool_wrapper
             else:
-                # TODO: Proper exception
-                raise Exception(
+                raise CannotProxySynchronousMethod(
                     f"{self.transport_class.__name__}.{item}() is synchronous "
                     f"and must be accessed directly and not via the pool"
                 )
-        else:
-            raise AttributeError(
-                f"Neither the transport pool {repr(self)} nor the transport with class "
-                f"{repr(self.transport_class)} has an attribute named {item}"
-            )
