@@ -191,6 +191,24 @@ async def test_checkout_checkin(dummy_pool: TransportPool):
 
 
 @pytest.mark.asyncio
+async def test_checking_to_closed_transport(mocker, redis_pool: TransportPool):
+    transport = await redis_pool.checkout()
+    mocker.spy(transport, "close")
+
+    # Close the pool
+    await redis_pool.close()
+
+    # Should work even though pool is closed
+    await transport.send_event(EventMessage(api_name="api", event_name="event"), options={})
+
+    # Check the transport into the closed pool
+    await redis_pool.checkin(transport)
+
+    # The transport has been closed by the pool
+    assert transport.close.called
+
+
+@pytest.mark.asyncio
 async def test_checkout_checkin_threaded(
     mocker, redis_pool: TransportPool, run_in_many_threads, get_total_redis_connections
 ):
