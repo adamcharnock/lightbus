@@ -1,9 +1,14 @@
+import asyncio
 from asyncio import Future
+from concurrent.futures.thread import ThreadPoolExecutor
+from concurrent.futures import wait
+from functools import partial
+from threading import Thread
 from unittest.mock import MagicMock
 
 import pytest
 
-from lightbus import DebugEventTransport, RedisEventTransport, EventTransport
+from lightbus import DebugEventTransport, RedisEventTransport, EventTransport, EventMessage
 from lightbus.config import Config
 from lightbus.exceptions import (
     CannotShrinkEmptyPool,
@@ -12,30 +17,35 @@ from lightbus.exceptions import (
     CannotProxyProperty,
 )
 from lightbus.transports.pool import TransportPool
+from lightbus.utilities.async_tools import cancel, block
 
 pytestmark = pytest.mark.unit
 
 
 @pytest.yield_fixture()
-def dummy_pool():
-    return TransportPool(
+async def dummy_pool():
+    pool = TransportPool(
         transport_class=DebugEventTransport,
         transport_config=DebugEventTransport.Config(),
         config=Config.default(),
     )
+    yield pool
+    await pool.close()
 
 
 @pytest.yield_fixture()
-def redis_pool(redis_server_url):
-    return TransportPool(
+async def redis_pool(redis_server_url):
+    pool = TransportPool(
         transport_class=RedisEventTransport,
         transport_config=RedisEventTransport.Config(url=redis_server_url),
         config=Config.default(),
     )
+    yield pool
+    await pool.close()
 
 
 @pytest.yield_fixture()
-def attr_test_pool(redis_server_url):
+async def attr_test_pool(redis_server_url):
     """Used for testing attribute access only"""
 
     class AttrTestEventTransport(EventTransport):
@@ -50,11 +60,32 @@ def attr_test_pool(redis_server_url):
         async def _async_private_method(self):
             return True
 
-    return TransportPool(
+    pool = TransportPool(
         transport_class=AttrTestEventTransport,
         transport_config=AttrTestEventTransport.Config(),
         config=Config.default(),
     )
+    yield pool
+    await pool.close()
+
+
+@pytest.yield_fixture()
+def run_in_many_threads():
+    def run_in_many_threads_(async_fn, max_workers=50, executions=200, *args, **kwargs):
+        with ThreadPoolExecutor(max_workers=max_workers) as e:
+            futures = []
+            for _ in range(0, executions):
+                futures.append(e.submit(partial(asyncio.run, async_fn(*args, **kwargs))))
+
+            done, _ = wait(futures)
+
+        for future in done:
+            if future.exception():
+                raise future.exception()
+
+        return done
+
+    return run_in_many_threads_
 
 
 def test_equal(dummy_pool):
@@ -111,6 +142,13 @@ async def test_grow(dummy_pool: TransportPool):
     assert dummy_pool.in_use == 0
 
 
+def test_grow_threaded(redis_pool: TransportPool, run_in_many_threads):
+    run_in_many_threads(redis_pool.grow, executions=200)
+
+    assert redis_pool.free == 200
+    assert redis_pool.in_use == 0
+
+
 @pytest.mark.asyncio
 async def test_shrink(dummy_pool: TransportPool):
     await dummy_pool.grow()
@@ -119,6 +157,19 @@ async def test_shrink(dummy_pool: TransportPool):
     await dummy_pool.shrink()
     await dummy_pool.shrink()
     assert dummy_pool.free == 0
+
+
+@pytest.mark.asyncio
+async def test_shrink_threaded(redis_pool: TransportPool, run_in_many_threads):
+    for _ in range(0, 200):
+        await redis_pool.grow()
+
+    assert redis_pool.free == 200
+
+    run_in_many_threads(redis_pool.shrink, executions=200)
+
+    assert redis_pool.free == 0
+    assert redis_pool.in_use == 0
 
 
 @pytest.mark.asyncio
@@ -137,6 +188,73 @@ async def test_checkout_checkin(dummy_pool: TransportPool):
     await dummy_pool.checkin(transport)
     assert dummy_pool.free == 1
     assert dummy_pool.in_use == 0
+
+
+@pytest.mark.asyncio
+async def test_checkout_checkin_threaded(
+    mocker, redis_pool: TransportPool, run_in_many_threads, get_total_redis_connections
+):
+    """Check in/out many connections concurrently (using threads)
+
+    Note that this will not grow the pool. See the doc string for TransportPool
+    """
+    mocker.spy(redis_pool, "grow")
+    mocker.spy(redis_pool, "_create_transport")
+    mocker.spy(redis_pool, "_close_transport")
+
+    async def _check_in_out():
+        transport = await redis_pool.checkout()
+        # Ensure we do something here in order to slow down the execution
+        # time, thereby ensuring our pool starts to fill up. We also need to
+        # use the connection to ensure the connection is lazy loaded
+        await transport.send_event(EventMessage(api_name="api", event_name="event"), options={})
+        await asyncio.sleep(0.02)
+        await redis_pool.checkin(transport)
+
+    run_in_many_threads(_check_in_out, executions=500, max_workers=20)
+
+    # We're running in a thread, so we never grow the pool. Instead
+    # we just return one-off connections which will be closed
+    # when they get checked back in
+    assert not redis_pool.grow.called
+    assert redis_pool._create_transport.call_count == 500
+    assert redis_pool._close_transport.call_count == 500
+    assert await get_total_redis_connections() == 1
+
+
+@pytest.mark.asyncio
+async def test_checkout_checkin_asyncio(
+    mocker, redis_pool: TransportPool, get_total_redis_connections
+):
+    """Check in/out many connections concurrently (using asyncio tasks)
+
+    Unlike using threads, this should grow the pool
+    """
+    mocker.spy(redis_pool, "grow")
+    mocker.spy(redis_pool, "_create_transport")
+    mocker.spy(redis_pool, "_close_transport")
+
+    async def _check_in_out():
+        transport = await redis_pool.checkout()
+        # Ensure we do something here in order to slow down the execution
+        # time, thereby ensuring our pool starts to fill up. We also need to
+        # use the connection to ensure the connection is lazy loaded
+        await transport.send_event(EventMessage(api_name="api", event_name="event"), options={})
+        await asyncio.sleep(0.02)
+        await redis_pool.checkin(transport)
+
+    async def _check_in_out_loop():
+        for _ in range(0, 500 // 20):
+            await _check_in_out()
+
+    tasks = [asyncio.create_task(_check_in_out_loop()) for _ in range(0, 20)]
+    await asyncio.wait(tasks)
+    await redis_pool.close()
+
+    assert redis_pool.grow.call_count == 20
+    assert redis_pool._create_transport.call_count == 20
+    assert redis_pool._close_transport.call_count == 20
+    assert await get_total_redis_connections() == 1
 
 
 @pytest.mark.asyncio
@@ -221,3 +339,29 @@ async def test_attr_proxy_not_found(attr_test_pool: TransportPool):
 
     assert attr_test_pool.free == 0
     assert attr_test_pool.in_use == 0
+
+
+@pytest.mark.asyncio
+async def test_close_with_transports_from_child_thread(redis_pool: TransportPool):
+    """Test that the pool can be closed when it contains transports created within a child thread"""
+    flag = False
+
+    async def thread():
+        nonlocal flag
+        async with redis_pool as transport:
+            # Do something to ensure a connection gets made
+            async for _ in transport.history("foo", "bar"):
+                pass
+            flag = True
+
+    fn = partial(asyncio.run, thread())
+    t = Thread(target=fn)
+    t.start()
+    t.join()
+
+    # Ensure we actually went and connected to redis
+    assert flag
+
+    await redis_pool.close()
+    assert redis_pool.in_use == 0
+    assert redis_pool.free == 0

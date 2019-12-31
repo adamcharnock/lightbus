@@ -194,6 +194,15 @@ def new_redis_pool(_closable, create_redis_pool, loop):
     return make_new
 
 
+@pytest.fixture
+def get_total_redis_connections(redis_client):
+    async def _get_total_redis_connections():
+        info = await redis_client.info()
+        return int(info["clients"]["connected_clients"])
+
+    return _get_total_redis_connections
+
+
 @pytest.yield_fixture
 def _closable(loop):
     conns = []

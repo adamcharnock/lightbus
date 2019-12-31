@@ -1,6 +1,7 @@
+import asyncio
 import threading
 from inspect import iscoroutinefunction, isasyncgenfunction
-from typing import NamedTuple, List, TypeVar, Type, Generic, TYPE_CHECKING
+from typing import NamedTuple, List, TypeVar, Type, Generic, TYPE_CHECKING, Dict
 
 from lightbus.exceptions import (
     TransportPoolIsClosed,
@@ -21,6 +22,31 @@ else:
 
 
 class TransportPool(Generic[VT]):
+    """ Pool for managing access to transports
+
+    This pool with function as a transparent proxy to the underlying transports.
+    In most cases you shouldn't need to access the underlying transports. If you
+    do you can use the context manage as follows:
+
+        async with transport_pool as transport:
+            transport.send_event(...)
+
+    Note that this pool will only perform pooling within the thread in which the
+    pool was created. If another thread uses the pool then the pool will be bypassed.
+    In this case, a new transport will always be created on checkout, and this
+    transport will then be immediately closed when checked back in.
+
+    This is because the pool will normally be closed sometime after the thread has
+    completed, at which point each transport in the pool will be closed. However, closing
+    the transport requires access to the event loop for the specific transport, but that
+    loop would have been closed when the thread shutdown. It therefore becomes impossible to
+    the transport cleanly. Therefore, in the case of threads, we create new transports on
+    checkout, and close and discard the transport on checkin.
+
+    This will have some performance impact for non-async user-provided-callables which need to
+    access the bus. These callables area run in a thread, and so will need fresh connections.
+    """
+
     def __init__(self, transport_class: Type[VT], transport_config: NamedTuple, config: "Config"):
         # TODO: Max pool size
         # TODO: Test
@@ -33,6 +59,7 @@ class TransportPool(Generic[VT]):
         self.pool: List[VT] = []
         self.checked_out = set()
         self.context_stack: List[VT] = []
+        self.home_thread = threading.current_thread()
 
     def __repr__(self):
         return f"<Pool of {self.transport_class.__name__} at 0x{id(self):02x}>"
@@ -45,10 +72,7 @@ class TransportPool(Generic[VT]):
 
     async def grow(self):
         with self.lock:
-            new_transport = self.transport_class.from_config(
-                config=self.config, **self.transport_config._asdict()
-            )
-            await new_transport.open()
+            new_transport = await self._create_transport()
             self.pool.append(new_transport)
 
     async def shrink(self):
@@ -59,26 +83,32 @@ class TransportPool(Generic[VT]):
                 raise CannotShrinkEmptyPool(
                     "Transport pool is already empty, cannot shrink it further"
                 )
-            await old_transport.close()
+            await self._close_transport(old_transport)
 
     async def checkout(self) -> VT:
         if self.closed:
             raise TransportPoolIsClosed("Cannot get a connection, transport pool is closed")
 
-        with self.lock:
-            if not self.pool:
-                await self.grow()
+        if threading.current_thread() != self.home_thread:
+            return await self._create_transport()
+        else:
+            with self.lock:
+                if not self.pool:
+                    await self.grow()
 
-            transport = self.pool.pop(0)
-            self.checked_out.add(transport)
+                transport = self.pool.pop(0)
+                self.checked_out.add(transport)
             return transport
 
     async def checkin(self, transport: VT):
-        with self.lock:
-            self.checked_out.discard(transport)
-            self.pool.append(transport)
-            if self.closed:
-                await self._close_all()
+        if threading.current_thread() != self.home_thread:
+            return await self._close_transport(transport)
+        else:
+            with self.lock:
+                self.checked_out.discard(transport)
+                self.pool.append(transport)
+                if self.closed:
+                    await self._close_all()
 
     @property
     def free(self) -> int:
@@ -116,7 +146,18 @@ class TransportPool(Generic[VT]):
     async def _close_all(self):
         with self.lock:
             while self.pool:
-                await self.pool.pop().close()
+                await self._close_transport(self.pool.pop())
+
+    async def _create_transport(self) -> VT:
+        new_transport = self.transport_class.from_config(
+            config=self.config, **self.transport_config._asdict()
+        )
+        await new_transport.open()
+        return new_transport
+
+    async def _close_transport(self, transport: VT):
+        """Close a specific transport"""
+        await transport.close()
 
     def __getattr__(self, item):
         async def fn_pool_wrapper(*args, **kwargs):

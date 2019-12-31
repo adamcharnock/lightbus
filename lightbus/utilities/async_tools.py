@@ -16,7 +16,6 @@ from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import,cyclic-import
     from schedule import Job
-    from lightbus.client import BusClient
 
 logger = logging.getLogger(__name__)
 

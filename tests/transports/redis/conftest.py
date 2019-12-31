@@ -71,12 +71,3 @@ def fire_dummy_events_fixture(bus):
         logger.warning("TEST: fire_dummy_events() completed")
 
     return fire_dummy_events
-
-
-@pytest.fixture
-def get_total_redis_connections(redis_client):
-    async def _get_total_redis_connections():
-        info = await redis_client.info()
-        return int(info["clients"]["connected_clients"])
-
-    return _get_total_redis_connections
