@@ -14,9 +14,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from queue import Queue
 from random import randint
-from typing import Type, Optional, Callable, Callable
-from unittest import mock
-from unittest.mock import MagicMock
+from typing import Type, Optional, Callable
 from urllib.parse import urlparse
 
 import pytest
@@ -40,7 +38,6 @@ from lightbus import (
     DebugRpcTransport,
     DebugResultTransport,
     DebugEventTransport,
-    BusPath,
     RedisRpcTransport,
     RedisResultTransport,
     RedisEventTransport,
@@ -63,7 +60,6 @@ from lightbus.plugins import PluginRegistry
 from lightbus.transports.redis.event import StreamUse
 from lightbus.utilities.async_tools import configure_event_loop
 from lightbus.utilities.testing import BusQueueMockerContext
-from tests.redis_transports.conftest import logger
 
 TCPAddress = namedtuple("TCPAddress", "host port")
 
