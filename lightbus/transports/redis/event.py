@@ -219,7 +219,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         # Here we use a queue to combine messages coming from both the
         # fetch messages loop and the reclaim messages loop.
-        # TODO: Close queue
         queue = InternalQueue(maxsize=1)
 
         async def consume_loop():
@@ -374,7 +373,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     )
 
                     if not event_message:
-                        # noop message, or message an event we don't care about
+                        # noop message, or an event message we don't care about
                         continue
 
                     logger.debug(
@@ -390,7 +389,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         )
                     )
 
-                    # NOTE: YIELD ALL MESSAGES, NOT JUST ONE
                     event_messages.append(event_message)
 
                 if event_messages:
