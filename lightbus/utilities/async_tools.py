@@ -2,6 +2,8 @@ import sys
 import asyncio
 import logging
 import threading
+from concurrent.futures.thread import ThreadPoolExecutor
+from queue import Queue, SimpleQueue
 from time import time
 from typing import Coroutine, TYPE_CHECKING
 import datetime
@@ -133,8 +135,9 @@ async def run_user_provided_callable(callable_, args, kwargs):
             exception = e
     else:
         try:
+            thread_pool_executor = ThreadPoolExecutor(thread_name_prefix="user_provided_callable")
             future = asyncio.get_event_loop().run_in_executor(
-                executor=None, func=lambda: callable_(*args, **kwargs)
+                executor=thread_pool_executor, func=lambda: callable_(*args, **kwargs)
             )
             return await future
         except Exception as e:
@@ -202,16 +205,24 @@ def configure_event_loop():
     asyncio.set_event_loop_policy(LightbusEventLoopPolicy())
 
 
-InternalQueueType = janus._AsyncQueueProxy
+class InternalQueue(SimpleQueue):
+    def __init__(self):
+        super().__init__()
+        self._put_executor = ThreadPoolExecutor(thread_name_prefix="InternalQueue-put")
+        self._get_executor = ThreadPoolExecutor(thread_name_prefix="InternalQueue-get")
 
+    async def put(self, item, timeout=None):
+        return await asyncio.get_event_loop().run_in_executor(
+            self._put_executor, super().put, item, True, timeout
+        )
 
-def InternalQueue(maxsize=0, loop=None) -> InternalQueueType:
-    return janus.Queue(maxsize=maxsize, loop=loop).async_q
+    async def get(self, timeout=None):
+        return await asyncio.get_event_loop().run_in_executor(
+            self._get_executor, super().get, True, timeout
+        )
 
+    def put_nowait(self, item):
+        return super().put(item, block=False)
 
-async def close_internal_queue(*queues: InternalQueueType):
-    for queue in queues:
-        queue._parent.close()
-
-    for queue in queues:
-        await queue._parent.wait_closed()
+    def get_nowait(self):
+        return super().get(block=False)

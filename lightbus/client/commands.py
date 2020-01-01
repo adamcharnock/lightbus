@@ -1,11 +1,10 @@
-import asyncio
 import logging
 
 from typing import NamedTuple, Optional, List, Tuple
 
 from lightbus.api import Api
 from lightbus.message import EventMessage, RpcMessage, ResultMessage
-from lightbus.utilities.async_tools import InternalQueueType
+from lightbus.utilities.async_tools import InternalQueue
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +17,7 @@ class SendEventCommand(NamedTuple):
 class ConsumeEventsCommand(NamedTuple):
     events: List[Tuple[str, str]]
     listener_name: str
-    destination_queue: InternalQueueType
+    destination_queue: InternalQueue
     options: dict = {}
 
 
@@ -58,7 +57,7 @@ class SendResultCommand(NamedTuple):
 
 class ReceiveResultCommand(NamedTuple):
     message: RpcMessage
-    destination_queue: InternalQueueType
+    destination_queue: InternalQueue
     options: dict
 
 

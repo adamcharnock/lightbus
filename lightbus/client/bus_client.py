@@ -20,7 +20,6 @@ from lightbus.utilities.async_tools import (
     call_every,
     call_on_schedule,
     cancel_and_log_exceptions,
-    close_internal_queue,
 )
 from lightbus.utilities.features import Feature, ALL_FEATURES
 from lightbus.utilities.frozendict import frozendict
@@ -140,9 +139,6 @@ class BusClient:
 
         while not self.error_queue.empty():
             logger.error(self.error_queue.get_nowait())
-            self.error_queue.task_done()
-
-        await close_internal_queue(self.error_queue)
 
         self._closed = True
 
@@ -294,7 +290,6 @@ class BusClient:
     async def error_monitor(self):
         async with self._event_monitor_lock:
             error: Error = await self.error_queue.get()
-            self.error_queue.task_done()
             logger.debug(f"Bus client event monitor detected an error, will shutdown.")
             logger.error(str(error))
 

@@ -1,9 +1,8 @@
 import asyncio
 import logging
-import os
-from contextlib import contextmanager, ContextDecorator
-from copy import copy
+from contextlib import ContextDecorator
 from functools import wraps
+from unittest.mock import patch, _patch
 
 from typing import List, Dict, Tuple, TypeVar, Type, NamedTuple, Optional
 
@@ -21,7 +20,7 @@ from lightbus.config import Config
 from lightbus.path import BusPath
 from lightbus.client import BusClient
 from lightbus.transports.registry import TransportRegistry
-from lightbus.utilities.async_tools import InternalQueueType
+from lightbus.utilities.async_tools import InternalQueue
 
 _registry: Dict[str, List] = {}
 logger = logging.getLogger(__name__)
@@ -358,31 +357,52 @@ Command = TypeVar("Command", bound=NamedTuple)
 
 
 class QueueMockContext:
-    def __init__(self, queue: InternalQueueType):
+    def __init__(self, queue: InternalQueue):
         self.queue = queue
         self.put_items: List[Tuple[Command, asyncio.Event]] = []
         self.got_items: List[Tuple[Command, asyncio.Event]] = []
-        self._old_get = None
-        self._old_put = None
+        self._patched_put: Optional[_patch] = None
+        self._patched_get: Optional[_patch] = None
+        self._patched_put_nowait: Optional[_patch] = None
+        self._patched_get_nowait: Optional[_patch] = None
 
     def __enter__(self) -> "QueueMockContext":
-        self._old_put = self.queue._parent._put_internal
-        self.queue._parent._put_internal = self._put
+        self.put_items = []
+        self.got_items = []
 
-        self._old_get = self.queue._parent._get
-        self.queue._parent._get = self._get
+        self._patched_put = patch.object(self.queue, "put", wraps=self._put)
+        self._patched_get = patch.object(self.queue, "get", wraps=self._get)
+        self._patched_put_nowait = patch.object(self.queue, "put_nowait", wraps=self._put_nowait)
+        self._patched_get_nowait = patch.object(self.queue, "get_nowait", wraps=self._get_nowait)
+
+        self._patched_put.start()
+        self._patched_get.start()
+        self._patched_put_nowait.start()
+        self._patched_get_nowait.start()
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        self._patched_put.stop()
+        self._patched_get.stop()
+        self._patched_put_nowait.stop()
+        self._patched_get_nowait.stop()
 
     def _put(self, item, *args, **kwargs):
         self.put_items.append(item)
-        return self._old_put(item, *args, **kwargs)
+        return self._patched_put.get_original()(item, *args, **kwargs)
+
+    def _put_nowait(self, item, *args, **kwargs):
+        self.put_items.append(item)
+        return self._patched_put_nowait.get_original()(item, *args, **kwargs)
 
     def _get(self, *args, **kwargs):
-        item = self._old_get(*args, **kwargs)
+        item = self._patched_get.get_original()(*args, **kwargs)
+        self.got_items.append(item)
+        return item
+
+    def _get_nowait(self, *args, **kwargs):
+        item = self._patched_get_nowait.get_original()(*args, **kwargs)
         self.got_items.append(item)
         return item
 

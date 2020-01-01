@@ -11,7 +11,7 @@ from lightbus.client.utilities import queue_exception_checker
 from lightbus.client import commands
 from lightbus.exceptions import TransportIsClosed
 from lightbus.transports.pool import TransportPool
-from lightbus.utilities.async_tools import cancel, InternalQueueType
+from lightbus.utilities.async_tools import cancel, InternalQueue
 from lightbus.utilities.singledispatch import singledispatchmethod
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ class RpcResultDock(BaseDock):
         rpc_message: RpcMessage,
         return_path: str,
         options: dict,
-        result_queue: InternalQueueType,
+        result_queue: InternalQueue,
     ):
         try:
             logger.debug("Result listener is waiting")

@@ -180,7 +180,6 @@ class EventClient(BaseSubClient):
                         listener=listener.callable,
                         options=listener.options,
                     )
-                    queue.task_done()
 
             # Start the consume_events() consumer running
             task = asyncio.ensure_future(

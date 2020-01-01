@@ -8,14 +8,14 @@ from types import TracebackType
 from typing import Coroutine, NamedTuple, Type, TYPE_CHECKING
 
 from lightbus.exceptions import InvalidName
-from lightbus.utilities.async_tools import InternalQueueType
+from lightbus.utilities.async_tools import InternalQueue
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    ErrorQueueType = InternalQueueType["Error"]
+    ErrorQueueType = InternalQueue["Error"]
 else:
-    ErrorQueueType = InternalQueueType
+    ErrorQueueType = InternalQueue
 
 
 class Error(NamedTuple):
@@ -68,7 +68,7 @@ def validate_event_or_rpc_name(api_name: str, type_: str, name: str):
         )
 
 
-def queue_exception_checker(coroutine: Coroutine, error_queue: InternalQueueType):
+def queue_exception_checker(coroutine: Coroutine, error_queue: InternalQueue):
     """Await a coroutine and place any errors into the provided queue
 
     Items added to the queue will be of the `Error` type. This `Error` type

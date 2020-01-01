@@ -14,10 +14,14 @@ def mock_result(dummy_bus):
         yield testing.MockResult(mocker_context, mock_responses={}, mock_events=set())
 
 
+def test_foo(mock_result: testing.MockResult):
+    pass
+
+
 @pytest.mark.parametrize(
     "method_name", ["assert_events_fired", "assertEventFired"], ids=["snake", "camel"]
 )
-def test_mock_result_assert_events_fired_simple(mock_result: testing.MockResult, method_name):
+def test_mock_result_assert_events_fired_simple(c, method_name):
     assert_events_fired = getattr(mock_result, method_name)
     mock_result.mocker_context.event.to_transport.put_items = [
         (

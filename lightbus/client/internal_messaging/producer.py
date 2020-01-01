@@ -27,16 +27,10 @@ Notes:
 
 import asyncio
 import logging
-from typing import Optional, NamedTuple
+from typing import Optional
 
-from lightbus.client import commands
 from lightbus.client.utilities import queue_exception_checker, ErrorQueueType
-from lightbus.utilities.async_tools import (
-    cancel,
-    cancel_and_log_exceptions,
-    InternalQueueType,
-    close_internal_queue,
-)
+from lightbus.utilities.async_tools import cancel, InternalQueue
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +49,7 @@ class InternalProducer:
     # How often should the queue sizes be monitored
     monitor_interval = 0.1
 
-    def __init__(self, queue: InternalQueueType, error_queue: ErrorQueueType):
+    def __init__(self, queue: InternalQueue, error_queue: ErrorQueueType):
         """Initialise the invoker
 
         The callable specified by `on_exception` will be called with a single positional argument,
@@ -82,8 +76,6 @@ class InternalProducer:
             await cancel(self._queue_monitor_task)
             self._queue_monitor_task = None
             self._monitor_ready = asyncio.Event()
-
-        await close_internal_queue(self.queue)
 
     async def wait_until_ready(self):
         """Wait until this invoker is ready to start receiving & handling commands"""

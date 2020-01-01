@@ -54,7 +54,6 @@ async def test_queue_monitor(producer: InternalProducer, caplog: LogCaptureFixtu
 
     # Now check we get logging when the queue shrinks, but is still above the warning level
     producer.queue.get_nowait()
-    producer.queue.task_done()
     await asyncio.sleep(0.05)
 
     assert len(caplog.records) == 1
@@ -65,7 +64,6 @@ async def test_queue_monitor(producer: InternalProducer, caplog: LogCaptureFixtu
 
     # Now check we get logging when the queue shrinks to BELOW the warning level
     producer.queue.get_nowait()
-    producer.queue.task_done()
     await asyncio.sleep(0.05)
 
     assert len(caplog.records) == 1

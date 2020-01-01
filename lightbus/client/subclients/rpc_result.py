@@ -51,7 +51,6 @@ async def bail_on_error(error_queue: ErrorQueueType, co):
         # An error appeared in the queue
         await cancel(fn_task)
         error: Error = monitor_task.result()
-        error_queue.task_done()
         # Put the error back on the queue so it can be picked up
         # by the bus client
         error_queue.put_nowait(error)

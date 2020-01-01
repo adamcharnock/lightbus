@@ -7,8 +7,7 @@ from lightbus.hooks import HookRegistry
 from lightbus.schema import Schema
 from lightbus.api import ApiRegistry
 from lightbus.config import Config
-from lightbus.transports.registry import TransportRegistry
-from lightbus.utilities.async_tools import InternalQueueType, close_internal_queue
+from lightbus.utilities.async_tools import InternalQueue
 
 
 class BaseSubClient:
@@ -19,8 +18,8 @@ class BaseSubClient:
         config: Config,
         schema: Schema,
         error_queue: ErrorQueueType,
-        consume_from: InternalQueueType,
-        produce_to: InternalQueueType,
+        consume_from: InternalQueue,
+        produce_to: InternalQueue,
     ):
         self.api_registry = api_registry
         self.hook_registry: HookRegistry = hook_registry
