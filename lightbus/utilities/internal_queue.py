@@ -1,13 +1,22 @@
 import asyncio
+import collections
 import threading
+from asyncio import Future
+from functools import partial
+
+from typing import Deque
 
 
 class InternalQueue(asyncio.Queue):
-    # These three are overridable in subclasses.
+    """Threadsafe version of asyncio.Queue"""
 
     def _init(self, maxsize):
         super()._init(maxsize)
         self._mutex = threading.RLock()
+        # We will get the current loop dynamically
+        # using asyncio.get_event_loop(), so make sure
+        # we splat the parent classes loop to avoid using it
+        self._loop = None
 
     def qsize(self):
         """Number of items in the queue."""
@@ -46,7 +55,7 @@ class InternalQueue(asyncio.Queue):
                 # free space in the following while loop
                 pass
 
-            putter = self._loop.create_future()
+            putter = asyncio.get_event_loop().create_future()
             self._putters.append(putter)
 
         while True:
@@ -68,11 +77,11 @@ class InternalQueue(asyncio.Queue):
                         self._wakeup_next(self._putters)
                 raise
 
-            try:
-                return self.put_nowait(item)
-            except asyncio.QueueFull:
-                putter = self._loop.create_future()
-                with self._mutex:
+            with self._mutex:
+                try:
+                    return self.put_nowait(item)
+                except asyncio.QueueFull:
+                    putter = asyncio.get_event_loop().create_future()
                     self._putters.append(putter)
 
     def put_nowait(self, item):
@@ -93,14 +102,13 @@ class InternalQueue(asyncio.Queue):
 
         If queue is empty, wait until an item is available.
         """
-
         with self._mutex:
             try:
                 return self.get_nowait()
             except asyncio.QueueEmpty:
                 pass
 
-            getter = self._loop.create_future()
+            getter = asyncio.get_event_loop().create_future()
             self._getters.append(getter)
 
         while True:
@@ -122,11 +130,11 @@ class InternalQueue(asyncio.Queue):
                         self._wakeup_next(self._getters)
                 raise
 
-            try:
-                return self.get_nowait()
-            except asyncio.QueueEmpty:
-                getter = self._loop.create_future()
-                with self._mutex:
+            with self._mutex:
+                try:
+                    return self.get_nowait()
+                except asyncio.QueueEmpty:
+                    getter = asyncio.get_event_loop().create_future()
                     self._getters.append(getter)
 
     def get_nowait(self):
@@ -140,6 +148,16 @@ class InternalQueue(asyncio.Queue):
             item = self._get()
             self._wakeup_next(self._putters)
             return item
+
+    def _wakeup_next(self, waiters):
+        # Wake up the next waiter (if any) that isn't cancelled.
+        while waiters:
+            waiter = waiters.popleft()
+            if not waiter.done():
+                # We must set the result from within the waiter's
+                # original event loop, so use call_soon_threadsafe()
+                waiter.get_loop().call_soon_threadsafe(partial(waiter.set_result, None))
+                break
 
     def task_done(self):
         """Indicate that a formerly enqueued task is complete.
