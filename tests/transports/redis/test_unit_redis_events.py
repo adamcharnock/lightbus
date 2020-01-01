@@ -772,6 +772,7 @@ async def test_reconnect_while_listening(
         async for messages_ in consumer:
             total_messages += len(messages_)
             await redis_event_transport.acknowledge(*messages_)
+            logging.info(f"Received {len(messages_)} messages. Total now at {total_messages}")
 
     enqueue_task = asyncio.ensure_future(co_enqeue())
     consume_task = asyncio.ensure_future(co_consume())
@@ -781,9 +782,9 @@ async def test_reconnect_while_listening(
     await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
     total_messages = 0
     await asyncio.sleep(0.2)
-    assert total_messages > 0
 
     await cancel(enqueue_task, consume_task)
+    assert total_messages > 0
 
 
 @pytest.mark.asyncio
