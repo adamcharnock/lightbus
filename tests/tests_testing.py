@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from lightbus.utilities.async_tools import InternalQueue
+from lightbus.utilities.internal_queue import InternalQueue
 from lightbus.utilities.testing import QueueMockContext
 
 

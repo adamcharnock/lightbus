@@ -13,7 +13,8 @@ from lightbus.client.subclients.rpc_result import RpcResultClient
 from lightbus.hooks import HookRegistry
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.plugins import PluginRegistry
-from lightbus.utilities.async_tools import get_event_loop, InternalQueue
+from lightbus.utilities.async_tools import get_event_loop
+from lightbus.utilities.internal_queue import InternalQueue
 from lightbus.utilities.features import ALL_FEATURES, Feature
 from lightbus.config.structure import RootConfig
 from lightbus.log import Bold

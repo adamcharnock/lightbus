@@ -4,7 +4,7 @@ import traceback
 import pytest
 
 from lightbus.client.utilities import queue_exception_checker, Error, ErrorQueueType
-from lightbus.utilities.async_tools import InternalQueue
+from lightbus.utilities.internal_queue import InternalQueue
 
 pytestmark = pytest.mark.unit
 

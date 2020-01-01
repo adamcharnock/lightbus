@@ -3,7 +3,8 @@ import logging
 from typing import Optional, Callable
 
 from lightbus.client.utilities import queue_exception_checker, ErrorQueueType
-from lightbus.utilities.async_tools import cancel, InternalQueue
+from lightbus.utilities.async_tools import cancel
+from lightbus.utilities.internal_queue import InternalQueue
 
 logger = logging.getLogger(__name__)
 

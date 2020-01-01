@@ -4,7 +4,7 @@ import pytest
 
 from lightbus.client.internal_messaging.consumer import InternalConsumer
 from lightbus.client.internal_messaging.producer import InternalProducer
-from lightbus.utilities.async_tools import InternalQueue
+from lightbus.utilities.internal_queue import InternalQueue
 
 
 @pytest.yield_fixture

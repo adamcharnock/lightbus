@@ -22,11 +22,8 @@ from lightbus.client.commands import (
     ConsumeEventsCommand,
     CloseCommand,
 )
-from lightbus.utilities.async_tools import (
-    run_user_provided_callable,
-    cancel_and_log_exceptions,
-    InternalQueue,
-)
+from lightbus.utilities.async_tools import run_user_provided_callable, cancel_and_log_exceptions
+from lightbus.utilities.internal_queue import InternalQueue
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.singledispatch import singledispatchmethod

@@ -58,7 +58,8 @@ from lightbus.path import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import PluginRegistry
 from lightbus.transports.redis.event import StreamUse
-from lightbus.utilities.async_tools import configure_event_loop, InternalQueue
+from lightbus.utilities.async_tools import configure_event_loop
+from lightbus.utilities.internal_queue import InternalQueue
 from lightbus.utilities.testing import BusQueueMockerContext
 
 TCPAddress = namedtuple("TCPAddress", "host port")

@@ -8,7 +8,7 @@ from types import TracebackType
 from typing import Coroutine, NamedTuple, Type, TYPE_CHECKING
 
 from lightbus.exceptions import InvalidName
-from lightbus.utilities.async_tools import InternalQueue
+from lightbus.utilities.internal_queue import InternalQueue
 
 logger = logging.getLogger(__name__)
 

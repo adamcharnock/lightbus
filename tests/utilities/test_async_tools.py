@@ -12,8 +12,8 @@ from lightbus.utilities.async_tools import (
     call_on_schedule,
     run_user_provided_callable,
     block,
-    InternalQueue,
 )
+from lightbus.utilities.internal_queue import InternalQueue
 
 pytestmark = pytest.mark.unit
 

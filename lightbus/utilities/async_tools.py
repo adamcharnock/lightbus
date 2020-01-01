@@ -3,7 +3,6 @@ import asyncio
 import logging
 import threading
 from concurrent.futures.thread import ThreadPoolExecutor
-from queue import Queue, SimpleQueue
 from time import time
 from typing import Coroutine, TYPE_CHECKING
 import datetime
@@ -11,7 +10,6 @@ import datetime
 import aioredis
 
 from lightbus.exceptions import CannotBlockHere
-from lightbus_vendored import janus
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import,cyclic-import
@@ -203,26 +201,3 @@ class LightbusEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
 def configure_event_loop():
     asyncio.set_event_loop_policy(LightbusEventLoopPolicy())
-
-
-class InternalQueue(SimpleQueue):
-    def __init__(self):
-        super().__init__()
-        self._put_executor = ThreadPoolExecutor(thread_name_prefix="InternalQueue-put")
-        self._get_executor = ThreadPoolExecutor(thread_name_prefix="InternalQueue-get")
-
-    async def put(self, item, timeout=None):
-        return await asyncio.get_event_loop().run_in_executor(
-            self._put_executor, super().put, item, True, timeout
-        )
-
-    async def get(self, timeout=None):
-        return await asyncio.get_event_loop().run_in_executor(
-            self._get_executor, super().get, True, timeout
-        )
-
-    def put_nowait(self, item):
-        return super().put(item, block=False)
-
-    def get_nowait(self):
-        return super().get(block=False)

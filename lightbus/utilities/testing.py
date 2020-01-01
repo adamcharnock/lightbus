@@ -20,7 +20,7 @@ from lightbus.config import Config
 from lightbus.path import BusPath
 from lightbus.client import BusClient
 from lightbus.transports.registry import TransportRegistry
-from lightbus.utilities.async_tools import InternalQueue
+from lightbus.utilities.internal_queue import InternalQueue
 
 _registry: Dict[str, List] = {}
 logger = logging.getLogger(__name__)
@@ -370,6 +370,11 @@ class QueueMockContext:
         self.put_items = []
         self.got_items = []
 
+        self._orig_put = self.queue.put
+        self._orig_get = self.queue.get
+        self._orig_put_nowait = self.queue.put_nowait
+        self._orig_get_nowait = self.queue.get_nowait
+
         self._patched_put = patch.object(self.queue, "put", wraps=self._put)
         self._patched_get = patch.object(self.queue, "get", wraps=self._get)
         self._patched_put_nowait = patch.object(self.queue, "put_nowait", wraps=self._put_nowait)
@@ -390,19 +395,19 @@ class QueueMockContext:
 
     def _put(self, item, *args, **kwargs):
         self.put_items.append(item)
-        return self._patched_put.get_original()(item, *args, **kwargs)
+        return self._orig_put(item, *args, **kwargs)
 
     def _put_nowait(self, item, *args, **kwargs):
         self.put_items.append(item)
-        return self._patched_put_nowait.get_original()(item, *args, **kwargs)
+        return self._orig_put_nowait(item, *args, **kwargs)
 
     def _get(self, *args, **kwargs):
-        item = self._patched_get.get_original()(*args, **kwargs)
+        item = self._orig_get(*args, **kwargs)
         self.got_items.append(item)
         return item
 
     def _get_nowait(self, *args, **kwargs):
-        item = self._patched_get_nowait.get_original()(*args, **kwargs)
+        item = self._orig_get_nowait(*args, **kwargs)
         self.got_items.append(item)
         return item
 

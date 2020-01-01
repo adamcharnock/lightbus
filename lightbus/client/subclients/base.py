@@ -7,7 +7,7 @@ from lightbus.hooks import HookRegistry
 from lightbus.schema import Schema
 from lightbus.api import ApiRegistry
 from lightbus.config import Config
-from lightbus.utilities.async_tools import InternalQueue
+from lightbus.utilities.internal_queue import InternalQueue
 
 
 class BaseSubClient:

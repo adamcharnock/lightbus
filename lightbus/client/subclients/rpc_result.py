@@ -18,7 +18,8 @@ from lightbus.exceptions import (
 )
 from lightbus.log import L, Bold
 from lightbus.message import ResultMessage, RpcMessage
-from lightbus.utilities.async_tools import run_user_provided_callable, cancel, InternalQueue
+from lightbus.utilities.async_tools import run_user_provided_callable, cancel
+from lightbus.utilities.internal_queue import InternalQueue
 from lightbus.utilities.casting import cast_to_signature
 from lightbus.utilities.deforming import deform_to_bus
 from lightbus.utilities.frozendict import frozendict

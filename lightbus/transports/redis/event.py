@@ -31,7 +31,8 @@ from lightbus.transports.redis.utilities import (
     redis_stream_id_add_one,
     redis_stream_id_subtract_one,
 )
-from lightbus.utilities.async_tools import cancel, InternalQueue
+from lightbus.utilities.async_tools import cancel
+from lightbus.utilities.internal_queue import InternalQueue
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string

@@ -4,7 +4,7 @@ from typing import NamedTuple, Optional, List, Tuple
 
 from lightbus.api import Api
 from lightbus.message import EventMessage, RpcMessage, ResultMessage
-from lightbus.utilities.async_tools import InternalQueue
+from lightbus.utilities.internal_queue import InternalQueue
 
 logger = logging.getLogger(__name__)
 

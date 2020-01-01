@@ -6,7 +6,7 @@ from lightbus.api import ApiRegistry
 from lightbus.client.utilities import ErrorQueueType
 from lightbus.config import Config
 from lightbus.transports.registry import TransportRegistry
-from lightbus.utilities.async_tools import InternalQueue
+from lightbus.utilities.internal_queue import InternalQueue
 
 
 class BaseDock:
