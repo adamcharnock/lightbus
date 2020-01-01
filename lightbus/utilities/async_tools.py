@@ -133,7 +133,9 @@ async def run_user_provided_callable(callable_, args, kwargs):
             exception = e
     else:
         try:
-            thread_pool_executor = ThreadPoolExecutor(thread_name_prefix="user_provided_callable")
+            thread_pool_executor = ThreadPoolExecutor(
+                thread_name_prefix="user_provided_callable_tpe"
+            )
             future = asyncio.get_event_loop().run_in_executor(
                 executor=thread_pool_executor, func=lambda: callable_(*args, **kwargs)
             )

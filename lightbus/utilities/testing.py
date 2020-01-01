@@ -361,8 +361,7 @@ class QueueMockContext:
         self.queue = queue
         self.put_items: List[Tuple[Command, asyncio.Event]] = []
         self.got_items: List[Tuple[Command, asyncio.Event]] = []
-        self._patched_put: Optional[_patch] = None
-        self._patched_get: Optional[_patch] = None
+
         self._patched_put_nowait: Optional[_patch] = None
         self._patched_get_nowait: Optional[_patch] = None
 
@@ -370,41 +369,24 @@ class QueueMockContext:
         self.put_items = []
         self.got_items = []
 
-        self._orig_put = self.queue.put
-        self._orig_get = self.queue.get
         self._orig_put_nowait = self.queue.put_nowait
         self._orig_get_nowait = self.queue.get_nowait
 
-        self._patched_put = patch.object(self.queue, "put", wraps=self._put)
-        self._patched_get = patch.object(self.queue, "get", wraps=self._get)
         self._patched_put_nowait = patch.object(self.queue, "put_nowait", wraps=self._put_nowait)
         self._patched_get_nowait = patch.object(self.queue, "get_nowait", wraps=self._get_nowait)
 
-        self._patched_put.start()
-        self._patched_get.start()
         self._patched_put_nowait.start()
         self._patched_get_nowait.start()
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._patched_put.stop()
-        self._patched_get.stop()
         self._patched_put_nowait.stop()
         self._patched_get_nowait.stop()
-
-    def _put(self, item, *args, **kwargs):
-        self.put_items.append(item)
-        return self._orig_put(item, *args, **kwargs)
 
     def _put_nowait(self, item, *args, **kwargs):
         self.put_items.append(item)
         return self._orig_put_nowait(item, *args, **kwargs)
-
-    def _get(self, *args, **kwargs):
-        item = self._orig_get(*args, **kwargs)
-        self.got_items.append(item)
-        return item
 
     def _get_nowait(self, *args, **kwargs):
         item = self._orig_get_nowait(*args, **kwargs)

@@ -490,7 +490,10 @@ def check_for_dangling_threads():
     yield
     threads_after = set(threading.enumerate())
     dangling_threads = threads_after - threads_before
-    names = [t.name for t in dangling_threads if "ThreadPoolExecutor" not in t.name]
+    # Lightbus' ThreadPoolExecutors have a thread_name_prefix value
+    # set which includes _tpe_. We can ignore these as they will clean
+    # themselves up.
+    names = [t.name for t in dangling_threads if "_tpe_" not in t.name]
     assert not names, f"Some threads were left dangling: {', '.join(names)}"
 
 
