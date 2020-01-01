@@ -183,6 +183,7 @@ async def call_on_schedule(callback, schedule: "Job", also_run_immediately: bool
 
 
 class ThreadSerializedTask(asyncio.Task):
+    # TODO: Remove ThreadSerializedTask
     _lock = threading.Lock()
 
     def _wakeup(self, *args, **kwargs):
