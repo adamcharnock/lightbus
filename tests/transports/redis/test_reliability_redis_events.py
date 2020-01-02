@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.mark.asyncio
-async def test_random_failures(
+async def test_listener_failures(
     bus: lightbus.path.BusPath, new_bus, caplog, redis_client, dummy_api, worker: Worker
 ):
     """Keep killing bus clients and check that we don't loose any events regardless"""
