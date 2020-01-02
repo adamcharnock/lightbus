@@ -63,11 +63,20 @@ async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
 @pytest.mark.parametrize(
     "stream_use", stream_use_test_data, ids=["stream_per_event", "stream_per_api"]
 )
-async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stop_me_later, stream_use):
+async def test_event_simple(
+    bus: lightbus.path.BusPath, dummy_api, stop_me_later, stream_use, redis_client
+):
     """Full event integration test"""
     bus.client.set_features([Feature.EVENTS])
     bus.client.register_api(dummy_api)
-    bus.client.transport_registry.get_event_transport("default").stream_use = stream_use
+
+    event_transport_pool = bus.client.transport_registry.get_event_transport("default")
+    async with event_transport_pool as t1, event_transport_pool as t2:
+        # The pool will need two transports for this, so get two from the pool and set
+        # their stream_use config option
+        t1.stream_use = stream_use
+        t2.stream_use = stream_use
+
     received_messages = []
 
     async def listener(event_message, **kwargs):
@@ -88,6 +97,16 @@ async def test_event_simple(bus: lightbus.path.BusPath, dummy_api, stop_me_later
     assert received_messages[0].api_name == "my.dummy"
     assert received_messages[0].event_name == "my_event"
     assert received_messages[0].native_id
+
+    # Check the event was acknowledged
+    stream_name = (
+        "my.dummy.my_event:stream" if stream_use == StreamUse.PER_EVENT else "my.dummy.*:stream"
+    )
+    info = await redis_client.xinfo_groups(stream=stream_name)
+    assert (
+        len(info) == 1
+    ), "There should only be one consumer group, that for out event listener above"
+    assert info[0][b"pending"] == 0
 
 
 @pytest.mark.asyncio
