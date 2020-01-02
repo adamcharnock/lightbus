@@ -693,7 +693,7 @@ class Worker:
         async def worker_context(bus):
             await self.start(bus)
 
-            yield
+            yield bus
 
             try:
                 await self.stop(bus)
