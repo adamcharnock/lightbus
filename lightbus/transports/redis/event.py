@@ -270,6 +270,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 try:
                     messages = await queue.get()
                     yield messages
+                    queue.task_done()
                 except GeneratorExit:
                     return
         finally:
