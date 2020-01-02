@@ -20,7 +20,7 @@ async def test_random_failures(
 ):
     """Keep killing bus clients and check that we don't loose an events regardless"""
 
-    caplog.set_level(logging.WARNING)
+    caplog.set_level(logging.ERROR)
     event_ok_ids = dict()
     history = []
 
