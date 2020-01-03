@@ -39,7 +39,7 @@ def block(coroutine: Coroutine, loop=None, *, timeout=None):
         if timeout is None:
             val = loop.run_until_complete(coroutine)
         else:
-            val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout, loop=loop))
+            val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
     except Exception as e:
         # The intention here is to get sensible stack traces from exceptions within blocking calls
         raise e
@@ -192,7 +192,7 @@ class ThreadSerializedTask(asyncio.Task):
 
     @staticmethod
     def factory(loop, coro):
-        return ThreadSerializedTask(coro, loop=loop)
+        return ThreadSerializedTask(coro)
 
 
 class LightbusEventLoopPolicy(asyncio.DefaultEventLoopPolicy):

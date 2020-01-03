@@ -105,7 +105,7 @@ class StatePlugin(LightbusPlugin):
         )
         if self.ping_enabled:
             logger.info("Ping messages will be sent every {} seconds".format(self.ping_interval))
-            self._ping_task = asyncio.ensure_future(self._send_ping(client), loop=client.loop)
+            self._ping_task = asyncio.ensure_future(self._send_ping(client))
         else:
             logger.warning(
                 "Ping events have been disabled. This will reduce log volume and bus traffic, but "
