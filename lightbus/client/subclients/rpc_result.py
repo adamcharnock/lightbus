@@ -102,7 +102,6 @@ class RpcResultClient(BaseSubClient):
 
         await self.hook_registry.execute("before_rpc_call", rpc_message=rpc_message)
 
-        # TODO: Close queue
         result_queue = InternalQueue()
 
         # Send the RPC

@@ -103,7 +103,7 @@ def create(
         config
     )
 
-    # TODO: Split out the Schema from the SchemaTransport and connect via a queue
+    # WFTODO: Split out the Schema from the SchemaTransport and connect via a queue
     #       just like everything else.
     schema = Schema(
         schema_transport=transport_registry.get_schema_transport(),
@@ -194,7 +194,7 @@ def create(
     )
 
     # Pass the client to any hooks
-    # TODO: Use a weakref (or a weakref proxy)
+    # WFTODO: Use a weakref (or a weakref proxy)
     hook_registry.set_extra_parameter("client", client)
 
     if _testing:

@@ -129,7 +129,7 @@ class TransportPool(Generic[VT]):
         await self.checkin(transport)
 
     async def open(self):
-        # TODO: This is used by the lazy loading, which can probably be ditched
+        # WFTODO: This is used by the lazy loading, which can probably be ditched
         #       now we have moved to using connection pools
         with self.lock:
             if not self.pool:

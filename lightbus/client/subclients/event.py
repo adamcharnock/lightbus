@@ -108,7 +108,7 @@ class EventClient(BaseSubClient):
         for api_name, name in events:
             validate_event_or_rpc_name(api_name, "event", name)
 
-        # TODO: Rather than having a whole other Listener object, why don't we just
+        # WFTODO: Rather than having a whole other Listener object, why don't we just
         #       create the commands here and then all start_listeners() needs to
         #       do is send the commands.
         self._event_listeners[listener_name] = Listener(

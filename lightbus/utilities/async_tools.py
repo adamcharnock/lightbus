@@ -25,7 +25,7 @@ def block(coroutine: Coroutine, loop=None, *, timeout=None):
 
     Note that this cannot be used inside an event loop.
     """
-    # TODO: Use asyncio.run()?
+    # WFTODO: Use asyncio.run()?
     loop = loop or get_event_loop()
     if loop.is_running():
         if hasattr(coroutine, "close"):

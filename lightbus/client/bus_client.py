@@ -90,7 +90,7 @@ class BusClient:
         error_queue: ErrorQueueType,
         features: Sequence[Union[Feature, str]] = ALL_FEATURES,
     ):
-        # TODO: self.transport_registry is no longer used, except for by the bus mocker. Remove.
+        # WFTODO: self.transport_registry is no longer used, except for by the bus mocker. Remove.
         self.transport_registry = transport_registry
         self.error_queue = error_queue
         self.api_registry = api_registry
@@ -133,8 +133,9 @@ class BusClient:
 
         await self.event_client.close()
         await self.rpc_result_client.close()
-        # TODO: Close other sub-clients once we implement them
+        # WFTODO: Close other sub-clients once we implement them
 
+        # WFTODO: Implement schema client
         await self.schema.close()
 
         while not self.error_queue.empty():
@@ -151,7 +152,7 @@ class BusClient:
             logger.info("Disabling serving of RPCs as no APIs have been registered")
             self.features.remove(Feature.RPCS)
 
-        # TODO: Move start_server() call outside of run_forever()? Leave up to calling code.
+        # WFTODO: Move start_server() call outside of run_forever()? Leave up to calling code.
         #       In fact, ditching run_forever() entirely may make some sense
         block(self.start_server())
 
@@ -202,7 +203,7 @@ class BusClient:
         await self._setup_server()
 
     async def _setup_server(self):
-        # TODO: Probably merge this into start_server so that there is parity between
+        # WFTODO: Probably merge this into start_server so that there is parity between
         #       start_server and stop_server. Also, a lot of tests use this
         #       _setup_server private method, which probably shouldn't be the case.
         #       UPDATE: These tests should now use the worker fixture
@@ -269,8 +270,6 @@ class BusClient:
         self.loop.run_forever()
 
     async def raise_errors(self):
-        # TODO: Implement error monitor elsewhere, start when the worker starts
-
         # If the error monitor is running then just return, as that means we are
         # running as a worker and so can rely on the error monitor to pickup the
         # errors which an happen in the various background tasks
