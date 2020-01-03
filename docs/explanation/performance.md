@@ -13,8 +13,8 @@ currently only ships with Redis support.
 Simple benchmarking[^1] on a 2018 MacBook Pro indicates the following execution times (plugins disabled, schema 
 and validation enabled, no event/RPC parameters):
 
-* Firing an event: ≈ 2.7ms (±10%)
-* Performing a remote procedure call: ≈ 7.0ms (±10%)
+* Firing an event: ≈ 1.7ms (±10%)
+* Performing a remote procedure call: ≈ 6.9ms (±10%)
 
 ## Redis performance
 
