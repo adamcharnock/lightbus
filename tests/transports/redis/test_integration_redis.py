@@ -64,7 +64,7 @@ async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
     "stream_use", stream_use_test_data, ids=["stream_per_event", "stream_per_api"]
 )
 async def test_event_simple(
-    bus: lightbus.path.BusPath, dummy_api, stop_me_later, stream_use, redis_client
+    bus: lightbus.path.BusPath, dummy_api, stream_use, redis_client, worker: Worker
 ):
     """Full event integration test"""
     bus.client.set_features([Feature.EVENTS])
@@ -85,12 +85,10 @@ async def test_event_simple(
 
     bus.my.dummy.my_event.listen(listener, listener_name="test")
 
-    await bus.client._setup_server()
-    stop_me_later(bus.client)
-
-    await asyncio.sleep(0.1)
-    await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
-    await asyncio.sleep(0.1)
+    async with worker(bus):
+        await asyncio.sleep(0.1)
+        await bus.my.dummy.my_event.fire_async(field="Hello! 😎")
+        await asyncio.sleep(0.1)
 
     assert len(received_messages) == 1
     assert received_messages[0].kwargs == {"field": "Hello! 😎"}
@@ -273,7 +271,9 @@ async def test_validation_rpc(loop, bus: lightbus.path.BusPath, dummy_api, mocke
 
 
 @pytest.mark.asyncio
-async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, mocker):
+async def test_validation_event(
+    loop, bus: lightbus.path.BusPath, dummy_api, mocker, worker: Worker
+):
     """Check validation happens when firing an event"""
     bus.client.register_api(dummy_api)
     config = Config.load_dict({"apis": {"default": {"validate": True, "strict_validation": True}}})
@@ -289,11 +289,10 @@ async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, moc
 
     bus.client.listen_for_event("my.dummy", "my_event", co_listener, listener_name="test")
 
-    await bus.client._setup_server()
-
-    await asyncio.sleep(0.1)
-    await bus.my.dummy.my_event.fire_async(field="Hello")
-    await asyncio.sleep(0.001)
+    async with worker(bus):
+        await asyncio.sleep(0.1)
+        await bus.my.dummy.my_event.fire_async(field="Hello")
+        await asyncio.sleep(0.001)
 
     # Validate gets called
     jsonschema.validate.assert_called_with(
@@ -311,7 +310,7 @@ async def test_validation_event(loop, bus: lightbus.path.BusPath, dummy_api, moc
 
 @pytest.mark.asyncio
 async def test_listen_to_multiple_events_across_multiple_transports(
-    loop, redis_server_url, redis_server_b_url
+    loop, redis_server_url, redis_server_b_url, worker: Worker
 ):
     redis_url_a = redis_server_url
     redis_url_b = redis_server_b_url
@@ -344,15 +343,11 @@ async def test_listen_to_multiple_events_across_multiple_transports(
         events=[("api_a", "event_a"), ("api_b", "event_b")], listener=listener, listener_name="test"
     )
 
-    await bus.client._setup_server()
-
-    await asyncio.sleep(0.1)
-    await bus.api_a.event_a.fire_async()
-    await bus.api_b.event_b.fire_async()
-    await asyncio.sleep(0.1)
-
-    await bus.client.stop_server()
-    await bus.client.close_async()
+    async with worker(bus):
+        await asyncio.sleep(0.1)
+        await bus.api_a.event_a.fire_async()
+        await bus.api_b.event_b.fire_async()
+        await asyncio.sleep(0.1)
 
     assert calls == 2
 
@@ -415,7 +410,7 @@ async def test_event_exception_in_listener_realtime(
 
 @pytest.mark.asyncio
 async def test_event_exception_in_listener_batch_fetch(
-    bus: lightbus.path.BusPath, dummy_api, redis_client
+    bus: lightbus.path.BusPath, dummy_api, redis_client, worker: Worker
 ):
     """Add a number of events to a stream then startup a listener which errors.
     The listener will fetch them all at once."""
@@ -438,12 +433,8 @@ async def test_event_exception_in_listener_batch_fetch(
         listener, listener_name="test_listener", bus_options={"since": "0"}
     )
 
-    await bus.client._setup_server()
-
-    await asyncio.sleep(0.1)
-
-    await bus.client.stop_server()
-    await bus.client.close_async()
+    async with worker(bus):
+        await asyncio.sleep(0.2)
 
     # Died when processing first message, so we only saw one message
     assert len(received_messages) == 1

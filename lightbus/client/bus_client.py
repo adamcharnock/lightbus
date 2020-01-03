@@ -173,10 +173,6 @@ class BusClient:
 
     async def start_server(self):
         """Server startup procedure
-
-        Must be called from within the main thread. Handles the niceties around
-        starting and stopping the server. The interesting setup happens in
-        BusClient._setup_server()
         """
         # Ensure an event loop exists
         get_event_loop()
@@ -201,13 +197,6 @@ class BusClient:
             )
         )
 
-        await self._setup_server()
-
-    async def _setup_server(self):
-        # WFTODO: Probably merge this into start_server so that there is parity between
-        #       start_server and stop_server. Also, a lot of tests use this
-        #       _setup_server private method, which probably shouldn't be the case.
-        #       UPDATE: These tests should now use the worker fixture
         logger.info(
             LBullets(
                 "APIs in registry ({})".format(len(self.api_registry.all())),

@@ -15,6 +15,7 @@ from pathlib import Path
 from queue import Queue
 from random import randint
 from typing import Type, Optional, Callable
+from unittest.mock import MagicMock
 from urllib.parse import urlparse
 
 import pytest
@@ -658,20 +659,6 @@ def error_queue():
     assert queue.qsize() == 0, f"Errors found in error queue: {queue._queue}"
 
 
-@pytest.yield_fixture()
-async def stop_me_later():
-    to_stop_later = []
-
-    def _stop_me_later(*items):
-        to_stop_later.extend(items)
-
-    yield _stop_me_later
-
-    for i in to_stop_later:
-        await i.stop_server()
-        await i.close_async()
-
-
 class Worker:
     def __init__(self, bus_factory: Callable):
         self.bus_factory = bus_factory
@@ -693,6 +680,7 @@ class Worker:
 
     def __call__(self, bus: Optional[BusPath] = None, raise_errors=True):
         bus = bus or self.bus_factory()
+        bus.client.stop_loop = MagicMock()
 
         @asynccontextmanager
         async def worker_context(bus):
