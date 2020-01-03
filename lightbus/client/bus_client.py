@@ -149,12 +149,6 @@ class BusClient:
         return get_event_loop()
 
     def run_forever(self):
-        if not self.api_registry.all() and Feature.RPCS in self.features:
-            logger.info("Disabling serving of RPCs as no APIs have been registered")
-            self.features.remove(Feature.RPCS)
-
-        # WFTODO: Move start_server() call outside of run_forever()? Leave up to calling code.
-        #       In fact, ditching run_forever() entirely may make some sense
         block(self.start_server())
 
         self._actually_run_forever()
@@ -179,9 +173,15 @@ class BusClient:
 
         self._server_tasks = set()
 
+        # Start monitoring for errors on the error queue
         error_monitor_task = asyncio.ensure_future(self.error_monitor())
         self._error_monitor_task = error_monitor_task
         self._server_tasks.add(self._error_monitor_task)
+
+        # Features setup & logging
+        if not self.api_registry.all() and Feature.RPCS in self.features:
+            logger.info("Disabling serving of RPCs as no APIs have been registered")
+            self.features.remove(Feature.RPCS)
 
         logger.info(
             LBullets(
@@ -197,6 +197,7 @@ class BusClient:
             )
         )
 
+        # Api logging
         logger.info(
             LBullets(
                 "APIs in registry ({})".format(len(self.api_registry.all())),
