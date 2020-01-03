@@ -284,13 +284,6 @@ async def test_context(dummy_pool: TransportPool):
 
 
 @pytest.mark.asyncio
-async def test_open(dummy_pool: TransportPool):
-    await dummy_pool.open()
-    assert dummy_pool.free == 1
-    assert dummy_pool.in_use == 0
-
-
-@pytest.mark.asyncio
 async def test_close(dummy_pool: TransportPool):
     await dummy_pool.grow()
     transport = dummy_pool.pool[0]
