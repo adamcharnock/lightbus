@@ -58,7 +58,6 @@ from lightbus.path import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import PluginRegistry
 from lightbus.transports.redis.event import StreamUse
-from lightbus.utilities.async_tools import configure_event_loop
 from lightbus.utilities.internal_queue import InternalQueue
 from lightbus.utilities.testing import BusQueueMockerContext
 
@@ -71,7 +70,6 @@ logger = logging.getLogger(__file__)
 
 def pytest_sessionstart(session):
     # Set custom lightbus policy on event loop
-    configure_event_loop()
 
     # Increase the number of allowable file descriptors to 10000
     # (needed in the reliability tests)
