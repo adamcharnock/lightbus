@@ -53,7 +53,7 @@ async def test_timeouts(bus: lightbus.path.BusPath, new_bus, caplog, dummy_api, 
         nonlocal results
         try:
             result = await client_bus.my.dummy.random_death.call_async(
-                n=n, death_every=20, bus_options={"timeout": 0.5}
+                n=n, death_every=20, bus_options={"timeout": 1}
             )
             results.append(result)
         except LightbusTimeout:
