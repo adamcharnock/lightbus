@@ -90,7 +90,6 @@ class RpcResultClient(BaseSubClient):
 
         Call an RPC and return the result.
         """
-        # TODO: InternalProducer command
         kwargs = deform_to_bus(kwargs)
         rpc_message = RpcMessage(api_name=api_name, procedure_name=name, kwargs=kwargs)
         validate_event_or_rpc_name(api_name, "rpc", name)
@@ -98,8 +97,6 @@ class RpcResultClient(BaseSubClient):
         logger.info("📞  Calling remote RPC {}.{}".format(Bold(api_name), Bold(name)))
 
         start_time = time.time()
-        # TODO: It is possible that the RPC will be called before we start waiting for the
-        #       response. This is bad.
 
         validate_outgoing(self.config, self.schema, rpc_message)
 
@@ -174,7 +171,6 @@ class RpcResultClient(BaseSubClient):
         return result_message.result
 
     async def _call_rpc_local(self, api_name: str, name: str, kwargs: dict = frozendict()):
-        # TODO: InternalProducer command
         api = self.api_registry.get(api_name)
         validate_event_or_rpc_name(api_name, "rpc", name)
 

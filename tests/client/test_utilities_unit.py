@@ -31,7 +31,6 @@ def ok_coroutine():
 
 @pytest.fixture
 def error_queue():
-    # TODO: Close queue
     return InternalQueue()
 
 

@@ -102,13 +102,6 @@ class RedisTransportMixin:
     connection_parameters: dict = {"address": "redis://localhost:6379", "maxsize": 100}
     _redis_pool = None
 
-    def __init__(self, *args, **kwargs):
-        # TODO: This lock fixes the test_random_failures test, but
-        #       there are likely concurrency issues that need to be sorted
-        #       in a more systematic way. Do this, and remove this lock.
-        self._test_lock = asyncio.Lock()
-        super().__init__(*args, **kwargs)
-
     def set_redis_pool(
         self,
         redis_pool: Optional[Redis],
@@ -191,10 +184,9 @@ class RedisTransportMixin:
             )
 
     async def close(self):
-        async with self._test_lock:
-            self._closed = True
-            if self._redis_pool:
-                await self._close_redis_pool()
+        self._closed = True
+        if self._redis_pool:
+            await self._close_redis_pool()
 
     async def _close_redis_pool(self):
         self._redis_pool.close()

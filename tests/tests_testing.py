@@ -8,7 +8,6 @@ from lightbus.utilities.testing import QueueMockContext
 
 @pytest.mark.asyncio
 def test_queue_mock_context_sync():
-    # TODO: Close queue
     queue = InternalQueue()
 
     with QueueMockContext(queue) as m:
@@ -22,7 +21,6 @@ def test_queue_mock_context_sync():
 
 @pytest.mark.asyncio
 async def test_queue_mock_context_async():
-    # TODO: Close queue
     queue = InternalQueue()
 
     with QueueMockContext(queue) as m:

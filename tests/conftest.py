@@ -653,7 +653,6 @@ def queue_mocker() -> Type[BusQueueMockerContext]:
 
 @pytest.yield_fixture()
 def error_queue():
-    # TODO: Close queue
     queue = InternalQueue()
     yield queue
     assert queue.qsize() == 0, f"Errors found in error queue: {queue._queue}"

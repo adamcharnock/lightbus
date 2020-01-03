@@ -85,7 +85,7 @@ async def test_internal_queue_put_delay():
 )
 def test_internal_thread_safety(start_order, maxsize, num_threads):
     num_consumer_threads, num_producer_threads = num_threads
-    queue = InternalQueue(maxsize=maxsize)  # TODO: With max size too
+    queue = InternalQueue(maxsize=maxsize)
     consumer_counter = Semaphore(value=0)
     producer_counter = Semaphore(value=0)
 

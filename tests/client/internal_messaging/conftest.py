@@ -12,7 +12,6 @@ async def consumer():
     def _on_exception(e):
         raise e
 
-    # TODO: Close queue
     consumer = InternalConsumer(queue=InternalQueue(), error_queue=InternalQueue())
     yield consumer
     await consumer.close()
@@ -23,7 +22,6 @@ async def producer():
     def _on_exception(e):
         raise e
 
-    # TODO: Close queue
     producer = InternalProducer(queue=InternalQueue(), error_queue=InternalQueue())
     yield producer
     await producer.close()

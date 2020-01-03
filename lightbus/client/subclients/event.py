@@ -102,6 +102,7 @@ class EventClient(BaseSubClient):
 
         if listener_name in self._event_listeners:
             # TODO: Custom exception class
+            # TODO: Test
             raise Exception(f"Listener with name {listener_name} already registered")
 
         for api_name, name in events:
@@ -166,7 +167,6 @@ class EventClient(BaseSubClient):
         async def start_listener(listener: Listener):
             # Setting the maxsize to 1 ensures the transport cannot load
             # messages faster than we can consume them
-            # TODO: Close queue
             queue = InternalQueue(maxsize=1)
 
             async def consume_events():
@@ -185,8 +185,6 @@ class EventClient(BaseSubClient):
             self._event_listener_tasks.add(task)
 
             await self.producer.send(
-                # TODO: Remove the ReceivedEventCommand because passing the queue
-                #       inside the ConsumeEventsCommand negates the need for it
                 ConsumeEventsCommand(
                     events=listener.events,
                     destination_queue=queue,
