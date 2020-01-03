@@ -610,10 +610,19 @@ def run_lightbus_command(make_test_bus_module, redis_config_file):
 
         return p
 
+    start_time = time.time()
+
     yield inner
+
+    duration = time.time() - start_time
+    if duration < 2:
+        # Make sure we give the command enough time to startup before shutting it down
+        time.sleep(2 - duration)
 
     # Cleanup
     for cmd, full_args, env, p in processes:
+        print(f"Cleaning up command 'lightbus {cmd}'")
+        print(f"    Sending SIGINT")
         try:
             os.kill(p.pid, signal.SIGINT)
         except ProcessLookupError:
@@ -623,10 +632,9 @@ def run_lightbus_command(make_test_bus_module, redis_config_file):
         try:
             p.wait(timeout=1)
         except subprocess.TimeoutExpired:
-            print(f"WARNING: Shutdown timed out. Killing")
+            print(f"    WARNING: Shutdown timed out. Killing")
             p.kill()
 
-        print(f"Cleaning up command 'lightbus {cmd}'")
         print(f"     Command: {' '.join(full_args)}")
         print(f"     Environment:")
         for k, v in env.items():
