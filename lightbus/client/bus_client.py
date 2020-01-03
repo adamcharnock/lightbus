@@ -90,7 +90,8 @@ class BusClient:
         error_queue: ErrorQueueType,
         features: Sequence[Union[Feature, str]] = ALL_FEATURES,
     ):
-        # WFTODO: self.transport_registry is no longer used, except for by the bus mocker. Remove.
+        # The transport registry isn't actually used by the bus client, but it is
+        # useful to have it available as a property on the client.
         self.transport_registry = transport_registry
         self.error_queue = error_queue
         self.api_registry = api_registry
