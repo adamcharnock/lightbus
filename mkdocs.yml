@@ -58,7 +58,7 @@ nav:
     - APIs: explanation/apis.md
     - Remote procedure calls: explanation/rpcs.md
     - Events: explanation/events.md
-    - Marshelling: explanation/marshalling.md
+    - Marshalling: explanation/marshalling.md
     - Transports: explanation/transports.md
     - Configuration: explanation/configuration.md
     - Schema: explanation/schema.md
