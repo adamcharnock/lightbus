@@ -119,7 +119,7 @@ class InternalProducer:
             await asyncio.sleep(self.monitor_interval)
 
     def send(self, command) -> asyncio.Event:
-        logger.debug("Sending command %s", command)
+        logger.debug(f"Sending command {command}")
         event = asyncio.Event()
         self.queue.put_nowait((command, event))
         return event

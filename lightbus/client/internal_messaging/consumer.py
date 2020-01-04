@@ -29,7 +29,6 @@ class InternalConsumer:
 
         Use `stop()` to shutdown the invoker.
         """
-        logger.debug("Starting internal consumer on queue %s", self.queue)
         self._consumer_task = asyncio.ensure_future(
             queue_exception_checker(self._consumer_loop(self.queue, handler), self.error_queue)
         )
@@ -41,7 +40,6 @@ class InternalConsumer:
         The shutdown procedure will stop any new tasks being created
         then shutdown all existing tasks
         """
-        logger.debug("Shutting down internal consumer on queue %s", self.queue)
         # Stop consuming commands from the queue
         # (this will also stop *new* tasks being created)
         if self._consumer_task is not None:
@@ -68,7 +66,7 @@ class InternalConsumer:
 
         This execution happens in the background.
         """
-        logger.debug(f"Handling command %s", command)
+        logger.debug(f"Handling command {command}")
 
         def when_task_finished(fut: asyncio.Future):
             self._running_commands.remove(fut)
