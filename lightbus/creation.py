@@ -2,6 +2,7 @@
 import logging
 import os
 import sys
+import weakref
 from typing import Union, Mapping, Type, List
 
 from lightbus import Schema
@@ -194,8 +195,8 @@ def create(
     )
 
     # Pass the client to any hooks
-    # WFTODO: Use a weakref (or a weakref proxy)
-    hook_registry.set_extra_parameter("client", client)
+    # (use a weakref to prevent circular references)
+    hook_registry.set_extra_parameter("client", weakref.proxy(client))
 
     if _testing:
         # We don't do this normally as the docs do not need to be
