@@ -17,7 +17,7 @@ class SendEventCommand(NamedTuple):
 class ConsumeEventsCommand(NamedTuple):
     events: List[Tuple[str, str]]
     listener_name: str
-    destination_queue: InternalQueue
+    destination_queue: InternalQueue[EventMessage]
     options: dict = {}
 
 

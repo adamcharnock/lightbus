@@ -1,8 +1,7 @@
 import asyncio
 import inspect
 import logging
-from asyncio import Task
-from typing import List, Tuple, Callable, Set, Dict, NamedTuple
+from typing import List, Tuple, Callable, Dict, NamedTuple
 
 from lightbus.schema.schema import Parameter
 from lightbus.message import EventMessage
@@ -108,9 +107,6 @@ class EventClient(BaseSubClient):
         for api_name, name in events:
             validate_event_or_rpc_name(api_name, "event", name)
 
-        # WFTODO: Rather than having a whole other Listener object, why don't we just
-        #       create the commands here and then all start_listeners() needs to
-        #       do is send the commands.
         self._event_listeners[listener_name] = Listener(
             callable=listener, options=options or {}, events=events, name=listener_name
         )
@@ -167,7 +163,7 @@ class EventClient(BaseSubClient):
         async def start_listener(listener: Listener):
             # Setting the maxsize to 1 ensures the transport cannot load
             # messages faster than we can consume them
-            queue = InternalQueue(maxsize=1)
+            queue: InternalQueue[EventMessage] = InternalQueue(maxsize=1)
 
             async def consume_events():
                 while True:

@@ -11,6 +11,7 @@ from lightbus.client.docks.event import EventDock
 from lightbus.client.docks.rpc_result import RpcResultDock
 from lightbus.client.subclients.event import EventClient
 from lightbus.client.subclients.rpc_result import RpcResultClient
+from lightbus.client.utilities import ErrorQueueType
 from lightbus.hooks import HookRegistry
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.plugins import PluginRegistry
@@ -112,7 +113,7 @@ def create(
         human_readable=config.bus().schema.human_readable,
     )
 
-    error_queue = InternalQueue()
+    error_queue: ErrorQueueType = InternalQueue()
 
     # Plugin registry
 

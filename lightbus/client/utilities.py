@@ -12,10 +12,7 @@ from lightbus.utilities.internal_queue import InternalQueue
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
-    ErrorQueueType = InternalQueue["Error"]
-else:
-    ErrorQueueType = InternalQueue
+ErrorQueueType = InternalQueue["Error"]
 
 
 class Error(NamedTuple):

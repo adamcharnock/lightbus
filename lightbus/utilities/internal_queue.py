@@ -1,13 +1,12 @@
 import asyncio
-import collections
 import threading
-from asyncio import Future
 from functools import partial
+from typing import TypeVar, Generic
 
-from typing import Deque
+T = TypeVar("T")
 
 
-class InternalQueue(asyncio.Queue):
+class InternalQueue(asyncio.Queue, Generic[T]):
     """Threadsafe version of asyncio.Queue"""
 
     def _init(self, maxsize):
@@ -40,7 +39,7 @@ class InternalQueue(asyncio.Queue):
             else:
                 return self.qsize() >= self._maxsize
 
-    async def put(self, item):
+    async def put(self, item: T):
         """Put an item into the queue.
 
         Put an item into the queue. If the queue is full, wait until a free
@@ -84,7 +83,7 @@ class InternalQueue(asyncio.Queue):
                     putter = asyncio.get_event_loop().create_future()
                     self._putters.append(putter)
 
-    def put_nowait(self, item):
+    def put_nowait(self, item: T):
         """Put an item into the queue without blocking.
 
         If no free slot is immediately available, raise QueueFull.
@@ -97,7 +96,7 @@ class InternalQueue(asyncio.Queue):
             self._finished.clear()
             self._wakeup_next(self._getters)
 
-    async def get(self):
+    async def get(self) -> T:
         """Remove and return an item from the queue.
 
         If queue is empty, wait until an item is available.
@@ -137,7 +136,7 @@ class InternalQueue(asyncio.Queue):
                     getter = asyncio.get_event_loop().create_future()
                     self._getters.append(getter)
 
-    def get_nowait(self):
+    def get_nowait(self) -> T:
         """Remove and return an item from the queue.
 
         Return an item if one is immediately available, else raise QueueEmpty.
