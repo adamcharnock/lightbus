@@ -168,6 +168,7 @@ class BusClient:
     async def start_server(self):
         """Server startup procedure
         """
+        # TODO: Rename to start_worker()
         # Ensure an event loop exists
         get_event_loop()
 
@@ -244,6 +245,7 @@ class BusClient:
         self._server_tasks.add(monitor_task)
 
     async def stop_server(self):
+        # TODO: Rename to stop_worker()
         logger.debug("Stopping server")
 
         # Cancel the tasks we created above
