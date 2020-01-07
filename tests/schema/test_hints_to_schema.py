@@ -1,3 +1,4 @@
+import functools
 import inspect
 import logging
 from decimal import Decimal
@@ -184,6 +185,18 @@ def test_response_no_types():
 
     schema = make_response_schema("api_name", "rpc_name", func)
     assert "type" not in schema
+
+
+def test_response_wrapped():
+    def func() -> int:
+        pass
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        pass
+
+    schema = make_response_schema("api_name", "rpc_name", wrapper)
+    assert schema["type"] == "integer"
 
 
 def test_response_bool():
@@ -420,6 +433,20 @@ def test_make_rpc_parameter_schema_null():
     schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
     # Note that type is not set to null
     assert schema["properties"]["username"] == {"default": None}
+
+
+def test_make_rpc_parameter_schema_wrapped():
+    """Ensure wrapped functions are unwrapped"""
+
+    def func(field: int):
+        pass
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        pass
+
+    schema = make_rpc_parameter_schema("api_name", "rpc_name", wrapper)
+    assert schema["properties"]["field"] == {"type": "integer"}
 
 
 def test_named_tuple_with_none_default():

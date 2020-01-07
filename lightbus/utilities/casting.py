@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 
 def cast_to_signature(parameters: dict, callable) -> dict:
     """Cast parameters into the type hints provided by callable's function signature.
+
+    Will resolve functions which have been wrapped using itertools.wrap()
     """
     for key, hint in get_type_hints(callable).items():
         if key not in parameters:

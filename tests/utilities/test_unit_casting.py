@@ -1,3 +1,4 @@
+import functools
 import logging
 from datetime import datetime, timezone, date
 from decimal import Decimal
@@ -20,6 +21,19 @@ def test_cast_to_signature_simple():
 
     obj = object()
     casted = cast_to_signature(callable=fn, parameters={"a": "1", "b": 2, "c": obj})
+    assert casted == {"a": 1, "b": "2", "c": obj}
+
+
+def test_cast_to_signature_wrapped():
+    def fn(a: int, b: str, c):
+        pass
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        pass
+
+    obj = object()
+    casted = cast_to_signature(callable=wrapper, parameters={"a": "1", "b": 2, "c": obj})
     assert casted == {"a": 1, "b": "2", "c": obj}
 
 
