@@ -42,6 +42,7 @@ class Error(NamedTuple):
     value: Exception
     traceback: TracebackType
     invoking_stack: StackSummary
+    help: str = ""
 
     @property
     def invoking_traceback_str(self) -> str:
@@ -72,7 +73,7 @@ def validate_event_or_rpc_name(api_name: str, type_: str, name: str):
         )
 
 
-def queue_exception_checker(coroutine: Coroutine, error_queue: InternalQueue):
+def queue_exception_checker(coroutine: Coroutine, error_queue: InternalQueue, help: str = ""):
     """Await a coroutine and place any errors into the provided queue
 
     Items added to the queue will be of the `Error` type. This `Error` type
@@ -100,7 +101,7 @@ def queue_exception_checker(coroutine: Coroutine, error_queue: InternalQueue):
             if not getattr(e, "enqueued", False):
                 # Flag not set, so add this error to the queue, and set the flag on it
                 e.enqueued = True
-                error = Error(*sys.exc_info(), invoking_stack)
+                error = Error(*sys.exc_info(), invoking_stack, help)
                 await error_queue.put(error)
 
             raise

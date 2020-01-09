@@ -284,6 +284,8 @@ class BusClient:
             error: Error = await self.error_queue.get()
             logger.debug(f"Bus client event monitor detected an error, will shutdown.")
             logger.error(str(error))
+            if error.help:
+                logger.error(error.help)
 
             self.exit_code = 1
             self.stop_loop()
@@ -406,8 +408,6 @@ class BusClient:
         This can generally be the same as the function name of the `listener` callable, but
         it should not change once deployed.
         """
-        # WFTODO: Add on_error parameter
-        # WFTODO: Add on_error tests
         return self.event_client.listen(
             events=events,
             listener=listener,

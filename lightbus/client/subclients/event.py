@@ -143,9 +143,18 @@ class EventClient(BaseSubClient):
         # thereby allowing listeners to have flexibility in the argument names.
         # (And therefore allowing listeners to use the `event` parameter themselves)
         if on_error == OnError.SHUTDOWN:
+            # Run the callback in the queue_exception_checker(). This will
+            # put any errors into Lightbus' error queue, and therefore
+            # cause a shutdown
             await queue_exception_checker(
                 run_user_provided_callable(listener, args=[event_message], kwargs=parameters),
                 self.error_queue,
+                help=(
+                    f"An error occurred while {listener} was handling an event. Lightbus will "
+                    f"now shutdown. If you wish to continue you can use the on_error parameter "
+                    f"when setting up your event. For example:\n\n"
+                    f"    bus.my_api.my_event.listen(fn, listener_name='example', on_error=lightbus.OnError.ACKNOWLEDGE_AND_LOG)"
+                ),
             )
         elif on_error == on_error.ACKNOWLEDGE_AND_LOG:
             try:
@@ -153,6 +162,7 @@ class EventClient(BaseSubClient):
             except asyncio.CancelledError:
                 raise
             except Exception as e:
+                # Log here. Acknowledgement will follow in below
                 logger.exception(e)
 
         # Acknowledge the successfully processed message

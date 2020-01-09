@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from unittest.mock import MagicMock
 
 import pytest
@@ -292,8 +293,10 @@ async def test_hook_simple_call(dummy_bus: lightbus.path.BusPath, decorator, hoo
 
 @pytest.mark.asyncio
 async def test_exception_in_listener_shutdown(
-    new_bus, worker: Worker, queue_mocker: Type[BusQueueMockerContext]
+    new_bus, worker: Worker, queue_mocker: Type[BusQueueMockerContext], caplog
 ):
+    caplog.set_level(logging.ERROR)
+
     class TestException(Exception):
         pass
 
@@ -325,13 +328,22 @@ async def test_exception_in_listener_shutdown(
 
             # Note that this hasn't actually shut the bus down, we'll test that in test_server_shutdown
 
+            assert len(caplog.records) == 2
+
+            exception_record: logging.LogRecord = caplog.records[0]
+            assert "TestException" in exception_record.msg
+
+            help_record: logging.LogRecord = caplog.records[1]
+            assert "Lightbus will now shutdown" in help_record.message
+
 
 @pytest.mark.asyncio
 async def test_exception_in_listener_log(
-    new_bus, worker: Worker, queue_mocker: Type[BusQueueMockerContext]
+    new_bus, worker: Worker, queue_mocker: Type[BusQueueMockerContext], caplog
 ):
     """When on_error=OnError.ACKNOWLEDGE_AND_LOG, we should see an exception logged and
     the messaged acked"""
+    caplog.set_level(logging.ERROR)
 
     class TestException(Exception):
         pass
@@ -360,9 +372,16 @@ async def test_exception_in_listener_log(
             )
             await asyncio.sleep(0.1)
 
+            # Ack happened
             assert not q.errors.put_items
             assert not bus.client.stop_loop.called
             assert q.event.to_transport.commands.get(AcknowledgeEventCommand)
+
+            # Logging happened
+            assert len(caplog.records) == 1
+            log_record: logging.LogRecord = caplog.records[0]
+            assert log_record.levelname == "ERROR"
+            assert type(log_record.msg) == TestException
 
 
 def test_add_background_task(dummy_bus: lightbus.path.BusPath, event_loop):
