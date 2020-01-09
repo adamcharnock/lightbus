@@ -4,7 +4,7 @@ from contextlib import ContextDecorator
 from functools import wraps
 from unittest.mock import patch, _patch
 
-from typing import List, Dict, Tuple, TypeVar, Type, NamedTuple, Optional
+from typing import List, Dict, Tuple, TypeVar, Type, NamedTuple, Optional, Set
 
 from lightbus import (
     RpcTransport,
@@ -365,6 +365,8 @@ class QueueMockContext:
         self._patched_put_nowait: Optional[_patch] = None
         self._patched_get_nowait: Optional[_patch] = None
 
+        self._blackhole: Set[Type[Command]] = set()
+
     def __enter__(self) -> "QueueMockContext":
         self.put_items = []
         self.got_items = []
@@ -380,12 +382,26 @@ class QueueMockContext:
 
         return self
 
+    def blackhole(self, *command_types):
+        self._blackhole = self._blackhole.union(set(command_types))
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._patched_put_nowait.stop()
         self._patched_get_nowait.stop()
 
     def _put_nowait(self, item, *args, **kwargs):
         self.put_items.append(item)
+
+        try:
+            command, event = item
+        except ValueError:
+            # The item being added isn't a command
+            pass
+        else:
+            # Don't call blackholed commands
+            if type(command) in self._blackhole:
+                return
+
         return self._orig_put_nowait(item, *args, **kwargs)
 
     def _get_nowait(self, *args, **kwargs):

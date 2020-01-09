@@ -6,7 +6,7 @@ from typing import List, Tuple, Callable, Dict, NamedTuple
 from lightbus.schema.schema import Parameter
 from lightbus.message import EventMessage
 from lightbus.client.subclients.base import BaseSubClient
-from lightbus.client.utilities import validate_event_or_rpc_name, queue_exception_checker
+from lightbus.client.utilities import validate_event_or_rpc_name, queue_exception_checker, OnError
 from lightbus.client.validator import validate_outgoing, validate_incoming
 from lightbus.exceptions import (
     UnknownApi,
@@ -94,6 +94,7 @@ class EventClient(BaseSubClient):
         listener: Callable,
         listener_name: str,
         options: dict = None,
+        on_error: OnError = OnError.SHUTDOWN,
     ):
         # TODO: Raise exception if we've already started all the listeners,
         #       because any subsequent listeners will not be setup (unless we fix that)
@@ -108,10 +109,16 @@ class EventClient(BaseSubClient):
             validate_event_or_rpc_name(api_name, "event", name)
 
         self._event_listeners[listener_name] = Listener(
-            callable=listener, options=options or {}, events=events, name=listener_name
+            callable=listener,
+            options=options or {},
+            events=events,
+            name=listener_name,
+            on_error=on_error,
         )
 
-    async def _on_message(self, event_message: EventMessage, listener: Callable, options: dict):
+    async def _on_message(
+        self, event_message: EventMessage, listener: Callable, options: dict, on_error: OnError
+    ):
 
         # TODO: Check events match those requested
         logger.info(
@@ -135,10 +142,18 @@ class EventClient(BaseSubClient):
         # Pass the event message as a positional argument,
         # thereby allowing listeners to have flexibility in the argument names.
         # (And therefore allowing listeners to use the `event` parameter themselves)
-        await queue_exception_checker(
-            run_user_provided_callable(listener, args=[event_message], kwargs=parameters),
-            self.error_queue,
-        )
+        if on_error == OnError.SHUTDOWN:
+            await queue_exception_checker(
+                run_user_provided_callable(listener, args=[event_message], kwargs=parameters),
+                self.error_queue,
+            )
+        elif on_error == on_error.ACKNOWLEDGE_AND_LOG:
+            try:
+                await listener(event_message, **parameters)
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                logger.exception(e)
 
         # Acknowledge the successfully processed message
         await self.producer.send(
@@ -172,6 +187,7 @@ class EventClient(BaseSubClient):
                         event_message=event_message,
                         listener=listener.callable,
                         options=listener.options,
+                        on_error=listener.on_error,
                     )
 
             # Start the consume_events() consumer running
@@ -198,6 +214,7 @@ class Listener(NamedTuple):
     options: dict
     events: List[Tuple[str, str]]
     name: str
+    on_error: OnError
 
 
 def sanity_check_listener(listener):

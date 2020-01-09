@@ -9,7 +9,6 @@ import pytest
 import lightbus
 import lightbus.path
 from lightbus.client.commands import SendResultCommand
-from lightbus.config.structure import OnError
 from lightbus.config import Config
 from lightbus.exceptions import LightbusTimeout, LightbusServerError
 from lightbus.transports.redis.event import StreamUse

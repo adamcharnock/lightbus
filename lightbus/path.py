@@ -1,5 +1,6 @@
 from typing import Optional, TYPE_CHECKING, Any, Generator
 
+from lightbus.client.utilities import OnError
 from lightbus.exceptions import InvalidBusPathConfiguration, InvalidParameters
 from lightbus.utilities.async_tools import block
 
@@ -104,7 +105,14 @@ class BusPath:
 
     # Events
 
-    def listen(self, listener, *, listener_name: str, bus_options: dict = None):
+    def listen(
+        self,
+        listener,
+        *,
+        listener_name: str,
+        bus_options: dict = None,
+        on_error: OnError = OnError.SHUTDOWN,
+    ):
         """Listen to events for this BusPath node"""
         return self.client.listen_for_event(
             api_name=self.api_name,
@@ -112,6 +120,7 @@ class BusPath:
             listener=listener,
             listener_name=listener_name,
             options=bus_options,
+            on_error=on_error,
         )
 
     def fire(self, *args, bus_options: dict = None, **kwargs):

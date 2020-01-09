@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+from enum import Enum
 from functools import wraps
 from traceback import extract_stack, StackSummary, format_exception, format_list
 
@@ -11,6 +12,12 @@ from lightbus.exceptions import InvalidName
 from lightbus.utilities.internal_queue import InternalQueue
 
 logger = logging.getLogger(__name__)
+
+
+class OnError(Enum):
+    SHUTDOWN = "shutdown"
+    ACKNOWLEDGE_AND_LOG = "log"
+
 
 ErrorQueueType = InternalQueue["Error"]
 

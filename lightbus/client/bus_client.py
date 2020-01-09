@@ -5,7 +5,7 @@ from functools import wraps
 from inspect import iscoroutinefunction
 from typing import List, Tuple, Coroutine, Union, Sequence, TYPE_CHECKING, Callable
 
-from lightbus.client.utilities import queue_exception_checker, Error, ErrorQueueType
+from lightbus.client.utilities import queue_exception_checker, Error, ErrorQueueType, OnError
 from lightbus.exceptions import (
     InvalidSchedule,
     BusAlreadyClosed,
@@ -369,7 +369,13 @@ class BusClient:
         )
 
     def listen_for_event(
-        self, api_name: str, name: str, listener: Callable, listener_name: str, options: dict = None
+        self,
+        api_name: str,
+        name: str,
+        listener: Callable,
+        listener_name: str,
+        options: dict = None,
+        on_error: OnError = OnError.SHUTDOWN,
     ):
         """Listen for a single event
 
@@ -385,6 +391,7 @@ class BusClient:
         listener: Callable,
         listener_name: str,
         options: dict = None,
+        on_error: OnError = OnError.SHUTDOWN,
     ):
         """Listen for a list of events
 
@@ -402,7 +409,11 @@ class BusClient:
         # WFTODO: Add on_error parameter
         # WFTODO: Add on_error tests
         return self.event_client.listen(
-            events=events, listener=listener, listener_name=listener_name, options=options
+            events=events,
+            listener=listener,
+            listener_name=listener_name,
+            options=options,
+            on_error=on_error,
         )
 
     def add_background_task(self, coroutine: Union[Coroutine, asyncio.Future]):

@@ -81,12 +81,6 @@ class LogLevelEnum(Enum):
     CRITICAL = "critical"
 
 
-class OnError(Enum):
-    IGNORE = "ignore"
-    STOP_LISTENER = "stop_listener"
-    SHUTDOWN = "shutdown"
-
-
 class ApiValidationConfig(NamedTuple):
     outgoing: bool = True
     incoming: bool = True

@@ -3,6 +3,7 @@ from typing import Type
 
 from lightbus.api import Api, Event
 from lightbus.client.commands import SendEventCommand
+from lightbus.client.utilities import OnError
 from lightbus.path import BusPath
 from lightbus.message import RpcMessage, EventMessage
 from lightbus.plugins.metrics import MetricsPlugin
@@ -129,7 +130,10 @@ async def test_execute_events(
     async with worker(dummy_bus):
         with queue_mocker(dummy_bus.client) as q:
             await dummy_bus.client.event_client._on_message(
-                event_message=event_message, listener=lambda *a, **kw: None, options={}
+                event_message=event_message,
+                listener=lambda *a, **kw: None,
+                options={},
+                on_error=OnError.SHUTDOWN,
             )
 
     # Arrange messages in a dict indexed by name (makes checking results)

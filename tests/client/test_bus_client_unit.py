@@ -8,8 +8,12 @@ import lightbus
 import lightbus.creation
 import lightbus.path
 from lightbus import EventMessage, BusPath
-from lightbus.client.commands import SendResultCommand, ConsumeEventsCommand
-from lightbus.client.utilities import Error
+from lightbus.client.commands import (
+    SendResultCommand,
+    ConsumeEventsCommand,
+    AcknowledgeEventCommand,
+)
+from lightbus.client.utilities import Error, OnError
 from lightbus.exceptions import (
     UnknownApi,
     EventNotFound,
@@ -301,7 +305,10 @@ async def test_exception_in_listener_shutdown(
 
     # Start the listener
     bus.client.listen_for_events(
-        events=[("my_api", "my_event")], listener=listener, listener_name="test"
+        events=[("my_api", "my_event")],
+        listener=listener,
+        listener_name="test",
+        on_error=OnError.SHUTDOWN,
     )
     with queue_mocker(bus.client) as q:
         async with worker(bus):
@@ -317,6 +324,45 @@ async def test_exception_in_listener_shutdown(
             assert bus.client.stop_loop.called
 
             # Note that this hasn't actually shut the bus down, we'll test that in test_server_shutdown
+
+
+@pytest.mark.asyncio
+async def test_exception_in_listener_log(
+    new_bus, worker: Worker, queue_mocker: Type[BusQueueMockerContext]
+):
+    """When on_error=OnError.ACKNOWLEDGE_AND_LOG, we should see an exception logged and
+    the messaged acked"""
+
+    class TestException(Exception):
+        pass
+
+    def listener(*args, **kwargs):
+        raise TestException()
+
+    bus: BusPath = new_bus()
+    bus.client.stop_loop = MagicMock()
+
+    # Start the listener
+    bus.client.listen_for_events(
+        events=[("my_api", "my_event")],
+        listener=listener,
+        listener_name="test",
+        on_error=OnError.ACKNOWLEDGE_AND_LOG,
+    )
+    with queue_mocker(bus.client) as q:
+        # Don't send event acks, we just want to ensure an attempt was made to ack
+        q.event.to_transport.blackhole(AcknowledgeEventCommand)
+
+        async with worker(bus):
+            consume_command = q.event.to_transport.commands.get(ConsumeEventsCommand)
+            consume_command.destination_queue.put_nowait(
+                EventMessage(api_name="my_api", event_name="my_event")
+            )
+            await asyncio.sleep(0.1)
+
+            assert not q.errors.put_items
+            assert not bus.client.stop_loop.called
+            assert q.event.to_transport.commands.get(AcknowledgeEventCommand)
 
 
 def test_add_background_task(dummy_bus: lightbus.path.BusPath, event_loop):
