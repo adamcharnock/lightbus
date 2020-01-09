@@ -170,6 +170,7 @@ class RpcResultClient(BaseSubClient):
         return result_message.result
 
     async def _call_rpc_local(self, api_name: str, name: str, kwargs: dict = frozendict()):
+        # WFTODO: Test lightbus doesn't die on error
         api = self.api_registry.get(api_name)
         validate_event_or_rpc_name(api_name, "rpc", name)
 

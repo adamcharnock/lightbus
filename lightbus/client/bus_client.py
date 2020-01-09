@@ -399,6 +399,8 @@ class BusClient:
         This can generally be the same as the function name of the `listener` callable, but
         it should not change once deployed.
         """
+        # WFTODO: Add on_error parameter
+        # WFTODO: Add on_error tests
         return self.event_client.listen(
             events=events, listener=listener, listener_name=listener_name, options=options
         )
