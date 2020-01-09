@@ -49,13 +49,21 @@ async def test_rpc_timeout(bus: lightbus.path.BusPath, dummy_api):
 
 
 @pytest.mark.asyncio
-async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api):
+async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api, worker: Worker, caplog):
     """Test what happens when the remote procedure throws an error"""
     bus.client.register_api(dummy_api)
+    caplog.set_level(logging.ERROR)
 
-    await bus.client.consume_rpcs(apis=[dummy_api])
-    with pytest.raises(LightbusServerError):
-        await bus.my.dummy.general_error.call_async()
+    bus.client.register_api(dummy_api)
+    async with worker(bus):
+        with pytest.raises(LightbusServerError):
+            await bus.my.dummy.general_error.call_async()
+
+        # Event loop not stopped, because RPCs should continue to be served
+        # even in the case of an error
+        assert not bus.client.stop_loop.called
+        assert len(caplog.records) == 1
+        assert "Oh no, there was some kind of error" in caplog.records[0].message
 
 
 @pytest.mark.asyncio
