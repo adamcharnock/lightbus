@@ -7,3 +7,4 @@ from .api import *
 from .schema import *
 from .creation import *
 from .client.utilities import OnError
+from .exceptions import *
