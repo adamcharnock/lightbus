@@ -34,7 +34,7 @@ def log_welcome_message(
     plugin_registry: PluginRegistry,
     config: Config,
 ):
-    """Show the server-startup welcome message
+    """Show the worker-startup welcome message
     """
     logger.info(
         LBullets(

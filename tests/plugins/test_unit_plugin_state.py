@@ -31,7 +31,7 @@ async def test_before_worker_start(dummy_bus: BusPath, loop, get_dummy_events):
     event_message = dummy_events[0]
 
     assert event_message.api_name == "internal.state"
-    assert event_message.event_name == "server_started"
+    assert event_message.event_name == "worker_started"
 
     assert event_message.kwargs["api_names"] == ["example.test"]
     assert event_message.kwargs["listening_for"] == ["example.test.my_event"]
@@ -61,7 +61,7 @@ async def test_ping(dummy_bus: BusPath, loop, get_dummy_events):
     event_message = dummy_events[0]
 
     assert event_message.api_name == "internal.state"
-    assert event_message.event_name == "server_ping"
+    assert event_message.event_name == "worker_ping"
 
     assert event_message.kwargs["api_names"] == ["example.test"]
     assert event_message.kwargs["listening_for"] == ["example.test.my_event"]
@@ -89,6 +89,6 @@ async def test_after_worker_stopped(dummy_bus: BusPath, loop, get_dummy_events):
     event_message = dummy_events[0]
 
     assert event_message.api_name == "internal.state"
-    assert event_message.event_name == "server_stopped"
+    assert event_message.event_name == "worker_stopped"
     assert event_message.kwargs["service_name"] == "foo"
     assert event_message.kwargs["process_name"] == "bar"

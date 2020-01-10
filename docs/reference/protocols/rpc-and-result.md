@@ -45,7 +45,7 @@ in the sent RPC message.
 See [message serialisation & encoding](#message-serialisation-encoding) for the format of 
 the returned RPC result.
 
-## Consuming incoming RPC calls (server)
+## Consuming incoming RPC calls (worker)
 
 RPCs are consumed as follows:
 
@@ -144,7 +144,7 @@ something custom here, but be aware that:
 
 Validation of outgoing parameters and incoming results is optional. However, 
 validation of outgoing parameters is recommended as sending of RPC messages which fail validation may 
-result in the message being rejected by the Lightbus server.  
+result in the message being rejected by the Lightbus worker.  
 
 This validation can be 
 performed using the using the schema available through the [schema protocol].

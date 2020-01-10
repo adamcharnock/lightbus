@@ -4,7 +4,7 @@ from lightbus.api import Api, Event
 class LightbusStateApi(Api):
     """The API for the state plugin"""
 
-    server_started = Event(
+    worker_started = Event(
         parameters=[
             "service_name",
             "process_name",
@@ -15,7 +15,7 @@ class LightbusStateApi(Api):
             "ping_interval",
         ]
     )
-    server_ping = Event(
+    worker_ping = Event(
         parameters=[
             "service_name",
             "process_name",
@@ -26,7 +26,7 @@ class LightbusStateApi(Api):
             "ping_interval",
         ]
     )
-    server_stopped = Event(parameters=["process_name", "timestamp"])
+    worker_stopped = Event(parameters=["process_name", "timestamp"])
 
     class Meta:
         name = "internal.state"

@@ -25,16 +25,16 @@ logger = logging.getLogger(__name__)
 
 
 class StatePlugin(LightbusPlugin):
-    """Fire events to the bus regarding the state of this Lightbus server
+    """Fire events to the bus regarding the state of this Lightbus worker
 
-    This plugin allows the state of each Lightbus server to be monitored
+    This plugin allows the state of each Lightbus worker to be monitored
     via the bus itself. This is provided by the `internal.state` API.
 
     This plugin provides coarse monitoring in the following form:
 
-      - Server started events
-      - Server ping events - indicate the server is alive. Sent every 60 seconds by default
-      - Server shutdown events
+      - Worker started events
+      - Worker ping events - indicate the worker is alive. Sent every 60 seconds by default
+      - Worker shutdown events
 
     See `lightbus.internal_apis.LightbusStateApi` for more details on the events provided.
 
@@ -74,8 +74,8 @@ class StatePlugin(LightbusPlugin):
         state_run_group = run_command_parser.add_argument_group(title="State plugin arguments")
         state_run_group.add_argument(
             "--ping-interval",
-            help="Interval between server ping events in seconds. Ping events alert the bus "
-            "that this Lightbus server is alive, and are used to update the lightbus admin interface.",
+            help="Interval between worker ping events in seconds. Ping events alert the bus "
+            "that this Lightbus worker is alive, and are used to update the lightbus admin interface.",
             metavar="SECONDS",
             type=int,
             default=self.ping_interval,
@@ -83,7 +83,7 @@ class StatePlugin(LightbusPlugin):
         state_run_group.add_argument(
             "--no-ping",
             help="Disable sending ping events on the internal.state API. This "
-            "may result in your server not appearing in the lightbus admin interface, "
+            "may result in your worker not appearing in the lightbus admin interface, "
             "but will reduce traffic and log volume.",
             action="store_true",
         )
@@ -98,7 +98,7 @@ class StatePlugin(LightbusPlugin):
         await event_transport.send_event(
             EventMessage(
                 api_name="internal.state",
-                event_name="server_started",
+                event_name="worker_started",
                 kwargs=self.get_state_kwargs(client),
             ),
             options={},
@@ -109,7 +109,7 @@ class StatePlugin(LightbusPlugin):
         else:
             logger.warning(
                 "Ping events have been disabled. This will reduce log volume and bus traffic, but "
-                "may result in this Lightbus server not appearing in the Lightbus admin interface."
+                "may result in this Lightbus worker not appearing in the Lightbus admin interface."
             )
 
     async def after_worker_stopped(self, *, client: "BusClient"):
@@ -117,7 +117,7 @@ class StatePlugin(LightbusPlugin):
         await event_transport.send_event(
             EventMessage(
                 api_name="internal.state",
-                event_name="server_stopped",
+                event_name="worker_stopped",
                 kwargs=dict(process_name=self.process_name, service_name=self.service_name),
             ),
             options={},
@@ -131,14 +131,14 @@ class StatePlugin(LightbusPlugin):
             await event_transport.send_event(
                 EventMessage(
                     api_name="internal.state",
-                    event_name="server_ping",
+                    event_name="worker_ping",
                     kwargs=self.get_state_kwargs(client),
                 ),
                 options={},
             )
 
     def get_state_kwargs(self, client: "BusClient"):
-        """Get the kwargs for a server_started or ping message"""
+        """Get the kwargs for a worker_started or ping message"""
         max_memory_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         event_listeners = chain(
             *[

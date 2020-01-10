@@ -3,8 +3,8 @@ Plugins provide hooks into Lightbus' inner workings.
 For example, the bundled [StatePlugin]
  hooks into the `before_worker_start` and `after_worker_stopped` hooks. 
 The plugin uses these hooks to bus events indicating the state of the worker. 
-A `internal.state.server_started` event indicates a worker has started, and a 
-`internal.state.server_stopped` event indicates a worker has stopped. Consuming 
+A `internal.state.worker_started` event indicates a worker has started, and a 
+`internal.state.worker_stopped` event indicates a worker has stopped. Consuming 
 these events will provide a picture of the current state of workers on the bus.
 
 ## Example plugin

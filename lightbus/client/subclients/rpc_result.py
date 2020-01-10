@@ -13,7 +13,7 @@ from lightbus.client.validator import validate_outgoing, validate_incoming
 from lightbus.exceptions import (
     NoApisToListenOn,
     SuddenDeathException,
-    LightbusServerError,
+    LightbusWorkerError,
     LightbusTimeout,
 )
 from lightbus.log import L, Bold
@@ -151,13 +151,13 @@ class RpcResultClient(BaseSubClient):
         else:
             logger.warning(
                 L(
-                    "⚡ Server error during remote call of {}. Took {}: {}",
+                    "⚡ Error during remote call of RPC {}. Took {}: {}",
                     Bold(rpc_message.canonical_name),
                     human_time(call_time),
                     result_message.result,
                 )
             )
-            raise LightbusServerError(
+            raise LightbusWorkerError(
                 "Error while calling {}: {}\nRemote stack trace:\n{}".format(
                     rpc_message.canonical_name, result_message.result, result_message.trace
                 )

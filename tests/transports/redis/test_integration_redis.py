@@ -10,7 +10,7 @@ import lightbus
 import lightbus.path
 from lightbus.client.commands import SendResultCommand
 from lightbus.config import Config
-from lightbus.exceptions import LightbusTimeout, LightbusServerError
+from lightbus.exceptions import LightbusTimeout, LightbusWorkerError
 from lightbus.transports.redis.event import StreamUse
 from lightbus.utilities.async_tools import cancel
 from lightbus.utilities.features import Feature
@@ -56,7 +56,7 @@ async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api, worker: Worker, 
 
     bus.client.register_api(dummy_api)
     async with worker(bus):
-        with pytest.raises(LightbusServerError):
+        with pytest.raises(LightbusWorkerError):
             await bus.my.dummy.general_error.call_async()
 
         # Event loop not stopped, because RPCs should continue to be served

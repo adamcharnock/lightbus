@@ -52,7 +52,7 @@ class MetricsPlugin(LightbusPlugin):
             procedure_name=rpc_message.procedure_name,
         )
 
-    # Server-side RPC hooks
+    # Worker-side RPC hooks
 
     async def before_rpc_execution(
         self, *, rpc_message: RpcMessage, client: "lightbus.client.BusClient"
@@ -98,7 +98,7 @@ class MetricsPlugin(LightbusPlugin):
             kwargs=deform_to_bus(event_message.kwargs),
         )
 
-    # Server-side event hooks
+    # Worker-side event hooks
 
     async def before_event_execution(
         self, *, event_message: EventMessage, client: "lightbus.client.BusClient"

@@ -40,7 +40,7 @@ def add_base_plugin(dummy_bus: BusPath):
     return do_add_base_plugin
 
 
-def test_server_start_stop(
+def test_worker_start_stop(
     mocker, track_called_hooks, dummy_bus: BusPath, add_base_plugin, dummy_api
 ):
     add_base_plugin()

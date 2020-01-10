@@ -664,11 +664,11 @@ class Worker:
         self.bus_factory = bus_factory
 
     async def start(self, bus: BusPath):
-        await bus.client.start_server()
+        await bus.client.start_worker()
 
     async def stop(self, bus: BusPath):
         try:
-            await bus.client.stop_server()
+            await bus.client.stop_worker()
         finally:
             # Stop server can raise any queued exceptions that had
             # not previously been raised, so make sure we

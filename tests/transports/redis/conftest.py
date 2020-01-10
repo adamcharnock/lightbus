@@ -56,7 +56,7 @@ async def bus(new_bus):
     yield bus
 
     try:
-        await bus.client.stop_server()
+        await bus.client.stop_worker()
         await bus.client.close_async()
     except BusAlreadyClosed:
         pass

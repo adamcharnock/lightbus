@@ -80,7 +80,7 @@ class PluginHookNotFound(LightbusException):
     pass
 
 
-class LightbusServerError(LightbusException):
+class LightbusWorkerError(LightbusException):
     pass
 
 

@@ -90,30 +90,32 @@ class BusClient:
         error_queue: ErrorQueueType,
         features: Sequence[Union[Feature, str]] = ALL_FEATURES,
     ):
+        self.config = config
+        self.schema = schema
+        self.plugin_registry = plugin_registry
+        self.hook_registry = hook_registry
+        self.event_client = event_client
+        self.rpc_result_client = rpc_result_client
+        self.api_registry = api_registry
         # The transport registry isn't actually used by the bus client, but it is
         # useful to have it available as a property on the client.
         self.transport_registry = transport_registry
         self.error_queue = error_queue
-        self.api_registry = api_registry
-        self.rpc_result_client = rpc_result_client
-        self.event_client = event_client
-        self._consumers = []  # RPC consumers
+
         # Coroutines added via schedule/every/add_background_task which should be started up
-        # once the server starts
+        # once the worker starts
         self._background_coroutines = []
         # Tasks produced from the values in self._background_coroutines. Will be closed on bus shutdown
         self._background_tasks = []
-        self.config = config
-        self.features: List[Union[Feature, str]] = ALL_FEATURES
-        self.set_features(list(features))
-        self.schema = None
+
+        self.features: List[Union[Feature, str]] = []
+        self.set_features(ALL_FEATURES)
+
         self.exit_code = 0
         self._closed = False
-        self._server_tasks = set()
+        self._worker_tasks = set()
         self._lazy_load_complete = False
-        self.schema = schema
-        self.plugin_registry = plugin_registry
-        self.hook_registry = hook_registry
+
         # Used to detect if the event monitor is running
         self._event_monitor_lock = asyncio.Lock()
 
@@ -146,35 +148,33 @@ class BusClient:
         return get_event_loop()
 
     def run_forever(self):
-        block(self.start_server())
+        block(self.start_worker())
 
         self._actually_run_forever()
         logger.debug("Main thread event loop was stopped")
 
-        # Stopping the server requires access to the worker,
-        # so do this first
-        logger.debug("Stopping server")
-        block(self.stop_server())
+        # Close down the worker
+        logger.debug("Stopping worker")
+        block(self.stop_worker())
 
-        # Here we close connections and shutdown the worker thread
+        # Close down the client
         logger.debug("Closing bus")
         block(self.close_async())
 
         return self.exit_code
 
-    async def start_server(self):
-        """Server startup procedure
+    async def start_worker(self):
+        """Worker startup procedure
         """
-        # TODO: Rename to start_worker()
         # Ensure an event loop exists
         get_event_loop()
 
-        self._server_tasks = set()
+        self._worker_tasks = set()
 
         # Start monitoring for errors on the error queue
         error_monitor_task = asyncio.ensure_future(self.error_monitor())
         self._error_monitor_task = error_monitor_task
-        self._server_tasks.add(self._error_monitor_task)
+        self._worker_tasks.add(self._error_monitor_task)
 
         # Features setup & logging
         if not self.api_registry.all() and Feature.RPCS in self.features:
@@ -207,7 +207,7 @@ class BusClient:
         for api in self.api_registry.all():
             await self.schema.add_api(api)
 
-        # We're running as a server now (e.g. lightbus run), so
+        # We're running as a worker now (e.g. lightbus run), so
         # do the lazy loading immediately
         await self.lazy_load_now()
 
@@ -238,15 +238,14 @@ class BusClient:
                 task = asyncio.ensure_future(queue_exception_checker(coroutine, self.error_queue))
                 self._background_tasks.append(task)
 
-        self._server_tasks.add(consume_rpc_task)
-        self._server_tasks.add(monitor_task)
+        self._worker_tasks.add(consume_rpc_task)
+        self._worker_tasks.add(monitor_task)
 
-    async def stop_server(self):
-        # TODO: Rename to stop_worker()
-        logger.debug("Stopping server")
+    async def stop_worker(self):
+        logger.debug("Stopping worker")
 
         # Cancel the tasks we created above
-        await cancel(*self._server_tasks)
+        await cancel(*self._worker_tasks)
 
         logger.info("Executing after_worker_stopped & on_stop hooks...")
         await self.hook_registry.execute("after_worker_stopped")
@@ -425,7 +424,7 @@ class BusClient:
         See lightbus.utilities.async_tools.check_for_exception() for details.
         """
 
-        # Store coroutine for starting once the server starts
+        # Store coroutine for starting once the worker starts
         self._background_coroutines.append(coroutine)
 
     # Utilities
@@ -654,7 +653,7 @@ class BusClient:
     def register_api(self, api: "Api"):
         """Register an API with this bus client
 
-        You must register APIs which you wish this server to fire events
+        You must register APIs which you wish to fire events
         on or handle RPCs calls for.
 
         See Also: https://lightbus.org/explanation/apis/
