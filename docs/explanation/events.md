@@ -65,29 +65,6 @@ bus.competitor_prices.changed.listen(
 )
 ```
 
----
-
-Note you cannot have two listeners with the same name for the same API.
-For example, this will **not** work (it will raise a `DuplicateListenerName` exception:
-
-```python3
-bus.competitor_prices.changed.listen(
-    send_price_alerts,
-    listener_name="price_listener",
-)
-
-### ERROR ##
-# This will raise a DuplicateListenerName exception because  
-# we have already created a listener named 'price_listener'
-# on the 'competitor_prices' API (above).
-bus.competitor_prices.changed.listen(
-    update_prices,
-    listener_name="price_listener",  # ⇠ DuplicateListenerName exception
-)
-```
-
-This restriction only applies to listeners within the same service.
-
 ## Process names
 
 Your [service-level configuration] also specifies a *process name*.

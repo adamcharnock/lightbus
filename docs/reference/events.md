@@ -114,6 +114,29 @@ Specifying `listener_name` is required in order to ensure
 each listeners receives all events it is due.
 See the [events explanation page] for further discussion.
 
+---
+
+You cannot have two listeners with the same name for the same API.
+For example, this will **not** work (it will raise a `DuplicateListenerName` exception:
+
+```python3
+bus.competitor_prices.changed.listen(
+    send_price_alerts,
+    listener_name="price_listener",
+)
+
+### ERROR ##
+# This will raise a DuplicateListenerName exception because  
+# we have already created a listener named 'price_listener'
+# on the 'competitor_prices' API (above).
+bus.competitor_prices.changed.listen(
+    update_prices,
+    listener_name="price_listener",  # ⇠ DuplicateListenerName exception
+)
+```
+
+This restriction only applies to listeners within the same service.
+
 ### Errors in event listeners
 
 By default, the Lightbus worker will exit if an event listener encounters an error. 
