@@ -117,7 +117,7 @@ class BusClient:
         self._lazy_load_complete = False
 
         # Used to detect if the event monitor is running
-        self._event_monitor_lock = asyncio.Lock()
+        self._error_monitor_lock = asyncio.Lock()
 
     def close(self):
         """Close the bus client
@@ -262,7 +262,7 @@ class BusClient:
         # If the error monitor is running then just return, as that means we are
         # running as a worker and so can rely on the error monitor to pickup the
         # errors which an happen in the various background tasks
-        if self._event_monitor_lock.locked():
+        if self._error_monitor_lock.locked():
             return
 
         # Check queue for errors
@@ -276,18 +276,33 @@ class BusClient:
             raise error.value
 
     async def error_monitor(self):
-        async with self._event_monitor_lock:
+        async with self._error_monitor_lock:
             error: Error = await self.error_queue.get()
             logger.debug(f"Bus client event monitor detected an error, will shutdown.")
-            logger.error(str(error))
-            if error.help:
-                logger.error(error.help)
 
-            self.exit_code = 1
+            if error.should_show_error():
+                logger.error(str(error))
+                if error.help:
+                    logger.error(error.help)
+            else:
+                logger.info(error.value)
+
+            self.exit_code = error.exit_code
             self.stop_loop()
 
     def stop_loop(self):
         self.loop.stop()
+
+    def request_shutdown(self):
+        self.error_queue.put_nowait(
+            Error(
+                type=KeyboardInterrupt,
+                value=KeyboardInterrupt("Shutdown requested"),
+                traceback=None,
+                invoking_stack=None,
+                exit_code=0,
+            )
+        )
 
     async def lazy_load_now(self):
         """Perform lazy tasks immediately

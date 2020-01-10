@@ -6,7 +6,7 @@ from functools import wraps
 from traceback import extract_stack, StackSummary, format_exception, format_list
 
 from types import TracebackType
-from typing import Coroutine, NamedTuple, Type, TYPE_CHECKING
+from typing import Coroutine, NamedTuple, Type, TYPE_CHECKING, Optional
 
 from lightbus.exceptions import InvalidName
 from lightbus.utilities.internal_queue import InternalQueue
@@ -38,27 +38,38 @@ class Error(NamedTuple):
     for the location where the coroutine was created.
     """
 
-    type: Type[Exception]
-    value: Exception
-    traceback: TracebackType
-    invoking_stack: StackSummary
+    type: Type[BaseException]
+    value: BaseException
+    traceback: Optional[TracebackType]
+    invoking_stack: Optional[StackSummary]
     help: str = ""
+    exit_code: int = 1
 
     @property
     def invoking_traceback_str(self) -> str:
-        return "".join(format_list(self.invoking_stack)).strip()
+        if self.invoking_stack:
+            return "".join(format_list(self.invoking_stack)).strip()
+        else:
+            return ""
 
     @property
     def exception_str(self) -> str:
-        return "".join(format_exception(self.type, self.value, self.traceback)).strip()
+        if self.type and self.value and self.traceback:
+            return "".join(format_exception(self.type, self.value, self.traceback)).strip()
+        else:
+            return ""
 
     def __str__(self):
         return (
             f"A coroutine raised an error, it was invoked at:\n\n"
-            f"{self.invoking_traceback_str}\n\n"
+            f"{self.invoking_traceback_str or 'Not available'}\n\n"
             f"The exception was:\n\n"
-            f"{self.exception_str}"
+            f"{self.exception_str or 'Not available'}"
         )
+
+    def should_show_error(self):
+        """Should this error be logged out?"""
+        return self.exit_code != 0
 
 
 def validate_event_or_rpc_name(api_name: str, type_: str, name: str):

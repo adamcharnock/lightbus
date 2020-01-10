@@ -106,8 +106,7 @@ class Command:
                 asyncio.get_event_loop().remove_signal_handler(signal_)
 
             logger.debug("Caught signal. Stopping Lightbus worker")
-            loop = asyncio.get_event_loop()
-            loop.stop()
+            bus.client.request_shutdown()
 
         for signal_ in restart_signals:
             asyncio.get_event_loop().add_signal_handler(
