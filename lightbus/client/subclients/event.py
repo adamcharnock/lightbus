@@ -111,7 +111,6 @@ class EventClient(BaseSubClient):
         sanity_check_listener(listener)
 
         if listener_name in self._event_listeners:
-            # TODO: Test
             raise DuplicateListenerName(f"Listener with name {listener_name} already registered")
 
         for api_name, name in events:

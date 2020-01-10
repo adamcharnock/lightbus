@@ -22,6 +22,7 @@ from lightbus.exceptions import (
     InvalidEventListener,
     TransportNotFound,
     InvalidName,
+    DuplicateListenerName,
 )
 from lightbus.transports.registry import SchemaTransportPoolType
 from lightbus.utilities.testing import BusQueueMockerContext
@@ -156,6 +157,18 @@ async def test_consume_rpcs_with_transport_error(
     assert result_message.error
     assert result_message.result
     assert result_message.trace
+
+
+@pytest.mark.asyncio
+async def test_listen_duplicate_listener_name(dummy_bus: lightbus.path.BusPath):
+    dummy_bus.client.listen_for_event(
+        "my.dummy", "my_event", listener=lambda *a: None, listener_name="test"
+    )
+
+    with pytest.raises(DuplicateListenerName):
+        dummy_bus.client.listen_for_event(
+            "my.dummy", "my_event", listener=lambda *a: None, listener_name="test"
+        )
 
 
 @pytest.mark.asyncio
