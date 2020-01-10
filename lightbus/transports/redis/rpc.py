@@ -162,14 +162,21 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
         with await self.connection_manager() as redis:
             try:
-                stream, data = await redis.blpop(*queue_keys)
-            except RuntimeError:
-                # For some reason aio-redis likes to eat the CancelledError and
-                # turn it into a Runtime error:
-                # https://github.com/aio-libs/aioredis/blob/9f5964/aioredis/connection.py#L184
-                raise asyncio.CancelledError(
-                    "aio-redis task was cancelled and decided it should be a RuntimeError"
-                )
+                try:
+                    stream, data = await redis.blpop(*queue_keys)
+                except RuntimeError:
+                    # For some reason aio-redis likes to eat the CancelledError and
+                    # turn it into a Runtime error:
+                    # https://github.com/aio-libs/aioredis/blob/9f5964/aioredis/connection.py#L184
+                    raise asyncio.CancelledError(
+                        "aio-redis task was cancelled and decided it should be a RuntimeError"
+                    )
+            except asyncio.CancelledError:
+                # We need to manually close the connection here otherwise the aioredis
+                # pool will emit warnings saying that this connection still has pending
+                # commands (i.e. the above blocking pop)
+                redis.close()
+                raise
 
             stream = decode(stream, "utf8")
             rpc_message = self.deserializer(data)

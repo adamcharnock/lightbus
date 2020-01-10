@@ -350,15 +350,22 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             while True:
                 # Fetch some messages.
                 # This will block until there are some messages available
-                stream_messages = await redis.xread_group(
-                    group_name=consumer_group,
-                    consumer_name=self.consumer_name,
-                    streams=list(streams.keys()),
-                    # Using ID '>' indicates we only want new messages which have not
-                    # been passed to other consumers in this group
-                    latest_ids=[">"] * len(streams),
-                    count=self.batch_size,
-                )
+                try:
+                    stream_messages = await redis.xread_group(
+                        group_name=consumer_group,
+                        consumer_name=self.consumer_name,
+                        streams=list(streams.keys()),
+                        # Using ID '>' indicates we only want new messages which have not
+                        # been passed to other consumers in this group
+                        latest_ids=[">"] * len(streams),
+                        count=self.batch_size,
+                    )
+                except asyncio.CancelledError:
+                    # We need to manually close the connection here otherwise the aioredis
+                    # pool will emit warnings saying that this connection still has pending
+                    # commands (i.e. the above blocking pop)
+                    redis.close()
+                    raise
 
                 # Handle the messages we have received
                 event_messages = []
