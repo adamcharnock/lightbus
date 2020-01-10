@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 import logging
-from typing import List, Tuple, Callable, Dict, NamedTuple
+from typing import List, Tuple, Callable, NamedTuple
 
 from lightbus.schema.schema import Parameter
 from lightbus.message import EventMessage
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 class EventClient(BaseSubClient):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._event_listeners: Dict[str, Listener] = {}
+        self._event_listeners: List[Listener] = []
         self._event_listener_tasks = set()
         self._listeners_started = False
 
@@ -110,19 +110,35 @@ class EventClient(BaseSubClient):
 
         sanity_check_listener(listener)
 
-        if listener_name in self._event_listeners:
-            raise DuplicateListenerName(f"Listener with name {listener_name} already registered")
+        for listener_api_name, _ in events:
+            duplicate_listener = self.get_event_listener(listener_api_name, listener_name)
+            if duplicate_listener:
+                raise DuplicateListenerName(
+                    f"A listener with name '{listener_name}' is already registered for API '{listener_api_name}'. "
+                    f"You cannot have multiple listeners with the same name for a given API. Rename one of your "
+                    f"listeners to resolve this problem."
+                )
 
         for api_name, name in events:
             validate_event_or_rpc_name(api_name, "event", name)
 
-        self._event_listeners[listener_name] = Listener(
-            callable=listener,
-            options=options or {},
-            events=events,
-            name=listener_name,
-            on_error=on_error,
+        self._event_listeners.append(
+            Listener(
+                callable=listener,
+                options=options or {},
+                events=events,
+                name=listener_name,
+                on_error=on_error,
+            )
         )
+
+    def get_event_listener(self, api_name: str, listener_name: str):
+        for listener in self._event_listeners:
+            if listener.name == listener_name:
+                for listener_api_name, _ in listener.events:
+                    if listener_api_name == api_name:
+                        return listener
+        return None
 
     async def _on_message(
         self, event_message: EventMessage, listener: Callable, options: dict, on_error: OnError
@@ -195,7 +211,7 @@ class EventClient(BaseSubClient):
     async def start_registered_listeners(self):
         """Start all listeners which have been previously registered via listen()"""
         self._listeners_started = True
-        for listener in self._event_listeners.values():
+        for listener in self._event_listeners:
             await self._start_listener(listener)
 
     async def _start_listener(self, listener: "Listener"):

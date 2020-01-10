@@ -160,7 +160,18 @@ async def test_consume_rpcs_with_transport_error(
 
 
 @pytest.mark.asyncio
-async def test_listen_duplicate_listener_name(dummy_bus: lightbus.path.BusPath):
+async def test_listen_duplicate_listener_name_different_api(dummy_bus: lightbus.path.BusPath):
+    dummy_bus.client.listen_for_event(
+        "my.foo", "my_event", listener=lambda *a: None, listener_name="test"
+    )
+    dummy_bus.client.listen_for_event(
+        "my.bar", "my_event", listener=lambda *a: None, listener_name="test"
+    )
+    assert len(dummy_bus.client.event_client._event_listeners) == 2
+
+
+@pytest.mark.asyncio
+async def test_listen_duplicate_listener_name_same_api(dummy_bus: lightbus.path.BusPath):
     dummy_bus.client.listen_for_event(
         "my.dummy", "my_event", listener=lambda *a: None, listener_name="test"
     )
