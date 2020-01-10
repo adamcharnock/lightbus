@@ -126,8 +126,6 @@ class RpcResultClient(BaseSubClient):
             if isinstance(result, Exception):
                 raise result
         except asyncio.TimeoutError:
-            # TODO: Remove RPC from queue. Perhaps add a RpcBackend.cancel() method. Optional,
-            #       as not all backends will support it. No point processing calls which have timed out.
             raise LightbusTimeout(
                 f"Timeout when calling RPC {rpc_message.canonical_name} after waiting for {human_time(call_time)}. "
                 f"It is possible no Lightbus process is serving this API, or perhaps it is taking "
