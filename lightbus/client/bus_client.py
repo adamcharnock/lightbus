@@ -230,7 +230,7 @@ class BusClient:
 
         # Start off any registered event listeners
         if Feature.EVENTS in self.features:
-            await self.event_client.start_listeners()
+            await self.event_client.start_registered_listeners()
 
         # Start off any background tasks
         if Feature.TASKS in self.features:

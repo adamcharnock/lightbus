@@ -230,3 +230,11 @@ class CannotProxySynchronousMethod(PoolProxyError):
 
 class AsyncFunctionOrMethodRequired(LightbusException):
     pass
+
+
+class ListenersAlreadyStarted(LightbusException):
+    pass
+
+
+class DuplicateListenerName(LightbusException):
+    pass

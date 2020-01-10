@@ -13,6 +13,8 @@ from lightbus.exceptions import (
     EventNotFound,
     InvalidEventArguments,
     InvalidEventListener,
+    ListenersAlreadyStarted,
+    DuplicateListenerName,
 )
 from lightbus.log import L, Bold
 from lightbus.client.commands import (
@@ -35,6 +37,7 @@ class EventClient(BaseSubClient):
         super().__init__(**kwargs)
         self._event_listeners: Dict[str, Listener] = {}
         self._event_listener_tasks = set()
+        self._listeners_started = False
 
     async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
         kwargs = kwargs or {}
@@ -96,14 +99,20 @@ class EventClient(BaseSubClient):
         options: dict = None,
         on_error: OnError = OnError.SHUTDOWN,
     ):
-        # TODO: Raise exception if we've already started all the listeners,
-        #       because any subsequent listeners will not be setup (unless we fix that)
+        if self._listeners_started:
+            # We are actually technically able to support starting listeners after worker
+            # startup, but it seems like it is a bad idea and a bit of an edge case.
+            # We may revisit this if sufficient demand arises.
+            raise ListenersAlreadyStarted(
+                "You are trying to register a new listener after the worker has started running. "
+                "Listeners should be setup in your @bus.client.on_start() hook, in your bus.py file."
+            )
+
         sanity_check_listener(listener)
 
         if listener_name in self._event_listeners:
-            # TODO: Custom exception class
             # TODO: Test
-            raise Exception(f"Listener with name {listener_name} already registered")
+            raise DuplicateListenerName(f"Listener with name {listener_name} already registered")
 
         for api_name, name in events:
             validate_event_or_rpc_name(api_name, "event", name)
@@ -184,39 +193,39 @@ class EventClient(BaseSubClient):
     async def handle(self, command):
         raise NotImplementedError(f"Did not recognise command {command.__class__.__name__}")
 
-    async def start_listeners(self):
-        async def start_listener(listener: Listener):
-            # Setting the maxsize to 1 ensures the transport cannot load
-            # messages faster than we can consume them
-            queue: InternalQueue[EventMessage] = InternalQueue(maxsize=1)
+    async def start_registered_listeners(self):
+        """Start all listeners which have been previously registered via listen()"""
+        self._listeners_started = True
+        for listener in self._event_listeners.values():
+            await self._start_listener(listener)
 
-            async def consume_events():
-                while True:
-                    event_message = await queue.get()
-                    await self._on_message(
-                        event_message=event_message,
-                        listener=listener.callable,
-                        options=listener.options,
-                        on_error=listener.on_error,
-                    )
+    async def _start_listener(self, listener: "Listener"):
+        # Setting the maxsize to 1 ensures the transport cannot load
+        # messages faster than we can consume them
+        queue: InternalQueue[EventMessage] = InternalQueue(maxsize=1)
 
-            # Start the consume_events() consumer running
-            task = asyncio.ensure_future(
-                queue_exception_checker(consume_events(), self.error_queue)
-            )
-            self._event_listener_tasks.add(task)
-
-            await self.producer.send(
-                ConsumeEventsCommand(
-                    events=listener.events,
-                    destination_queue=queue,
-                    listener_name=listener.name,
+        async def consume_events():
+            while True:
+                event_message = await queue.get()
+                await self._on_message(
+                    event_message=event_message,
+                    listener=listener.callable,
                     options=listener.options,
+                    on_error=listener.on_error,
                 )
-            ).wait()
 
-        for listener_ in self._event_listeners.values():
-            await start_listener(listener_)
+        # Start the consume_events() consumer running
+        task = asyncio.ensure_future(queue_exception_checker(consume_events(), self.error_queue))
+        self._event_listener_tasks.add(task)
+
+        await self.producer.send(
+            ConsumeEventsCommand(
+                events=listener.events,
+                destination_queue=queue,
+                listener_name=listener.name,
+                options=listener.options,
+            )
+        ).wait()
 
 
 class Listener(NamedTuple):
