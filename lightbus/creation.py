@@ -105,8 +105,6 @@ def create(
         config
     )
 
-    # WFTODO: Split out the Schema from the SchemaTransport and connect via a queue
-    #       just like everything else.
     schema = Schema(
         schema_transport=transport_registry.get_schema_transport(),
         max_age_seconds=config.bus().schema.ttl,

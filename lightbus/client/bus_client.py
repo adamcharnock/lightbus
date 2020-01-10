@@ -134,9 +134,6 @@ class BusClient:
 
         await self.event_client.close()
         await self.rpc_result_client.close()
-        # WFTODO: Close other sub-clients once we implement them
-
-        # WFTODO: Implement schema client
         await self.schema.close()
 
         while not self.error_queue.empty():
