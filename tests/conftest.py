@@ -790,7 +790,7 @@ class StandaloneRedisServer:
             self.p.kill()
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def _docker_available():
     docker_cmd = subprocess.run(
         ["docker", "stats", "--no-stream"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
