@@ -11,6 +11,7 @@ import signal
 import threading
 import time
 from contextlib import asynccontextmanager
+from functools import lru_cache
 from pathlib import Path
 from queue import Queue
 from random import randint
@@ -773,6 +774,9 @@ class StandaloneRedisServer:
         assert False, "Redis failed to start in a timely fashion"
 
     def stop(self):
+        if not self.p:
+            return
+
         try:
             self.p.send_signal(signal.SIGINT)
         except ProcessLookupError:
@@ -786,8 +790,19 @@ class StandaloneRedisServer:
             self.p.kill()
 
 
+@lru_cache
+def _docker_available():
+    docker_cmd = subprocess.run(
+        ["docker", "stats", "--no-stream"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    return docker_cmd.returncode == 0
+
+
 @pytest.yield_fixture
 def standalone_redis_server():
+    if not _docker_available():
+        raise pytest.skip("Docker not available")
+
     server = StandaloneRedisServer()
     yield server
     server.stop()
