@@ -739,3 +739,55 @@ def new_bus(loop, redis_server_url):
         return bus
     return _new_bus
 # fmt: on
+
+
+class StandaloneRedisServer:
+    def __init__(self):
+        self.port = randint(16384, 65535)
+        self.p: Optional[subprocess.Popen] = None
+        self.args = ["docker", "run", "--rm", "-p", f"{self.port}:6379", "redis:5"]
+
+    def start(self):
+        self.p = subprocess.Popen(
+            self.args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf8"
+        )
+        time.sleep(0.1)
+
+        for _ in range(0, 50):
+            self.p.poll()
+            if self.p.returncode is not None:
+                print(self.p.stdout.read())
+                print(self.p.stderr.read())
+                assert (
+                    False
+                ), f"Redis docker image exited immediately with status {self.p.returncode}"
+
+            time.sleep(0.1)
+            stdout = self.p.stdout.readline()
+            if "Ready to accept connections" in stdout:
+                return
+
+        self.stop()
+        print(self.p.stdout.read())
+        print(self.p.stderr.read())
+        assert False, "Redis failed to start in a timely fashion"
+
+    def stop(self):
+        try:
+            self.p.send_signal(signal.SIGINT)
+        except ProcessLookupError:
+            # Process already gone
+            pass
+
+        try:
+            self.p.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            print(f"    WARNING: Shutdown timed out. Killing")
+            self.p.kill()
+
+
+@pytest.yield_fixture
+def standalone_redis_server():
+    server = StandaloneRedisServer()
+    yield server
+    server.stop()

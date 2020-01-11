@@ -1,12 +1,14 @@
 import asyncio
 import json
 
+import aioredis
 import pytest
 
 from lightbus import RedisRpcTransport
 from lightbus.message import RpcMessage
 from lightbus.serializers import BlobMessageSerializer, BlobMessageDeserializer
 from lightbus.utilities.async_tools import cancel
+from tests.conftest import StandaloneRedisServer
 
 pytestmark = pytest.mark.unit
 
@@ -198,7 +200,83 @@ async def test_reconnect_upon_call_rpc(redis_rpc_transport, redis_client):
 
 
 @pytest.mark.asyncio
-async def test_reconnect_upon_consume_rpcs(redis_client, redis_rpc_transport, dummy_api):
+async def test_reconnect_consume_rpcs_dead_server(
+    standalone_redis_server: StandaloneRedisServer, create_redis_pool, dummy_api
+):
+    """Start a redis server up then turn it off and on again during RPC consumption.
+
+    RPCs should be consumed as normal once the redis server returns
+    """
+    redis_url = f"redis://127.0.0.1:{standalone_redis_server.port}/0"
+    standalone_redis_server.start()
+
+    redis_rpc_transport = RedisRpcTransport(
+        redis_pool=await create_redis_pool(address=redis_url), consumption_restart_delay=0.0001
+    )
+
+    async def co_enqeue():
+        redis_client = await aioredis.create_redis(address=redis_url)
+        try:
+            while True:
+                await asyncio.sleep(0.01)
+                await redis_client.set("rpc_expiry_key:123abc", 1)
+                await redis_client.rpush(
+                    "my.dummy:rpc_queue",
+                    value=json.dumps(
+                        {
+                            "metadata": {
+                                "id": "123abc",
+                                "api_name": "my.api",
+                                "procedure_name": "my_proc",
+                                "return_path": "abc",
+                            },
+                            "kwargs": {"field": "value"},
+                        }
+                    ),
+                )
+        finally:
+            redis_client.close()
+
+    total_messages = 0
+
+    async def co_consume():
+        nonlocal total_messages
+        while True:
+            messages = await redis_rpc_transport.consume_rpcs(apis=[dummy_api])
+            total_messages += len(messages)
+
+    # Starting enqeuing and consuming rpc calls
+    enqueue_task = asyncio.ensure_future(co_enqeue())
+    consume_task = asyncio.ensure_future(co_consume())
+
+    await asyncio.sleep(0.2)
+    assert total_messages > 0
+
+    # Stop enqeuing and stop the server
+    await cancel(enqueue_task)
+    standalone_redis_server.stop()
+
+    # We don't get any more messages
+    total_messages = 0
+    await asyncio.sleep(0.2)
+    assert total_messages == 0
+
+    try:
+        # Now start the server again, and start emitting messages
+        standalone_redis_server.start()
+        enqueue_task = asyncio.ensure_future(co_enqeue())
+        total_messages = 0
+        await asyncio.sleep(0.2)
+        # ... the consumer has auto-reconnected and received some messages
+        assert total_messages > 0
+    finally:
+        await cancel(enqueue_task, consume_task)
+
+
+@pytest.mark.asyncio
+async def test_reconnect_consume_rpcs_connection_dropped(
+    redis_client, redis_rpc_transport, dummy_api
+):
     redis_rpc_transport.consumption_restart_delay = 0.0001
 
     async def co_enqeue():

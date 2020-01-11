@@ -3,7 +3,7 @@ import logging
 import time
 from typing import Mapping, Sequence, TYPE_CHECKING
 
-from aioredis import PipelineError, ConnectionClosedError
+from aioredis import PipelineError, ConnectionClosedError, ReplyError
 from aioredis.util import decode
 
 from lightbus.transports.base import RpcTransport, RpcMessage, Api
@@ -148,6 +148,21 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
                     f"in {self.consumption_restart_delay} seconds..."
                 )
                 await asyncio.sleep(self.consumption_restart_delay)
+            except ConnectionRefusedError:
+                logger.warning(
+                    f"Redis connection refused while consuming RPCs, retrying "
+                    f"in {self.consumption_restart_delay} seconds..."
+                )
+                await asyncio.sleep(self.consumption_restart_delay)
+            except ReplyError as e:
+                if "LOADING" in str(e):
+                    logger.warning(
+                        f"Redis server is still loading, retrying "
+                        f"in {self.consumption_restart_delay} seconds..."
+                    )
+                    await asyncio.sleep(self.consumption_restart_delay)
+                else:
+                    raise
 
     async def _consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         # Get the name of each list queue

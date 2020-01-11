@@ -171,7 +171,7 @@ class RedisTransportMixin:
                 if internal_pool.size == internal_pool.maxsize:
                     logging.critical(
                         "Redis pool has reached maximum size. It is possible that this will recover normally, "
-                        "but may be you have more event listeners than connections available to the Redis pool. "
+                        "you may have more event listeners than connections available to the Redis pool. "
                         "You can increase the redis pool size by specifying the `maxsize` "
                         "parameter in each of the Redis transport configuration sections. Current maxsize is: {}"
                         "".format(self.connection_parameters.get("maxsize"))

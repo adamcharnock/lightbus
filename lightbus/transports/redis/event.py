@@ -239,6 +239,21 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         f"in {self.consumption_restart_delay} seconds..."
                     )
                     await asyncio.sleep(self.consumption_restart_delay)
+                except ConnectionRefusedError:
+                    logger.warning(
+                        f"Redis connection refused while consuming events, retrying "
+                        f"in {self.consumption_restart_delay} seconds..."
+                    )
+                    await asyncio.sleep(self.consumption_restart_delay)
+                except ReplyError as e:
+                    if "LOADING" in str(e):
+                        logger.warning(
+                            f"Redis server is still loading, retrying "
+                            f"in {self.consumption_restart_delay} seconds..."
+                        )
+                        await asyncio.sleep(self.consumption_restart_delay)
+                    else:
+                        raise
 
         async def reclaim_loop():
             """
