@@ -10,7 +10,10 @@ from lightbus.transports.base import RpcTransport, RpcMessage, Api
 from lightbus.exceptions import TransportIsClosed
 from lightbus.log import LBullets, L, Bold
 from lightbus.serializers import BlobMessageSerializer, BlobMessageDeserializer
-from lightbus.transports.redis.utilities import RedisTransportMixin
+from lightbus.transports.redis.utilities import (
+    RedisTransportMixin,
+    retry_on_redis_connection_failure,
+)
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
@@ -133,36 +136,16 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
     async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         """Consume RPCs for the given APIs"""
-        while True:
-            if self._closed:
-                # Triggered during shutdown
-                raise TransportIsClosed("Transport is closed. Cannot consume RPCs")
+        if self._closed:
+            # Triggered during shutdown
+            raise TransportIsClosed("Transport is closed. Cannot consume RPCs")
 
-            try:
-                return await self._consume_rpcs(apis)
-            except (ConnectionClosedError, ConnectionResetError):
-                # ConnectionClosedError is from aioredis. However, sometimes the connection
-                # can die outside of aioredis, in which case we get a builtin ConnectionResetError.
-                logger.warning(
-                    f"Redis connection lost while consuming RPCs, reconnecting "
-                    f"in {self.consumption_restart_delay} seconds..."
-                )
-                await asyncio.sleep(self.consumption_restart_delay)
-            except ConnectionRefusedError:
-                logger.warning(
-                    f"Redis connection refused while consuming RPCs, retrying "
-                    f"in {self.consumption_restart_delay} seconds..."
-                )
-                await asyncio.sleep(self.consumption_restart_delay)
-            except ReplyError as e:
-                if "LOADING" in str(e):
-                    logger.warning(
-                        f"Redis server is still loading, retrying "
-                        f"in {self.consumption_restart_delay} seconds..."
-                    )
-                    await asyncio.sleep(self.consumption_restart_delay)
-                else:
-                    raise
+        return await retry_on_redis_connection_failure(
+            fn=self._consume_rpcs,
+            args=[apis],
+            retry_delay=self.consumption_restart_delay,
+            action="consuming RPCs",
+        )
 
     async def _consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         # Get the name of each list queue

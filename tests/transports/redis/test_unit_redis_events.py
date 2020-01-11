@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from itertools import chain
 
+import aioredis
 import pytest
 
 from lightbus.config import Config
@@ -16,6 +17,7 @@ from lightbus.transports.redis.event import StreamUse
 from lightbus.transports.redis.utilities import RedisEventMessage
 from lightbus import RedisEventTransport
 from lightbus.utilities.async_tools import cancel
+from tests.conftest import StandaloneRedisServer
 
 pytestmark = pytest.mark.unit
 
@@ -741,7 +743,7 @@ async def test_reconnect_upon_send_event(
 
 
 @pytest.mark.asyncio
-async def test_reconnect_while_listening(
+async def test_reconnect_while_listening_connection_dropped(
     redis_event_transport: RedisEventTransport, redis_client, error_queue
 ):
     redis_event_transport.consumption_restart_delay = 0.0001
@@ -785,6 +787,81 @@ async def test_reconnect_while_listening(
 
     await cancel(enqueue_task, consume_task)
     assert total_messages > 0
+
+
+@pytest.mark.asyncio
+async def test_reconnect_while_listening_dead_server(
+    standalone_redis_server: StandaloneRedisServer, create_redis_pool, dummy_api, error_queue
+):
+    redis_url = f"redis://127.0.0.1:{standalone_redis_server.port}/0"
+    standalone_redis_server.start()
+
+    redis_event_transport = RedisEventTransport(
+        redis_pool=await create_redis_pool(address=redis_url),
+        consumption_restart_delay=0.0001,
+        service_name="test",
+        consumer_name="test",
+        stream_use=StreamUse.PER_EVENT,
+    )
+
+    async def co_enqeue():
+        redis_client = await aioredis.create_redis(address=redis_url)
+        try:
+            while True:
+                await asyncio.sleep(0.1)
+                logging.info("test_reconnect_while_listening: Sending message")
+                await redis_client.xadd(
+                    "my.dummy.my_event:stream",
+                    fields={
+                        b"api_name": b"my.dummy",
+                        b"event_name": b"my_event",
+                        b"id": b"123",
+                        b"version": b"1",
+                        b":field": b'"value"',
+                    },
+                )
+        finally:
+            redis_client.close()
+
+    total_messages = 0
+
+    async def co_consume():
+        nonlocal total_messages
+
+        consumer = redis_event_transport.consume(
+            [("my.dummy", "my_event")], "test_listener", error_queue=error_queue
+        )
+        async for messages_ in consumer:
+            total_messages += len(messages_)
+            await redis_event_transport.acknowledge(*messages_)
+            logging.info(f"Received {len(messages_)} messages. Total now at {total_messages}")
+
+    # Starting enqeuing and consuming events
+    enqueue_task = asyncio.ensure_future(co_enqeue())
+    consume_task = asyncio.ensure_future(co_consume())
+
+    await asyncio.sleep(0.2)
+    assert total_messages > 0
+
+    # Stop enqeuing and stop the server
+    await cancel(enqueue_task)
+    standalone_redis_server.stop()
+
+    # We don't get any more messages
+    total_messages = 0
+    await asyncio.sleep(0.2)
+    assert total_messages == 0
+
+    try:
+        # Now start the server again, and start emitting messages
+        standalone_redis_server.start()
+        enqueue_task = asyncio.ensure_future(co_enqeue())
+        total_messages = 0
+        await asyncio.sleep(0.2)
+        # ... the consumer has auto-reconnected and received some messages
+        assert total_messages > 0
+    finally:
+        await cancel(enqueue_task, consume_task)
 
 
 @pytest.mark.asyncio

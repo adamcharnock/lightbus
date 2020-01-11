@@ -12,6 +12,7 @@
     * Renamed `LightbusServerError` to `LightbusWorkerError`
     * Renamed `BusClient.start_server()` to `BusClient.start_worker()`
     * Renamed `BusClient.stop_server()` to `BusClient.stop_worker()`
+* More cases now handled in Redis connection retrying (connection refused and redis in LOADING state)
 
 ## 0.9.1 - Unreleased
 

@@ -30,6 +30,7 @@ from lightbus.transports.redis.utilities import (
     datetime_to_redis_steam_id,
     redis_stream_id_add_one,
     redis_stream_id_subtract_one,
+    retry_on_redis_connection_failure,
 )
 from lightbus.utilities.async_tools import cancel
 from lightbus.utilities.internal_queue import InternalQueue
@@ -223,37 +224,16 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         async def consume_loop():
             """Regular event consuming. See _fetch_new_messages()"""
-            while True:
-                try:
-                    async for messages in self._fetch_new_messages(
-                        streams, consumer_group, expected_events, forever
-                    ):
-                        await queue.put(messages)
-                        # Wait for the queue to empty before getting trying to get another message
-                        await queue.join()
-                except (ConnectionClosedError, ConnectionResetError):
-                    # ConnectionClosedError is from aioredis. However, sometimes the connection
-                    # can die outside of aioredis, in which case we get a builtin ConnectionResetError.
-                    logger.warning(
-                        f"Redis connection lost while consuming events, reconnecting "
-                        f"in {self.consumption_restart_delay} seconds..."
-                    )
-                    await asyncio.sleep(self.consumption_restart_delay)
-                except ConnectionRefusedError:
-                    logger.warning(
-                        f"Redis connection refused while consuming events, retrying "
-                        f"in {self.consumption_restart_delay} seconds..."
-                    )
-                    await asyncio.sleep(self.consumption_restart_delay)
-                except ReplyError as e:
-                    if "LOADING" in str(e):
-                        logger.warning(
-                            f"Redis server is still loading, retrying "
-                            f"in {self.consumption_restart_delay} seconds..."
-                        )
-                        await asyncio.sleep(self.consumption_restart_delay)
-                    else:
-                        raise
+            async for messages in self._fetch_new_messages(
+                streams, consumer_group, expected_events, forever
+            ):
+                await queue.put(messages)
+                # Wait for the queue to empty before getting trying to get another message
+                await queue.join()
+
+        retry_consume_loop = retry_on_redis_connection_failure(
+            fn=consume_loop, retry_delay=self.consumption_restart_delay, action="consuming events"
+        )
 
         async def reclaim_loop():
             """
@@ -275,7 +255,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         try:
             # Run the two above coroutines in their own tasks
             consume_task = asyncio.ensure_future(
-                queue_exception_checker(consume_loop(), error_queue)
+                queue_exception_checker(retry_consume_loop, error_queue)
             )
             reclaim_task = asyncio.ensure_future(
                 queue_exception_checker(reclaim_loop(), error_queue)
