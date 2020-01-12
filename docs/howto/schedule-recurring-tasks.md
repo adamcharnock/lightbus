@@ -60,7 +60,7 @@ You can move your task processing to a separate process as follows:
 lightbus run --only tasks
 
 # Process 2: Handles everything else (events and rpcs)
-lightbus run --skip rpcs
+lightbus run --skip tasks
 ```
 
 [schedule]: https://github.com/dbader/schedule
