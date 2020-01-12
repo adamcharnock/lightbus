@@ -23,8 +23,6 @@ logging.getLogger('asyncio').setLevel(logging.CRITICAL)
 
 logging.basicConfig(level=logging.INFO, format="%(msecs)f %(threadName)s %(task)s %(msg)s")
 
-thread_pool_executor = ThreadPoolExecutor(thread_name_prefix="dispatch")
-
 
 class ThreadSerializedTask(asyncio.Task):
     _lock = threading.Lock()

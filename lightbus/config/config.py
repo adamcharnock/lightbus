@@ -107,6 +107,10 @@ class Config:
 
         return cls(root_config=cast_to_hint(config, RootConfig))
 
+    @classmethod
+    def default(cls):
+        return cls.load_dict(config={}, set_defaults=True)
+
     def __getattr__(self, item):
         if hasattr(self._config, item):
             return getattr(self._config, item)

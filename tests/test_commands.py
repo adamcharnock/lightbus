@@ -24,6 +24,24 @@ def test_commands_run_env(run_lightbus_command, redis_config_file, make_test_bus
     )
 
 
+def test_commands_run_clean_shutdown(run_lightbus_command, make_test_bus_module):
+    code = (
+        "bus = lightbus.create()\n"
+        "def handler(event): pass\n"
+        'bus.foo.bar.listen(handler, listener_name="test")\n'
+    )
+    p = run_lightbus_command(
+        "run", "--bus", make_test_bus_module(code), env={"LIGHTBUS_MODULE": ""}
+    )
+    os.kill(p.pid, signal.SIGINT)
+    time.sleep(0.5)
+    logging_output = p.stderr.read().decode("utf8")
+    print(logging_output)
+    assert (
+        "has pending commands" not in logging_output
+    ), "Lightbus didn't close its redis connections properly"
+
+
 def test_commands_shell(run_lightbus_command):
     run_lightbus_command("shell")
 

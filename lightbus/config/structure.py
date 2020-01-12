@@ -25,7 +25,7 @@ from enum import Enum
 from typing import NamedTuple, Optional, Union, Dict
 
 from lightbus.plugins import find_plugins
-from lightbus.transports.base import get_available_transports
+from lightbus.transports.registry import get_available_transports
 from lightbus.utilities.config import random_name
 from lightbus.utilities.human import generate_human_friendly_name
 
@@ -81,12 +81,6 @@ class LogLevelEnum(Enum):
     CRITICAL = "critical"
 
 
-class OnError(Enum):
-    IGNORE = "ignore"
-    STOP_LISTENER = "stop_listener"
-    SHUTDOWN = "shutdown"
-
-
 class ApiValidationConfig(NamedTuple):
     outgoing: bool = True
     incoming: bool = True
@@ -103,7 +97,6 @@ class ApiConfig:
     strict_validation: bool = False
     #: Cast values before calling event listeners and RPCs
     cast_values: bool = True
-    on_error: OnError = OnError.SHUTDOWN
 
     def __init__(self, **kw):
         for k, v in kw.items():

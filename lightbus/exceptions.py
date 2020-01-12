@@ -80,7 +80,7 @@ class PluginHookNotFound(LightbusException):
     pass
 
 
-class LightbusServerError(LightbusException):
+class LightbusWorkerError(LightbusException):
     pass
 
 
@@ -204,9 +204,37 @@ class RemoteSchemasNotLoaded(LightbusException):
     pass
 
 
-class WorkerNotReady(LightbusException):
+class TransportPoolIsClosed(LightbusException):
     pass
 
 
-class WorkerDeadlock(LightbusException):
+class CannotShrinkEmptyPool(LightbusException):
+    pass
+
+
+class PoolProxyError(LightbusException):
+    pass
+
+
+class CannotProxyPrivateMethod(PoolProxyError):
+    pass
+
+
+class CannotProxyProperty(PoolProxyError):
+    pass
+
+
+class CannotProxySynchronousMethod(PoolProxyError):
+    pass
+
+
+class AsyncFunctionOrMethodRequired(LightbusException):
+    pass
+
+
+class ListenersAlreadyStarted(LightbusException):
+    pass
+
+
+class DuplicateListenerName(LightbusException):
     pass

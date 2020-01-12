@@ -96,6 +96,8 @@ class ResultMessage(Message):
         self,
         *,
         result,
+        api_name: str,
+        procedure_name: str,
         rpc_message_id: str,
         id: str = "",
         error: bool = False,
@@ -103,6 +105,8 @@ class ResultMessage(Message):
         native_id: str = None,
     ):
         super().__init__(id, native_id)
+        self.api_name = api_name
+        self.procedure_name = procedure_name
         self.rpc_message_id = rpc_message_id
 
         if isinstance(result, BaseException):

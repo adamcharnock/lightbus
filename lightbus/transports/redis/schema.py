@@ -20,6 +20,7 @@ class RedisSchemaTransport(RedisTransportMixin, SchemaTransport):
     ):
         self.set_redis_pool(redis_pool, url, connection_parameters)
         self._latest_ids = {}
+        super().__init__()
 
     @classmethod
     def from_config(

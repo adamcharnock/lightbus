@@ -11,20 +11,20 @@ tooling around the bus.
 
 ### Events
 
-#### `server_started`
+#### `worker_started`
 
 Parameters: `process_name`, `metrics_enabled`, `api_names`, `listening_for`, `timestamp`, `ping_interval`
 
 Fired when the worker starts up.
 
-#### `server_ping`
+#### `worker_ping`
 
 Parameters: `process_name`, `metrics_enabled`, `api_names`, `listening_for`, `timestamp`, `ping_interval`
 
 Fires every 60 seconds after worker startup. This indicates that the worker is still alive and has not 
 died unexpectedly. This interval is configurable (see below).
 
-#### `server_stopped`
+#### `worker_stopped`
 
 Parameters: `process_name`, `timestamp`
 

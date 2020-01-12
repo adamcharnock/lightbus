@@ -1,9 +1,10 @@
+import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Optional, Mapping
 
 import aioredis
-from aioredis import Redis, ConnectionsPool
+from aioredis import Redis, ConnectionsPool, ReplyError, ConnectionClosedError
 
 from aioredis.util import decode
 
@@ -170,7 +171,7 @@ class RedisTransportMixin:
                 if internal_pool.size == internal_pool.maxsize:
                     logging.critical(
                         "Redis pool has reached maximum size. It is possible that this will recover normally, "
-                        "but may be you have more event listeners than connections available to the Redis pool. "
+                        "you may have more event listeners than connections available to the Redis pool. "
                         "You can increase the redis pool size by specifying the `maxsize` "
                         "parameter in each of the Redis transport configuration sections. Current maxsize is: {}"
                         "".format(self.connection_parameters.get("maxsize"))
@@ -202,3 +203,31 @@ class RedisTransportMixin:
             return f"redis://{conn.address[0]}:{conn.address[1]}/{conn.db}"
         else:
             return self.connection_parameters.get("address", "Unknown URL")
+
+
+async def retry_on_redis_connection_failure(fn, *, args=tuple(), retry_delay: int, action: str):
+    """Decorator to repeatedly call fn in case of Redis connection problems"""
+    while True:
+        try:
+            return await fn(*args)
+        except (ConnectionClosedError, ConnectionResetError):
+            # ConnectionClosedError is from aioredis. However, sometimes the connection
+            # can die outside of aioredis, in which case we get a builtin ConnectionResetError.
+            logger.warning(
+                f"Redis connection lost while {action}, reconnecting "
+                f"in {retry_delay} seconds..."
+            )
+            await asyncio.sleep(retry_delay)
+        except ConnectionRefusedError:
+            logger.warning(
+                f"Redis connection refused while {action}, retrying " f"in {retry_delay} seconds..."
+            )
+            await asyncio.sleep(retry_delay)
+        except ReplyError as e:
+            if "LOADING" in str(e):
+                logger.warning(
+                    f"Redis server is still loading, retrying " f"in {retry_delay} seconds..."
+                )
+                await asyncio.sleep(retry_delay)
+            else:
+                raise

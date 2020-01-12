@@ -3,14 +3,17 @@ import logging
 import time
 from typing import Mapping, Sequence, TYPE_CHECKING
 
-from aioredis import PipelineError, ConnectionClosedError
+from aioredis import PipelineError, ConnectionClosedError, ReplyError
 from aioredis.util import decode
 
 from lightbus.transports.base import RpcTransport, RpcMessage, Api
 from lightbus.exceptions import TransportIsClosed
 from lightbus.log import LBullets, L, Bold
 from lightbus.serializers import BlobMessageSerializer, BlobMessageDeserializer
-from lightbus.transports.redis.utilities import RedisTransportMixin
+from lightbus.transports.redis.utilities import (
+    RedisTransportMixin,
+    retry_on_redis_connection_failure,
+)
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
@@ -56,6 +59,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
         self.rpc_timeout = rpc_timeout
         self.rpc_retry_delay = rpc_retry_delay
         self.consumption_restart_delay = consumption_restart_delay
+        super().__init__()
 
     @classmethod
     def from_config(
@@ -83,7 +87,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             consumption_restart_delay=consumption_restart_delay,
         )
 
-    async def call_rpc(self, rpc_message: RpcMessage, options: dict, bus_client: "BusClient"):
+    async def call_rpc(self, rpc_message: RpcMessage, options: dict):
         """Emit a call to a remote procedure
 
         This only sends the request, it does not await any result (see RedisResultTransport)
@@ -130,25 +134,18 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             p.expire(expiry_key, timeout=self.rpc_timeout)
             await p.execute()
 
-    async def consume_rpcs(
-        self, apis: Sequence[Api], bus_client: "BusClient"
-    ) -> Sequence[RpcMessage]:
+    async def consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         """Consume RPCs for the given APIs"""
-        while True:
-            if self._closed:
-                # Triggered during shutdown
-                raise TransportIsClosed("Transport is closed. Cannot consume RPCs")
+        if self._closed:
+            # Triggered during shutdown
+            raise TransportIsClosed("Transport is closed. Cannot consume RPCs")
 
-            try:
-                return await self._consume_rpcs(apis)
-            except (ConnectionClosedError, ConnectionResetError):
-                # ConnectionClosedError is from aioredis. However, sometimes the connection
-                # can die outside of aioredis, in which case we get a builtin ConnectionResetError.
-                logger.warning(
-                    f"Redis connection lost while consuming RPCs, reconnecting "
-                    f"in {self.consumption_restart_delay} seconds..."
-                )
-                await asyncio.sleep(self.consumption_restart_delay)
+        return await retry_on_redis_connection_failure(
+            fn=self._consume_rpcs,
+            args=[apis],
+            retry_delay=self.consumption_restart_delay,
+            action="consuming RPCs",
+        )
 
     async def _consume_rpcs(self, apis: Sequence[Api]) -> Sequence[RpcMessage]:
         # Get the name of each list queue
@@ -163,14 +160,21 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
 
         with await self.connection_manager() as redis:
             try:
-                stream, data = await redis.blpop(*queue_keys)
-            except RuntimeError:
-                # For some reason aio-redis likes to eat the CancelledError and
-                # turn it into a Runtime error:
-                # https://github.com/aio-libs/aioredis/blob/9f5964/aioredis/connection.py#L184
-                raise asyncio.CancelledError(
-                    "aio-redis task was cancelled and decided it should be a RuntimeError"
-                )
+                try:
+                    stream, data = await redis.blpop(*queue_keys)
+                except RuntimeError:
+                    # For some reason aio-redis likes to eat the CancelledError and
+                    # turn it into a Runtime error:
+                    # https://github.com/aio-libs/aioredis/blob/9f5964/aioredis/connection.py#L184
+                    raise asyncio.CancelledError(
+                        "aio-redis task was cancelled and decided it should be a RuntimeError"
+                    )
+            except asyncio.CancelledError:
+                # We need to manually close the connection here otherwise the aioredis
+                # pool will emit warnings saying that this connection still has pending
+                # commands (i.e. the above blocking pop)
+                redis.close()
+                raise
 
             stream = decode(stream, "utf8")
             rpc_message = self.deserializer(data)

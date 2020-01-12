@@ -52,7 +52,7 @@ class MetricsPlugin(LightbusPlugin):
             procedure_name=rpc_message.procedure_name,
         )
 
-    # Server-side RPC hooks
+    # Worker-side RPC hooks
 
     async def before_rpc_execution(
         self, *, rpc_message: RpcMessage, client: "lightbus.client.BusClient"
@@ -86,6 +86,9 @@ class MetricsPlugin(LightbusPlugin):
     async def after_event_sent(
         self, *, event_message: EventMessage, client: "lightbus.client.BusClient"
     ):
+        if event_message.api_name == "internal.metrics":
+            return
+
         await self.send_event(
             client,
             "event_fired",
@@ -95,11 +98,14 @@ class MetricsPlugin(LightbusPlugin):
             kwargs=deform_to_bus(event_message.kwargs),
         )
 
-    # Server-side event hooks
+    # Worker-side event hooks
 
     async def before_event_execution(
         self, *, event_message: EventMessage, client: "lightbus.client.BusClient"
     ):
+        if event_message.api_name == "internal.metrics":
+            return
+
         await self.send_event(
             client,
             "event_received",
@@ -112,6 +118,9 @@ class MetricsPlugin(LightbusPlugin):
     async def after_event_execution(
         self, *, event_message: EventMessage, client: "lightbus.client.BusClient"
     ):
+        if event_message.api_name == "internal.metrics":
+            return
+
         await self.send_event(
             client,
             "event_processed",
@@ -121,19 +130,14 @@ class MetricsPlugin(LightbusPlugin):
             kwargs=deform_to_bus(event_message.kwargs),
         )
 
-    def send_event(self, client, event_name_, **kwargs) -> Coroutine:
+    def send_event(self, client: "lightbus.client.BusClient", event_name_, **kwargs) -> Coroutine:
         """Send an event to the bus
-
-        Note that we bypass using BusClient directly, otherwise we would trigger this
-        plugin again thereby causing an infinite loop.
         """
         kwargs.setdefault("timestamp", datetime.utcnow().timestamp())
         kwargs.setdefault("service_name", self.service_name)
         kwargs.setdefault("process_name", self.process_name)
         kwargs = deform_to_bus(kwargs)
-        event_transport = client.transport_registry.get_event_transport("internal.metrics")
-        return event_transport.send_event(
-            EventMessage(api_name="internal.metrics", event_name=event_name_, kwargs=kwargs),
-            options={},
-            bus_client=client,
+
+        return client.fire_event(
+            api_name="internal.metrics", name=event_name_, kwargs=kwargs, options={}
         )

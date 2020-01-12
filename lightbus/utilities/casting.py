@@ -6,8 +6,6 @@ from enum import Enum
 from typing import Mapping, Type, get_type_hints, Union, TypeVar, Callable, Any
 from base64 import b64decode
 
-import dateutil.parser
-
 from lightbus.utilities.type_checks import (
     type_is_namedtuple,
     type_is_dataclass,
@@ -83,10 +81,10 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
         return _mapping_to_instance(mapping=value, destination_type=hint)
     elif is_class and issubclass_safe(hint_type, datetime.datetime) and isinstance_safe(value, str):
         # Datetime as a string
-        return dateutil.parser.parse(value)
+        return datetime.datetime.fromisoformat(value)
     elif is_class and issubclass_safe(hint_type, datetime.date) and isinstance_safe(value, str):
         # Date as a string
-        return cast_or_warning(lambda v: dateutil.parser.parse(v).date(), value)
+        return cast_or_warning(lambda v: datetime.datetime.fromisoformat(v).date(), value)
     elif is_class and issubclass_safe(hint_type, list):
         # Lists
         if hint_args and hasattr(value, "__iter__"):

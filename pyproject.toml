@@ -1,6 +1,6 @@
 [tool]
 
-                [tool.dephell.main]
+    [tool.dephell.main]
     from = {format = "poetry", path = "pyproject.toml"}
     envs = ["main"]
     to = {format = "setuppy", path = "setup.py"}
@@ -44,9 +44,7 @@
     #   black setup.py
     python = ">=3.7"
     aioredis = ">=1.2.0"
-    janus = "*"
     jsonschema = ">=3.2"
-    python-dateutil = "*"
     pyyaml = ">=3.12"
 
     [tool.poetry.dev-dependencies]
@@ -65,7 +63,7 @@
     pytest-asyncio = ">=0.10.0"
     pytest-benchmark = "*"
     pytest-cov = "*"
-    pytest-mock = "*"
+    pytest-mock = "2.0.0"
     pytest-repeat = "*"
     pytest-timeout = "*"
     pytest-xdist = "*"
@@ -81,7 +79,7 @@
     lightbus = 'lightbus.commands:lightbus_entry_point'
 
     # These are our entry points (which poetry calls 'plugins')
-    [tool.poetry.plugins.lightbus_plugins]
+                                                                                                                                                                                                                                                                [tool.poetry.plugins.lightbus_plugins]
     internal_state = "lightbus.plugins.state:StatePlugin"
     internal_metrics = "lightbus.plugins.metrics:MetricsPlugin"
 

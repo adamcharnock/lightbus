@@ -10,9 +10,13 @@ import resource
 import signal
 import threading
 import time
+from contextlib import asynccontextmanager
+from functools import lru_cache
 from pathlib import Path
 from queue import Queue
 from random import randint
+from typing import Type, Optional, Callable
+from unittest.mock import MagicMock
 from urllib.parse import urlparse
 
 import pytest
@@ -32,11 +36,13 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 import lightbus
 import lightbus.creation
 from lightbus import (
-    BusClient,
     RedisSchemaTransport,
     DebugRpcTransport,
     DebugResultTransport,
     DebugEventTransport,
+    RedisRpcTransport,
+    RedisResultTransport,
+    RedisEventTransport,
 )
 from lightbus.commands import COMMAND_PARSED_ARGS
 from lightbus.config.structure import (
@@ -53,7 +59,9 @@ from lightbus.exceptions import BusAlreadyClosed
 from lightbus.path import BusPath
 from lightbus.message import EventMessage
 from lightbus.plugins import PluginRegistry
-from lightbus.utilities.async_tools import cancel, configure_event_loop
+from lightbus.transports.redis.event import StreamUse
+from lightbus.utilities.internal_queue import InternalQueue
+from lightbus.utilities.testing import BusQueueMockerContext
 
 TCPAddress = namedtuple("TCPAddress", "host port")
 
@@ -64,7 +72,6 @@ logger = logging.getLogger(__file__)
 
 def pytest_sessionstart(session):
     # Set custom lightbus policy on event loop
-    configure_event_loop()
 
     # Increase the number of allowable file descriptors to 10000
     # (needed in the reliability tests)
@@ -96,16 +103,24 @@ def create_redis_connection(_closable):
 
 
 @pytest.fixture
-def redis_server_url():
+async def redis_server_url():
     # We use 127.0.0.1 rather than 'localhost' as this bypasses some
     # problems we encounter with getaddrinfo when performing tests
     # which create a lot of connections (e.g. the reliability tests)
-    return os.environ.get("REDIS_URL", "") or "redis://127.0.0.1:6379/10"
+    url = os.environ.get("REDIS_URL", "") or "redis://127.0.0.1:6379/10"
+    redis = await aioredis.create_redis(url)
+    await redis.flushdb()
+    redis.close()
+    return url
 
 
 @pytest.fixture
-def redis_server_b_url():
-    return os.environ.get("REDIS_URL_B", "") or "redis://127.0.0.1:6379/11"
+async def redis_server_b_url():
+    url = os.environ.get("REDIS_URL_B", "") or "redis://127.0.0.1:6379/11"
+    redis = await aioredis.create_redis(url)
+    await redis.flushdb()
+    redis.close()
+    return url
 
 
 @pytest.fixture
@@ -165,7 +180,6 @@ async def redis_pool(create_redis_pool, loop):
 async def redis_client(create_redis_client, loop):
     """Returns Redis client instance."""
     redis = await create_redis_client()
-    await redis.flushall()
     return redis
 
 
@@ -179,6 +193,15 @@ def new_redis_pool(_closable, create_redis_pool, loop):
         return redis
 
     return make_new
+
+
+@pytest.fixture
+def get_total_redis_connections(redis_client):
+    async def _get_total_redis_connections():
+        info = await redis_client.info()
+        return int(info["clients"]["connected_clients"])
+
+    return _get_total_redis_connections
 
 
 @pytest.yield_fixture
@@ -219,6 +242,7 @@ def dummy_bus(loop, redis_server_url):
             )
         ),
         plugins=[],
+        _testing=True,
     )
     # fmt: on
     yield dummy_bus
@@ -252,11 +276,13 @@ def get_dummy_events(mocker, dummy_bus: BusPath):
     def get_events():
         events = []
         send_event_calls = event_transport.send_event.call_args_list
+
         for args, kwargs in send_event_calls:
+            event = args[0] if args else kwargs["event_message"]
             assert isinstance(
-                args[0], EventMessage
+                event, EventMessage
             ), "Argument passed to send_event was not an EventMessage"
-            events.append(args[0])
+            events.append(event)
         return events
 
     return get_events
@@ -464,7 +490,10 @@ def check_for_dangling_threads():
     yield
     threads_after = set(threading.enumerate())
     dangling_threads = threads_after - threads_before
-    names = [t.name for t in dangling_threads if "ThreadPoolExecutor" not in t.name]
+    # Lightbus' ThreadPoolExecutors have a thread_name_prefix value
+    # set which includes _tpe_. We can ignore these as they will clean
+    # themselves up.
+    names = [t.name for t in dangling_threads if "_tpe_" not in t.name]
     assert not names, f"Some threads were left dangling: {', '.join(names)}"
 
 
@@ -581,10 +610,19 @@ def run_lightbus_command(make_test_bus_module, redis_config_file):
 
         return p
 
+    start_time = time.time()
+
     yield inner
+
+    duration = time.time() - start_time
+    if duration < 2:
+        # Make sure we give the command enough time to startup before shutting it down
+        time.sleep(2 - duration)
 
     # Cleanup
     for cmd, full_args, env, p in processes:
+        print(f"Cleaning up command 'lightbus {cmd}'")
+        print(f"    Sending SIGINT")
         try:
             os.kill(p.pid, signal.SIGINT)
         except ProcessLookupError:
@@ -594,10 +632,9 @@ def run_lightbus_command(make_test_bus_module, redis_config_file):
         try:
             p.wait(timeout=1)
         except subprocess.TimeoutExpired:
-            print(f"WARNING: Shutdown timed out. Killing")
+            print(f"    WARNING: Shutdown timed out. Killing")
             p.kill()
 
-        print(f"Cleaning up command 'lightbus {cmd}'")
         print(f"     Command: {' '.join(full_args)}")
         print(f"     Environment:")
         for k, v in env.items():
@@ -609,3 +646,163 @@ def run_lightbus_command(make_test_bus_module, redis_config_file):
         print(f"---- 'lightbus {cmd}' stderr ----", flush=True)
         print(p.stderr.read().decode("utf8"), flush=True)
         assert p.returncode == 0, f"Child process running 'lightbus {cmd}' exited abnormally"
+
+
+@pytest.fixture
+def queue_mocker() -> Type[BusQueueMockerContext]:
+    return BusQueueMockerContext
+
+
+@pytest.yield_fixture()
+def error_queue():
+    queue = InternalQueue()
+    yield queue
+    assert queue.qsize() == 0, f"Errors found in error queue: {queue._queue}"
+
+
+class Worker:
+    def __init__(self, bus_factory: Callable):
+        self.bus_factory = bus_factory
+
+    async def start(self, bus: BusPath):
+        await bus.client.start_worker()
+
+    async def stop(self, bus: BusPath):
+        try:
+            await bus.client.stop_worker()
+        finally:
+            # Stop server can raise any queued exceptions that had
+            # not previously been raised, so make sure we
+            # do the close by wrapping it in a finally
+            try:
+                await bus.client.close_async()
+            except BusAlreadyClosed:
+                pass
+
+    def __call__(self, bus: Optional[BusPath] = None, raise_errors=True):
+        bus = bus or self.bus_factory()
+        bus.client.stop_loop = MagicMock()
+
+        @asynccontextmanager
+        async def worker_context(bus):
+            await self.start(bus)
+
+            yield bus
+
+            try:
+                await self.stop(bus)
+            except Exception as e:
+                if raise_errors:
+                    raise
+                else:
+                    logger.error(e)
+
+        return worker_context(bus)
+
+
+@pytest.yield_fixture
+async def worker(new_bus):
+    yield Worker(bus_factory=new_bus)
+
+
+# fmt: off
+@pytest.fixture
+def new_bus(loop, redis_server_url):
+    def _new_bus(service_name="{friendly}"):
+        bus = lightbus.creation.create(
+            config=RootConfig(
+                apis={
+                    'default': ApiConfig(
+                        rpc_transport=RpcTransportSelector(
+                            redis=RedisRpcTransport.Config(url=redis_server_url)
+                        ),
+                        result_transport=ResultTransportSelector(
+                            redis=RedisResultTransport.Config(url=redis_server_url)
+                        ),
+                        event_transport=EventTransportSelector(redis=RedisEventTransport.Config(
+                            url=redis_server_url,
+                            stream_use=StreamUse.PER_EVENT,
+                            service_name="test_service",
+                            consumer_name="test_consumer",
+                        )),
+                    )
+                },
+                bus=BusConfig(
+                    schema=SchemaConfig(
+                        transport=SchemaTransportSelector(redis=RedisSchemaTransport.Config(url=redis_server_url)),
+                    )
+                ),
+                service_name=service_name
+            ),
+            plugins=[],
+            _testing=True,
+        )
+        return bus
+    return _new_bus
+# fmt: on
+
+
+class StandaloneRedisServer:
+    def __init__(self):
+        self.port = randint(16384, 65535)
+        self.p: Optional[subprocess.Popen] = None
+        self.args = ["docker", "run", "--rm", "-p", f"{self.port}:6379", "redis:5"]
+
+    def start(self):
+        self.p = subprocess.Popen(
+            self.args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf8"
+        )
+        time.sleep(0.1)
+
+        for _ in range(0, 50):
+            self.p.poll()
+            if self.p.returncode is not None:
+                print(self.p.stdout.read())
+                print(self.p.stderr.read())
+                assert (
+                    False
+                ), f"Redis docker image exited immediately with status {self.p.returncode}"
+
+            time.sleep(0.1)
+            stdout = self.p.stdout.readline()
+            if "Ready to accept connections" in stdout:
+                return
+
+        self.stop()
+        print(self.p.stdout.read())
+        print(self.p.stderr.read())
+        assert False, "Redis failed to start in a timely fashion"
+
+    def stop(self):
+        if not self.p:
+            return
+
+        try:
+            self.p.send_signal(signal.SIGINT)
+        except ProcessLookupError:
+            # Process already gone
+            pass
+
+        try:
+            self.p.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            print(f"    WARNING: Shutdown timed out. Killing")
+            self.p.kill()
+
+
+@lru_cache(maxsize=None)
+def _docker_available():
+    docker_cmd = subprocess.run(
+        ["docker", "stats", "--no-stream"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    return docker_cmd.returncode == 0
+
+
+@pytest.yield_fixture
+def standalone_redis_server():
+    if not _docker_available():
+        raise pytest.skip("Docker not available")
+
+    server = StandaloneRedisServer()
+    yield server
+    server.stop()

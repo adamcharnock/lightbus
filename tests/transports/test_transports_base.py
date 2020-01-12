@@ -10,7 +10,7 @@ from lightbus import (
 )
 from lightbus.config import Config
 from lightbus.exceptions import TransportNotFound
-from lightbus.transports.base import TransportRegistry, get_transport, get_transport_name
+from lightbus.transports.registry import TransportRegistry, get_transport, get_transport_name
 
 pytestmark = pytest.mark.unit
 
@@ -97,74 +97,107 @@ def test_transport_registry_get_does_not_exist_other():
 
 def test_transport_registry_get_fallback(redis_default_config):
     registry = TransportRegistry().load_config(redis_default_config)
-    assert registry.get_rpc_transport("default").__class__ == RedisRpcTransport
-    assert registry.get_result_transport("default").__class__ == RedisResultTransport
-    assert registry.get_event_transport("default").__class__ == RedisEventTransport
-    assert registry.get_schema_transport("default").__class__ == RedisSchemaTransport
+    assert registry.get_rpc_transport("default").transport_class == RedisRpcTransport
+    assert registry.get_result_transport("default").transport_class == RedisResultTransport
+    assert registry.get_event_transport("default").transport_class == RedisEventTransport
+    assert registry.get_schema_transport("default").transport_class == RedisSchemaTransport
 
 
 def test_transport_registry_get_specific_api(redis_other_config):
     registry = TransportRegistry().load_config(redis_other_config)
-    assert registry.get_rpc_transport("other").__class__ == RedisRpcTransport
-    assert registry.get_result_transport("other").__class__ == RedisResultTransport
-    assert registry.get_event_transport("other").__class__ == RedisEventTransport
-    assert registry.get_schema_transport("other").__class__ == RedisSchemaTransport
+    assert registry.get_rpc_transport("other").transport_class == RedisRpcTransport
+    assert registry.get_result_transport("other").transport_class == RedisResultTransport
+    assert registry.get_event_transport("other").transport_class == RedisEventTransport
+    assert registry.get_schema_transport("other").transport_class == RedisSchemaTransport
 
 
 def test_transport_registry_load_config(redis_default_config):
     registry = TransportRegistry().load_config(redis_default_config)
-    assert registry.get_rpc_transport("default").__class__ == RedisRpcTransport
-    assert registry.get_result_transport("default").__class__ == RedisResultTransport
-    assert registry.get_event_transport("default").__class__ == RedisEventTransport
-    assert registry.get_schema_transport("default").__class__ == RedisSchemaTransport
+    assert registry.get_rpc_transport("default").transport_class == RedisRpcTransport
+    assert registry.get_result_transport("default").transport_class == RedisResultTransport
+    assert registry.get_event_transport("default").transport_class == RedisEventTransport
+    assert registry.get_schema_transport("default").transport_class == RedisSchemaTransport
 
 
 def test_transport_registry_get_rpc_transports(redis_default_config):
     registry = TransportRegistry().load_config(redis_default_config)
-    debug_transport = DebugRpcTransport()
-    redis_transport = RedisRpcTransport()
 
-    registry.set_rpc_transport("redis1", redis_transport)
-    registry.set_rpc_transport("redis2", redis_transport)
-    registry.set_rpc_transport("debug1", debug_transport)
-    registry.set_rpc_transport("debug2", debug_transport)
-    transports = registry.get_rpc_transports(
+    # Note how we set a config value below. We do this because
+    # we need this transport to appear different from the default
+    # transport for the purposes of this test. Also note that these
+    # are not actual transports, but transport pools which wrap transports.
+    # We are therefore actually comparing transport pools. Transport
+    # pools are considered equal if they have the same transport class
+    # and config. It is for this reason we modify the config below.
+    registry.set_rpc_transport(
+        "redis1", RedisRpcTransport, RedisRpcTransport.Config(rpc_timeout=99), Config.default()
+    )
+    registry.set_rpc_transport(
+        "redis2", RedisRpcTransport, RedisRpcTransport.Config(rpc_timeout=99), Config.default()
+    )
+    registry.set_rpc_transport(
+        "debug1", DebugRpcTransport, DebugRpcTransport.Config(), Config.default()
+    )
+    registry.set_rpc_transport(
+        "debug2", DebugRpcTransport, DebugRpcTransport.Config(), Config.default()
+    )
+
+    transport_pools = registry.get_rpc_transports(
         ["default", "foo", "bar", "redis1", "redis2", "debug1", "debug2"]
     )
 
-    default_redis_transport = registry.get_rpc_transport("default")
+    default_transport = registry.get_rpc_transport("default")
+    redis_transport = registry.get_rpc_transport("redis1")
+    debug_transport = registry.get_rpc_transport("debug1")
 
-    transports = dict(transports)
-    assert set(transports[default_redis_transport]) == {"default", "foo", "bar"}
-    assert set(transports[debug_transport]) == {"debug1", "debug2"}
-    assert set(transports[redis_transport]) == {"redis1", "redis2"}
+    assert set(transport_pools[default_transport]) == {"default", "foo", "bar"}
+    assert set(transport_pools[debug_transport]) == {"debug1", "debug2"}
+    assert set(transport_pools[redis_transport]) == {"redis1", "redis2"}
 
 
 def test_transport_registry_get_event_transports(redis_default_config):
     registry = TransportRegistry().load_config(redis_default_config)
-    debug_transport = DebugEventTransport()
-    redis_transport = RedisEventTransport(service_name="foo", consumer_name="bar")
 
-    registry.set_event_transport("redis1", redis_transport)
-    registry.set_event_transport("redis2", redis_transport)
-    registry.set_event_transport("debug1", debug_transport)
-    registry.set_event_transport("debug2", debug_transport)
+    # See comment in test_transport_registry_get_rpc_transports
+    registry.set_event_transport(
+        "redis1", RedisEventTransport, RedisEventTransport.Config(batch_size=99), Config.default()
+    )
+    registry.set_event_transport(
+        "redis2", RedisEventTransport, RedisEventTransport.Config(batch_size=99), Config.default()
+    )
+    registry.set_event_transport(
+        "debug1", DebugEventTransport, DebugEventTransport.Config(), Config.default()
+    )
+    registry.set_event_transport(
+        "debug2", DebugEventTransport, DebugEventTransport.Config(), Config.default()
+    )
+
     transports = registry.get_event_transports(
         ["default", "foo", "bar", "redis1", "redis2", "debug1", "debug2"]
     )
 
-    default_redis_transport = registry.get_event_transport("default")
+    default_transport = registry.get_event_transport("default")
+    redis_transport = registry.get_event_transport("redis1")
+    debug_transport = registry.get_event_transport("debug1")
 
-    transports = dict(transports)
-    assert set(transports[default_redis_transport]) == {"default", "foo", "bar"}
+    assert set(transports[default_transport]) == {"default", "foo", "bar"}
     assert set(transports[debug_transport]) == {"debug1", "debug2"}
     assert set(transports[redis_transport]) == {"redis1", "redis2"}
 
 
 def test_get_all_transports(redis_default_config):
     registry = TransportRegistry().load_config(redis_default_config)
-    registry.set_event_transport("another", registry.get_event_transport("default"))
-    registry.set_event_transport("foo", DebugEventTransport())
+
+    # Is equal to the default transport, so will not be included
+    # in the get_all_transports() return value
+    registry.set_event_transport(
+        "another", RedisEventTransport, RedisEventTransport.Config(), Config.default()
+    )
+    registry.set_event_transport(
+        "foo", DebugEventTransport, DebugEventTransport.Config(), Config.default()
+    )
+
+    # redis rpc + redis result + redis event + foo debug transport (above) = 4
     assert len(registry.get_all_transports()) == 4
 
 

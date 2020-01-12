@@ -56,6 +56,6 @@ def benchmark_call_rpc(run_lightbus, bus, benchmark):
 
 
 @pytest.mark.benchmark(group="network")
-def benchmark_fire_event(run_lightbus, bus, benchmark):
+def benchmark_fire_event(bus, benchmark):
     bus.client.register_api(BenchmarkApi())
     benchmark.pedantic(bus.benchmark.fire_me.fire, rounds=20, warmup_rounds=1)

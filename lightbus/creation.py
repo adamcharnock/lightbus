@@ -2,18 +2,31 @@
 import logging
 import os
 import sys
+import weakref
 from typing import Union, Mapping, Type, List
 
+from lightbus import Schema
+from lightbus.api import ApiRegistry
+from lightbus.client.docks.event import EventDock
+from lightbus.client.docks.rpc_result import RpcResultDock
+from lightbus.client.subclients.event import EventClient
+from lightbus.client.subclients.rpc_result import RpcResultClient
+from lightbus.client.utilities import ErrorQueueType
+from lightbus.hooks import HookRegistry
+from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
+from lightbus.plugins import PluginRegistry
+from lightbus.utilities.async_tools import get_event_loop
+from lightbus.utilities.internal_queue import InternalQueue
 from lightbus.utilities.features import ALL_FEATURES, Feature
 from lightbus.config.structure import RootConfig
 from lightbus.log import Bold
 from lightbus.path import BusPath
-from lightbus.client import BusClient
+from lightbus.client.bus_client import BusClient
 from lightbus.config import Config
 from lightbus.exceptions import FailedToImportBusModule
-from lightbus.transports.base import TransportRegistry
+from lightbus.transports.registry import TransportRegistry
 from lightbus.utilities.importing import import_module_from_string
-
+from lightbus.utilities.logging import log_welcome_message
 
 __all__ = ["create", "load_config", "import_bus_module", "get_bus"]
 logger = logging.getLogger(__name__)
@@ -30,6 +43,7 @@ def create(
     node_class: Type[BusPath] = BusPath,
     plugins=None,
     flask: bool = False,
+    _testing: bool = False,
     **kwargs,
 ) -> BusPath:
     """
@@ -64,6 +78,10 @@ def create(
             # Flask has a reloader process that shouldn't start a lightbus client
             return
 
+    # Ensure an event loop exists, as creating InternalQueue
+    # objects requires that we have one.
+    get_event_loop()
+
     # If were are running via the Lightbus CLI then we may have
     # some command line arguments we need to apply.
     # pylint: disable=cyclic-import,import-outside-toplevel
@@ -87,12 +105,110 @@ def create(
         config
     )
 
-    client = client_class(
-        transport_registry=transport_registry,
+    schema = Schema(
+        schema_transport=transport_registry.get_schema_transport(),
+        max_age_seconds=config.bus().schema.ttl,
+        human_readable=config.bus().schema.human_readable,
+    )
+
+    error_queue: ErrorQueueType = InternalQueue()
+
+    # Plugin registry
+
+    plugin_registry = PluginRegistry()
+    if plugins is None:
+        logger.debug("Auto-loading any installed Lightbus plugins...")
+        plugin_registry.autoload_plugins(config)
+    else:
+        logger.debug("Loading explicitly specified Lightbus plugins....")
+        plugin_registry.set_plugins(plugins)
+
+    # Hook registry
+
+    hook_registry = HookRegistry(
+        error_queue=error_queue, execute_plugin_hooks=plugin_registry.execute_hook
+    )
+
+    # API registry
+
+    api_registry = ApiRegistry()
+    api_registry.add(LightbusStateApi())
+    api_registry.add(LightbusMetricsApi())
+
+    events_queue_client_to_dock = InternalQueue()
+    events_queue_dock_to_client = InternalQueue()
+
+    event_client = EventClient(
+        api_registry=api_registry,
+        hook_registry=hook_registry,
         config=config,
+        schema=schema,
+        error_queue=error_queue,
+        consume_from=events_queue_dock_to_client,
+        produce_to=events_queue_client_to_dock,
+    )
+
+    event_dock = EventDock(
+        transport_registry=transport_registry,
+        api_registry=api_registry,
+        config=config,
+        error_queue=error_queue,
+        consume_from=events_queue_client_to_dock,
+        produce_to=events_queue_dock_to_client,
+    )
+
+    rpcs_queue_client_to_dock = InternalQueue()
+    rpcs_queue_dock_to_client = InternalQueue()
+
+    rpc_result_client = RpcResultClient(
+        api_registry=api_registry,
+        hook_registry=hook_registry,
+        config=config,
+        schema=schema,
+        error_queue=error_queue,
+        consume_from=rpcs_queue_dock_to_client,
+        produce_to=rpcs_queue_client_to_dock,
+    )
+
+    rpc_result_dock = RpcResultDock(
+        transport_registry=transport_registry,
+        api_registry=api_registry,
+        config=config,
+        error_queue=error_queue,
+        consume_from=rpcs_queue_client_to_dock,
+        produce_to=rpcs_queue_dock_to_client,
+    )
+
+    client = client_class(
+        config=config,
+        hook_registry=hook_registry,
+        plugin_registry=plugin_registry,
         features=features,
-        plugins=plugins,
+        schema=schema,
+        api_registry=api_registry,
+        event_client=event_client,
+        rpc_result_client=rpc_result_client,
+        error_queue=error_queue,
+        transport_registry=transport_registry,
         **kwargs,
+    )
+
+    # Pass the client to any hooks
+    # (use a weakref to prevent circular references)
+    hook_registry.set_extra_parameter("client", weakref.proxy(client))
+
+    if _testing:
+        # We don't do this normally as the docs do not need to be
+        # accessed directly, but this is useful in testing
+        client.event_dock = event_dock
+        client.rpc_result_dock = rpc_result_dock
+
+    log_welcome_message(
+        logger=logger,
+        transport_registry=transport_registry,
+        schema=schema,
+        plugin_registry=plugin_registry,
+        config=config,
     )
 
     return node_class(name="", parent=None, client=client)

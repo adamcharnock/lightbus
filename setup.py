@@ -23,7 +23,8 @@ if os.path.exists(readme_path):
 setup(
     long_description=readme,
     name="lightbus",
-    version="0.0.2-alpha.1",
+    version="0.9.0",
+    description="RPC & event framework for Python 3",
     python_requires=">=3.7",
     project_urls={
         "documentation": "https://lightbus.org",
@@ -70,6 +71,10 @@ setup(
     },
     packages=[
         "lightbus",
+        "lightbus.client",
+        "lightbus.client.docks",
+        "lightbus.client.internal_messaging",
+        "lightbus.client.subclients",
         "lightbus.commands",
         "lightbus.config",
         "lightbus.plugins",
@@ -81,11 +86,5 @@ setup(
     ],
     package_dir={"": "."},
     package_data={},
-    install_requires=[
-        "aioredis>=1.2.0",
-        "janus",
-        "jsonschema>=3.2",
-        "python-dateutil",
-        "pyyaml>=3.12",
-    ],
+    install_requires=["aioredis>=1.2.0", "jsonschema>=3.2", "pyyaml>=3.12"],
 )

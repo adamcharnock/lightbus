@@ -5,10 +5,12 @@ import os
 import signal
 import sys
 
+from lightbus import BusPath
 from lightbus.commands import utilities as command_utilities
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
 from lightbus.utilities.features import Feature, ALL_FEATURES
+from lightbus.utilities.logging import log_welcome_message
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +67,7 @@ class Command:
     def _handle(self, args, config, plugin_registry: PluginRegistry):
         command_utilities.setup_logging(override=getattr(args, "log_level", None), config=config)
 
+        bus: BusPath
         bus_module, bus = command_utilities.import_bus(args)
 
         # Convert only & skip into a list of features to enable
@@ -102,13 +105,21 @@ class Command:
             for signal_ in restart_signals:
                 asyncio.get_event_loop().remove_signal_handler(signal_)
 
-            logger.debug("Caught signal. Stopping main thread event loop")
-            bus.client.shutdown_server(exit_code=0)
+            logger.debug("Caught signal. Stopping Lightbus worker")
+            bus.client.request_shutdown()
 
         for signal_ in restart_signals:
             asyncio.get_event_loop().add_signal_handler(
                 signal_, lambda: asyncio.ensure_future(signal_handler())
             )
+
+        log_welcome_message(
+            logger=logger,
+            transport_registry=bus.client.transport_registry,
+            schema=bus.client.schema,
+            plugin_registry=bus.client.plugin_registry,
+            config=bus.client.config,
+        )
 
         try:
             block(plugin_registry.execute_hook("receive_args", args=args), timeout=5)

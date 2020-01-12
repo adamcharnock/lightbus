@@ -9,7 +9,7 @@ from lightbus.config import Config
 from lightbus.exceptions import FailedToImportBusModule
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.logging import configure_logging
-from lightbus.utilities.async_tools import block, configure_event_loop
+from lightbus.utilities.async_tools import block
 import lightbus.commands.run
 import lightbus.commands.shell
 import lightbus.commands.dump_schema
@@ -28,7 +28,6 @@ RESET = "\033[0m" if sys.stdout.isatty() else ""
 def lightbus_entry_point():  # pragma: no cover
     sys.path.insert(0, "")
     configure_logging()
-    configure_event_loop()
     run_command_from_args()
 
 

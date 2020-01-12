@@ -1,19 +1,17 @@
 import pytest
 
 from lightbus import EventMessage, RpcMessage
+from lightbus.client.commands import SendEventCommand, CallRpcCommand
 from lightbus.utilities import testing
-
+from lightbus.utilities.testing import BusQueueMockerContext
 
 pytestmark = pytest.mark.unit
 
 
-@pytest.fixture
-def mock_result():
-    rpc = testing.TestRpcTransport()
-    result = testing.TestResultTransport()
-    event = testing.TestEventTransport()
-    schema = testing.TestSchemaTransport()
-    return testing.MockResult(rpc, result, event, schema)
+@pytest.yield_fixture
+def mock_result(dummy_bus):
+    with BusQueueMockerContext(dummy_bus) as mocker_context:
+        yield testing.MockResult(mocker_context, mock_responses={}, mock_events=set())
 
 
 @pytest.mark.parametrize(
@@ -21,7 +19,12 @@ def mock_result():
 )
 def test_mock_result_assert_events_fired_simple(mock_result: testing.MockResult, method_name):
     assert_events_fired = getattr(mock_result, method_name)
-    mock_result.event.events = [(EventMessage(api_name="api", event_name="event"), {})]
+    mock_result.mocker_context.event.to_transport.put_items = [
+        (
+            SendEventCommand(message=EventMessage(api_name="api", event_name="event"), options={}),
+            None,
+        )
+    ]
 
     # No exception
     try:
@@ -38,9 +41,15 @@ def test_mock_result_assert_events_fired_simple(mock_result: testing.MockResult,
 )
 def test_mock_result_assert_events_fired_times(mock_result: testing.MockResult, method_name):
     assert_events_fired = getattr(mock_result, method_name)
-    mock_result.event.events = [
-        (EventMessage(api_name="api", event_name="event"), {}),
-        (EventMessage(api_name="api", event_name="event"), {}),
+    mock_result.mocker_context.event.to_transport.put_items = [
+        (
+            SendEventCommand(message=EventMessage(api_name="api", event_name="event"), options={}),
+            None,
+        ),
+        (
+            SendEventCommand(message=EventMessage(api_name="api", event_name="event"), options={}),
+            None,
+        ),
     ]
 
     # No error
@@ -73,7 +82,7 @@ def test_mock_result_assert_events_fired_times(mock_result: testing.MockResult, 
 )
 def test_mock_result_assert_events_fired_zero(mock_result: testing.MockResult, method_name):
     assert_events_fired = getattr(mock_result, method_name)
-    mock_result.event.events = []
+    mock_result.mocker_context.event.to_transport.put_items = []
 
     # No error
     try:
@@ -91,7 +100,12 @@ def test_mock_result_assert_events_fired_zero(mock_result: testing.MockResult, m
 )
 def test_mock_result_assert_event_not_fired(mock_result: testing.MockResult, method_name):
     assert_event_not_fired = getattr(mock_result, method_name)
-    mock_result.event.events = [(EventMessage(api_name="api", event_name="event"), {})]
+    mock_result.mocker_context.event.to_transport.put_items = [
+        (
+            SendEventCommand(message=EventMessage(api_name="api", event_name="event"), options={}),
+            None,
+        )
+    ]
 
     # No exception
     try:
@@ -111,8 +125,17 @@ def test_mock_result_get_event_messages(mock_result: testing.MockResult, method_
 
     event1 = EventMessage(api_name="api", event_name="event1")
     event2 = EventMessage(api_name="api", event_name="event2")
-
-    mock_result.event.events = [(event1, {}), (event2, {})]
+    # fmt: off
+    mock_result.mocker_context.event.to_transport.put_items = [
+        (
+            SendEventCommand(message=event1, options={}),
+            None,
+        ), (
+            SendEventCommand(message=event2, options={}),
+            None,
+        ),
+    ]
+    # fmt: on
 
     assert get_event_messages() == [event1, event2]
 
@@ -125,8 +148,17 @@ def test_mock_result_get_event_messages_filtered(mock_result: testing.MockResult
 
     event1 = EventMessage(api_name="api", event_name="event1")
     event2 = EventMessage(api_name="api", event_name="event2")
-
-    mock_result.event.events = [(event1, {}), (event2, {})]
+    # fmt: off
+    mock_result.mocker_context.event.to_transport.put_items = [
+        (
+            SendEventCommand(message=event1, options={}),
+            None,
+        ), (
+            SendEventCommand(message=event2, options={}),
+            None,
+        ),
+    ]
+    # fmt: on
 
     assert get_event_messages("api.event2") == [event2]
 
@@ -136,7 +168,16 @@ def test_mock_result_get_event_messages_filtered(mock_result: testing.MockResult
 )
 def test_mock_result_assert_rpc_called_simple(mock_result: testing.MockResult, method_name):
     assert_rpc_called = getattr(mock_result, method_name)
-    mock_result.rpc.rpcs = [(RpcMessage(api_name="api", procedure_name="rpc"), {})]
+
+    rpc_message = RpcMessage(api_name="api", procedure_name="rpc")
+    # fmt: off
+    mock_result.mocker_context.rpc_result.to_transport.put_items = [
+        (
+            CallRpcCommand(message=rpc_message, options={}),
+            None,
+        ),
+    ]
+    # fmt: on
 
     # No exception
     try:
@@ -153,10 +194,20 @@ def test_mock_result_assert_rpc_called_simple(mock_result: testing.MockResult, m
 )
 def test_mock_result_assert_rpc_called_times(mock_result: testing.MockResult, method_name):
     assert_rpc_called = getattr(mock_result, method_name)
-    mock_result.rpc.rpcs = [
-        (RpcMessage(api_name="api", procedure_name="rpc"), {}),
-        (RpcMessage(api_name="api", procedure_name="rpc"), {}),
+
+    rpc_message1 = RpcMessage(api_name="api", procedure_name="rpc")
+    rpc_message2 = RpcMessage(api_name="api", procedure_name="rpc")
+    # fmt: off
+    mock_result.mocker_context.rpc_result.to_transport.put_items = [
+        (
+            CallRpcCommand(message=rpc_message1, options={}),
+            None,
+        ), (
+            CallRpcCommand(message=rpc_message2, options={}),
+            None,
+        ),
     ]
+    # fmt: on
 
     # No error
     try:
@@ -188,7 +239,8 @@ def test_mock_result_assert_rpc_called_times(mock_result: testing.MockResult, me
 )
 def test_mock_result_assert_rpc_called_zero(mock_result: testing.MockResult, method_name):
     assert_rpc_called = getattr(mock_result, method_name)
-    mock_result.rpc.rpcs = []
+
+    mock_result.mocker_context.rpc_result.to_transport.put_items = []
 
     # No error
     try:
@@ -206,7 +258,16 @@ def test_mock_result_assert_rpc_called_zero(mock_result: testing.MockResult, met
 )
 def test_mock_result_assert_rpc_not_called(mock_result: testing.MockResult, method_name):
     assert_rpc_not_called = getattr(mock_result, method_name)
-    mock_result.rpc.rpcs = [(RpcMessage(api_name="api", procedure_name="rpc"), {})]
+
+    rpc_message = RpcMessage(api_name="api", procedure_name="rpc")
+    # fmt: off
+    mock_result.mocker_context.rpc_result.to_transport.put_items = [
+        (
+            CallRpcCommand(message=rpc_message, options={}),
+            None,
+        ),
+    ]
+    # fmt: on
 
     # No exception
     try:
@@ -224,12 +285,21 @@ def test_mock_result_assert_rpc_not_called(mock_result: testing.MockResult, meth
 def test_mock_result_get_rpc_messages(mock_result: testing.MockResult, method_name):
     get_rpc_messages = getattr(mock_result, method_name)
 
-    rpc1 = RpcMessage(api_name="api", procedure_name="rpc1")
-    rpc2 = RpcMessage(api_name="api", procedure_name="rpc2")
+    rpc_message1 = RpcMessage(api_name="api", procedure_name="rpc")
+    rpc_message2 = RpcMessage(api_name="api", procedure_name="rpc")
+    # fmt: off
+    mock_result.mocker_context.rpc_result.to_transport.put_items = [
+        (
+            CallRpcCommand(message=rpc_message1, options={}),
+            None,
+        ), (
+            CallRpcCommand(message=rpc_message2, options={}),
+            None,
+        ),
+    ]
+    # fmt: on
 
-    mock_result.rpc.rpcs = [(rpc1, {}), (rpc2, {})]
-
-    assert get_rpc_messages() == [rpc1, rpc2]
+    assert get_rpc_messages() == [rpc_message1, rpc_message2]
 
 
 @pytest.mark.parametrize(
@@ -238,33 +308,60 @@ def test_mock_result_get_rpc_messages(mock_result: testing.MockResult, method_na
 def test_mock_result_get_rpc_messages_filtered(mock_result: testing.MockResult, method_name):
     get_rpc_messages = getattr(mock_result, method_name)
 
-    rpc1 = RpcMessage(api_name="api", procedure_name="rpc1")
-    rpc2 = RpcMessage(api_name="api", procedure_name="rpc2")
+    rpc_message1 = RpcMessage(api_name="api", procedure_name="rpc1")
+    rpc_message2 = RpcMessage(api_name="api", procedure_name="rpc2")
+    # fmt: off
+    mock_result.mocker_context.rpc_result.to_transport.put_items = [
+        (
+            CallRpcCommand(message=rpc_message1, options={}),
+            None,
+        ), (
+            CallRpcCommand(message=rpc_message2, options={}),
+            None,
+        ),
+    ]
+    # fmt: on
 
-    mock_result.rpc.rpcs = [(rpc1, {}), (rpc2, {})]
-
-    assert get_rpc_messages("api.rpc2") == [rpc2]
+    assert get_rpc_messages("api.rpc2") == [rpc_message2]
 
 
 @pytest.mark.parametrize(
     "property_name", ["event_names_fired", "eventNamesFired"], ids=["snake", "camel"]
 )
 def test_mock_result_event_names_fired(mock_result: testing.MockResult, property_name):
-    mock_result.event.events = [
-        (EventMessage(api_name="api", event_name="event"), {}),
-        (EventMessage(api_name="api2", event_name="event2"), {}),
+    event1 = EventMessage(api_name="api1", event_name="event1")
+    event2 = EventMessage(api_name="api2", event_name="event2")
+    # fmt: off
+    mock_result.mocker_context.event.to_transport.put_items = [
+        (
+            SendEventCommand(message=event1, options={}),
+            None,
+        ), (
+            SendEventCommand(message=event2, options={}),
+            None,
+        ),
     ]
-    assert getattr(mock_result, property_name) == ["api.event", "api2.event2"]
+    # fmt: on
+    assert getattr(mock_result, property_name) == ["api1.event1", "api2.event2"]
 
 
 @pytest.mark.parametrize(
-    "property_name", ["event_names_fired", "eventNamesFired"], ids=["snake", "camel"]
+    "property_name", ["rpc_names_called", "rpcNamesCalled"], ids=["snake", "camel"]
 )
-def test_mock_result_rpc_names_fired(mock_result: testing.MockResult, property_name):
-    mock_result.event.events = [
-        (RpcMessage(api_name="api", procedure_name="rpc"), {}),
-        (RpcMessage(api_name="api2", procedure_name="rpc2"), {}),
+def test_mock_result_rpc_names_called(mock_result: testing.MockResult, property_name):
+    rpc_message1 = RpcMessage(api_name="api", procedure_name="rpc")
+    rpc_message2 = RpcMessage(api_name="api2", procedure_name="rpc2")
+    # fmt: off
+    mock_result.mocker_context.rpc_result.to_transport.put_items = [
+        (
+            CallRpcCommand(message=rpc_message1, options={}),
+            None,
+        ), (
+            CallRpcCommand(message=rpc_message2, options={}),
+            None,
+        ),
     ]
+    # fmt: on
     assert getattr(mock_result, property_name) == ["api.rpc", "api2.rpc2"]
 
 

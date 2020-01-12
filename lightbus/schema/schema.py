@@ -24,12 +24,14 @@ from lightbus.schema.hints_to_schema import (
     make_rpc_parameter_schema,
     make_event_parameter_schema,
 )
+from lightbus.transports.registry import SchemaTransportPoolType
 from lightbus.utilities.io import make_file_safe_api_name
 from lightbus.api import Api, Event
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import
     from lightbus.transports.base import SchemaTransport
+    from lightbus.transports.pool import TransportPool
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +52,12 @@ class Schema:
 
     def __init__(
         self,
-        schema_transport: "SchemaTransport",
+        schema_transport: "SchemaTransportPoolType",
         max_age_seconds: Optional[int] = 60,
         human_readable: bool = True,
     ):
         self.schema_transport = schema_transport
+        self._schema_transport: Optional["SchemaTransport"] = None
         self.max_age_seconds = max_age_seconds
         self.human_readable = human_readable
 
@@ -123,7 +126,7 @@ class Schema:
         raise SchemaNotFound(
             "No schema found for '{}' on API '{}'. You should either, a) ensure this "
             "API is being served by another lightbus process, or b) load this schema manually."
-            "".format(api_name, name)
+            "".format(name, api_name)
         )
 
     def validate_parameters(self, api_name, event_or_rpc_name, parameters):
@@ -155,7 +158,7 @@ class Schema:
                     f"Validation error when using JSON schema to validate parameters for \n"
                     f"{api_name}.{event_or_rpc_name}.\n"
                     f"\n"
-                    f"It is likely that you have passed in invalid value for the \n"
+                    f"It is likely that you have passed in an invalid value for the \n"
                     f"'{path[0]}' parameter.\n"
                     f"\n"
                     f"The error given was: {e.message}\n"
@@ -379,6 +382,9 @@ class Schema:
         indent = 2 if self.human_readable else None
         return json_encode(schema, indent=indent)
 
+    async def close(self):
+        await self.schema_transport.close()
+
 
 class Parameter(inspect.Parameter):
     """Describes the name and type of an event parameter"""
@@ -431,8 +437,3 @@ def api_to_schema(api: "lightbus.Api") -> dict:
             }
 
     return schema
-
-
-def _parameter_names(parameters) -> set:
-    """Take a list of parameters (as strings or Parameter) and return a list of parameter names"""
-    return {p.name if isinstance(p, Parameter) else p for p in parameters}

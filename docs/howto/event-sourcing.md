@@ -39,11 +39,6 @@ apis:
       # Received (incoming) events must be processed 
       # regardless of their validity
       incoming: false
-    
-    # Die on errors. Errors must be dealt with before 
-    # continuing to processes events in order to ensure 
-    # consistency. You may also wish to set this to "stop_listener"
-    on_error: "shutdown"
 
     event_transport:
       redis:

@@ -45,7 +45,7 @@ async def test_many_calls_and_clients(bus: lightbus.path.BusPath, new_bus, caplo
 
 @pytest.mark.asyncio
 async def test_timeouts(bus: lightbus.path.BusPath, new_bus, caplog, dummy_api, loop):
-    caplog.set_level(logging.WARNING)
+    caplog.set_level(logging.ERROR)
     loop.slow_callback_duration = 0.01
     results = []
 
@@ -53,7 +53,7 @@ async def test_timeouts(bus: lightbus.path.BusPath, new_bus, caplog, dummy_api, 
         nonlocal results
         try:
             result = await client_bus.my.dummy.random_death.call_async(
-                n=n, death_every=20, bus_options={"timeout": 0.5}
+                n=n, death_every=20, bus_options={"timeout": 1}
             )
             results.append(result)
         except LightbusTimeout:

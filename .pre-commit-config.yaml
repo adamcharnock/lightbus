@@ -4,6 +4,6 @@ repos:
     hooks:
     - id: black
       args: [--line-length=100, --safe, --py36]
-      python_version: python3.7
+      language_version: python3.7
       verbose: true
       exclude: ^lightbus_experiments/

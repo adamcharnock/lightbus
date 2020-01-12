@@ -154,7 +154,15 @@ class LightbusFormatter(logging.Formatter):  # pragma: no cover
         if fmt is None:
             fmt = default_formats[style]
 
-        super(LightbusFormatter, self).__init__(fmt, datefmt, style)
+        if sys.version_info >= (3, 8):
+            # Disable the new validation feature in 3.8, as out dictionary
+            # of formats will cause it to error. All this logging needs refactoring
+            # anyway.
+            extra = dict(validate=False)
+        else:
+            extra = dict()
+
+        super(LightbusFormatter, self).__init__(fmt, datefmt, style, **extra)
 
         # Disable reset codes if we do not have a TTY
         self.stream = stream or sys.stdout

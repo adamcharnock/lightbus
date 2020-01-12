@@ -2,27 +2,31 @@
 
 """
 import asyncio
+from contextlib import contextmanager
+
 import pytest
 
 from lightbus import BusClient
 from lightbus.path import BusPath
 from lightbus.message import RpcMessage, EventMessage
 from lightbus.plugins import LightbusPlugin
+from tests.conftest import Worker
 
 pytestmark = pytest.mark.unit
 
 
 @pytest.fixture
-def called_hooks(mocker, dummy_bus: BusPath):
+def track_called_hooks(mocker):
     # Patch only applies to module in which execute_hook is used, not
     # where it is defined
     async def dummy_coroutine(*args, **kwargs):
         pass
 
-    m = mocker.patch.object(
-        dummy_bus.client.plugin_registry, "execute_hook", side_effect=dummy_coroutine
-    )
-    return lambda: [kwargs.get("name") or args[0] for args, kwargs in m.call_args_list]
+    def inner(bus_client: BusClient):
+        m = mocker.patch.object(bus_client.hook_registry, "execute", side_effect=dummy_coroutine)
+        return lambda: [kwargs.get("name") or args[0] for args, kwargs in m.call_args_list]
+
+    return inner
 
 
 @pytest.fixture
@@ -36,27 +40,32 @@ def add_base_plugin(dummy_bus: BusPath):
     return do_add_base_plugin
 
 
-def test_server_start_stop(mocker, called_hooks, dummy_bus: BusPath, add_base_plugin, dummy_api):
+def test_worker_start_stop(
+    mocker, track_called_hooks, dummy_bus: BusPath, add_base_plugin, dummy_api
+):
     add_base_plugin()
     dummy_bus.client.register_api(dummy_api)
+    hook_tracker = track_called_hooks(dummy_bus.client)
     mocker.patch.object(BusClient, "_actually_run_forever")
     dummy_bus.client.run_forever()
-    assert called_hooks() == ["before_worker_start", "after_worker_stopped"]
+    assert hook_tracker() == ["before_worker_start", "after_worker_stopped"]
 
 
-def test_rpc_calls(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
+def test_rpc_calls(track_called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
     dummy_bus.client.register_api(dummy_api)
+    hook_tracker = track_called_hooks(dummy_bus.client)
     dummy_bus.my.dummy.my_proc(field=123)
-    assert called_hooks() == ["before_rpc_call", "after_rpc_call"]
+    assert hook_tracker() == ["before_rpc_call", "after_rpc_call"]
 
 
 @pytest.mark.asyncio
 async def test_rpc_execution(
-    called_hooks, dummy_bus: BusPath, loop, mocker, add_base_plugin, dummy_api
+    dummy_bus: BusPath, track_called_hooks, mocker, add_base_plugin, dummy_api
 ):
     add_base_plugin()
     dummy_bus.client.register_api(dummy_api)
+    hook_tracker = track_called_hooks(dummy_bus.client)
 
     async def dummy_transport_consume_rpcs(*args, **kwargs):
         if m.call_count == 1:
@@ -74,35 +83,40 @@ async def test_rpc_execution(
     # Give the bus worker a moment to execute the hooks
     await asyncio.sleep(0.01)
 
-    assert called_hooks() == ["before_rpc_execution", "after_rpc_execution"]
+    assert hook_tracker() == ["before_rpc_execution", "after_rpc_execution"]
 
 
-def test_event_sent(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
+def test_event_sent(track_called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
     dummy_bus.client.register_api(dummy_api)
+    hook_tracker = track_called_hooks(dummy_bus.client)
     dummy_bus.my.dummy.my_event.fire(field="foo")
-    assert called_hooks() == ["before_event_sent", "after_event_sent"]
+    assert hook_tracker() == ["before_event_sent", "after_event_sent"]
 
 
 @pytest.mark.asyncio
-async def test_event_execution(called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
+async def test_event_execution(
+    track_called_hooks, new_bus, worker: Worker, loop, add_base_plugin, dummy_api
+):
     add_base_plugin()
-    dummy_bus.client.register_api(dummy_api)
+    bus = new_bus()
+    bus.client.register_api(dummy_api)
+    hook_tracker = track_called_hooks(bus.client)
 
-    dummy_bus.client.listen_for_event(
-        "my.dummy", "my_event", lambda *a, **kw: None, listener_name="test"
-    )
-    await dummy_bus.client._setup_server()
-    await asyncio.sleep(0.1)
+    bus.client.listen_for_event("my.dummy", "my_event", lambda *a, **kw: None, listener_name="test")
 
-    # Send the event message using a lower-level API to avoid triggering the
-    # before_event_sent & after_event_sent plugin hooks. We don't care about those here
-    event_message = EventMessage(api_name="my.dummy", event_name="my_event", kwargs={"field": 1})
-    event_transport = dummy_bus.client.transport_registry.get_event_transport("default")
-    await event_transport.send_event(event_message, options={}, bus_client=None)
-    await asyncio.sleep(0.1)
+    async with worker(bus):
+        await asyncio.sleep(0.1)
 
-    # There is a chance of events firing twice (because the dummy_bus keeps firing events),
-    # so cast to the lists to sets first before comparing
-    assert "before_event_execution" in called_hooks()
-    assert "after_event_execution" in called_hooks()
+        # Send the event message using a lower-level API to avoid triggering the
+        # before_event_sent & after_event_sent plugin hooks. We don't care about those here
+        event_message = EventMessage(
+            api_name="my.dummy", event_name="my_event", kwargs={"field": "a"}
+        )
+        event_transport = bus.client.transport_registry.get_event_transport("default")
+        await event_transport.send_event(event_message, options={})
+        await asyncio.sleep(0.1)
+
+    # FYI: There is a chance of events firing twice (because the dummy_bus keeps firing events),
+    assert "before_event_execution" in hook_tracker()
+    assert "after_event_execution" in hook_tracker()

@@ -2,14 +2,9 @@ import json
 from uuid import UUID
 
 import pytest
-from base64 import b64decode
 
 from lightbus.message import RpcMessage, ResultMessage
-from lightbus.serializers import (
-    BlobMessageDeserializer,
-    ByFieldMessageSerializer,
-    ByFieldMessageDeserializer,
-)
+from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeserializer
 from lightbus import RedisResultTransport
 
 pytestmark = pytest.mark.unit
@@ -25,7 +20,7 @@ async def test_connection_manager(redis_result_transport):
 
 @pytest.mark.asyncio
 async def test_get_return_path(redis_result_transport: RedisResultTransport):
-    return_path = redis_result_transport.get_return_path(
+    return_path = await redis_result_transport.get_return_path(
         RpcMessage(
             api_name="my.api",
             procedure_name="my_proc",
@@ -48,9 +43,14 @@ async def test_send_result(redis_result_transport: RedisResultTransport, redis_c
             kwargs={"field": "value"},
             return_path="abc",
         ),
-        result_message=ResultMessage(id="345", rpc_message_id="123abc", result="All done! 😎"),
+        result_message=ResultMessage(
+            api_name="my.api",
+            procedure_name="my_proc",
+            id="345",
+            rpc_message_id="123abc",
+            result="All done! 😎",
+        ),
         return_path="redis+key://my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e",
-        bus_client=None,
     )
     assert await redis_client.keys("*") == [
         b"my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e"
@@ -86,7 +86,6 @@ async def test_receive_result(redis_result_transport: RedisResultTransport, redi
         ),
         return_path="redis+key://my.api.my_proc:result:e1821498-e57c-11e7-af9d-7831c1c3936e",
         options={},
-        bus_client=None,
     )
     assert result_message.result == "All done! 😎"
     assert result_message.rpc_message_id == "123abc"
@@ -99,12 +98,12 @@ async def test_from_config(redis_client):
     await redis_client.select(5)
     host, port = redis_client.address
     transport = RedisResultTransport.from_config(
-        config=None,
         url=f"redis://127.0.0.1:{port}/5",
         connection_parameters=dict(maxsize=123),
         # Non default serializers, event though they wouldn't make sense in this context
         serializer="lightbus.serializers.ByFieldMessageSerializer",
         deserializer="lightbus.serializers.ByFieldMessageDeserializer",
+        config=None,
     )
     with await transport.connection_manager() as transport_client:
         assert transport_client.connection.address == ("127.0.0.1", port)
@@ -115,3 +114,4 @@ async def test_from_config(redis_client):
     assert transport._redis_pool.connection.maxsize == 123
     assert isinstance(transport.serializer, ByFieldMessageSerializer)
     assert isinstance(transport.deserializer, ByFieldMessageDeserializer)
+    await transport.close()

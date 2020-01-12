@@ -41,6 +41,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         self.deserializer = deserializer
         self.result_ttl = result_ttl
         self.rpc_timeout = rpc_timeout
+        super().__init__()
 
     @classmethod
     def from_config(
@@ -65,7 +66,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
             rpc_timeout=rpc_timeout,
         )
 
-    def get_return_path(self, rpc_message: RpcMessage) -> str:
+    async def get_return_path(self, rpc_message: RpcMessage) -> str:
         """Get the return path for the given message
 
         The return path is sent with the outgoing RPC message and
@@ -85,11 +86,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         return return_path[12:]
 
     async def send_result(
-        self,
-        rpc_message: RpcMessage,
-        result_message: ResultMessage,
-        return_path: str,
-        bus_client: "BusClient",
+        self, rpc_message: RpcMessage, result_message: ResultMessage, return_path: str
     ):
         """Send the result back to the caller"""
         logger.debug(
@@ -118,7 +115,7 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
         )
 
     async def receive_result(
-        self, rpc_message: RpcMessage, return_path: str, options: dict, bus_client: "BusClient"
+        self, rpc_message: RpcMessage, return_path: str, options: dict
     ) -> ResultMessage:
         """Await a result from the processing worker"""
         logger.debug(L("Awaiting Redis result for RPC message: {}", Bold(rpc_message)))
@@ -136,7 +133,9 @@ class RedisResultTransport(RedisTransportMixin, ResultTransport):
                 result = await redis.blpop(redis_key, timeout=self.rpc_timeout)
             _, serialized = result
 
-        result_message = self.deserializer(serialized)
+        result_message = self.deserializer(
+            serialized, api_name=rpc_message.api_name, procedure_name=rpc_message.procedure_name
+        )
 
         logger.debug(
             L(

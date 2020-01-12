@@ -5,11 +5,11 @@ workflows:
   tests:
     jobs:
       - test-37
-#      - test-38
+      - test-38
       - combine_coverage_reports:
           requires:
             - test-37
-#            - test-38
+            - test-38
 
   build_and_deploy_docs:
     jobs:
@@ -60,7 +60,7 @@ jobs:
   test-38:
     <<: *test-template
     docker:
-      - image: circleci/python:3.8.0b3
+      - image: circleci/python:3.8.1
       - image: postgres:9.6.2
       - image: redis:5
 

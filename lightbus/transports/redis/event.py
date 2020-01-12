@@ -19,6 +19,7 @@ from typing import (
 from aioredis import ConnectionClosedError, ReplyError
 from aioredis.util import decode
 
+from lightbus.client.utilities import queue_exception_checker, ErrorQueueType
 from lightbus.transports.base import EventTransport, EventMessage
 from lightbus.log import LBullets, L, Bold
 from lightbus.serializers import ByFieldMessageSerializer, ByFieldMessageDeserializer
@@ -29,8 +30,10 @@ from lightbus.transports.redis.utilities import (
     datetime_to_redis_steam_id,
     redis_stream_id_add_one,
     redis_stream_id_subtract_one,
+    retry_on_redis_connection_failure,
 )
-from lightbus.utilities.async_tools import make_exception_checker, cancel
+from lightbus.utilities.async_tools import cancel
+from lightbus.utilities.internal_queue import InternalQueue
 from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.human import human_time
 from lightbus.utilities.importing import import_from_string
@@ -56,6 +59,10 @@ class StreamUse(Enum):
             return self.value == other
         else:
             return super().__eq__(other)
+
+    # Need to define this manually because we also
+    # defined __eq__
+    __hash__ = Enum.__hash__
 
 
 class RedisEventTransport(RedisTransportMixin, EventTransport):
@@ -136,7 +143,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             consumer_ttl=consumer_ttl,
         )
 
-    async def send_event(self, event_message: EventMessage, options: dict, bus_client: "BusClient"):
+    async def send_event(self, event_message: EventMessage, options: dict):
         """Publish an event"""
         stream = self._get_stream_names(
             listen_for=[(event_message.api_name, event_message.event_name)]
@@ -177,7 +184,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self,
         listen_for: List[Tuple[str, str]],
         listener_name: str,
-        bus_client: "BusClient",
+        error_queue: ErrorQueueType,
         since: Union[Since, Sequence[Since]] = "$",
         forever=True,
     ) -> AsyncGenerator[List[RedisEventMessage], None]:
@@ -213,26 +220,20 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         # Here we use a queue to combine messages coming from both the
         # fetch messages loop and the reclaim messages loop.
-        queue = asyncio.Queue(maxsize=1)
+        queue = InternalQueue(maxsize=1)
 
         async def consume_loop():
             """Regular event consuming. See _fetch_new_messages()"""
-            while True:
-                try:
-                    async for messages in self._fetch_new_messages(
-                        streams, consumer_group, expected_events, forever
-                    ):
-                        await queue.put(messages)
-                        # Wait for the queue to empty before getting trying to get another message
-                        await queue.join()
-                except (ConnectionClosedError, ConnectionResetError):
-                    # ConnectionClosedError is from aioredis. However, sometimes the connection
-                    # can die outside of aioredis, in which case we get a builtin ConnectionResetError.
-                    logger.warning(
-                        f"Redis connection lost while consuming events, reconnecting "
-                        f"in {self.consumption_restart_delay} seconds..."
-                    )
-                    await asyncio.sleep(self.consumption_restart_delay)
+            async for messages in self._fetch_new_messages(
+                streams, consumer_group, expected_events, forever
+            ):
+                await queue.put(messages)
+                # Wait for the queue to empty before getting trying to get another message
+                await queue.join()
+
+        retry_consume_loop = retry_on_redis_connection_failure(
+            fn=consume_loop, retry_delay=self.consumption_restart_delay, action="consuming events"
+        )
 
         async def reclaim_loop():
             """
@@ -253,12 +254,12 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         try:
             # Run the two above coroutines in their own tasks
-            consume_task = asyncio.ensure_future(consume_loop())
-            reclaim_task = asyncio.ensure_future(reclaim_loop())
-
-            # Make sure we surface any exceptions that occur in either task
-            consume_task.add_done_callback(make_exception_checker(bus_client))
-            reclaim_task.add_done_callback(make_exception_checker(bus_client))
+            consume_task = asyncio.ensure_future(
+                queue_exception_checker(retry_consume_loop, error_queue)
+            )
+            reclaim_task = asyncio.ensure_future(
+                queue_exception_checker(reclaim_loop(), error_queue)
+            )
 
             while True:
                 try:
@@ -320,6 +321,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 if not event_message:
                     # noop message, or message an event we don't care about
                     continue
+
                 logger.debug(
                     LBullets(
                         L(
@@ -343,15 +345,22 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             while True:
                 # Fetch some messages.
                 # This will block until there are some messages available
-                stream_messages = await redis.xread_group(
-                    group_name=consumer_group,
-                    consumer_name=self.consumer_name,
-                    streams=list(streams.keys()),
-                    # Using ID '>' indicates we only want new messages which have not
-                    # been passed to other consumers in this group
-                    latest_ids=[">"] * len(streams),
-                    count=self.batch_size,
-                )
+                try:
+                    stream_messages = await redis.xread_group(
+                        group_name=consumer_group,
+                        consumer_name=self.consumer_name,
+                        streams=list(streams.keys()),
+                        # Using ID '>' indicates we only want new messages which have not
+                        # been passed to other consumers in this group
+                        latest_ids=[">"] * len(streams),
+                        count=self.batch_size,
+                    )
+                except asyncio.CancelledError:
+                    # We need to manually close the connection here otherwise the aioredis
+                    # pool will emit warnings saying that this connection still has pending
+                    # commands (i.e. the above blocking pop)
+                    redis.close()
+                    raise
 
                 # Handle the messages we have received
                 event_messages = []
@@ -365,9 +374,11 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         native_id=message_id,
                         consumer_group=consumer_group,
                     )
+
                     if not event_message:
-                        # noop message, or message an event we don't care about
+                        # noop message, or an event message we don't care about
                         continue
+
                     logger.debug(
                         LBullets(
                             L(
@@ -380,7 +391,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                             ),
                         )
                     )
-                    # NOTE: YIELD ALL MESSAGES, NOT JUST ONE
+
                     event_messages.append(event_message)
 
                 if event_messages:
@@ -487,7 +498,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                             if event_messages:
                                 yield event_messages
 
-    async def acknowledge(self, *event_messages: RedisEventMessage, bus_client: "BusClient"):
+    async def acknowledge(self, *event_messages: RedisEventMessage):
         """Acknowledge that a message has been successfully processed
         """
         with await self.connection_manager() as redis:

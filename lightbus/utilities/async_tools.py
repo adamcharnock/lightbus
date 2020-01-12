@@ -2,21 +2,18 @@ import sys
 import asyncio
 import logging
 import threading
-import traceback
-from contextlib import contextmanager
-from functools import partial
+from concurrent.futures.thread import ThreadPoolExecutor
 from time import time
 from typing import Coroutine, TYPE_CHECKING
 import datetime
 
 import aioredis
 
-from lightbus.exceptions import LightbusShutdownInProgress, CannotBlockHere
+from lightbus.exceptions import CannotBlockHere
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import,cyclic-import
     from schedule import Job
-    from lightbus.client import BusClient
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +38,7 @@ def block(coroutine: Coroutine, loop=None, *, timeout=None):
         if timeout is None:
             val = loop.run_until_complete(coroutine)
         else:
-            val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout, loop=loop))
+            val = loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
     except Exception as e:
         # The intention here is to get sensible stack traces from exceptions within blocking calls
         raise e
@@ -96,44 +93,25 @@ async def cancel(*tasks):
         raise ex
 
 
-def check_for_exception(fut: asyncio.Future, bus_client: "BusClient", die=True):
-    """Check for exceptions in returned future
+async def cancel_and_log_exceptions(*tasks):
+    """Cancel tasks and log any exceptions
 
-    To be used as a callback, eg:
-
-    task.add_done_callback(check_for_exception)
+    This is useful when shutting down, when tasks need to be cancelled any anything
+    that goes wrong should be logged but will not otherwise be dealt with.
     """
-    with exception_handling_context(bus_client, die):
-        if fut.exception():
-            fut.result()
+    for task in tasks:
+        try:
+            await cancel(task)
+        except Exception as e:
+            # pylint: disable=broad-except
+            logger.exception(e)
+            logger.error(
+                "Error encountered when shutting down task %s. Exception logged, will now move on.",
+                task,
+            )
 
 
-def make_exception_checker(bus_client: "BusClient", die=True):
-    """Creates a callback handler (i.e. check_for_exception())
-    which will be called with the given arguments"""
-    return partial(check_for_exception, die=die, bus_client=bus_client)
-
-
-@contextmanager
-def exception_handling_context(bus_client: "BusClient", die=True):
-    """Handle exceptions in user code"""
-    try:
-        yield
-    except (asyncio.CancelledError, LightbusShutdownInProgress):
-        return
-    except Exception as e:
-        # Must log the exception here, otherwise exceptions that occur during
-        # listener setup will never be logged
-        logger.debug(f"Exception occurred in exception handling context. die is {die}")
-        logger.exception(e)
-        if die:
-            logger.debug("Stopping event loop and setting exit code")
-            bus_client.shutdown_server(exit_code=1)
-
-
-async def run_user_provided_callable(
-    callable_, args, kwargs, bus_client: "BusClient", die_on_exception=True
-):
+async def run_user_provided_callable(callable_, args, kwargs):
     """Run user provided code
 
     If the callable is blocking (i.e. a regular function) it will be
@@ -147,23 +125,28 @@ async def run_user_provided_callable(
 
     The callable will be called with the given args and kwargs
     """
-    if hasattr(callable_, "_parent_stack"):
-        # Used to provide helpful output in case of deadlock in client worker
-        callable_._parent_stack = traceback.extract_stack(limit=5)[:-1]
-
     if asyncio.iscoroutinefunction(callable_):
-        return await callable_(*args, **kwargs)
+        try:
+            return await callable_(*args, **kwargs)
+        except Exception as e:
+            exception = e
+    else:
+        try:
+            thread_pool_executor = ThreadPoolExecutor(
+                thread_name_prefix="user_provided_callable_tpe"
+            )
+            future = asyncio.get_event_loop().run_in_executor(
+                executor=thread_pool_executor, func=lambda: callable_(*args, **kwargs)
+            )
+            return await future
+        except Exception as e:
+            exception = e
 
-    with exception_handling_context(bus_client, die=die_on_exception):
-        future = asyncio.get_event_loop().run_in_executor(
-            executor=None, func=lambda: callable_(*args, **kwargs)
-        )
-    return await future
+    logger.debug(f"Error in user provided callable: {repr(exception)}")
+    raise exception
 
 
-async def call_every(
-    *, callback, timedelta: datetime.timedelta, also_run_immediately: bool, bus_client: "BusClient"
-):
+async def call_every(*, callback, timedelta: datetime.timedelta, also_run_immediately: bool):
     """Call callback every timedelta
 
     If also_run_immediately is set then the callback will be called before any waiting
@@ -177,47 +160,22 @@ async def call_every(
     while True:
         start_time = time()
         if not first_run or also_run_immediately:
-            await run_user_provided_callable(callback, args=[], kwargs={}, bus_client=bus_client)
+            await run_user_provided_callable(callback, args=[], kwargs={})
         total_execution_time = time() - start_time
         sleep_time = max(0.0, timedelta.total_seconds() - total_execution_time)
         await asyncio.sleep(sleep_time)
         first_run = False
 
 
-async def call_on_schedule(
-    callback, schedule: "Job", also_run_immediately: bool, bus_client: "BusClient"
-):
+async def call_on_schedule(callback, schedule: "Job", also_run_immediately: bool):
     first_run = True
     while True:
         schedule._schedule_next_run()
 
         if not first_run or also_run_immediately:
             schedule.last_run = datetime.datetime.now()
-            await run_user_provided_callable(callback, args=[], kwargs={}, bus_client=bus_client)
+            await run_user_provided_callable(callback, args=[], kwargs={})
 
         td = schedule.next_run - datetime.datetime.now()
         await asyncio.sleep(td.total_seconds())
         first_run = False
-
-
-class ThreadSerializedTask(asyncio.Task):
-    _lock = threading.Lock()
-
-    def _wakeup(self, *args, **kwargs):
-        with ThreadSerializedTask._lock:
-            super()._wakeup(*args, **kwargs)
-
-    @staticmethod
-    def factory(loop, coro):
-        return ThreadSerializedTask(coro, loop=loop)
-
-
-class LightbusEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
-    def get_event_loop(self):
-        loop = super().get_event_loop()
-        loop.set_task_factory(ThreadSerializedTask.factory)
-        return loop
-
-
-def configure_event_loop():
-    asyncio.set_event_loop_policy(LightbusEventLoopPolicy())
