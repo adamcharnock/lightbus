@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../..">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -62,7 +62,7 @@
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -1001,22 +1001,22 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#server_started" class="md-nav__link">
-    server_started
+  <a href="#worker_started" class="md-nav__link">
+    worker_started
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#server_ping" class="md-nav__link">
-    server_ping
+  <a href="#worker_ping" class="md-nav__link">
+    worker_ping
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#server_stopped" class="md-nav__link">
-    server_stopped
+  <a href="#worker_stopped" class="md-nav__link">
+    worker_stopped
   </a>
   
 </li>
@@ -1282,22 +1282,22 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#server_started" class="md-nav__link">
-    server_started
+  <a href="#worker_started" class="md-nav__link">
+    worker_started
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#server_ping" class="md-nav__link">
-    server_ping
+  <a href="#worker_ping" class="md-nav__link">
+    worker_ping
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#server_stopped" class="md-nav__link">
-    server_stopped
+  <a href="#worker_stopped" class="md-nav__link">
+    worker_stopped
   </a>
   
 </li>
@@ -1409,14 +1409,14 @@ to the bus. This state information is available as the following events on the
 <p>This plugin should add minimal load to the bus and may be useful in developing 
 tooling around the bus.</p>
 <h3 id="events">Events<a class="headerlink" href="#events" title="Permanent link">&para;</a></h3>
-<h4 id="server_started"><code>server_started</code><a class="headerlink" href="#server_started" title="Permanent link">&para;</a></h4>
+<h4 id="worker_started"><code>worker_started</code><a class="headerlink" href="#worker_started" title="Permanent link">&para;</a></h4>
 <p>Parameters: <code>process_name</code>, <code>metrics_enabled</code>, <code>api_names</code>, <code>listening_for</code>, <code>timestamp</code>, <code>ping_interval</code></p>
 <p>Fired when the worker starts up.</p>
-<h4 id="server_ping"><code>server_ping</code><a class="headerlink" href="#server_ping" title="Permanent link">&para;</a></h4>
+<h4 id="worker_ping"><code>worker_ping</code><a class="headerlink" href="#worker_ping" title="Permanent link">&para;</a></h4>
 <p>Parameters: <code>process_name</code>, <code>metrics_enabled</code>, <code>api_names</code>, <code>listening_for</code>, <code>timestamp</code>, <code>ping_interval</code></p>
 <p>Fires every 60 seconds after worker startup. This indicates that the worker is still alive and has not 
 died unexpectedly. This interval is configurable (see below).</p>
-<h4 id="server_stopped"><code>server_stopped</code><a class="headerlink" href="#server_stopped" title="Permanent link">&para;</a></h4>
+<h4 id="worker_stopped"><code>worker_stopped</code><a class="headerlink" href="#worker_stopped" title="Permanent link">&para;</a></h4>
 <p>Parameters: <code>process_name</code>, <code>timestamp</code></p>
 <p>Fires when a worker shuts down cleanly.</p>
 <h3 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h3>
@@ -1503,6 +1503,7 @@ bigger impact on performance than the state plugin, but also provides much more 
                 
                   
                 
+                
               
               
                 
@@ -1569,7 +1570,7 @@ bigger impact on performance than the state plugin, but also provides much more 
       
     </div>
     
-      <script src="../../assets/javascripts/application.a8b5e56f.js"></script>
+      <script src="../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       

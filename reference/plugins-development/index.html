@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../..">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -62,7 +62,7 @@
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -1257,8 +1257,8 @@
 <p>For example, the bundled <a href="https://github.com/adamcharnock/lightbus/blob/master/lightbus/plugins/state.py">StatePlugin</a>
  hooks into the <code>before_worker_start</code> and <code>after_worker_stopped</code> hooks. 
 The plugin uses these hooks to bus events indicating the state of the worker. 
-A <code>internal.state.server_started</code> event indicates a worker has started, and a 
-<code>internal.state.server_stopped</code> event indicates a worker has stopped. Consuming 
+A <code>internal.state.worker_started</code> event indicates a worker has started, and a 
+<code>internal.state.worker_stopped</code> event indicates a worker has stopped. Consuming 
 these events will provide a picture of the current state of workers on the bus.</p>
 <h2 id="example-plugin">Example plugin<a class="headerlink" href="#example-plugin" title="Permanent link">&para;</a></h2>
 <p>Let's create a simple plugin which will print a configurable message to the 
@@ -1364,6 +1364,7 @@ as an asynchronous method on your plugin class. </p>
                 
                   
                 
+                
               
               
                 
@@ -1430,7 +1431,7 @@ as an asynchronous method on your plugin class. </p>
       
     </div>
     
-      <script src="../../assets/javascripts/application.a8b5e56f.js"></script>
+      <script src="../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       

@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../..">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -62,7 +62,7 @@
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -1085,8 +1085,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#consuming-incoming-rpc-calls-server" class="md-nav__link">
-    Consuming incoming RPC calls (server)
+  <a href="#consuming-incoming-rpc-calls-worker" class="md-nav__link">
+    Consuming incoming RPC calls (worker)
   </a>
   
 </li>
@@ -1281,8 +1281,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#consuming-incoming-rpc-calls-server" class="md-nav__link">
-    Consuming incoming RPC calls (server)
+  <a href="#consuming-incoming-rpc-calls-worker" class="md-nav__link">
+    Consuming incoming RPC calls (worker)
   </a>
   
 </li>
@@ -1406,7 +1406,7 @@ should be in the following format:</p>
 in the sent RPC message.</p>
 <p>See <a href="#message-serialisation-encoding">message serialisation &amp; encoding</a> for the format of 
 the returned RPC result.</p>
-<h2 id="consuming-incoming-rpc-calls-server">Consuming incoming RPC calls (server)<a class="headerlink" href="#consuming-incoming-rpc-calls-server" title="Permanent link">&para;</a></h2>
+<h2 id="consuming-incoming-rpc-calls-worker">Consuming incoming RPC calls (worker)<a class="headerlink" href="#consuming-incoming-rpc-calls-worker" title="Permanent link">&para;</a></h2>
 <p>RPCs are consumed as follows:</p>
 <div class="codehilite"><pre><span></span># Blocks until a RPC message is received
 BLPOP &quot;{api_name}:rpc_queue&quot;
@@ -1490,7 +1490,7 @@ something custom here, but be aware that:</p>
 <h2 id="data-validation">Data validation<a class="headerlink" href="#data-validation" title="Permanent link">&para;</a></h2>
 <p>Validation of outgoing parameters and incoming results is optional. However, 
 validation of outgoing parameters is recommended as sending of RPC messages which fail validation may 
-result in the message being rejected by the Lightbus server.  </p>
+result in the message being rejected by the Lightbus worker.  </p>
 <p>This validation can be 
 performed using the using the schema available through the <a href="../schema/">schema protocol</a>.</p>
 <h2 id="data-deformation-casting">Data deformation &amp; casting<a class="headerlink" href="#data-deformation-casting" title="Permanent link">&para;</a></h2>
@@ -1501,6 +1501,7 @@ structures.</p>
 is left up to individual library developers.</p>
                 
                   
+                
                 
               
               
@@ -1568,7 +1569,7 @@ is left up to individual library developers.</p>
       
     </div>
     
-      <script src="../../../assets/javascripts/application.a8b5e56f.js"></script>
+      <script src="../../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
       

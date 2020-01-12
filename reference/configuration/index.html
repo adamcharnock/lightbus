@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../..">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -62,7 +62,7 @@
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -1756,12 +1756,6 @@ APIs do not inherit from the default configuration.</p>
 <li><code>cast_values</code> (default: <code>true</code>) – If enabled, incoming values will be best-effort
   casted based on the annotations of the RPC method signature or event listener.
   See <a href="../typing/">typing</a>.</li>
-<li><code>on_error</code> (default: <code>shutdown</code>) – How should errors in event handlers be
-  dealt with. Must be one of <code>ignore</code>, <code>stop_listener</code>, or <code>shutdown</code>.
-  In all cases the exception will be logged. <code>ignore</code> will simply log the error and
-  continue processing events. <code>stop_listener</code> will consume no further events
-  for that listener, but other event listeners will continue as normal.
-  <code>shutdown</code> will cause the Lightbus process to exit with a non-zero exit code.</li>
 </ul>
 <h5 id="transport-selector">Transport selector<a class="headerlink" href="#transport-selector" title="Permanent link">&para;</a></h5>
 <p>The schema config resides under both the <a href="#api-config">API config</a> and the
@@ -1857,6 +1851,7 @@ You must there set <code>enabled: true</code> if you wish to use the plugin. For
                 
                   
                 
+                
               
               
                 
@@ -1923,7 +1918,7 @@ You must there set <code>enabled: true</code> if you wish to use the plugin. For
       
     </div>
     
-      <script src="../../assets/javascripts/application.a8b5e56f.js"></script>
+      <script src="../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       

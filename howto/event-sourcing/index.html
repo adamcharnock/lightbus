@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../..">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -62,7 +62,7 @@
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -1255,11 +1255,6 @@ something like this:</p>
       <span class="c1"># regardless of their validity</span>
       <span class="nt">incoming</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
 
-    <span class="c1"># Die on errors. Errors must be dealt with before </span>
-    <span class="c1"># continuing to processes events in order to ensure </span>
-    <span class="c1"># consistency. You may also wish to set this to &quot;stop_listener&quot;</span>
-    <span class="nt">on_error</span><span class="p">:</span> <span class="s">&quot;shutdown&quot;</span>
-
     <span class="nt">event_transport</span><span class="p">:</span>
       <span class="nt">redis</span><span class="p">:</span>
         <span class="nt">url</span><span class="p">:</span> <span class="s">&#39;redis://redis_host:6379/0&#39;</span>
@@ -1299,6 +1294,7 @@ lightbus run --service-name=example_service --process-name=worker3
 <p><strong>Ordering will <em>not</em> be maintained when running multiple workers.</strong></p>
                 
                   
+                
                 
               
               
@@ -1366,7 +1362,7 @@ lightbus run --service-name=example_service --process-name=worker3
       
     </div>
     
-      <script src="../../assets/javascripts/application.a8b5e56f.js"></script>
+      <script src="../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       

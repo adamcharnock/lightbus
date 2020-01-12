@@ -148,15 +148,6 @@
               }
             ]
           },
-          "on_error": {
-            "default": "shutdown",
-            "enum": [
-              "ignore",
-              "stop_listener",
-              "shutdown"
-            ],
-            "type": "string"
-          },
           "result_transport": {
             "default": null,
             "oneOf": [
