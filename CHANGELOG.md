@@ -3,6 +3,7 @@
 
 ## 0.10.0 - Unreleased
 
+* Python 3.8 now supported
 * The `on_error` configuration parameter has been removed. All errors are now fatal to the 
   Lightbus worker. If you wish for errors to not be fatal you should catch them in your 
   event handlers.
@@ -13,10 +14,6 @@
     * Renamed `BusClient.start_server()` to `BusClient.start_worker()`
     * Renamed `BusClient.stop_server()` to `BusClient.stop_worker()`
 * More cases now handled in Redis connection retrying (connection refused and redis in LOADING state)
-
-## 0.9.1 - Unreleased
-
-* ...
 
 ## 0.9.0 - Initial release
 
