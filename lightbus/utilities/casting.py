@@ -24,13 +24,14 @@ def cast_to_signature(parameters: dict, callable) -> dict:
 
     Will resolve functions which have been wrapped using itertools.wrap()
     """
+    casted_parameters = parameters.copy()
     for key, hint in get_type_hints(callable).items():
-        if key not in parameters:
+        if key not in casted_parameters:
             continue
 
-        parameters[key] = cast_to_hint(value=parameters[key], hint=hint)
+        casted_parameters[key] = cast_to_hint(value=casted_parameters[key], hint=hint)
 
-    return parameters
+    return casted_parameters
 
 
 V = TypeVar("V")
