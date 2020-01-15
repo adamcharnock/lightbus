@@ -294,6 +294,7 @@ class BusClient:
         self.loop.stop()
 
     def request_shutdown(self):
+        logger.debug("Requesting Lightbus shutdown")
         self.error_queue.put_nowait(
             Error(
                 type=KeyboardInterrupt,
