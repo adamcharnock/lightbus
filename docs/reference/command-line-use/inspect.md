@@ -94,13 +94,14 @@ speed up subsequent executions and reduce the load on the bus.
 ## Option reference
 
 ```
-$ lightbus inspect --help
+$ lightbus inspect -h
 usage: lightbus inspect [-h] [--json-path JSON_SEARCH]
                         [--id LIGHTBUS_EVENT_ID] [--native-id NATIVE_EVENT_ID]
                         [--api API_NAME] [--event EVENT_NAME]
                         [--version VERSION_NUMBER] [--format FORMAT]
-                        [--cache-only] [--follow] [--internal]
-                        [--bus BUS_MODULE] [--service-name SERVICE_NAME]
+                        [--cache-only] [--follow] [--validate]
+                        [--show-casting] [--internal] [--bus BUS_MODULE]
+                        [--service-name SERVICE_NAME]
                         [--process-name PROCESS_NAME] [--config FILE]
                         [--log-level LOG_LEVEL]
 
@@ -133,6 +134,11 @@ Inspect command arguments:
   --follow, -f          Continually listen for new events matching the search
                         criteria. May only be used on a single API (default:
                         False)
+  --validate, -d        Validate displayed events against the bus schema. Only
+                        available when --format is set to 'human'
+                        (experimental) (default: False)
+  --show-casting, -C    Show how the message values will be casted for each
+                        event listener (experimental) (default: False)
   --internal, -I        Include internal APIs (default: False)
 
 Common arguments:
