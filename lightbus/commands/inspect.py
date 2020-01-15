@@ -8,12 +8,13 @@ from hashlib import sha1
 import sys
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, get_type_hints
 
-from lightbus import EventMessage, BusPath, EventTransport
+from lightbus import EventMessage, BusPath, EventTransport, ValidationError
 from lightbus.commands import utilities as command_utilities
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
+from lightbus.utilities.casting import cast_to_signature
 from lightbus_vendored.jsonpath import jsonpath
 
 
@@ -87,6 +88,23 @@ class Command:
             ),
             action="store_true",
         )
+        group.add_argument(
+            "--validate",
+            "-d",
+            help=(
+                "Validate displayed events against the bus schema. Only available "
+                "when --format is set to 'human' (experimental)"
+            ),
+            action="store_true",
+        )
+        group.add_argument(
+            "--show-casting",
+            "-C",
+            help=(
+                "Show how the message values will be casted for each event listener (experimental)"
+            ),
+            action="store_true",
+        )
         group.add_argument("--internal", "-I", help="Include internal APIs", action="store_true")
 
         command_utilities.setup_common_arguments(parser_inspect)
@@ -99,6 +117,7 @@ class Command:
         api_names: List[str]
 
         block(bus.client.lazy_load_now())
+        block(bus.client.hook_registry.execute("before_worker_start"))
 
         # Locally registered APIs
         api_names = [api.meta.name for api in bus.client.api_registry.all()]
@@ -147,7 +166,7 @@ class Command:
         async with transport_pool as transport:
             async for message in self.get_messages(args, api_name, args.event, transport, bus):
                 if self.match_message(args, message):
-                    self.output(args, transport, message)
+                    self.output(args, transport, message, bus)
 
     async def get_messages(
         self,
@@ -320,7 +339,7 @@ class Command:
 
         return True
 
-    def output(self, args, transport: EventTransport, message: EventMessage):
+    def output(self, args, transport: EventTransport, message: EventMessage, bus: BusPath):
         """Print out the given message"""
 
         serialized = transport.serializer(message)
@@ -347,8 +366,52 @@ class Command:
             print(f"\n{Colors.BWhite}Data:{Colors.Reset}")
             for k, v in message.get_kwargs().items():
                 if isinstance(v, (dict, list)):
-                    v = json.dumps(v)
+                    v = json.dumps(v, indent=4)
+                    pad = " " * 24
+                    v = "".join(pad + v for v in v.splitlines(keepends=True)).lstrip()
                 print(f"    {str(k).ljust(20)}: {v}")
+
+            if args.validate or args.show_casting:
+                print(f"\n{Colors.BWhite}Extra:{Colors.Reset}")
+
+            if args.validate:
+                try:
+                    bus.client.schema.validate_parameters(
+                        message.api_name, message.event_name, message.kwargs
+                    )
+                except ValidationError as e:
+                    validation_message = f"{Colors.Red}{e}{Colors.Reset}"
+                else:
+                    validation_message = f"{Colors.Green}Passed{Colors.Reset}"
+
+                print(f"    Validation:         {validation_message}")
+
+            if args.show_casting:
+                for listener in bus.client.event_client._event_listeners:
+                    if (message.api_name, message.event_name) not in listener.events:
+                        continue
+
+                    hints = get_type_hints(listener.callable)
+                    casted = cast_to_signature(
+                        parameters=message.kwargs, callable=listener.callable
+                    )
+                    print(
+                        f"\n    {Colors.BWhite}Casting for listener: {listener.name}{Colors.Reset}"
+                    )
+
+                    for key, value in message.kwargs.items():
+                        was = type(value)
+                        via = hints[key]
+                        now = type(casted[key])
+                        color = Colors.Green if via == now else Colors.Red
+                        print(
+                            f"        "
+                            f"{color}{str(key).ljust(20)}: "
+                            f"Received a '{was.__name__}', "
+                            f"casted to a '{via.__name__}', "
+                            f"result was a '{now.__name__}'"
+                            f"{Colors.Reset}"
+                        )
 
             print("\n")
 
