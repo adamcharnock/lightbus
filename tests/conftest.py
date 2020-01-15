@@ -242,7 +242,6 @@ def dummy_bus(loop, redis_server_url):
             )
         ),
         plugins=[],
-        _testing=True,
     )
     # fmt: on
     yield dummy_bus
@@ -735,7 +734,6 @@ def new_bus(loop, redis_server_url):
                 service_name=service_name
             ),
             plugins=[],
-            _testing=True,
         )
         return bus
     return _new_bus

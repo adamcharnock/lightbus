@@ -43,7 +43,6 @@ def create(
     node_class: Type[BusPath] = BusPath,
     plugins=None,
     flask: bool = False,
-    _testing: bool = False,
     **kwargs,
 ) -> BusPath:
     """
@@ -197,11 +196,12 @@ def create(
     # (use a weakref to prevent circular references)
     hook_registry.set_extra_parameter("client", weakref.proxy(client))
 
-    if _testing:
-        # We don't do this normally as the docs do not need to be
-        # accessed directly, but this is useful in testing
-        client.event_dock = event_dock
-        client.rpc_result_dock = rpc_result_dock
+    # We don't do this normally as the docks do not need to be
+    # accessed directly, but this is useful in testing
+    # TODO: Testing flag removed, but these are only needed in testing.
+    #       Perhaps wrap them up in a way that makes this obvious
+    client.event_dock = event_dock
+    client.rpc_result_dock = rpc_result_dock
 
     log_welcome_message(
         logger=logger,
