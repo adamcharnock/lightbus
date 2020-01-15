@@ -240,8 +240,6 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             Reclaim messages which other consumers have failed to
             processes in reasonable time. See _reclaim_lost_messages()
             """
-
-            await asyncio.sleep(self.acknowledgement_timeout)
             async for messages in self._reclaim_lost_messages(
                 stream_names, consumer_group, expected_events
             ):
@@ -311,15 +309,18 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             for stream, message_id, fields in pending_messages:
                 message_id = decode(message_id, "utf8")
                 stream = decode(stream, "utf8")
-                event_message = self._fields_to_message(
-                    fields,
-                    expected_events,
-                    stream=stream,
-                    native_id=message_id,
-                    consumer_group=consumer_group,
-                )
-                if not event_message:
-                    # noop message, or message an event we don't care about
+                try:
+                    event_message = self._fields_to_message(
+                        fields,
+                        expected_events,
+                        stream=stream,
+                        native_id=message_id,
+                        consumer_group=consumer_group,
+                    )
+                except (NoopMessage, IgnoreMessage):
+                    # This listener doesn't need to care about this message, so acknowledge
+                    # it and move on with our lives
+                    await redis.xack(stream, consumer_group, message_id)
                     continue
 
                 logger.debug(
@@ -367,16 +368,18 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 for stream, message_id, fields in stream_messages:
                     message_id = decode(message_id, "utf8")
                     stream = decode(stream, "utf8")
-                    event_message = self._fields_to_message(
-                        fields,
-                        expected_events,
-                        stream=stream,
-                        native_id=message_id,
-                        consumer_group=consumer_group,
-                    )
-
-                    if not event_message:
-                        # noop message, or an event message we don't care about
+                    try:
+                        event_message = self._fields_to_message(
+                            fields,
+                            expected_events,
+                            stream=stream,
+                            native_id=message_id,
+                            consumer_group=consumer_group,
+                        )
+                    except (NoopMessage, IgnoreMessage):
+                        # This listener doesn't need to care about this message, so acknowledge
+                        # it and move on with our lives
+                        await redis.xack(stream, consumer_group, message_id)
                         continue
 
                     logger.debug(
@@ -427,9 +430,16 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         reclaim_from = redis_stream_id_add_one(reclaim_from)
 
                     # Fetch the next batch of messages
-                    old_messages = await redis.xpending(
-                        stream, consumer_group, reclaim_from, "+", count=self.reclaim_batch_size
-                    )
+                    try:
+                        old_messages = await redis.xpending(
+                            stream, consumer_group, reclaim_from, "+", count=self.reclaim_batch_size
+                        )
+                    except ReplyError as e:
+                        if "NOGROUP" in str(e):
+                            # Group or consumer doesn't exist yet, so stop processing for this loop.
+                            break
+                        else:
+                            raise
 
                     timeout = self.acknowledgement_timeout * 1000
                     event_messages = []
@@ -468,16 +478,20 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                             # Parse each message we managed to claim
                             for claimed_message_id, fields in result:
                                 claimed_message_id = decode(claimed_message_id, "utf8")
-                                event_message = self._fields_to_message(
-                                    fields,
-                                    expected_events,
-                                    stream=stream,
-                                    native_id=claimed_message_id,
-                                    consumer_group=consumer_group,
-                                )
-                                if not event_message:
-                                    # noop message, or message an event we don't care about
+                                try:
+                                    event_message = self._fields_to_message(
+                                        fields,
+                                        expected_events,
+                                        stream=stream,
+                                        native_id=claimed_message_id,
+                                        consumer_group=consumer_group,
+                                    )
+                                except (NoopMessage, IgnoreMessage):
+                                    # This listener doesn't need to care about this message, so acknowledge
+                                    # it and move on with our lives
+                                    await redis.xack(stream, consumer_group, claimed_message_id)
                                     continue
+
                                 logger.debug(
                                     LBullets(
                                         L(
@@ -551,14 +565,17 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 for message_id, fields in messages:
                     message_id = decode(message_id, "utf8")
                     redis_stop = redis_stream_id_subtract_one(message_id)
-                    event_message = self._fields_to_message(
-                        fields,
-                        expected_event_names={event_name},
-                        stream=stream_name,
-                        native_id=message_id,
-                        consumer_group=None,
-                    )
-                    if event_message:
+                    try:
+                        event_message = self._fields_to_message(
+                            fields,
+                            expected_event_names={event_name},
+                            stream=stream_name,
+                            native_id=message_id,
+                            consumer_group=None,
+                        )
+                    except (NoopMessage, IgnoreMessage):
+                        pass
+                    else:
                         yield event_message
 
     async def _create_consumer_groups(self, streams, redis, consumer_group):
@@ -657,7 +674,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
 
         if tuple(fields.items()) == ((b"", b""),):
             # Is a noop message, ignore
-            return None
+            raise NoopMessage()
 
         message = self.deserializer(
             fields, stream=stream, native_id=native_id, consumer_group=consumer_group
@@ -671,7 +688,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 f"Ignoring message for unneeded event: {message}. "
                 f"Only listening for {', '.join(expected_event_names)}"
             )
-            return None
+            raise IgnoreMessage()
         return message
 
     def _get_stream_names(self, listen_for):
@@ -693,6 +710,14 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             if stream_name not in stream_names:
                 stream_names.append(stream_name)
         return stream_names
+
+
+class NoopMessage(Exception):
+    pass
+
+
+class IgnoreMessage(Exception):
+    pass
 
 
 # See RedisEventTransport._cleanup()

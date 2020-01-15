@@ -5,6 +5,7 @@ from itertools import chain
 
 import aioredis
 import pytest
+from aioredis import Redis
 
 from lightbus.config import Config
 from lightbus.message import EventMessage
@@ -95,6 +96,83 @@ async def test_consume_events_simple(
     assert message.kwargs == {"field": "value"}
     assert message.native_id
     assert type(message.native_id) == str
+
+
+@pytest.mark.asyncio
+async def test_consume_events_noop(
+    redis_event_transport: RedisEventTransport, redis_client, error_queue
+):
+    """Consume a noop event"""
+    messages = []
+
+    async def co_consume():
+        nonlocal messages
+        async for message_ in redis_event_transport.consume(
+            [("my.dummy", "my_event")], "test_listener", since="0", error_queue=error_queue
+        ):
+            messages.append(message_)
+
+    consume_task = asyncio.ensure_future(co_consume())
+
+    await redis_client.xadd("my.dummy.my_event:stream", fields={b"": b""})
+
+    await asyncio.sleep(0.05)
+    await cancel(consume_task)
+
+    assert not messages
+    consumers = await redis_client.xinfo_consumers(
+        "my.dummy.my_event:stream", "test_service-test_listener"
+    )
+
+    assert len(consumers) == 1
+    assert consumers[0][b"pending"] == 0
+
+
+@pytest.mark.asyncio
+async def test_consume_events_noop_reclaim(
+    redis_event_transport: RedisEventTransport, redis_client, error_queue
+):
+    """Reclaim a noop event"""
+    messages = []
+
+    async def co_consume():
+        nonlocal messages
+        async for message_ in redis_event_transport.consume(
+            [("my.dummy", "my_event")], "test_listener", since="0", error_queue=error_queue
+        ):
+            messages.append(message_)
+
+    await redis_client.xadd("my.dummy.my_event:stream", fields={b"": b""})
+    assert await redis_client.xgroup_create(
+        "my.dummy.my_event:stream", "test_service-test_listener", latest_id="0"
+    )
+    assert await redis_client.xread_group(
+        "test_service-test_listener",
+        "test_consumer",
+        ["my.dummy.my_event:stream"],
+        latest_ids=[">"],
+        timeout=None,
+    )
+
+    groups = await redis_client.xinfo_groups("my.dummy.my_event:stream")
+    consumers = await redis_client.xinfo_consumers(
+        "my.dummy.my_event:stream", "test_service-test_listener"
+    )
+    # We now have one pending event
+    assert consumers[0][b"pending"] == 1
+
+    # Now consume it again (using the same consumer name)
+    consume_task = asyncio.ensure_future(co_consume())
+    await asyncio.sleep(0.05)
+    await cancel(consume_task)
+
+    assert not messages
+    consumers = await redis_client.xinfo_consumers(
+        "my.dummy.my_event:stream", "test_service-test_listener"
+    )
+
+    assert len(consumers) == 1
+    assert consumers[0][b"pending"] == 0
 
 
 @pytest.mark.asyncio
@@ -328,7 +406,7 @@ async def test_from_config(redis_client):
 
 
 @pytest.mark.asyncio
-async def test_reclaim_lost_messages(redis_client, redis_pool):
+async def test_reclaim_lost_messages_one(redis_client: Redis, redis_pool):
     """Test that messages which another consumer has timed out on can be reclaimed"""
 
     # Add a message
@@ -375,10 +453,83 @@ async def test_reclaim_lost_messages(redis_client, redis_pool):
     reclaimed_messages = []
     async for m in reclaimer:
         reclaimed_messages.extend(m)
+        for m in reclaimed_messages:
+            await event_transport.acknowledge(m)
 
     assert len(reclaimed_messages) == 1
     assert reclaimed_messages[0].native_id
     assert type(reclaimed_messages[0].native_id) == str
+
+    result = await redis_client.xinfo_consumers("my.dummy.my_event:stream", "test_service")
+    consumer_info = {r[b"name"]: r for r in result}
+
+    assert consumer_info[b"bad_consumer"][b"pending"] == 0
+    assert consumer_info[b"good_consumer"][b"pending"] == 0
+
+
+@pytest.mark.asyncio
+async def test_reclaim_lost_messages_different_event(redis_client: Redis, redis_pool):
+    """Test that messages which another consumer has timed out on can be reclaimed
+
+    However, in this case we have a single stream for an entire API. The stream
+    has a lost message for an event we are not listening for. In this case the
+    event shouldn't be claimed
+    """
+
+    # Add a message
+    await redis_client.xadd(
+        "my.dummy.*:stream",
+        fields={
+            b"api_name": b"my.dummy",
+            b"event_name": b"my_event",
+            b"id": b"123",
+            b"version": b"1",
+            b":field": b'"value"',
+        },
+    )
+    # Create the consumer group
+    await redis_client.xgroup_create(
+        stream="my.dummy.*:stream", group_name="test_service", latest_id="0"
+    )
+
+    # Claim it in the name of another consumer
+    result = await redis_client.xread_group(
+        group_name="test_service",
+        consumer_name="bad_consumer",
+        streams=["my.dummy.*:stream"],
+        latest_ids=[">"],
+    )
+    assert result, "Didn't actually manage to claim any message"
+
+    # Sleep a moment to fake a short timeout
+    await asyncio.sleep(0.1)
+
+    event_transport = RedisEventTransport(
+        redis_pool=redis_pool,
+        service_name="test_service",
+        consumer_name="good_consumer",
+        acknowledgement_timeout=0.01,  # in ms, short for the sake of testing
+        stream_use=StreamUse.PER_API,
+    )
+    reclaimer = event_transport._reclaim_lost_messages(
+        stream_names=["my.dummy.*:stream"],
+        consumer_group="test_service",
+        expected_events={"another_event"},  # NOTE: We this is NOT the event we created above
+    )
+
+    reclaimed_messages = []
+    async for m in reclaimer:
+        reclaimed_messages.extend(m)
+        for m in reclaimed_messages:
+            await event_transport.acknowledge(m)
+
+    assert len(reclaimed_messages) == 0
+
+    result = await redis_client.xinfo_consumers("my.dummy.*:stream", "test_service")
+    consumer_info = {r[b"name"]: r for r in result}
+
+    assert consumer_info[b"bad_consumer"][b"pending"] == 0
+    assert consumer_info[b"good_consumer"][b"pending"] == 0
 
 
 @pytest.mark.asyncio

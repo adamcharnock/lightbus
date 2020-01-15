@@ -407,12 +407,9 @@ async def test_event_exception_in_listener_realtime(
     )
 
     pending_message_ids = [id_ for id_, *_ in pending_messages]
-    # The first 2 messages are still pending. Why 2 messages? Because:
-    #  - 1. The noop message used to create the stream (because we listened before we fired)
-    #  - 2. The first message which caused the error
 
-    assert len(pending_message_ids) == 2
-    assert pending_message_ids == message_ids[:2]
+    # The erroneous message is still pending
+    assert len(pending_message_ids) == 1
 
 
 @pytest.mark.asyncio
