@@ -11,7 +11,7 @@
 }
 @media only screen and (min-width:76.1875em) {
 .md-nav__item--nested #version-selector {
-  padding: .6rem .6rem;
+  padding: .6rem .0rem;
 }
   #version-selector {
     padding: .6rem .6rem;
