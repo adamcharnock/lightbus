@@ -60,14 +60,11 @@ window.addEventListener("DOMContentLoaded", function() {
       window.location.href = REL_BASE_URL + "/../" + this.value;
     });
 
-    // var selectInUl = document.createElement('ul');
-    // selectInUl.appendChild(select);
-    // selectInUl.className = 'md-tabs__list';
-    // var tabs = document.querySelector("nav.md-tabs > .md-tabs__inner");
-    // tabs.appendChild(selectInUl);
-
+    var selectInLi = document.createElement('li');
+    selectInLi.appendChild(select);
+    selectInLi.className = 'md-nav__item';
     var sidebar = document.querySelector(".md-nav--primary");
-    sidebar.appendChild(select);
+    sidebar.appendChild(selectInLi);
   };
   xhr.send();
 });
