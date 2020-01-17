@@ -61,7 +61,8 @@ window.addEventListener("DOMContentLoaded", function() {
 
     var selectInLi = document.createElement('li');
     selectInLi.appendChild(select);
-    selectInLi.className = 'md-nav__item version-selector';
+    selectInLi.className = 'md-nav__item';
+    selectInLi.id = 'version-selector';
     var sidebarUl = document.querySelector(".md-nav--primary .md-nav__list");
     sidebarUl.appendChild(selectInLi);
   };
