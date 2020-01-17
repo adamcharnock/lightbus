@@ -79,11 +79,13 @@ jobs:
           keys:
             - deps-3-{{ .Environment.CIRCLE_JOB }}-{{ checksum "pyproject.toml" }}
       - run:
+          # Mike needs the git config user.name & user.email values set
           command: |
+            git config --global user.name "Adam Charnock"
+            git config --global user.email "adam@adamcharnock.com"
             poetry config settings.virtualenvs.in-project true
             poetry install
             poetry run lightbus dumpconfigschema > docs/static/default-config-schema.json
-            ls -la
             poetry run mike deploy dev --message="Automated build by CircleCI [ci skip]" --push --force
 
       - save_cache:
