@@ -32,6 +32,7 @@ jobs:
             - deps-3-{{ .Environment.CIRCLE_JOB }}-{{ checksum "pyproject.toml" }}
       - run:
           command: |
+            poetry config settings.virtualenvs.in-project true
             poetry install
             mkdir -p .coverage .test-reports
 
@@ -79,6 +80,7 @@ jobs:
             - deps-3-{{ .Environment.CIRCLE_JOB }}-{{ checksum "pyproject.toml" }}
       - run:
           command: |
+            poetry config settings.virtualenvs.in-project true
             poetry install
             poetry run lightbus dumpconfigschema > docs/static/default-config-schema.json
             ls -la
