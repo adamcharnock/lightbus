@@ -92,7 +92,10 @@ jobs:
           command: poetry run lightbus dumpconfigschema > docs/static/default-config-schema.json
 
       - run:
-          command: poetry run mike deploy dev --message="Automated build by CircleCI [ci skip]" --push --force
+          command: |
+            poetry run mike deploy dev --message="Automated build by CircleCI [ci skip]"
+            git log | head
+            git push --force
 
       - save_cache:
           key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "pyproject.toml" }}
