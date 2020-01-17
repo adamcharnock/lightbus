@@ -62,8 +62,12 @@ window.addEventListener("DOMContentLoaded", function() {
     selectInLi.className = 'md-nav__item';
     selectInLi.id = 'version-selector';
     var primarySidebarUl = document.querySelector(".md-nav--primary > .md-nav__list");
-    var secondarySidebarUl = document.querySelector(".md-nav--primary .md-nav .md-nav__list");
-    primarySidebarUl.appendChild(selectInLi);
+    var secondarySidebarUl = document.querySelector(".md-nav--primary > .md-nav__list > .md-nav__item--active.md-nav__item--nested .md-nav__list");
+    if(secondarySidebarUl) {
+      secondarySidebarUl.appendChild(selectInLi);
+    } else {
+      primarySidebarUl.appendChild(selectInLi);
+    }
   };
   xhr.send();
 });
