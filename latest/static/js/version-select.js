@@ -60,10 +60,11 @@ window.addEventListener("DOMContentLoaded", function() {
       window.location.href = REL_BASE_URL + "/../" + this.value;
     });
 
-    var selectInUl = document.createElement('ul')
-    selectInUl.appendChild(select)
+    var selectInUl = document.createElement('ul');
+    selectInUl.appendChild(select);
+    selectInUl.classList.add('md-tabs__list');
     var tabs = document.querySelector("nav.md-tabs > .md-tabs__inner");
-    tabs.insertBefore(selectInUl, tabs.lastElementChild.nextSibling);
+    tabs.appendChild(selectInUl);
   };
   xhr.send();
 });
