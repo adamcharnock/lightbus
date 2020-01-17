@@ -127,7 +127,7 @@ If you are having a technical problem then the more information
 you can include the better (problem description, screenshots, and code 
 are all useful).
 
-[issue-1]: https://github.com/adamcharnock/lightbus/issues/1
+[issue-1]: https://github.com/adamcharnock/lightbus/issues/1/
 [simple-processes]: /static/images/simple-processes.png
 [anatomy lesson]: explanation/anatomy-lesson.md
 [tutorials]: tutorial/index.md
