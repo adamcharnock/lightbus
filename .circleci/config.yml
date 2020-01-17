@@ -81,6 +81,7 @@ jobs:
           command: |
             poetry install
             poetry run lightbus dumpconfigschema > docs/static/default-config-schema.json
+            ls -la
             poetry run mike deploy dev --message="Automated build by CircleCI [ci skip]" --push --force
 
       - save_cache:
