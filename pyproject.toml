@@ -1,6 +1,6 @@
 [tool]
 
-    [tool.dephell.main]
+        [tool.dephell.main]
     from = {format = "poetry", path = "pyproject.toml"}
     envs = ["main"]
     to = {format = "setuppy", path = "setup.py"}
@@ -74,28 +74,29 @@
     # Remove once this is done https://github.com/dephell/dephell/issues/216
     fissix = "==19.2b1"
     codacy-coverage = "^1.3"
+    mike = "^0.4.2"
 
     [tool.poetry.scripts]
     lightbus = 'lightbus.commands:lightbus_entry_point'
 
     # These are our entry points (which poetry calls 'plugins')
-                                                                                                                                                                                                                                                                [tool.poetry.plugins.lightbus_plugins]
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                [tool.poetry.plugins.lightbus_plugins]
     internal_state = "lightbus.plugins.state:StatePlugin"
     internal_metrics = "lightbus.plugins.metrics:MetricsPlugin"
 
-    [tool.poetry.plugins.lightbus_event_transports]
+                                                                                                                                                                                                                                                                        [tool.poetry.plugins.lightbus_event_transports]
     redis = "lightbus:RedisEventTransport"
     debug = "lightbus:DebugEventTransport"
 
-    [tool.poetry.plugins.lightbus_rpc_transports]
+                                                                                                                                                                                                                                                                        [tool.poetry.plugins.lightbus_rpc_transports]
     redis = "lightbus:RedisRpcTransport"
     debug = "lightbus:DebugRpcTransport"
 
-    [tool.poetry.plugins.lightbus_result_transports]
+                                                                                                                                                                                                                                                                        [tool.poetry.plugins.lightbus_result_transports]
     redis = "lightbus:RedisResultTransport"
     debug = "lightbus:DebugResultTransport"
 
-    [tool.poetry.plugins.lightbus_schema_transports]
+                                                                                                                                                                                                                                                                        [tool.poetry.plugins.lightbus_schema_transports]
     redis = "lightbus:RedisSchemaTransport"
     debug = "lightbus:DebugSchemaTransport"
 
