@@ -93,9 +93,7 @@ jobs:
 
       - run:
           command: |
-            poetry run mike deploy dev --message="Automated build by CircleCI [ci skip]"
-            git log | head
-            git push --force
+            poetry run mike deploy dev --message="Automated build by CircleCI [ci skip]" --push --force
 
       - save_cache:
           key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "pyproject.toml" }}
