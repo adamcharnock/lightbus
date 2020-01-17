@@ -1,5 +1,3 @@
-theme: readthedocs
-
 # Project information
 site_name: Lightbus
 site_description: RPC & event system for Python 3
