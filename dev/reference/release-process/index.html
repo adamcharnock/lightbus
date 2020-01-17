@@ -1162,13 +1162,17 @@ poetry version <span class="o">{</span>patch,minor,major,prepatch,preminor,prema
 git add .
 git commit -m <span class="s2">&quot;Releasing version </span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
 
+<span class="c1"># Make docs</span>
+mike deploy v<span class="k">$(</span>lightbus version --pyproject --docs<span class="k">)</span> --message<span class="o">=</span><span class="s2">&quot;Build docs for release of </span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
+
 <span class="c1"># Tagging and branching</span>
 git tag <span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
 git branch <span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
 git push origin <span class="se">\</span>
     refs/tags/<span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span> <span class="se">\</span>
     refs/heads/<span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span> <span class="se">\</span>
-    master
+    master <span class="se">\</span>
+    gh-pages
 
 <span class="c1"># Wait for CI to pass: https://circleci.com/gh/adamcharnock/lightbus</span>
 
