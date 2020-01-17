@@ -1,5 +1,9 @@
 #version-selector {
+  padding: .6rem .8rem;
+}
+#version-selector select {
   display: block;
-  margin-left: 13px;
   padding: 2px;
+  width: 100%;
+  font-size: .8rem;
 }

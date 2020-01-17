@@ -55,14 +55,13 @@ window.addEventListener("DOMContentLoaded", function() {
     var select = makeSelect(versions.map(function(i) {
       return {text: i.title, value: i.version};
     }), realVersion);
-    select.id = "version-selector";
     select.addEventListener("change", function(event) {
       window.location.href = REL_BASE_URL + "/../" + this.value;
     });
 
     var selectInLi = document.createElement('li');
     selectInLi.appendChild(select);
-    selectInLi.className = 'md-nav__item';
+    selectInLi.className = 'md-nav__item version-selector';
     var sidebarUl = document.querySelector(".md-nav--primary .md-nav__list");
     sidebarUl.appendChild(selectInLi);
   };
