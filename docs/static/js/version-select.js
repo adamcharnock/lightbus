@@ -22,10 +22,10 @@ window.addEventListener("DOMContentLoaded", function() {
   }
 
   // `base_url` comes from the base.html template for this theme.
-  var REL_BASE_URL = base_url;
-  var ABS_BASE_URL = normalizePath(window.location.pathname + "/" +
-                                   REL_BASE_URL);
-  var CURRENT_VERSION = ABS_BASE_URL.split("/").pop();
+  // Lightbus note: The base_url js variable wasn't immediately obviously
+  //                available on the mkdocs-material theme. So we were
+  //                simply assume the first part of the URL is the version.
+  var CURRENT_VERSION = window.location.pathname.split("/")[1];
 
   function makeSelect(options, selected) {
     var select = document.createElement("select");
@@ -40,7 +40,8 @@ window.addEventListener("DOMContentLoaded", function() {
   }
 
   var xhr = new XMLHttpRequest();
-  xhr.open("GET", REL_BASE_URL + "/../versions.json");
+  // Lightbus note: Again, we make assumptions about the path
+  xhr.open("GET", "/versions.json");
   xhr.onload = function() {
     var versions = JSON.parse(this.responseText);
 
@@ -52,13 +53,21 @@ window.addEventListener("DOMContentLoaded", function() {
     var select = makeSelect(versions.map(function(i) {
       return {text: i.title, value: i.version};
     }), realVersion);
-    select.id = "version-selector";
     select.addEventListener("change", function(event) {
       window.location.href = REL_BASE_URL + "/../" + this.value;
     });
 
-    var title = document.querySelector("div.wy-side-nav-search");
-    title.insertBefore(select, title.querySelector(".icon-home").nextSibling);
+    var selectInLi = document.createElement('li');
+    selectInLi.appendChild(select);
+    selectInLi.className = 'md-nav__item';
+    selectInLi.id = 'version-selector';
+    var primarySidebarUl = document.querySelector(".md-nav--primary > .md-nav__list");
+    var secondarySidebarUl = document.querySelector(".md-nav--primary > .md-nav__list > .md-nav__item--active.md-nav__item--nested .md-nav__list");
+    if(secondarySidebarUl) {
+      secondarySidebarUl.appendChild(selectInLi);
+    } else {
+      primarySidebarUl.appendChild(selectInLi);
+    }
   };
   xhr.send();
 });
