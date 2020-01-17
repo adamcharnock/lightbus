@@ -3,12 +3,11 @@
 }
 #version-selector select {
   display: block;
-  padding: 0 2px;
   width: 100%;
   font-size: .8rem;
 }
 @media only screen and (max-width:76.1875em) {
   #version-selector select {
-    padding: 0 2px;
+    padding: 0 .8rem;
   }
 }
