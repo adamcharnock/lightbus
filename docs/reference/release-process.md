@@ -17,13 +17,17 @@ poetry version {patch,minor,major,prepatch,preminor,premajor,prerelease}
 git add .
 git commit -m "Releasing version $(lightbus version --pyproject)"
 
+# Make docs
+mike deploy v$(lightbus version --pyproject --docs) --message="Build docs for release of $(lightbus version --pyproject)"
+
 # Tagging and branching
 git tag "v$(lightbus version --pyproject)"
 git branch "v$(lightbus version --pyproject)"
 git push origin \
     refs/tags/"v$(lightbus version --pyproject)" \
     refs/heads/"v$(lightbus version --pyproject)" \
-    master
+    master \
+    gh-pages
 
 # Wait for CI to pass: https://circleci.com/gh/adamcharnock/lightbus
 
