@@ -25,7 +25,7 @@ window.addEventListener("DOMContentLoaded", function() {
   // Lightbus note: The base_url js variable wasn't immediately obviously
   //                available on the mkdocs-material theme. So we were
   //                simply assume the first part of the URL is the version.
-  var CURRENT_VERSION = window.location.pathname.split("/")[0];
+  var CURRENT_VERSION = window.location.pathname.split("/")[1];
 
   function makeSelect(options, selected) {
     var select = document.createElement("select");
