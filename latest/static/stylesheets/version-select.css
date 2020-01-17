@@ -7,7 +7,7 @@
   font-size: .8rem;
 }
 @media only screen and (max-width:76.1875em) {
-  #version-selector select {
-    padding: 0 .8rem;
+  #version-selector {
+    padding: 0 .6rem;
   }
 }
