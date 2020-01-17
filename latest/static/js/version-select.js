@@ -61,7 +61,7 @@ window.addEventListener("DOMContentLoaded", function() {
     });
 
     var tabs = document.querySelector("nav.md-tabs > .md-tabs__inner");
-    tabs.insertBefore(select, tabs.lastChild);
+    tabs.insertBefore(select, tabs.lastElementChild.nextSibling);
   };
   xhr.send();
 });
