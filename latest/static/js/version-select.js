@@ -22,7 +22,10 @@ window.addEventListener("DOMContentLoaded", function() {
   }
 
   // `base_url` comes from the base.html template for this theme.
-  var REL_BASE_URL = base_url;
+  // Lightbus note: The base_url js variable wasn't immediately obviously
+  //                available on the mkdocs-material theme. Hard coding
+  //                here for Lightbus' docs.
+  var REL_BASE_URL = '';
   var ABS_BASE_URL = normalizePath(window.location.pathname + "/" +
                                    REL_BASE_URL);
   var CURRENT_VERSION = ABS_BASE_URL.split("/").pop();
@@ -57,8 +60,8 @@ window.addEventListener("DOMContentLoaded", function() {
       window.location.href = REL_BASE_URL + "/../" + this.value;
     });
 
-    var title = document.querySelector("div.wy-side-nav-search");
-    title.insertBefore(select, title.querySelector(".icon-home").nextSibling);
+    var tabs = document.querySelector("nav.md-tabs > .md-tabs__inner");
+    tabs.insertBefore(select, tabs.lastChild.nextSibling);
   };
   xhr.send();
 });
