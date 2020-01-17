@@ -40,7 +40,8 @@ window.addEventListener("DOMContentLoaded", function() {
   }
 
   var xhr = new XMLHttpRequest();
-  xhr.open("GET", REL_BASE_URL + "/../versions.json");
+  // Lightbus note: Again, we make assumptions about the path
+  xhr.open("GET", "/versions.json");
   xhr.onload = function() {
     var versions = JSON.parse(this.responseText);
 
