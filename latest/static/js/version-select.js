@@ -23,12 +23,9 @@ window.addEventListener("DOMContentLoaded", function() {
 
   // `base_url` comes from the base.html template for this theme.
   // Lightbus note: The base_url js variable wasn't immediately obviously
-  //                available on the mkdocs-material theme. Hard coding
-  //                here for Lightbus' docs.
-  var REL_BASE_URL = '';
-  var ABS_BASE_URL = normalizePath(window.location.pathname + "/" +
-                                   REL_BASE_URL);
-  var CURRENT_VERSION = ABS_BASE_URL.split("/").pop();
+  //                available on the mkdocs-material theme. So we were
+  //                simply assume the first part of the URL is the version.
+  var CURRENT_VERSION = window.location.pathname.split("/")[0];
 
   function makeSelect(options, selected) {
     var select = document.createElement("select");
