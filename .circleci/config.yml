@@ -32,7 +32,7 @@ jobs:
             - deps-3-{{ .Environment.CIRCLE_JOB }}-{{ checksum "pyproject.toml" }}
       - run:
           command: |
-            poetry config settings.virtualenvs.in-project true
+            poetry config virtualenvs.in-project true
             poetry install
             mkdir -p .coverage .test-reports
 
@@ -83,7 +83,7 @@ jobs:
           command: |
             git config --global user.name "Adam Charnock"
             git config --global user.email "adam@adamcharnock.com"
-            poetry config settings.virtualenvs.in-project true
+            poetry config virtualenvs.in-project true
             poetry install
             poetry run lightbus dumpconfigschema > docs/static/default-config-schema.json
             poetry run mike deploy dev --message="Automated build by CircleCI [ci skip]" --push --force
