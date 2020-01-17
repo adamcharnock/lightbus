@@ -67,7 +67,7 @@ window.addEventListener("DOMContentLoaded", function() {
     // tabs.appendChild(selectInUl);
 
     var sidebar = document.querySelector(".md-nav--primary");
-    tabs.appendChild(select);
+    sidebar.appendChild(select);
   };
   xhr.send();
 });
