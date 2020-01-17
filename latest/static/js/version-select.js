@@ -45,8 +45,6 @@ window.addEventListener("DOMContentLoaded", function() {
   xhr.onload = function() {
     var versions = JSON.parse(this.responseText);
 
-    console.log(versions);
-    console.log(versions.find);
     var realVersion = versions.find(function(i) {
       return i.version === CURRENT_VERSION ||
              i.aliases.includes(CURRENT_VERSION);
@@ -63,8 +61,9 @@ window.addEventListener("DOMContentLoaded", function() {
     selectInLi.appendChild(select);
     selectInLi.className = 'md-nav__item';
     selectInLi.id = 'version-selector';
-    var sidebarUl = document.querySelector(".md-nav--primary .md-nav__list");
-    sidebarUl.appendChild(selectInLi);
+    var primarySidebarUl = document.querySelector(".md-nav--primary > .md-nav__list");
+    var secondarySidebarUl = document.querySelector(".md-nav--primary .md-nav .md-nav__list");
+    primarySidebarUl.appendChild(selectInLi);
   };
   xhr.send();
 });
