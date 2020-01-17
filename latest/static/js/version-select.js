@@ -60,8 +60,10 @@ window.addEventListener("DOMContentLoaded", function() {
       window.location.href = REL_BASE_URL + "/../" + this.value;
     });
 
+    var selectInUl = document.createElement('ul')
+    selectInUl.appendChild(select)
     var tabs = document.querySelector("nav.md-tabs > .md-tabs__inner");
-    tabs.insertBefore(select, tabs.lastElementChild.nextSibling);
+    tabs.insertBefore(selectInUl, tabs.lastElementChild.nextSibling);
   };
   xhr.send();
 });
