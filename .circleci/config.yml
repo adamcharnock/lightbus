@@ -18,7 +18,6 @@ workflows:
             branches:
               only:
                 - master
-                - run-in-executor
 jobs:
   test-37: &test-template
     docker:
@@ -82,7 +81,7 @@ jobs:
           command: |
             poetry install
             poetry run lightbus dumpconfigschema > docs/static/default-config-schema.json
-            poetry run mkdocs gh-deploy --force --message="Automated build by CircleCI [ci skip]"
+            poetry run mike deploy dev --message="Automated build by CircleCI [ci skip]" --push --force
 
       - save_cache:
           key: deps-2-{{ .Environment.CIRCLE_JOB }}-{{ checksum "pyproject.toml" }}
