@@ -631,8 +631,16 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     active_consumers = 0
                     group_name = group[b"name"]
 
+                    try:
+                        consumers = await redis.xinfo_consumers(stream_name, group_name)
+                    except ReplyError as e:
+                        # Group has already vanished,
+                        # perhaps something else is doing a cleanup
+                        if "NOGROUP" in str(e):
+                            continue
+
                     # Get all the consumers for that group
-                    for consumer in await redis.xinfo_consumers(stream_name, group_name):
+                    for consumer in consumers:
                         consumer_name = consumer[b"name"]
                         idle_seconds = consumer[b"idle"] / 1000
 
