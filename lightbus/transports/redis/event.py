@@ -17,6 +17,7 @@ from typing import (
 )
 
 from aioredis import ConnectionClosedError, ReplyError
+from aioredis.commands import streams
 from aioredis.util import decode
 
 from lightbus.client.utilities import queue_exception_checker, ErrorQueueType
@@ -470,26 +471,30 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                                 )
                             )
 
-                            # *Try* to claim the messages...
+                            # *Try* to claim the message...
                             result = await redis.xclaim(
                                 stream, consumer_group, self.consumer_name, int(timeout), message_id
                             )
 
                             # Parse each message we managed to claim
-                            for claimed_message_id, fields in result:
-                                claimed_message_id = decode(claimed_message_id, "utf8")
+                            for _, fields in result:
+                                # Note that sometimes we will claim a message and it will be 'nil'.
+                                # In this case the result will be (None, {}). We therefore do not
+                                # rely on the values we get back from XCLAIM.
+                                # I suspect this may happen if a stream has been trimmed, thereby causing
+                                # un-acknowledged messages to be deleted from Redis.
                                 try:
                                     event_message = self._fields_to_message(
                                         fields,
                                         expected_events,
                                         stream=stream,
-                                        native_id=claimed_message_id,
+                                        native_id=message_id,
                                         consumer_group=consumer_group,
                                     )
                                 except (NoopMessage, IgnoreMessage):
                                     # This listener doesn't need to care about this message, so acknowledge
                                     # it and move on with our lives
-                                    await redis.xack(stream, consumer_group, claimed_message_id)
+                                    await redis.xack(stream, consumer_group, message_id)
                                     continue
 
                                 logger.debug(
@@ -680,6 +685,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
     ) -> Optional[RedisEventMessage]:
         """Convert a dict of Redis message fields into a RedisEventMessage"""
 
+        if not fields:
+            # Redis returned us a message of 'nil'
+            raise NoopMessage()
+
         if tuple(fields.items()) == ((b"", b""),):
             # Is a noop message, ignore
             raise NoopMessage()
@@ -737,3 +746,24 @@ if table.getn(consumers) == 0 then
     redis.call('xgroup', 'destroy', stream_name, group_name)
 end
 """
+
+
+def parse_messages(messages):
+    # TODO: Remove and bump required aioredis version when merged:
+    #       https://github.com/aio-libs/aioredis/pull/723
+    if messages is None:
+        return []
+
+    parsed_messages = []
+    for message in messages:
+        if message is None:
+            # In some conditions redis will return a NIL message
+            parsed_messages.append((None, {}))
+        else:
+            mid, values = message
+            parsed_messages.append((mid, streams.fields_to_dict(values)))
+
+    return parsed_messages
+
+
+streams.parse_messages = parse_messages
