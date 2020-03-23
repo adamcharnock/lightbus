@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../..">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
+      <meta name="generator" content="mkdocs-1.1, mkdocs-material-4.6.3">
     
     
       
@@ -46,7 +46,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application.adb8469c.css">
       
         <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -57,7 +57,7 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
+      <script src="../../assets/javascripts/modernizr.86422ebf.js"></script>
     
     
       
@@ -120,7 +120,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#31-getting-started" tabindex="1" class="md-skip">
+      <a href="#31-getting-started" tabindex="0" class="md-skip">
         Skip to content
       </a>
     
@@ -129,7 +129,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://lightbus.org" title="Lightbus" class="md-header-nav__button md-logo">
+        <a href="http://lightbus.org" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
           
             <i class="md-icon"></i>
           
@@ -160,7 +160,7 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <input type="text" class="md-search__input" aria-label="search" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
       <label class="md-icon md-search__icon" for="__search"></label>
       <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
         &#xE5CD;
@@ -1295,8 +1295,8 @@ The goal is to show how Lightbus can allow multiple services to interact.</p>
 the code will be repeated below. There is a directory for each service we will
 create – <code>store/</code>, <code>dashboard/</code>, and <code>image/</code>.</p>
 <p>Before continuing ensure you have installed <code>flask</code> and <code>honcho</code>:</p>
-<div class="codehilite"><pre><span></span>pip3 install flask honcho
-</pre></div>
+<div class="codehilite"><pre><span></span><code>pip3 install flask honcho
+</code></pre></div>
 
 
 <p>A passing familiarity with <a href="http://flask.pocoo.org/">Flask</a> may be useful, but is not required. <a href="https://github.com/nickstenning/honcho">Honcho</a>
@@ -1307,7 +1307,7 @@ have already read and completed the <a href="../installation/">installation</a> 
 <h2 id="32-image-resizing-service">3.2. Image resizing service<a class="headerlink" href="#32-image-resizing-service" title="Permanent link">&para;</a></h2>
 <p>The image resizing service will be a simple Lightbus API, the purpose of which
 is to allow our store to resize images prior to display:</p>
-<div class="codehilite"><pre><span></span><span class="c1"># File: ./image/bus.py</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># File: ./image/bus.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="k">class</span> <span class="nc">ImageApi</span><span class="p">(</span><span class="n">lightbus</span><span class="o">.</span><span class="n">Api</span><span class="p">):</span>
@@ -1317,17 +1317,17 @@ is to allow our store to resize images prior to display:</p>
 
     <span class="k">def</span> <span class="nf">resize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
         <span class="c1"># This is a demo, so just return an animal picture of the correct size</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;https://placeimg.com/</span><span class="si">{width}</span><span class="s1">/</span><span class="si">{height}</span><span class="s1">/animals?_=</span><span class="si">{url}</span><span class="s1">&#39;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;https://placeimg.com/</span><span class="si">{</span><span class="n">width</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">height</span><span class="si">}</span><span class="s1">/animals?_=</span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s1">&#39;</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">register_api</span><span class="p">(</span><span class="n">ImageApi</span><span class="p">)</span>
-</pre></div>
+</code></pre></div>
 
 <p>There is no web interface for this service, so this is all we need.</p>
 <h2 id="33-store-service">3.3. Store service<a class="headerlink" href="#33-store-service" title="Permanent link">&para;</a></h2>
 <p>Our store will have both a Lightbus API and a web interface. We'll start
 with the API first:</p>
-<div class="codehilite"><pre><span></span><span class="c1"># File: ./store/bus.py</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># File: ./store/bus.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="k">class</span> <span class="nc">StoreApi</span><span class="p">(</span><span class="n">lightbus</span><span class="o">.</span><span class="n">Api</span><span class="p">):</span>
@@ -1338,12 +1338,12 @@ with the API first:</p>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">register_api</span><span class="p">(</span><span class="n">StoreApi</span><span class="p">)</span>
-</pre></div>
+</code></pre></div>
 
 <p>This API has a single event called <code>page_viewed</code>. The store web interface will fire this
 event whenever a page is viewed.</p>
 <p>Our store web interface uses Flask and is a little longer:</p>
-<div class="codehilite"><pre><span></span><span class="c1"># File: ./store/web.py</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># File: ./store/web.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 <span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
 
@@ -1369,8 +1369,8 @@ event whenever a page is viewed.</p>
         <span class="c1"># Get an image of the appropriate size</span>
         <span class="n">resized_url</span> <span class="o">=</span> <span class="n">bus</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">image_url</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
         <span class="n">html</span> <span class="o">+=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s1">&#39;&lt;a href=&quot;/pet/</span><span class="si">{pet_num}</span><span class="s1">&quot;&gt;&#39;</span>
-            <span class="sa">f</span><span class="s1">&#39;&lt;img src=&quot;</span><span class="si">{resized_url}</span><span class="s1">&quot;&gt;&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;&lt;a href=&quot;/pet/</span><span class="si">{</span><span class="n">pet_num</span><span class="si">}</span><span class="s1">&quot;&gt;&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;&lt;img src=&quot;</span><span class="si">{</span><span class="n">resized_url</span><span class="si">}</span><span class="s1">&quot;&gt;&#39;</span>
             <span class="sa">f</span><span class="s1">&#39;&lt;/a&gt; &#39;</span>
         <span class="p">)</span>
 
@@ -1385,17 +1385,17 @@ event whenever a page is viewed.</p>
     <span class="n">resized_url</span> <span class="o">=</span> <span class="n">bus</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">PETS</span><span class="p">[</span><span class="n">pet_num</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
 
     <span class="c1"># Fire the page view</span>
-    <span class="n">bus</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">page_viewed</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;/pet/</span><span class="si">{pet_num}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">bus</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">page_viewed</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;/pet/</span><span class="si">{</span><span class="n">pet_num</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="n">html</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&lt;h1&gt;Pet </span><span class="si">{pet_num}</span><span class="s1">&lt;/h1&gt;&#39;</span>
-    <span class="n">html</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&lt;img src=&quot;</span><span class="si">{resized_url}</span><span class="s1">&quot;&gt;&lt;br /&gt;&#39;</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&lt;h1&gt;Pet </span><span class="si">{</span><span class="n">pet_num</span><span class="si">}</span><span class="s1">&lt;/h1&gt;&#39;</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&lt;img src=&quot;</span><span class="si">{</span><span class="n">resized_url</span><span class="si">}</span><span class="s1">&quot;&gt;&lt;br /&gt;&#39;</span>
     <span class="k">return</span> <span class="n">html</span>
-</pre></div>
+</code></pre></div>
 
 <h2 id="34-interlude-give-it-a-go">3.4. Interlude: give it a go<a class="headerlink" href="#34-interlude-give-it-a-go" title="Permanent link">&para;</a></h2>
 <p>We're not quite done yet, but you can now startup the necessary processes and
 see the store. You will need to run each of these in a separate terminal window:</p>
-<div class="codehilite"><pre><span></span>$ ls
+<div class="codehilite"><pre><span></span><code>$ ls
 image/       store/
 
 <span class="c1"># Start our image resizing service</span>
@@ -1403,7 +1403,7 @@ $ lightbus run --bus<span class="o">=</span>image.bus
 
 <span class="c1"># Start our store&#39;s web interface</span>
 $ <span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py flask run --port<span class="o">=</span><span class="m">5001</span>
-</pre></div>
+</code></pre></div>
 
 <p>Now open <a href="http://127.0.0.1:5001">127.0.0.1:5001</a> in your browser and
 you should see three animal pictures awaiting you. The URL for each
@@ -1423,7 +1423,7 @@ of page view statistics for the online store.</p>
 interface. It will therefore need both a lightbus process and a
 web process.</p>
 <p>Fist we will start with the <code>bus.py</code> file:</p>
-<div class="codehilite"><pre><span></span><span class="c1"># File: ./dashboard/bus.py</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># File: ./dashboard/bus.py</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
@@ -1444,7 +1444,7 @@ web process.</p>
 <span class="k">def</span> <span class="nf">on_start</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># Called when lightbus starts up</span>
     <span class="n">bus</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">page_viewed</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">handle_page_view</span><span class="p">)</span>
-</pre></div>
+</code></pre></div>
 
 <p>This is a simple listener for the <code>bus.store.page_viewed</code> event. This event is fired by the
 store's web interface we created above.</p>
@@ -1455,7 +1455,7 @@ event is all the dashboard's Lightbus process will do, it will not provide any A
 In a real service this would likely be a DBMS of some form (Postgres, MySQL,
 Redis, Mongo etc). For simplicity we just store JSON to a file.</p>
 <p>Now we'll define our dashboard's web interface:</p>
-<div class="codehilite"><pre><span></span><span class="c1"># File: ./dashboard/web.py</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># File: ./dashboard/web.py</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
 
@@ -1471,11 +1471,11 @@ Redis, Mongo etc). For simplicity we just store JSON to a file.</p>
 
     <span class="n">html</span> <span class="o">+=</span> <span class="s1">&#39;&lt;ul&gt;&#39;</span>
     <span class="k">for</span> <span class="n">url</span><span class="p">,</span> <span class="n">total_views</span> <span class="ow">in</span> <span class="n">page_views</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">html</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;li&gt;URL &lt;code&gt;</span><span class="si">{url}</span><span class="s1">&lt;/code&gt;: </span><span class="si">{total_views}</span><span class="s1">&lt;/li&gt;&#39;</span>
+        <span class="n">html</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;&lt;li&gt;URL &lt;code&gt;</span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s1">&lt;/code&gt;: </span><span class="si">{</span><span class="n">total_views</span><span class="si">}</span><span class="s1">&lt;/li&gt;&#39;</span>
     <span class="n">html</span> <span class="o">+=</span> <span class="s1">&#39;&lt;/ul&gt;&#39;</span>
 
     <span class="k">return</span> <span class="n">html</span>
-</pre></div>
+</code></pre></div>
 
 <p>This reads the JSON data that was written by the event listener in <code>dashboard/bus.py</code> above,
 then render it to HTML.</p>
@@ -1524,7 +1524,7 @@ then render it to HTML.</p>
 </tbody>
 </table>
 <p>You can run each of these as follows:</p>
-<div class="codehilite"><pre><span></span>$ ls
+<div class="codehilite"><pre><span></span><code>$ ls
 dashboard/    image/    store/
 
 <span class="c1"># Image resizer (Lightbus)</span>
@@ -1536,24 +1536,24 @@ $ <span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py flask ru
 <span class="c1"># Dashboard (Web + Lightbus)</span>
 $ lightbus run --bus<span class="o">=</span>dashboard.bus
 $ <span class="nv">FLASK_APP</span><span class="o">=</span>dashboard/web.py flask run --port<span class="o">=</span><span class="m">5000</span>
-</pre></div>
+</code></pre></div>
 
 <p><strong>However,</strong> you may find it easier to startup these processes
 with the <code>honcho</code> tool we installed earlier. First, create
 a file called <code>Procfile</code>:</p>
-<div class="codehilite"><pre><span></span><span class="c1"># Procfile</span>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Procfile</span>
 image_resizer_bus: lightbus run --bus<span class="o">=</span>image.bus
 store_web:         <span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py flask run --port<span class="o">=</span><span class="m">5001</span>
 dashboard_bus:     lightbus run --bus<span class="o">=</span>dashboard.bus
 dashboard_web:     <span class="nv">FLASK_APP</span><span class="o">=</span>dashboard/web.py flask run --port<span class="o">=</span><span class="m">5000</span>
-</pre></div>
+</code></pre></div>
 
 <p>And now use <code>honcho</code> to startup all the processes together:</p>
-<div class="codehilite"><pre><span></span>$ ls
+<div class="codehilite"><pre><span></span><code>$ ls
 Procfile    dashboard/    image/    store/
 
 $ honcho start
-</pre></div>
+</code></pre></div>
 
 <p>If you see an error stating <code>command not found</code>, ensure you installed <code>honcho</code> as
 detailed above (<code>pip3 install honcho</code>).</p>
@@ -1639,9 +1639,9 @@ you should explore the <a href="../../explanation/">Explanation</a> section.</p>
       <div class="md-footer-copyright">
         
         powered by
-        <a href="https://www.mkdocs.org">MkDocs</a>
+        <a href="https://www.mkdocs.org" target="_blank" rel="noopener">MkDocs</a>
         and
-        <a href="https://squidfunk.github.io/mkdocs-material/">
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
           Material for MkDocs</a>
       </div>
       
@@ -1651,9 +1651,9 @@ you should explore the <a href="../../explanation/">Explanation</a> section.</p>
       
     </div>
     
-      <script src="../../assets/javascripts/application.808e90bb.js"></script>
+      <script src="../../assets/javascripts/application.c33a9706.js"></script>
       
-      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      <script>app.initialize({version:"1.1",url:{base:"../.."}})</script>
       
         <script src="../../static/js/version-select.js"></script>
       
