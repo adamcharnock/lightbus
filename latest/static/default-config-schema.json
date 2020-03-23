@@ -1,0 +1,521 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "apis": {
+      "additionalProperties": {
+        "additionalProperties": false,
+        "properties": {
+          "cast_values": {
+            "default": true,
+            "type": "boolean"
+          },
+          "event_fire_timeout": {
+            "default": 5,
+            "type": "integer"
+          },
+          "event_listener_setup_timeout": {
+            "default": 1,
+            "type": "integer"
+          },
+          "event_transport": {
+            "default": null,
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "debug": {
+                    "default": null,
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {},
+                        "title": "DebugEventTransportConfig",
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "redis": {
+                    "default": null,
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "acknowledgement_timeout": {
+                            "default": 60,
+                            "type": "number"
+                          },
+                          "batch_size": {
+                            "default": 10,
+                            "type": "integer"
+                          },
+                          "connection_parameters": {
+                            "default": {
+                              "maxsize": 100
+                            },
+                            "type": "object"
+                          },
+                          "consumer_name": {
+                            "default": null,
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "consumer_ttl": {
+                            "default": 2592000,
+                            "type": "integer"
+                          },
+                          "consumption_restart_delay": {
+                            "default": 5,
+                            "type": "integer"
+                          },
+                          "deserializer": {
+                            "default": "lightbus.serializers.ByFieldMessageDeserializer",
+                            "type": "string"
+                          },
+                          "max_stream_length": {
+                            "default": 100000,
+                            "oneOf": [
+                              {
+                                "type": "integer"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "reclaim_batch_size": {
+                            "default": null,
+                            "oneOf": [
+                              {
+                                "type": "integer"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "serializer": {
+                            "default": "lightbus.serializers.ByFieldMessageSerializer",
+                            "type": "string"
+                          },
+                          "service_name": {
+                            "default": null,
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "stream_use": {
+                            "default": "per_api",
+                            "enum": [
+                              "per_api",
+                              "per_event"
+                            ],
+                            "type": "string"
+                          },
+                          "url": {
+                            "default": "redis://127.0.0.1:6379/0",
+                            "type": "string"
+                          }
+                        },
+                        "title": "RedisEventTransportConfig",
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "title": "EventTransportSelector",
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "result_transport": {
+            "default": null,
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "debug": {
+                    "default": null,
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {},
+                        "title": "DebugResultTransportConfig",
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "redis": {
+                    "default": null,
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "connection_parameters": {
+                            "default": {
+                              "maxsize": 100
+                            },
+                            "type": "object"
+                          },
+                          "deserializer": {
+                            "default": "lightbus.serializers.BlobMessageDeserializer",
+                            "type": "string"
+                          },
+                          "result_ttl": {
+                            "default": 60,
+                            "type": "integer"
+                          },
+                          "rpc_timeout": {
+                            "default": 5,
+                            "type": "integer"
+                          },
+                          "serializer": {
+                            "default": "lightbus.serializers.BlobMessageSerializer",
+                            "type": "string"
+                          },
+                          "url": {
+                            "default": "redis://127.0.0.1:6379/0",
+                            "type": "string"
+                          }
+                        },
+                        "title": "RedisResultTransportConfig",
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "title": "ResultTransportSelector",
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rpc_timeout": {
+            "default": 5,
+            "type": "integer"
+          },
+          "rpc_transport": {
+            "default": null,
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "debug": {
+                    "default": null,
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {},
+                        "title": "DebugRpcTransportConfig",
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "redis": {
+                    "default": null,
+                    "oneOf": [
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "batch_size": {
+                            "default": 10,
+                            "type": "integer"
+                          },
+                          "connection_parameters": {
+                            "default": {
+                              "maxsize": 100
+                            },
+                            "type": "object"
+                          },
+                          "consumption_restart_delay": {
+                            "default": 5,
+                            "type": "integer"
+                          },
+                          "deserializer": {
+                            "default": "lightbus.serializers.BlobMessageDeserializer",
+                            "type": "string"
+                          },
+                          "rpc_retry_delay": {
+                            "default": 1,
+                            "type": "integer"
+                          },
+                          "rpc_timeout": {
+                            "default": 5,
+                            "type": "integer"
+                          },
+                          "serializer": {
+                            "default": "lightbus.serializers.BlobMessageSerializer",
+                            "type": "string"
+                          },
+                          "url": {
+                            "default": "redis://127.0.0.1:6379/0",
+                            "type": "string"
+                          }
+                        },
+                        "title": "RedisRpcTransportConfig",
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "title": "RpcTransportSelector",
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "strict_validation": {
+            "default": false,
+            "type": "boolean"
+          },
+          "validate": {
+            "default": {
+              "incoming": true,
+              "outgoing": true
+            },
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "incoming": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "outgoing": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "title": "ApiValidationConfig",
+                "type": "object"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "ApiConfig",
+        "type": "object"
+      },
+      "default": {},
+      "type": "object"
+    },
+    "bus": {
+      "additionalProperties": false,
+      "default": {
+        "log_level": "info",
+        "schema": {
+          "human_readable": true,
+          "transport": null,
+          "ttl": 60
+        }
+      },
+      "properties": {
+        "log_level": {
+          "default": "info",
+          "enum": [
+            "debug",
+            "info",
+            "warning",
+            "error",
+            "critical"
+          ],
+          "type": "string"
+        },
+        "schema": {
+          "additionalProperties": false,
+          "default": {
+            "human_readable": true,
+            "transport": null,
+            "ttl": 60
+          },
+          "properties": {
+            "human_readable": {
+              "default": true,
+              "type": "boolean"
+            },
+            "transport": {
+              "default": null,
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "debug": {
+                      "default": null,
+                      "oneOf": [
+                        {
+                          "additionalProperties": false,
+                          "properties": {},
+                          "title": "DebugSchemaTransportConfig",
+                          "type": "object"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "redis": {
+                      "default": null,
+                      "oneOf": [
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "connection_parameters": {
+                              "default": {},
+                              "type": "object"
+                            },
+                            "url": {
+                              "default": "redis://127.0.0.1:6379/0",
+                              "type": "string"
+                            }
+                          },
+                          "title": "RedisSchemaTransportConfig",
+                          "type": "object"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "title": "SchemaTransportSelector",
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ttl": {
+              "default": 60,
+              "type": "integer"
+            }
+          },
+          "title": "SchemaConfig",
+          "type": "object"
+        }
+      },
+      "title": "BusConfig",
+      "type": "object"
+    },
+    "plugins": {
+      "additionalProperties": false,
+      "default": {
+        "internal_metrics": {
+          "enabled": false
+        },
+        "internal_state": {
+          "enabled": false,
+          "ping_enabled": true,
+          "ping_interval": 60
+        }
+      },
+      "properties": {
+        "internal_metrics": {
+          "default": {
+            "enabled": false
+          },
+          "oneOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "type": "boolean"
+                }
+              },
+              "title": "MetricsPluginConfig",
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "internal_state": {
+          "default": {
+            "enabled": false,
+            "ping_enabled": true,
+            "ping_interval": 60
+          },
+          "oneOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "type": "boolean"
+                },
+                "ping_enabled": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "ping_interval": {
+                  "default": 60,
+                  "type": "integer"
+                }
+              },
+              "title": "StatePluginConfig",
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "title": "PluginSelector",
+      "type": "object"
+    },
+    "process_name": {
+      "default": "{random4}",
+      "type": "string"
+    },
+    "service_name": {
+      "default": "{friendly}",
+      "type": "string"
+    }
+  },
+  "title": "RootConfig",
+  "type": "object"
+}
