@@ -23,7 +23,7 @@ if os.path.exists(readme_path):
 setup(
     long_description=readme,
     name="lightbus",
-    version="0.9.0",
+    version="0.10.0-alpha.0",
     description="RPC & event framework for Python 3",
     python_requires=">=3.7",
     project_urls={
