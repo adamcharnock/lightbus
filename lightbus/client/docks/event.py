@@ -1,10 +1,13 @@
 import asyncio
+import logging
 
 from lightbus.client.docks.base import BaseDock
 from lightbus.client.utilities import queue_exception_checker
 from lightbus.client import commands
 from lightbus.utilities.async_tools import cancel
 from lightbus.utilities.singledispatch import singledispatchmethod
+
+logger = logging.getLogger(__name__)
 
 
 class EventDock(BaseDock):
@@ -34,6 +37,7 @@ class EventDock(BaseDock):
             )
             async for event_messages in consumer:
                 for event_message in event_messages:
+                    logger.debug(f"Putting event {event_message.id} onto the internal queue")
                     await command.destination_queue.put(event_message)
 
                 # Wait for the queue to be emptied before fetching more.
@@ -42,6 +46,7 @@ class EventDock(BaseDock):
                 # though as it will ensure events are processed in a more ordered fashion
                 # in cases where there are multiple workers, and also ensure fewer
                 # messages need to be reclaimed in the event of a crash
+                logger.debug(f"Waiting for messages to be consumed before adding more")
                 await command.destination_queue.join()
 
         for event_transport_pool, api_names in event_transports.items():

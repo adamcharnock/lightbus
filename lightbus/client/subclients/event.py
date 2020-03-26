@@ -221,13 +221,18 @@ class EventClient(BaseSubClient):
 
         async def consume_events():
             while True:
+                logger.debug("Event listener now waiting for event on the internal queue")
                 event_message = await queue.get()
+                logger.debug(
+                    "Event listener has now received an event on the internal queue, processing now"
+                )
                 await self._on_message(
                     event_message=event_message,
                     listener=listener.callable,
                     options=listener.options,
                     on_error=listener.on_error,
                 )
+                queue.task_done()
 
         # Start the consume_events() consumer running
         task = asyncio.ensure_future(queue_exception_checker(consume_events(), self.error_queue))

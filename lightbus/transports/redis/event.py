@@ -263,7 +263,13 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             while True:
                 try:
                     messages = await queue.get()
+                    logger.debug(
+                        f"Got batch of {len(messages)} message(s). Yielding messages to Lightbus client"
+                    )
                     yield messages
+                    logger.debug(
+                        f"Batch of {len(messages)} message(s) was processed by Lightbus client. Marking as done."
+                    )
                     queue.task_done()
                 except GeneratorExit:
                     return
@@ -380,6 +386,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                     except (NoopMessage, IgnoreMessage):
                         # This listener doesn't need to care about this message, so acknowledge
                         # it and move on with our lives
+                        logger.debug(
+                            f"Ignoring NOOP event with ID {message_id} discovered during streaming of messages"
+                        )
                         await redis.xack(stream, consumer_group, message_id)
                         continue
 
@@ -494,6 +503,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                                 except (NoopMessage, IgnoreMessage):
                                     # This listener doesn't need to care about this message, so acknowledge
                                     # it and move on with our lives
+                                    logger.debug(
+                                        f"Ignoring NOOP event with ID {message_id} discovered during event reclaiming"
+                                    )
                                     await redis.xack(stream, consumer_group, message_id)
                                     continue
 
@@ -513,9 +525,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                                 )
                                 event_messages.append(event_message)
 
-                            # And yield our batch of messages
-                            if event_messages:
-                                yield event_messages
+                    # And yield our batch of messages
+                    if event_messages:
+                        yield event_messages
 
     async def acknowledge(self, *event_messages: RedisEventMessage):
         """Acknowledge that a message has been successfully processed
@@ -579,7 +591,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                             consumer_group=None,
                         )
                     except (NoopMessage, IgnoreMessage):
-                        pass
+                        logger.debug(
+                            f"Ignoring NOOP event with ID {message_id} discovered during fetching of event history"
+                        )
                     else:
                         yield event_message
 
