@@ -85,6 +85,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         batch_size=10,
         reclaim_batch_size: int = None,
         acknowledgement_timeout: float = 60,
+        reclaim_interval: float = 60,
         max_stream_length: Optional[int] = 100_000,
         stream_use: StreamUse = StreamUse.PER_API,
         consumption_restart_delay: int = 5,
@@ -96,6 +97,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         self.service_name = service_name
         self.consumer_name = consumer_name
         self.acknowledgement_timeout = acknowledgement_timeout
+        self.reclaim_interval = reclaim_interval
         self.max_stream_length = max_stream_length
         self.stream_use = stream_use
         self.consumption_restart_delay = consumption_restart_delay
@@ -115,6 +117,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         serializer: str = "lightbus.serializers.ByFieldMessageSerializer",
         deserializer: str = "lightbus.serializers.ByFieldMessageDeserializer",
         acknowledgement_timeout: float = 60,
+        reclaim_interval: Optional[float] = None,
         max_stream_length: Optional[int] = 100_000,
         stream_use: StreamUse = StreamUse.PER_API,
         consumption_restart_delay: int = 5,
@@ -127,6 +130,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         if isinstance(stream_use, str):
             stream_use = StreamUse[stream_use.upper()]
 
+        if reclaim_interval is None:
+            reclaim_interval = acknowledgement_timeout
+
         return cls(
             redis_pool=None,
             service_name=service_name,
@@ -138,6 +144,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             serializer=serializer,
             deserializer=deserializer,
             acknowledgement_timeout=acknowledgement_timeout,
+            reclaim_interval=reclaim_interval,
             max_stream_length=max_stream_length or None,
             stream_use=stream_use,
             consumption_restart_delay=consumption_restart_delay,
@@ -222,9 +229,16 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         # Here we use a queue to combine messages coming from both the
         # fetch messages loop and the reclaim messages loop.
         queue = InternalQueue(maxsize=1)
+        initial_reclaiming_complete = asyncio.Event()
 
         async def consume_loop():
             """Regular event consuming. See _fetch_new_messages()"""
+            logger.debug(
+                "Will begin consuming events once the initial event reclaiming is complete"
+            )
+            await initial_reclaiming_complete.wait()
+            logger.debug("Event reclaiming is complete, beginning to consume events")
+
             async for messages in self._fetch_new_messages(
                 streams, consumer_group, expected_events, forever
             ):
@@ -241,12 +255,17 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
             Reclaim messages which other consumers have failed to
             processes in reasonable time. See _reclaim_lost_messages()
             """
-            async for messages in self._reclaim_lost_messages(
-                stream_names, consumer_group, expected_events
-            ):
-                await queue.put(messages)
-                # Wait for the queue to empty before getting trying to get another message
-                await queue.join()
+            while True:
+                logger.debug("Checking for any events which need reclaiming")
+                async for messages in self._reclaim_lost_messages(
+                    stream_names, consumer_group, expected_events
+                ):
+                    await queue.put(messages)
+                    # Wait for the queue to empty before getting trying to get another message
+                    await queue.join()
+
+                initial_reclaiming_complete.set()
+                await asyncio.sleep(self.reclaim_interval)
 
         consume_task = None
         reclaim_task = None

@@ -686,6 +686,10 @@ async def test_reclaim_lost_messages_consume(redis_client, redis_pool, error_que
     async def consume():
         async for messages_ in consumer:
             messages.extend(messages_)
+            # Ack the messages, otherwise the message will get picked up in the
+            # claiming (good) and then, because it hasn't been acked, get picked
+            # up by the consume too (bad).
+            await event_transport.acknowledge(*messages_)
 
     task = asyncio.ensure_future(consume())
     await asyncio.sleep(0.1)

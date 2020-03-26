@@ -109,13 +109,24 @@ The deserializer to be used in converting the lightbus message into a bus-approp
 *Type: `float`, default: `60.0`, seconds* 
 
 Any message not processed `acknowledgement_timeout` seconds will assume to have failed and 
-will therefore be picked up by another Lightbus worker. This is typically caused by a Lightbus worker 
+will therefore be reclaimed up by another Lightbus worker. This is typically caused by a Lightbus worker 
 exiting ungracefully.
 
 !!! important "Long running events"
     
     You will need to modify this if you have event handlers which take a long time to execute. 
     This value must exceed the length of time it takes any event to be processed
+
+### `reclaim_interval`
+
+*Type: `float`, default is the value of `acknowledgement_timeout`, in seconds* 
+
+How often should each Lightbus client attempt to reclaim events?
+
+When an error occurs in a Lightbus worker then it may die while still holding a claim over events. 
+Other Lightbus works therefore periodically check for any events which have timed out 
+(see `acknowledgement_timeout`) and attempt to reclaim any events found. Reclaimed 
+events are then processed and acknowledged as normal. 
 
 ### `max_stream_length`
 
