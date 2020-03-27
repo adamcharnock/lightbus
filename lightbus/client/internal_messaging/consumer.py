@@ -79,7 +79,11 @@ class InternalConsumer:
                 fut.result()
             except:
                 pass
-            on_done.set()
+
+            # We use call_soon_threadsafe() to ensure we call the Event's set()
+            # in a threadsafe fashion. This is because the Event object may have
+            # been created in another thread and be attached to another event loop
+            on_done._loop.call_soon_threadsafe(on_done.set)
 
         # fmt: off
         background_call_task = asyncio.ensure_future(queue_exception_checker(
