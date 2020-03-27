@@ -106,9 +106,13 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             last_try = try_number == 1
             try:
                 await self._call_rpc(rpc_message, queue_key, expiry_key)
-                return
-            except (PipelineError, ConnectionClosedError, ConnectionResetError):
+                break
+            except (PipelineError, ConnectionClosedError, ConnectionResetError) as e:
                 if not last_try:
+                    logger.debug(
+                        f"Retrying sending of message. Will retry {try_number} more times. "
+                        f"Error was {type(e).__name__}: {e}"
+                    )
                     await asyncio.sleep(self.rpc_retry_delay)
                 else:
                     raise
