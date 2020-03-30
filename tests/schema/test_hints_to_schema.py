@@ -98,7 +98,7 @@ def test_union():
         pass
 
     schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
-    assert schema["properties"]["field"] == {"oneOf": [{"type": "string"}, {"type": "integer"}]}
+    assert schema["properties"]["field"] == {"anyOf": [{"type": "string"}, {"type": "integer"}]}
     assert schema["required"] == ["field"]
 
 
@@ -108,7 +108,7 @@ def test_union_default():
 
     schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
     assert schema["properties"]["field"] == {
-        "oneOf": [
+        "anyOf": [
             {"type": "string", "default": 123},  # Technically an invalid default value
             {"type": "integer", "default": 123},
         ]
@@ -121,7 +121,7 @@ def test_optional():
         pass
 
     schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
-    assert schema["properties"]["username"] == {"oneOf": [{"type": "string"}, {"type": "null"}]}
+    assert schema["properties"]["username"] == {"anyOf": [{"type": "string"}, {"type": "null"}]}
     assert schema["required"] == ["username"]
 
 
@@ -457,12 +457,12 @@ def test_named_tuple_with_none_default():
         pass
 
     schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
-    assert len(schema["properties"]["user"]["oneOf"]) == 2
+    assert len(schema["properties"]["user"]["anyOf"]) == 2
 
 
 def test_named_tuple_optional_with_none_default():
     # There is a risk of {'type': 'null'} being present twice here,
-    # resulting in three values in oneOf. Check this doesn't happen
+    # resulting in three values in anyOf. Check this doesn't happen
 
     class User(NamedTuple):
         pass
@@ -471,7 +471,7 @@ def test_named_tuple_optional_with_none_default():
         pass
 
     schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
-    assert len(schema["properties"]["user"]["oneOf"]) == 2
+    assert len(schema["properties"]["user"]["anyOf"]) == 2
 
 
 def test_named_tuple_field_with_none_default():
@@ -485,7 +485,7 @@ def test_named_tuple_field_with_none_default():
         pass
 
     schema = make_rpc_parameter_schema("api_name", "rpc_name", func)
-    assert len(schema["properties"]["user"]["properties"]["foo"]["oneOf"]) == 2
+    assert len(schema["properties"]["user"]["properties"]["foo"]["anyOf"]) == 2
 
 
 class _TestEnum(Enum):

@@ -38,17 +38,17 @@ def test_config_as_json_schema_apis():
     bus_config_schema = schema["properties"]["bus"]
     api_config_schema = schema["properties"]["apis"]["additionalProperties"]["properties"]
 
-    assert api_config_schema["event_transport"]["oneOf"][0]["type"] == "object"
-    assert api_config_schema["rpc_transport"]["oneOf"][0]["type"] == "object"
-    assert api_config_schema["result_transport"]["oneOf"][0]["type"] == "object"
+    assert api_config_schema["event_transport"]["anyOf"][0]["type"] == "object"
+    assert api_config_schema["rpc_transport"]["anyOf"][0]["type"] == "object"
+    assert api_config_schema["result_transport"]["anyOf"][0]["type"] == "object"
 
     assert api_config_schema["rpc_timeout"]["type"] == "integer"
     assert api_config_schema["event_listener_setup_timeout"]["type"] == "integer"
     assert api_config_schema["event_fire_timeout"]["type"] == "integer"
-    assert api_config_schema["validate"]["oneOf"]
+    assert api_config_schema["validate"]["anyOf"]
 
     assert (
-        bus_config_schema["properties"]["schema"]["properties"]["transport"]["oneOf"][0]["type"]
+        bus_config_schema["properties"]["schema"]["properties"]["transport"]["anyOf"][0]["type"]
         == "object"
     )
 
@@ -59,14 +59,14 @@ def test_config_as_json_schema_redis():
     bus_config_schema = schema["properties"]["bus"]
     api_config_schema = schema["properties"]["apis"]["additionalProperties"]["properties"]
 
-    redis_rpc_transport = api_config_schema["rpc_transport"]["oneOf"][0]["properties"]["redis"][
-        "oneOf"
+    redis_rpc_transport = api_config_schema["rpc_transport"]["anyOf"][0]["properties"]["redis"][
+        "anyOf"
     ][0]
-    redis_result_transport = api_config_schema["result_transport"]["oneOf"][0]["properties"][
+    redis_result_transport = api_config_schema["result_transport"]["anyOf"][0]["properties"][
         "redis"
-    ]["oneOf"][0]
-    redis_event_transport = api_config_schema["event_transport"]["oneOf"][0]["properties"]["redis"][
-        "oneOf"
+    ]["anyOf"][0]
+    redis_event_transport = api_config_schema["event_transport"]["anyOf"][0]["properties"]["redis"][
+        "anyOf"
     ][0]
 
     assert redis_rpc_transport["type"] == "object"
@@ -74,8 +74,8 @@ def test_config_as_json_schema_redis():
     assert redis_event_transport["type"] == "object"
 
     redis_schema_transport = bus_config_schema["properties"]["schema"]["properties"]["transport"][
-        "oneOf"
-    ][0]["properties"]["redis"]["oneOf"][0]
+        "anyOf"
+    ][0]["properties"]["redis"]["anyOf"][0]
     assert redis_schema_transport["type"] == "object"
 
 

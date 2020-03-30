@@ -91,7 +91,7 @@ def parameter_to_schema(parameter):
 
     This will create the schemas using `annotation_to_json_schemas()`,
     set the default values based on the parameters default value
-    annotation, and combine the schemas with `wrap_with_one_of()`
+    annotation, and combine the schemas with `wrap_with_any_of()`
     """
     type_schemas = annotation_to_json_schemas(parameter.annotation, parameter.default)
     if not type_schemas:
@@ -103,7 +103,7 @@ def parameter_to_schema(parameter):
             type_schema["default"] = parameter.default
         schemas.append(type_schema)
 
-    return wrap_with_one_of(schemas)
+    return wrap_with_any_of(schemas)
 
 
 def return_type_to_schema(type_):
@@ -118,7 +118,7 @@ def return_type_to_schema(type_):
     if not type_schemas:
         return {}
 
-    return wrap_with_one_of(type_schemas)
+    return wrap_with_any_of(type_schemas)
 
 
 def annotation_to_json_schemas(annotation, default=empty):
@@ -154,7 +154,7 @@ def python_type_to_json_schemas(type_):
 
     Note that a type hint may actually have several possible representations,
     which is why this function returns a list of schemas. An example of this is
-    the `Union` type hint. These are later combined via `wrap_with_one_of()`
+    the `Union` type hint. These are later combined via `wrap_with_any_of()`
     """
     # pylint: disable=too-many-return-statements
     type_, hint_args = parse_hint(type_)
@@ -180,7 +180,7 @@ def python_type_to_json_schemas(type_):
         return [
             {
                 "type": "object",
-                "additionalProperties": wrap_with_one_of(python_type_to_json_schemas(hint_args[1])),
+                "additionalProperties": wrap_with_any_of(python_type_to_json_schemas(hint_args[1])),
             }
         ]
     elif issubclass_safe(type_, (dict, Mapping)):
@@ -205,7 +205,7 @@ def python_type_to_json_schemas(type_):
                 "maxItems": len(hint_args),
                 "minItems": len(hint_args),
                 "items": [
-                    wrap_with_one_of(python_type_to_json_schemas(sub_type))
+                    wrap_with_any_of(python_type_to_json_schemas(sub_type))
                     for sub_type in hint_args
                 ],
             }
@@ -213,7 +213,7 @@ def python_type_to_json_schemas(type_):
     elif issubclass_safe(type_, (list, tuple, set)):
         schema = {"type": "array"}
         if hint_args:
-            schema["items"] = wrap_with_one_of(python_type_to_json_schemas(hint_args[0]))
+            schema["items"] = wrap_with_any_of(python_type_to_json_schemas(hint_args[0]))
         return [schema]
     elif issubclass_safe(type_, NoneType) or type_ is None:
         return [{"type": "null"}]
@@ -260,13 +260,13 @@ def make_custom_object_schema(type_, property_names=None):
         default = get_property_default(type_, property_name)
 
         if hasattr(type_, "__annotations__"):
-            properties[property_name] = wrap_with_one_of(
+            properties[property_name] = wrap_with_any_of(
                 annotation_to_json_schemas(
                     annotation=type_.__annotations__.get(property_name, None), default=default
                 )
             )
         elif default is not empty:
-            properties[property_name] = wrap_with_one_of(python_type_to_json_schemas(type(default)))
+            properties[property_name] = wrap_with_any_of(python_type_to_json_schemas(type(default)))
         else:
             properties[property_name] = {}
 
@@ -290,12 +290,12 @@ def make_custom_object_schema(type_, property_names=None):
     return schema
 
 
-def wrap_with_one_of(schemas: Sequence):
-    """Take multiple JSON schemas and combine them using the `oneOf` JSON schema notation"""
+def wrap_with_any_of(schemas: Sequence):
+    """Take multiple JSON schemas and combine them using the `anyOf` JSON schema notation"""
     if len(schemas) == 1:
         return schemas[0]
     else:
-        return {"oneOf": schemas}
+        return {"anyOf": schemas}
 
 
 def _normalise_event_parameters(parameters: Sequence) -> Sequence:
