@@ -22,6 +22,6 @@ def uses_django_db(f):
         try:
             return f(*args, **kwargs)
         finally:
-            db.connection.close_all()
+            db.connections.close_all()
 
     return wrapped
