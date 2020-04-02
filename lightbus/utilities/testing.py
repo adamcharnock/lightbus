@@ -211,7 +211,12 @@ class BusMocker(ContextDecorator):
         """Restores the bus back to its original state"""
         bus_with_mocked_queues = self.stack.pop()
         bus_with_mocked_queues.__exit__(exc_type, exc, exc_tb)
-        bus_with_mocked_queues.client.transport_registry = self.old_transport_registry
+
+        # The docs are only available on the bus client during testing
+        bus_with_mocked_queues.client.event_dock.transport_registry = self.old_transport_registry
+        bus_with_mocked_queues.client.rpc_result_dock.transport_registry = (
+            self.old_transport_registry
+        )
 
 
 bus_mocker = BusMocker
