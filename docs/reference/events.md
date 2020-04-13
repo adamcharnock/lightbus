@@ -170,6 +170,39 @@ bus.auth.user_created.listen(
 )
 ```
 
+## Listening for events (asynchronous handlers)
+
+Event handlers may also be asynchronous. For example:
+
+```python3
+import lightbus
+import asyncio
+
+bus = lightbus.create()
+
+
+# Asynchronous handles can be used too
+async def handle_created(username, email):
+    await asyncio.sleep(0.1)
+    print(f"Username {username} created")
+
+
+@bus.client.on_start()
+def on_start():
+    # Bus client has started up, so register our listeners
+
+    bus.auth.user_created.listen(
+        handle_created,
+        listener_name="user_created"
+    )
+```
+
+!!! note "A note on threads"
+
+    Asynchronous handlers will be executed 
+    in the same thread as Lightbus, whereas synchronous handlers will be executed in 
+    their own thread.
+
 ## Type hints
 
 See the [typing reference](typing.md).
