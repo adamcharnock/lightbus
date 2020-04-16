@@ -1297,7 +1297,7 @@ your event handlers should be <a href="https://en.wikipedia.org/wiki/Idempotence
 <h2 id="defining-events">Defining events<a class="headerlink" href="#defining-events" title="Permanent link">&para;</a></h2>
 <p>You can define events using the <code>Event</code> class. For example,
 you could define the following bus.py in your authenication service:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># auth_service/bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># auth_service/bus.py</span>
 <span class="kn">from</span> <span class="nn">lightbus</span> <span class="kn">import</span> <span class="n">Api</span><span class="p">,</span> <span class="n">Event</span>
 
 
@@ -1312,7 +1312,7 @@ you could define the following bus.py in your authenication service:</p>
 
 <h2 id="firing-events">Firing events<a class="headerlink" href="#firing-events" title="Permanent link">&para;</a></h2>
 <p>You can fire events as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Anywhere in your code</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Anywhere in your code</span>
 
 <span class="c1"># Import your project&#39;s bus instance</span>
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
@@ -1322,7 +1322,7 @@ you could define the following bus.py in your authenication service:</p>
 
 <h2 id="firing-events-asynchronously">Firing events (asynchronously)<a class="headerlink" href="#firing-events-asynchronously" title="Permanent link">&para;</a></h2>
 <p>You can also fire events asynchronously using asyncio:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Anywhere in your code</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Anywhere in your code</span>
 
 <span class="c1"># Import your project&#39;s bus instance</span>
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
@@ -1339,7 +1339,7 @@ activity, and is therefore dealt with by the <code>lightbus run</code>
 command.</p>
 <p>You can setup event listeners in your services' <code>bus</code> module
 as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># other_service/bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># other_service/bus.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
@@ -1385,7 +1385,7 @@ See the <a href="../../explanation/events/">events explanation page</a> for furt
 <hr />
 <p>You cannot have two listeners with the same name for the same API.
 For example, this will <strong>not</strong> work (it will raise a <code>DuplicateListenerName</code> exception:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">bus</span><span class="o">.</span><span class="n">competitor_prices</span><span class="o">.</span><span class="n">changed</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span>
+<div class="highlight"><pre><span></span><code><span class="n">bus</span><span class="o">.</span><span class="n">competitor_prices</span><span class="o">.</span><span class="n">changed</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span>
     <span class="n">send_price_alerts</span><span class="p">,</span>
     <span class="n">listener_name</span><span class="o">=</span><span class="s2">&quot;price_listener&quot;</span><span class="p">,</span>
 <span class="p">)</span>
@@ -1413,7 +1413,7 @@ Possible values are:</p>
   and log the error.</li>
 </ul>
 <p>For example:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Taken from the above example</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Taken from the above example</span>
 
 <span class="c1"># Worker shutdown on error (the default)</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">user_created</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span>
@@ -1432,7 +1432,7 @@ Possible values are:</p>
 
 <h2 id="listening-for-events-asynchronous-handlers">Listening for events (asynchronous handlers)<a class="headerlink" href="#listening-for-events-asynchronous-handlers" title="Permanent link">&para;</a></h2>
 <p>Event handlers may also be asynchronous. For example:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">lightbus</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">lightbus</span>
 <span class="kn">import</span> <span class="nn">asyncio</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>

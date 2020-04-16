@@ -1273,7 +1273,7 @@ console every time a message is sent.</p>
 </ol>
 <h3 id="1-define-the-plugin">1. Define the plugin<a class="headerlink" href="#1-define-the-plugin" title="Permanent link">&para;</a></h3>
 <p>Create the following in a python module (we'll assume it is at <code>my_project.greeting_plugin</code>):</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus.plugins</span> <span class="kn">import</span> <span class="n">LightbusPlugin</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus.plugins</span> <span class="kn">import</span> <span class="n">LightbusPlugin</span>
 
 
 <span class="k">class</span> <span class="nc">GreetingPlugin</span><span class="p">(</span><span class="n">LightbusPlugin</span><span class="p">):</span>
@@ -1297,7 +1297,7 @@ console every time a message is sent.</p>
 
 <h3 id="2-make-lightbus-aware-of-the-plugin">2. Make Lightbus aware of the plugin<a class="headerlink" href="#2-make-lightbus-aware-of-the-plugin" title="Permanent link">&para;</a></h3>
 <p>Lightbus is made aware of the plugin via an entrypoint in you're project's <code>setup.py</code> file:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Your setup.py file</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Your setup.py file</span>
 <span class="kn">from</span> <span class="nn">setuptools</span> <span class="kn">import</span> <span class="n">setup</span><span class="p">,</span> <span class="n">find_packages</span>
 
 <span class="n">setup</span><span class="p">(</span>
@@ -1324,7 +1324,7 @@ console every time a message is sent.</p>
 <h3 id="3-configure-the-plugin">3. Configure the plugin<a class="headerlink" href="#3-configure-the-plugin" title="Permanent link">&para;</a></h3>
 <p>You can configure your plugin in your bus' configuration YAML file 
 (see the <a href="../configuration/">configuration reference</a>). For example:</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">bus</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code><span class="nt">bus</span><span class="p">:</span>
   <span class="l l-Scalar l-Scalar-Plain">...</span>
 
 <span class="nt">apis</span><span class="p">:</span>

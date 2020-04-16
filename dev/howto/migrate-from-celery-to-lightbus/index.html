@@ -1234,7 +1234,7 @@ your Celery queue and be handled by a Celery worker process. The web process doe
 any response from the worker, it only needs to know that it <em>will</em> be handled.</p>
 <p><strong>In Lightbus these are <a href="../../explanation/events/">events</a>.</strong></p>
 <p>We can convert this to Lightbus as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># bus.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="c1"># Create an API for everything user-related</span>
@@ -1264,7 +1264,7 @@ any response from the worker, it only needs to know that it <em>will</em> be han
 </code></pre></div>
 
 <p>Then, within our web server code we can send an email as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Your web server code</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Your web server code</span>
 
 <span class="c1"># Import the bus client from your bus.py file</span>
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
@@ -1294,7 +1294,7 @@ to do this task for you, and the web server will wait for it to be done, and the
 response (the image URL) from the worker.</p>
 <p><strong>In Lightbus these are <a href="../../explanation/rpcs/">remote procedure calls</a> (RPCs).</strong></p>
 <p>We can implement the above example as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># bus.py (as above, with one addition)</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># bus.py (as above, with one addition)</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="k">class</span> <span class="nc">UserApi</span><span class="p">(</span><span class="n">lightbus</span><span class="o">.</span><span class="n">Api</span><span class="p">):</span>
@@ -1318,7 +1318,7 @@ response (the image URL) from the worker.</p>
 </code></pre></div>
 
 <p>We can then use this within our web server as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Your web server code</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Your web server code</span>
 
 <span class="c1"># Import the bus client from your bus.py file</span>
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
@@ -1337,7 +1337,7 @@ call the remote procedure and render the user profile HTML.</p>
 <p>Lightbus can replace Celery's periodic tasks through the use of the <code>@bus.client.every()</code> and/or 
 <code>@bus.client.schedule()</code> decorators (see <a href="../schedule-recurring-tasks/">how to schedule recurring tasks</a>). </p>
 <p>For example:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># bus.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>

@@ -1227,7 +1227,7 @@
 </ul>
 <h2 id="simple-recurring-tasks-using-busclientevery">Simple recurring tasks using <code>@bus.client.every()</code><a class="headerlink" href="#simple-recurring-tasks-using-busclientevery" title="Permanent link">&para;</a></h2>
 <p>Lightbus natively supports simple recurring tasks using the <code>@bus.client.every()</code> decorator:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># bus.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
@@ -1245,7 +1245,7 @@ at the given interval.</p>
 the <a href="https://github.com/dbader/schedule">schedule</a> library. This allows for schedules 
 such as 'every Monday at 1am', rather than simple intervals.
 For example:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">lightbus</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">lightbus</span>
 <span class="kn">import</span> <span class="nn">schedule</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
@@ -1262,7 +1262,7 @@ Lightbus process. This will avoid blocking the processing of incoming events and
 <p>For example, the default RPC timeout is 5 seconds. Any task which runs for longer than 
 this has the possibility of causing incoming RPCs to timeout.</p>
 <p>You can move your task processing to a separate process as follows:</p>
-<div class="codehilite"><pre><span></span><code># Process 1: Handles scheduled tasks only
+<div class="highlight"><pre><span></span><code># Process 1: Handles scheduled tasks only
 lightbus run --only tasks
 
 # Process 2: Handles everything else (events and rpcs)

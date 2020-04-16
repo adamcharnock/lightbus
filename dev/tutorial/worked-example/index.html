@@ -1307,7 +1307,7 @@ have already read and completed the <a href="../installation/">installation</a> 
 <h2 id="32-image-resizing-service">3.2. Image resizing service<a class="headerlink" href="#32-image-resizing-service" title="Permanent link">&para;</a></h2>
 <p>The image resizing service will be a simple Lightbus API, the purpose of which
 is to allow our store to resize images prior to display:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># File: ./image/bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># File: ./image/bus.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="k">class</span> <span class="nc">ImageApi</span><span class="p">(</span><span class="n">lightbus</span><span class="o">.</span><span class="n">Api</span><span class="p">):</span>
@@ -1327,7 +1327,7 @@ is to allow our store to resize images prior to display:</p>
 <h2 id="33-store-service">3.3. Store service<a class="headerlink" href="#33-store-service" title="Permanent link">&para;</a></h2>
 <p>Our store will have both a Lightbus API and a web interface. We'll start
 with the API first:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># File: ./store/bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># File: ./store/bus.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="k">class</span> <span class="nc">StoreApi</span><span class="p">(</span><span class="n">lightbus</span><span class="o">.</span><span class="n">Api</span><span class="p">):</span>
@@ -1343,7 +1343,7 @@ with the API first:</p>
 <p>This API has a single event called <code>page_viewed</code>. The store web interface will fire this
 event whenever a page is viewed.</p>
 <p>Our store web interface uses Flask and is a little longer:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># File: ./store/web.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># File: ./store/web.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 <span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
 
@@ -1395,7 +1395,7 @@ event whenever a page is viewed.</p>
 <h2 id="34-interlude-give-it-a-go">3.4. Interlude: give it a go<a class="headerlink" href="#34-interlude-give-it-a-go" title="Permanent link">&para;</a></h2>
 <p>We're not quite done yet, but you can now startup the necessary processes and
 see the store. You will need to run each of these in a separate terminal window:</p>
-<div class="codehilite"><pre><span></span><code>$ ls
+<div class="highlight"><pre><span></span><code>$ ls
 image/       store/
 
 <span class="c1"># Start our image resizing service</span>
@@ -1423,7 +1423,7 @@ of page view statistics for the online store.</p>
 interface. It will therefore need both a lightbus process and a
 web process.</p>
 <p>Fist we will start with the <code>bus.py</code> file:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># File: ./dashboard/bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># File: ./dashboard/bus.py</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
@@ -1455,7 +1455,7 @@ event is all the dashboard's Lightbus process will do, it will not provide any A
 In a real service this would likely be a DBMS of some form (Postgres, MySQL,
 Redis, Mongo etc). For simplicity we just store JSON to a file.</p>
 <p>Now we'll define our dashboard's web interface:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># File: ./dashboard/web.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># File: ./dashboard/web.py</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
 
@@ -1524,7 +1524,7 @@ then render it to HTML.</p>
 </tbody>
 </table>
 <p>You can run each of these as follows:</p>
-<div class="codehilite"><pre><span></span><code>$ ls
+<div class="highlight"><pre><span></span><code>$ ls
 dashboard/    image/    store/
 
 <span class="c1"># Image resizer (Lightbus)</span>
@@ -1541,7 +1541,7 @@ $ <span class="nv">FLASK_APP</span><span class="o">=</span>dashboard/web.py flas
 <p><strong>However,</strong> you may find it easier to startup these processes
 with the <code>honcho</code> tool we installed earlier. First, create
 a file called <code>Procfile</code>:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Procfile</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Procfile</span>
 image_resizer_bus: lightbus run --bus<span class="o">=</span>image.bus
 store_web:         <span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py flask run --port<span class="o">=</span><span class="m">5001</span>
 dashboard_bus:     lightbus run --bus<span class="o">=</span>dashboard.bus
@@ -1549,7 +1549,7 @@ dashboard_web:     <span class="nv">FLASK_APP</span><span class="o">=</span>dash
 </code></pre></div>
 
 <p>And now use <code>honcho</code> to startup all the processes together:</p>
-<div class="codehilite"><pre><span></span><code>$ ls
+<div class="highlight"><pre><span></span><code>$ ls
 Procfile    dashboard/    image/    store/
 
 $ honcho start

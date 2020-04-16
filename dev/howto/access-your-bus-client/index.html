@@ -1208,7 +1208,7 @@
                 <h1 id="how-to-access-your-bus-client">How to access your bus client<a class="headerlink" href="#how-to-access-your-bus-client" title="Permanent link">&para;</a></h1>
 <p>You create your bus client in your bus module
 (typically called <code>bus.py</code>) with the line:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Creating your bus client in your bus.py file</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Creating your bus client in your bus.py file</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
@@ -1222,7 +1222,7 @@ fire an event when a web form is submitted.</p>
 <p>The first approach is to import your bus client directly from
 your bus module, in the same way you would import anything else
 in your codebase:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># For example</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># For example</span>
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
 <span class="c1"># ...or if your service has its own package</span>
@@ -1238,7 +1238,7 @@ use the <a href="../../reference/configuration/#1-module-loading">module loading
 If the bus module has already been imported, then the module's
 <code>bus</code> attribute will simply be returned. Otherwise the bus module will be
 imported first.</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Anywhere in your codebase</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Anywhere in your codebase</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">get_bus</span><span class="p">()</span>

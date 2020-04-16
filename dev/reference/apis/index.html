@@ -1246,7 +1246,7 @@ define API classes within your <code>bus.py</code> file. You can also define
 your API elsewhere and import it into your <code>bus.py</code> file.</p>
 <p><strong>For further discussion of APIs <a href="../../explanation/apis/">see the concepts section</a>.</strong></p>
 <h2 id="an-example-api">An example API<a class="headerlink" href="#an-example-api" title="Permanent link">&para;</a></h2>
-<div class="codehilite"><pre><span></span><code><span class="c1"># An example API. You can define this in your bus.py,</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># An example API. You can define this in your bus.py,</span>
 <span class="c1"># or import into your bus.py file from elsewhere</span>
 
 <span class="k">class</span> <span class="nc">SupportCaseApi</span><span class="p">(</span><span class="n">Api</span><span class="p">):</span>
@@ -1271,14 +1271,14 @@ zero or more events and zero or more procedures.</p>
 the only required option. The name specifies how the API will be
 accessed on the bus.</p>
 <p>You could call an RPC on the above API as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 
 <span class="c1"># Call the get_case() RPC.</span>
 <span class="n">case</span> <span class="o">=</span> <span class="n">bus</span><span class="o">.</span><span class="n">support</span><span class="o">.</span><span class="n">case</span><span class="o">.</span><span class="n">get_case</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
 </code></pre></div>
 
 <p>You can also fire an event on this API:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 
 <span class="c1"># Fire the case_created event</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">support</span><span class="o">.</span><span class="n">case</span><span class="o">.</span><span class="n">case_created</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span>
@@ -1299,7 +1299,7 @@ on the bus. See <a href="#naming-your-apis">naming</a>, below.</p>
 can contain periods which allow you
 to structure your bus in a suitable form for your situation.
 Some example API naming schemes may look like:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Example API naming schemes for use within Meta.name</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Example API naming schemes for use within Meta.name</span>
 <span class="nt">Format</span><span class="p">:</span>  <span class="l l-Scalar l-Scalar-Plain">&lt;service&gt;</span>
 <span class="nt">Example</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">support.get_case()</span>
          <span class="l l-Scalar l-Scalar-Plain">support.get_activity()</span>

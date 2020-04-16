@@ -1148,7 +1148,7 @@
                 
                 <h1 id="lightbus-release-process">Lightbus release process<a class="headerlink" href="#lightbus-release-process" title="Permanent link">&para;</a></h1>
 <p>Lightbus releases are performed as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Update the setup.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Update the setup.py</span>
 dephell convert
 black setup.py
 
@@ -1158,19 +1158,28 @@ poetry lock
 <span class="c1"># Version bump</span>
 poetry version <span class="o">{</span>patch,minor,major,prepatch,preminor,premajor,prerelease<span class="o">}</span>
 
+<span class="nb">export</span> <span class="nv">VERSION</span><span class="o">=</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span>   <span class="c1"># v1.2.3</span>
+<span class="nb">export</span> <span class="nv">VERSION_DOCS</span><span class="o">=</span><span class="k">$(</span>lightbus version --pyproject --docs<span class="k">)</span>  <span class="c1"># v1.2</span>
+
 <span class="c1"># Commit</span>
 git add .
-git commit -m <span class="s2">&quot;Releasing version </span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
+git commit -m <span class="s2">&quot;Releasing version </span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
 
 <span class="c1"># Make docs</span>
-mike deploy v<span class="k">$(</span>lightbus version --pyproject --docs<span class="k">)</span> --message<span class="o">=</span><span class="s2">&quot;Build docs for release of </span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
+git checkout gh-pages
+git pull origin gh-pages
+git checkout master
+
+mike deploy v<span class="nv">$VERSION_DOCS</span> --message<span class="o">=</span><span class="s2">&quot;Build docs for release of </span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
+mike delete latest
+mike <span class="nb">alias</span> v<span class="nv">$VERSION_DOCS</span> latest
 
 <span class="c1"># Tagging and branching</span>
-git tag <span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
-git branch <span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span>
+git tag <span class="s2">&quot;v</span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
+git branch <span class="s2">&quot;v</span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
 git push origin <span class="se">\</span>
-    refs/tags/<span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span> <span class="se">\</span>
-    refs/heads/<span class="s2">&quot;v</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span><span class="s2">&quot;</span> <span class="se">\</span>
+    refs/tags/<span class="s2">&quot;v</span><span class="nv">$VERSION</span><span class="s2">&quot;</span> <span class="se">\</span>
+    refs/heads/<span class="s2">&quot;v</span><span class="nv">$VERSION</span><span class="s2">&quot;</span> <span class="se">\</span>
     master <span class="se">\</span>
     gh-pages
 

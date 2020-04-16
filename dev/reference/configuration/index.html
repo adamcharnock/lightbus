@@ -1485,7 +1485,7 @@ distinction between processes.</p>
 <h2 id="2-service-level-configuration">2. Service-level configuration<a class="headerlink" href="#2-service-level-configuration" title="Permanent link">&para;</a></h2>
 <p>The <code>bus</code> module discovered in the module loading stage (<a href="#1-module-loading">above</a>)
 must define a Lightbus client as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Must be in your bus.py file</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Must be in your bus.py file</span>
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 </code></pre></div>
 
@@ -1501,7 +1501,7 @@ must define a Lightbus client as follows:</p>
 <p>Service-level configuration is different to your global configuration
 because the values will vary between services.</p>
 <p>The following service-level options are available:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Available service-level configuration options</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Available service-level configuration options</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
     <span class="c1"># Relevant to event consumption</span>
@@ -1613,7 +1613,7 @@ should end with <code>.yaml</code> or <code>.json</code>. </p>
 shared by all lightbus clients and can be specified as a path on 
 disk, or as a HTTP(S) URL (<a href="../../explanation/configuration/#3-global-bus-configuration">see explanation</a>).</p>
 <p>A basic default configuration file is as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Root configuration</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Root configuration</span>
 <span class="nt">bus</span><span class="p">:</span>
   <span class="c1"># Bus configuration</span>
 
@@ -1707,7 +1707,7 @@ The reserved API name of <code>default</code> provides a catch-all configuration
 for any APIs without specific configurations. Specifically configured
 APIs do not inherit from the default configuration.</p>
 <p>For example:</p>
-<div class="codehilite"><pre><span></span><code><span class="nn">...</span>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span>
 <span class="nt">apis</span><span class="p">:</span>
 
   <span class="c1"># Catch-all api config</span>
@@ -1763,7 +1763,7 @@ APIs do not inherit from the default configuration.</p>
 <p>The schema config resides under both the <a href="#api-config">API config</a> and the
 <a href="#schema-config">schema config</a>.</p>
 <p>Transports are specified as follows:</p>
-<div class="codehilite"><pre><span></span><code>... parent yaml ...
+<div class="highlight"><pre><span></span><code>... parent yaml ...
     [transport-name]:
         option: &quot;value&quot;
         option: &quot;value&quot;
@@ -1839,7 +1839,7 @@ configuration options will vary from plugin to plugin, so you should read
 the plugin's documentation for details.</p>
 <p>However, all plugins support the <code>enabled</code> property, which defaults to <code>false</code>. 
 You must there set <code>enabled: true</code> if you wish to use the plugin. For example:</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">bus</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code><span class="nt">bus</span><span class="p">:</span>
   <span class="l l-Scalar l-Scalar-Plain">...</span>
 
 <span class="nt">apis</span><span class="p">:</span>

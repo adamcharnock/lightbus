@@ -1236,7 +1236,7 @@ you will see no results. This is because <code>lightbus inspect</code> relies on
 </div>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <p>You can query the bus for a <strong>specific lightbus event ID</strong>:</p>
-<div class="codehilite"><pre><span></span><code># Will produce JSON output
+<div class="highlight"><pre><span></span><code># Will produce JSON output
 lightbus inspect --id 1bff06d0-fa9b-11e9-b8ca-f218986bf8ce
 
 # Will produce human-readable output
@@ -1246,19 +1246,19 @@ lightbus inspect --id 1bff06d0-fa9b-11e9-b8ca-f218986bf8ce --format human
 <hr />
 <p>You can also query the bus using the message ID native to the underlying broker
 (in this case, this will be the Redis streams message ID):</p>
-<div class="codehilite"><pre><span></span><code>lightbus inspect --native-id 1572389392059-0
+<div class="highlight"><pre><span></span><code>lightbus inspect --native-id 1572389392059-0
 </code></pre></div>
 
 <hr />
 <p>You can also query by <strong>API and/or event name</strong>:</p>
-<div class="codehilite"><pre><span></span><code># Event/api filtering
+<div class="highlight"><pre><span></span><code># Event/api filtering
 lightbus inspect --event user_registered 
 lightbus inspect --api my_company.auth 
 </code></pre></div>
 
 <hr />
 <p><strong>Wildcards</strong> are also supported in event &amp; api filtering:</p>
-<div class="codehilite"><pre><span></span><code># Wildcard filtering
+<div class="highlight"><pre><span></span><code># Wildcard filtering
 lightbus inspect --event user_* 
 lightbus inspect --api my_company.*
 </code></pre></div>
@@ -1274,25 +1274,25 @@ For example:</p>
 </div>
 <hr />
 <p>You can see a <strong>continually updating stream</strong> of all events for a single API:</p>
-<div class="codehilite"><pre><span></span><code># Continually show events for the given API 
+<div class="highlight"><pre><span></span><code># Continually show events for the given API 
 lightbus inspect --follow --api auth
 </code></pre></div>
 
 <hr />
 <p>You can query based on the <strong>data sent in the event</strong>. For example, to query based on the 
 value of the <code>email</code> parameter of a fired event:</p>
-<div class="codehilite"><pre><span></span><code>lightbus inspect --json-path email=joe@example.com
+<div class="highlight"><pre><span></span><code>lightbus inspect --json-path email=joe@example.com
 </code></pre></div>
 
 <p>You can also query on more complex <strong><a href="https://goessner.net/articles/JsonPath/">JSON path</a> expressions</strong>:</p>
-<div class="codehilite"><pre><span></span><code>lightbus inspect --json-path address.city=London
+<div class="highlight"><pre><span></span><code>lightbus inspect --json-path address.city=London
 </code></pre></div>
 
 <h2 id="cache">Cache<a class="headerlink" href="#cache" title="Permanent link">&para;</a></h2>
 <p>This command will maintain an cache of fetched messages in <code>~/.lightbus/</code>. This will 
 speed up subsequent executions and reduce the load on the bus.</p>
 <h2 id="option-reference">Option reference<a class="headerlink" href="#option-reference" title="Permanent link">&para;</a></h2>
-<div class="codehilite"><pre><span></span><code>$ lightbus inspect -h
+<div class="highlight"><pre><span></span><code>$ lightbus inspect -h
 usage: lightbus inspect [-h] [--json-path JSON_SEARCH]
                         [--id LIGHTBUS_EVENT_ID] [--native-id NATIVE_EVENT_ID]
                         [--api API_NAME] [--event EVENT_NAME]

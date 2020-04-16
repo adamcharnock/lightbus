@@ -1210,7 +1210,7 @@
 <strong>All functionality on the bus is defined using APIs.</strong></p>
 <p>For example, consider an API for support tickets within a company's 
 help desk:</p>
-<div class="codehilite"><pre><span></span><code><span class="k">class</span> <span class="nc">TicketApi</span><span class="p">(</span><span class="n">Api</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">TicketApi</span><span class="p">(</span><span class="n">Api</span><span class="p">):</span>
     <span class="n">ticket_created</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">parameters</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;sender&#39;</span><span class="p">,</span> <span class="s1">&#39;subject&#39;</span><span class="p">,</span> <span class="s1">&#39;body&#39;</span><span class="p">))</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
@@ -1225,7 +1225,7 @@ on the bus. The help desk service could define multiple additional APIs as neede
 (perhaps for listing help desk staff or retrieving reports).</p>
 <h2 id="api-registration-authoritativenon-authoritative-apis">API registration &amp; authoritative/non-authoritative APIs<a class="headerlink" href="#api-registration-authoritativenon-authoritative-apis" title="Permanent link">&para;</a></h2>
 <p>An API can be registered with your service's bus client as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">lightbus</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">lightbus</span>
 <span class="kn">from</span> <span class="nn">my_apis</span> <span class="kn">import</span> <span class="n">HelpDeskApi</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>

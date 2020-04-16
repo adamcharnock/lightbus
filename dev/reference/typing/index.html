@@ -1276,7 +1276,7 @@ across your entire bus.</p>
 <h2 id="typing-syntax-for-rpcs">Typing syntax for RPCs<a class="headerlink" href="#typing-syntax-for-rpcs" title="Permanent link">&para;</a></h2>
 <p>You can provide typing information for Remote Procedure Calls using
 regular Python type hinting:</p>
-<div class="codehilite"><pre><span></span><code><span class="k">class</span> <span class="nc">AuthApi</span><span class="p">(</span><span class="n">lightbus</span><span class="o">.</span><span class="n">Api</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">AuthApi</span><span class="p">(</span><span class="n">lightbus</span><span class="o">.</span><span class="n">Api</span><span class="p">):</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
         <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;auth&#39;</span>
@@ -1296,7 +1296,7 @@ regular Python type hinting:</p>
 <p>Typing information for events is different to that for RPCs.
 Firstly, events do not provide return values. Secondly, event
 parameters are specified differently:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># auth_service/bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># auth_service/bus.py</span>
 <span class="kn">from</span> <span class="nn">lightbus</span> <span class="kn">import</span> <span class="n">Api</span><span class="p">,</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Parameter</span>
 
 
@@ -1335,7 +1335,7 @@ the following data structures:</p>
 <li>... and therefore validate incoming/outgoing objects against this schema</li>
 </ul>
 <h3 id="namedtuple-example">NamedTuple example<a class="headerlink" href="#namedtuple-example" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="c1"># bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># bus.py</span>
 <span class="kn">from</span> <span class="nn">lightbus</span> <span class="kn">import</span> <span class="n">Api</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NamedTuple</span>
 
@@ -1358,7 +1358,7 @@ the following data structures:</p>
 <h3 id="dataclass-example">Dataclass example<a class="headerlink" href="#dataclass-example" title="Permanent link">&para;</a></h3>
 <p>Lightbus supports <a href="https://www.python.org/dev/peps/pep-0557/">dataclasses</a> 
 in the same way as it supports <a href="#namedtuple-example">named tuples</a>. For example:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># bus.py</span>
 <span class="kn">from</span> <span class="nn">lightbus</span> <span class="kn">import</span> <span class="n">Api</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
@@ -1384,7 +1384,7 @@ in the same way as it supports <a href="#namedtuple-example">named tuples</a>. F
 <li>The class defines a <code>__from_bus__(self, value: dict)</code> class method, which returns an instance of the class.</li>
 <li>The class defines a <code>__to_bus__(self)</code> method, which returns a <code>dict</code>.</li>
 </ol>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus</span> <span class="kn">import</span> <span class="n">Api</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus</span> <span class="kn">import</span> <span class="n">Api</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">():</span>

@@ -1321,7 +1321,7 @@ classes. They are useful when either:</p>
 at-least-once semantics you should consder using events instead.</p>
 <h2 id="definition">Definition<a class="headerlink" href="#definition" title="Permanent link">&para;</a></h2>
 <p>As covered in previous sections, you define RPCs as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># bus.py</span>
 <span class="kn">from</span> <span class="nn">lightbus</span> <span class="kn">import</span> <span class="n">Api</span>
 
 
@@ -1347,7 +1347,7 @@ at-least-once semantics you should consder using events instead.</p>
 
 <h2 id="calling">Calling<a class="headerlink" href="#calling" title="Permanent link">&para;</a></h2>
 <p>RPCs are called simply as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Anywhere in your code</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Anywhere in your code</span>
 
 <span class="c1"># Import your project&#39;s bus instance</span>
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
@@ -1358,7 +1358,7 @@ at-least-once semantics you should consder using events instead.</p>
 
 <h2 id="calling-asynchronously">Calling (asynchronously)<a class="headerlink" href="#calling-asynchronously" title="Permanent link">&para;</a></h2>
 <p>You can also perform the call asynchronously using asyncio:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Anywhere in your code</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Anywhere in your code</span>
 
 <span class="c1"># Import your project&#39;s bus instance</span>
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
@@ -1417,7 +1417,7 @@ your particular scenario.</p>
 </ul>
 <h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h2>
 <p>RPCs can only be called with keyword arguments. For example:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Raises an InvalidParameters exception</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Raises an InvalidParameters exception</span>
 <span class="n">result</span> <span class="o">=</span> <span class="n">bus</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">check_password</span><span class="p">(</span><span class="s1">&#39;admin&#39;</span><span class="p">,</span> <span class="s1">&#39;secret&#39;</span><span class="p">)</span>  <span class="c1"># ERROR</span>
 
 <span class="c1"># Success</span>

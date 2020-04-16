@@ -1434,7 +1434,7 @@ handling of received events.</p>
 bus' <code>config.yaml</code>.</p>
 <h4 id="validate-bool-true"><code>validate (bool) = true</code><a class="headerlink" href="#validate-bool-true" title="Permanent link">&para;</a></h4>
 <p>You can enable/disable validation using a boolean true/false flag:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># In config.yaml</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># In config.yaml</span>
 <span class="nt">apis</span><span class="p">:</span>
     <span class="nt">default</span><span class="p">:</span>
         <span class="nt">validate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
@@ -1442,7 +1442,7 @@ bus' <code>config.yaml</code>.</p>
 
 <p>For finer grained control you can specify individual flags for incoming/outgoing
 validation:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># In config.yaml</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># In config.yaml</span>
 <span class="nt">apis</span><span class="p">:</span>
     <span class="nt">default</span><span class="p">:</span>
         <span class="nt">validate</span><span class="p">:</span>
@@ -1453,7 +1453,7 @@ validation:</p>
 <h4 id="strict_validation-bool-false"><code>strict_validation (bool) = false</code><a class="headerlink" href="#strict_validation-bool-false" title="Permanent link">&para;</a></h4>
 <p>If <code>strict_validation</code> is <code>true</code> then calling a procedure for which no schema exists will
 result in an error:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># In config.yaml</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># In config.yaml</span>
 <span class="nt">apis</span><span class="p">:</span>
     <span class="nt">default</span><span class="p">:</span>
         <span class="nt">strict_validation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
@@ -1465,7 +1465,7 @@ For example, you may <a href="../command-line-use/dumpschema/">take a dump of yo
 and use it to test/develop against either in your local development environment or 
 in any automated testing system.</p>
 <p>You can load a local schema as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
 <span class="c1"># Either load form a single file</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">load_local</span><span class="p">(</span><span class="s2">&quot;/path/to/local/bus-schema.json&quot;</span><span class="p">)</span>

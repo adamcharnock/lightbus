@@ -1283,7 +1283,7 @@ then two records will be created, even though the event was identical in both ca
 <p>A UUID is a standard way of producing a globally unique ID. An upsert is a combination of 
 an 'update' and an 'insert' which says: *'Insert this record, but if you find a duplicate then update it instead'. </p>
 <p>Take the following event handler as an example:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># BAD, not idempotent</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># BAD, not idempotent</span>
 <span class="k">def</span> <span class="nf">handle_page_view</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
     <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO views (url)&quot;</span><span class="p">)</span>
 </code></pre></div>
@@ -1291,7 +1291,7 @@ an 'update' and an 'insert' which says: *'Insert this record, but if you find a 
 <p>This is not an idempotent event handler because multiple invocations for the same event will 
 result in multiple records being created.</p>
 <p>An idempotent version of the above can be rewritten as:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># GOOD, idempotent</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># GOOD, idempotent</span>
 <span class="k">def</span> <span class="nf">handle_page_view</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Try to perform an insert first (this should normally work fine)</span>
@@ -1311,14 +1311,14 @@ which will make the above simpler (and therefore less error prone).</p>
 <h3 id="upserts-in-django">Upserts in Django<a class="headerlink" href="#upserts-in-django" title="Permanent link">&para;</a></h3>
 <p>Django provides the <a href="https://docs.djangoproject.com/en/dev/ref/models/querysets/#update-or-create">update_or_create()</a>
 method which serves exactly this purpose:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Idempotent</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Idempotent</span>
 <span class="k">def</span> <span class="nf">handle_page_view</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
     <span class="n">Views</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">update_or_create</span><span class="p">(</span><span class="n">uuid</span><span class="o">=</span><span class="n">uuid</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="n">url</span><span class="p">})</span>
 </code></pre></div>
 
 <h3 id="upserts-in-sql">Upserts in SQL<a class="headerlink" href="#upserts-in-sql" title="Permanent link">&para;</a></h3>
 <p>Many relational databases can also perform upsert in a single SQL query:</p>
-<div class="codehilite"><pre><span></span><code><span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">views</span> <span class="p">(</span><span class="nb">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">&#39;uuid-here&#39;</span><span class="p">,</span> <span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">)</span> 
+<div class="highlight"><pre><span></span><code><span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">views</span> <span class="p">(</span><span class="nb">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">&#39;uuid-here&#39;</span><span class="p">,</span> <span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">)</span> 
 <span class="k">ON</span> <span class="n">CONFLICT</span> <span class="p">(</span><span class="nb">uuid</span><span class="p">)</span> 
 <span class="k">DO</span> <span class="k">UPDATE</span> <span class="k">SET</span> <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">;</span>
 </code></pre></div>

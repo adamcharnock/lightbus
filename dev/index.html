@@ -1267,7 +1267,7 @@ for other platforms will be added in future.</p>
 and common problems are caught with
 clear and helpful error messages.</p>
 <p>For example, a naïve authentication API:</p>
-<div class="codehilite"><pre><span></span><code><span class="k">class</span> <span class="nc">AuthApi</span><span class="p">(</span><span class="n">Api</span><span class="p">):</span>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">AuthApi</span><span class="p">(</span><span class="n">Api</span><span class="p">):</span>
     <span class="n">user_registered</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">parameters</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;email&#39;</span><span class="p">))</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
@@ -1281,7 +1281,7 @@ clear and helpful error messages.</p>
 </code></pre></div>
 
 <p>The <code>check_password</code> procedure can be called remotely as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">lightbus</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 
@@ -1293,7 +1293,7 @@ clear and helpful error messages.</p>
 </code></pre></div>
 
 <p>You can also listen for events:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># bus.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>

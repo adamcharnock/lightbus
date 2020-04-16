@@ -1420,7 +1420,7 @@ or simply for general interest and review. <strong>You do not need to be aware o
 protocol in order to use Lightbus</strong>.</p>
 <h2 id="sending-events">Sending events<a class="headerlink" href="#sending-events" title="Permanent link">&para;</a></h2>
 <p>The following command will send an event:</p>
-<div class="codehilite"><pre><span></span><code>XADD {stream_name} [MAXLEN ~ {max_stream_length}] * {field_name_1} {field_value_1} {field_name_2} {field_value_2}...
+<div class="highlight"><pre><span></span><code>XADD {stream_name} [MAXLEN ~ {max_stream_length}] * {field_name_1} {field_value_1} {field_name_2} {field_value_2}...
 </code></pre></div>
 
 <h3 id="stream_name"><code>{stream_name}</code><a class="headerlink" href="#stream_name" title="Permanent link">&para;</a></h3>
@@ -1452,13 +1452,13 @@ Lightbus may implement event functionality around event versions in future
 events which this process has consumed yet failed to process (for example, 
 due to an error, hardware failure, network problem, etc).</p>
 <p>We perform this initial check for events as follows:</p>
-<div class="codehilite"><pre><span></span><code>XREAD_GROUP {group_name} {consumer_name} {stream_name} 0
+<div class="highlight"><pre><span></span><code>XREAD_GROUP {group_name} {consumer_name} {stream_name} 0
 </code></pre></div>
 
 <p>The <code>0</code> above indicates we wish to receive un-acknowledged events for this consumer 
 (i.e this Lightbus process).</p>
 <p>Once we have received and processed any of these events, we can retrieve further events as follows:</p>
-<div class="codehilite"><pre><span></span><code>XREAD_GROUP {group_name} {consumer_name} {stream} &gt;
+<div class="highlight"><pre><span></span><code>XREAD_GROUP {group_name} {consumer_name} {stream} &gt;
 </code></pre></div>
 
 <h3 id="group_name"><code>{group_name}</code><a class="headerlink" href="#group_name" title="Permanent link">&para;</a></h3>
@@ -1472,7 +1472,7 @@ due to an error, hardware failure, network problem, etc).</p>
 <p>Events can be considered timed if another Lightbus process has held onto them for too long.
 Any client consuming events should check for these from time to time.</p>
 <p>Timed out events can be claimed as follows:</p>
-<div class="codehilite"><pre><span></span><code># Get pending messages
+<div class="highlight"><pre><span></span><code># Get pending messages
 XPENDING {stream} {group_name} - + {batch_size}
 
 # For each message try to claim it

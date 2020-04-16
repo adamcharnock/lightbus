@@ -1323,7 +1323,7 @@ The <em>listener name</em> is setup when you create your event listener (see bel
 <p>For example, this <code>bus</code> module sets up two listeners. Each listener is
 given a <code>listener_name</code>, thereby ensuring each listener receives a
 copy of every <code>competitor_prices.changed</code> event.</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Example of setting service and listener names</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Example of setting service and listener names</span>
 <span class="kn">from</span> <span class="nn">my_handlers</span> <span class="kn">import</span> <span class="n">send_price_alerts</span><span class="p">,</span> <span class="n">update_db</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>

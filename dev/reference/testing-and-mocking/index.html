@@ -1256,7 +1256,7 @@ These utilities allow you to:</p>
 <li>Mock RPC responses</li>
 </ul>
 <h2 id="mocking-with-events">Mocking with events<a class="headerlink" href="#mocking-with-events" title="Permanent link">&para;</a></h2>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus.utilities.testing</span> <span class="kn">import</span> <span class="n">BusMocker</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus.utilities.testing</span> <span class="kn">import</span> <span class="n">BusMocker</span>
 
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
@@ -1278,7 +1278,7 @@ These utilities allow you to:</p>
 </code></pre></div>
 
 <h2 id="mocking-with-rpcs">Mocking with RPCs<a class="headerlink" href="#mocking-with-rpcs" title="Permanent link">&para;</a></h2>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus.utilities.testing</span> <span class="kn">import</span> <span class="n">BusMocker</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus.utilities.testing</span> <span class="kn">import</span> <span class="n">BusMocker</span>
 
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
@@ -1306,7 +1306,7 @@ not be setup using the <code>mock_event_firing</code> / <code>mock_rpc_call</cod
 <code>BusMocker(bus, require_mocking=False)</code>.</p>
 <p>For example, the following will result in no errors even though we have not 
 setup any mocks:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus.utilities.testing</span> <span class="kn">import</span> <span class="n">BusMocker</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus.utilities.testing</span> <span class="kn">import</span> <span class="n">BusMocker</span>
 
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
@@ -1321,7 +1321,7 @@ setup any mocks:</p>
 <h2 id="the-bus_mocker-decorator">The <code>@bus_mocker</code> decorator<a class="headerlink" href="#the-bus_mocker-decorator" title="Permanent link">&para;</a></h2>
 <p>You can also access the bus mocker using the <code>@bus_mocker</code> decorator. We can rewrite 
 our earlier event example (above) as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus.utilities.testing</span> <span class="kn">import</span> <span class="n">bus_mocker</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus.utilities.testing</span> <span class="kn">import</span> <span class="n">bus_mocker</span>
 
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
@@ -1345,7 +1345,7 @@ our earlier event example (above) as follows:</p>
 <h2 id="testing-in-django">Testing in Django<a class="headerlink" href="#testing-in-django" title="Permanent link">&para;</a></h2>
 <p>You can use the mocker in your Django tests just as shown above.
 For example, we can access the mocker using the context manager:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">django.test</span> <span class="kn">import</span> <span class="n">TestCase</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django.test</span> <span class="kn">import</span> <span class="n">TestCase</span>
 <span class="kn">from</span> <span class="nn">lightbus.utilities.testing</span> <span class="kn">import</span> <span class="n">BusMocker</span>
 
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>
@@ -1359,7 +1359,7 @@ For example, we can access the mocker using the context manager:</p>
 </code></pre></div>
 
 <p>Or we can use the <code>@bus_mocker</code> decorator:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">django.test</span> <span class="kn">import</span> <span class="n">TestCase</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django.test</span> <span class="kn">import</span> <span class="n">TestCase</span>
 <span class="kn">from</span> <span class="nn">lightbus.utilities.testing</span> <span class="kn">import</span> <span class="n">bus_mocker</span>
 
 <span class="kn">from</span> <span class="nn">bus</span> <span class="kn">import</span> <span class="n">bus</span>

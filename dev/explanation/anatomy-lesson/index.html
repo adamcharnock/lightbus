@@ -1217,13 +1217,13 @@
 <h2 id="the-client">The client<a class="headerlink" href="#the-client" title="Permanent link">&para;</a></h2>
 <p>The client allows you to interact with the bus from within your Python
 codebase. For example:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># The bus is created in your bus.py file</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># The bus is created in your bus.py file</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 </code></pre></div>
 
-<div class="codehilite"><pre><span></span><code><span class="c1"># Elsewhere in codebase</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Elsewhere in codebase</span>
 <span class="kn">from</span> <span class="nn">my_project.bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
 <span class="c1"># Perform a remote procedure call</span>
@@ -1268,7 +1268,7 @@ in order to bootstrap itself. Your bus module should therefore:</p>
 <p>For example, let's use the <code>auth.create_user()</code> remote procedure call
 to create a new user every time a <code>customers.new_customer</code> event appears on the
 bus:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># bus.py</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># bus.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
