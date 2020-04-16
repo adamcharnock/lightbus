@@ -69,9 +69,6 @@ jobs:
       - image: circleci/python:3.7
 
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - "SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8"
 
       - checkout
 
@@ -93,6 +90,7 @@ jobs:
 
       - run:
           command: |
+            command: cat .circleci/known_hosts >> ~/.ssh/config
             poetry run mike deploy --message="Automated build by CircleCI [ci skip]" dev
             git push --force origin gh-pages
 
