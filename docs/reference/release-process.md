@@ -13,21 +13,28 @@ poetry lock
 # Version bump
 poetry version {patch,minor,major,prepatch,preminor,premajor,prerelease}
 
+export VERSION=$(lightbus version --pyproject)   # v1.2.3
+export VERSION_DOCS=$(lightbus version --pyproject --docs  # v1.2
+
 # Commit
 git add .
-git commit -m "Releasing version $(lightbus version --pyproject)"
+git commit -m "Releasing version $VERSION"
 
 # Make docs
-mike deploy v$(lightbus version --pyproject --docs) --message="Build docs for release of $(lightbus version --pyproject)"
+git checkout gh-pages
+git pull origin gh-pages
+git checkout master
+
+mike deploy v$VERSION_DOCS --message="Build docs for release of $VERSION"
 mike delete latest
-mike alias v$(lightbus version --pyproject --docs) latest
+mike alias v$VERSION_DOCS latest
 
 # Tagging and branching
-git tag "v$(lightbus version --pyproject)"
-git branch "v$(lightbus version --pyproject)"
+git tag "v$VERSION"
+git branch "v$VERSION"
 git push origin \
-    refs/tags/"v$(lightbus version --pyproject)" \
-    refs/heads/"v$(lightbus version --pyproject)" \
+    refs/tags/"v$VERSION" \
+    refs/heads/"v$VERSION" \
     master \
     gh-pages
 
