@@ -90,7 +90,7 @@ jobs:
 
       - run:
           command: |
-            cat .circleci/known_hosts >> ~/.ssh/config
+            cat /home/circleci/project/.circleci/known_hosts >> ~/.ssh/config
             poetry run mike deploy --message="Automated build by CircleCI [ci skip]" dev
             git push --force origin gh-pages
 
