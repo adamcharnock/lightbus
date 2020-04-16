@@ -1072,6 +1072,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#reclaim_interval" class="md-nav__link">
+    reclaim_interval
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#max_stream_length" class="md-nav__link">
     max_stream_length
   </a>
@@ -1443,6 +1450,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#reclaim_interval" class="md-nav__link">
+    reclaim_interval
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#max_stream_length" class="md-nav__link">
     max_stream_length
   </a>
@@ -1733,13 +1747,20 @@ processed out-of-order.</p>
 <h3 id="acknowledgement_timeout"><code>acknowledgement_timeout</code><a class="headerlink" href="#acknowledgement_timeout" title="Permanent link">&para;</a></h3>
 <p><em>Type: <code>float</code>, default: <code>60.0</code>, seconds</em> </p>
 <p>Any message not processed <code>acknowledgement_timeout</code> seconds will assume to have failed and 
-will therefore be picked up by another Lightbus worker. This is typically caused by a Lightbus worker 
+will therefore be reclaimed up by another Lightbus worker. This is typically caused by a Lightbus worker 
 exiting ungracefully.</p>
 <div class="admonition important">
 <p class="admonition-title">Long running events</p>
 <p>You will need to modify this if you have event handlers which take a long time to execute. 
 This value must exceed the length of time it takes any event to be processed</p>
 </div>
+<h3 id="reclaim_interval"><code>reclaim_interval</code><a class="headerlink" href="#reclaim_interval" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>float</code>, default is the value of <code>acknowledgement_timeout</code>, in seconds</em> </p>
+<p>How often should each Lightbus client attempt to reclaim events?</p>
+<p>When an error occurs in a Lightbus worker then it may die while still holding a claim over events. 
+Other Lightbus works therefore periodically check for any events which have timed out 
+(see <code>acknowledgement_timeout</code>) and attempt to reclaim any events found. Reclaimed 
+events are then processed and acknowledged as normal. </p>
 <h3 id="max_stream_length"><code>max_stream_length</code><a class="headerlink" href="#max_stream_length" title="Permanent link">&para;</a></h3>
 <p><em>Type: <code>int</code>, default: <code>100_000</code></em> </p>
 <p>Streams will be trimmed so they never exceed the given length. Set to <code>null</code> for no limit.</p>
