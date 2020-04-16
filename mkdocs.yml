@@ -126,3 +126,7 @@ google_analytics:
 
 extra_css:
   - 'static/stylesheets/extra.css'
+  - 'static/stylesheets/version-select.css'
+
+extra_javascript:
+  - 'static/js/version-select.js'
