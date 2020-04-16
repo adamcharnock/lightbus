@@ -19,6 +19,8 @@ git commit -m "Releasing version $(lightbus version --pyproject)"
 
 # Make docs
 mike deploy v$(lightbus version --pyproject --docs) --message="Build docs for release of $(lightbus version --pyproject)"
+mike delete latest
+mike alias v$(lightbus version --pyproject --docs) latest
 
 # Tagging and branching
 git tag "v$(lightbus version --pyproject)"
