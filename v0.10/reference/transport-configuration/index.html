@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../..">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
+      <meta name="generator" content="mkdocs-1.1, mkdocs-material-4.6.3">
     
     
       
@@ -46,7 +46,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application.adb8469c.css">
       
         <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -57,7 +57,7 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
+      <script src="../../assets/javascripts/modernizr.86422ebf.js"></script>
     
     
       
@@ -120,7 +120,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#transport-configuration" tabindex="1" class="md-skip">
+      <a href="#transport-configuration" tabindex="0" class="md-skip">
         Skip to content
       </a>
     
@@ -129,7 +129,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://lightbus.org" title="Lightbus" class="md-header-nav__button md-logo">
+        <a href="http://lightbus.org" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
           
             <i class="md-icon"></i>
           
@@ -160,7 +160,7 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <input type="text" class="md-search__input" aria-label="search" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
       <label class="md-icon md-search__icon" for="__search"></label>
       <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
         &#xE5CD;
@@ -1072,6 +1072,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#reclaim_interval" class="md-nav__link">
+    reclaim_interval
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#max_stream_length" class="md-nav__link">
     max_stream_length
   </a>
@@ -1443,6 +1450,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#reclaim_interval" class="md-nav__link">
+    reclaim_interval
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#max_stream_length" class="md-nav__link">
     max_stream_length
   </a>
@@ -1644,8 +1658,8 @@
 <p>Many code editors support using a JSON schema to provide auto-complete and validation when 
 editing a JSON file. If you wish, you can write your configuration in JSON (rather than YAML),
 and load the following JSON schema into your editor: </p>
-<div class="codehilite"><pre><span></span>https://lightbus.org/static/default-config-schema.json
-</pre></div>
+<div class="codehilite"><pre><span></span><code>https://lightbus.org/static/default-config-schema.json
+</code></pre></div>
 
 
 <p>This will provide you with autocomplete and validation for Lightbus' various 
@@ -1654,7 +1668,7 @@ configuration options.</p>
 <a href="../command-line-use/dumpconfigschema/">generate your own config schema</a>.</p>
 </div>
 <h2 id="complete-configuration-example">Complete configuration example<a class="headerlink" href="#complete-configuration-example" title="Permanent link">&para;</a></h2>
-<div class="codehilite"><pre><span></span><span class="nn">...</span>
+<div class="codehilite"><pre><span></span><code><span class="nn">...</span>
 <span class="nt">apis</span><span class="p">:</span>
 
   <span class="c1"># Catch-all api config</span>
@@ -1704,14 +1718,14 @@ configuration options.</p>
     <span class="nt">transport</span><span class="p">:</span>
       <span class="nt">redis</span><span class="p">:</span>
         <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
-</pre></div>
+</code></pre></div>
 
 <h2 id="redis-event-transport-configuration">Redis Event Transport configuration<a class="headerlink" href="#redis-event-transport-configuration" title="Permanent link">&para;</a></h2>
 <h3 id="url"><code>url</code><a class="headerlink" href="#url" title="Permanent link">&para;</a></h3>
 <p><em>Type: <code>str</code>, default: <code>redis://127.0.0.1:6379/0</code></em></p>
 <p>The connection string for the redis server. Format is:</p>
-<div class="codehilite"><pre><span></span>`redis://host:port/db_number`
-</pre></div>
+<div class="codehilite"><pre><span></span><code>`redis://host:port/db_number`
+</code></pre></div>
 
 
 <h3 id="batch_size"><code>batch_size</code><a class="headerlink" href="#batch_size" title="Permanent link">&para;</a></h3>
@@ -1733,13 +1747,20 @@ processed out-of-order.</p>
 <h3 id="acknowledgement_timeout"><code>acknowledgement_timeout</code><a class="headerlink" href="#acknowledgement_timeout" title="Permanent link">&para;</a></h3>
 <p><em>Type: <code>float</code>, default: <code>60.0</code>, seconds</em> </p>
 <p>Any message not processed <code>acknowledgement_timeout</code> seconds will assume to have failed and 
-will therefore be picked up by another Lightbus worker. This is typically caused by a Lightbus worker 
+will therefore be reclaimed up by another Lightbus worker. This is typically caused by a Lightbus worker 
 exiting ungracefully.</p>
 <div class="admonition important">
 <p class="admonition-title">Long running events</p>
 <p>You will need to modify this if you have event handlers which take a long time to execute. 
 This value must exceed the length of time it takes any event to be processed</p>
 </div>
+<h3 id="reclaim_interval"><code>reclaim_interval</code><a class="headerlink" href="#reclaim_interval" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>float</code>, default is the value of <code>acknowledgement_timeout</code>, in seconds</em> </p>
+<p>How often should each Lightbus client attempt to reclaim events?</p>
+<p>When an error occurs in a Lightbus worker then it may die while still holding a claim over events. 
+Other Lightbus works therefore periodically check for any events which have timed out 
+(see <code>acknowledgement_timeout</code>) and attempt to reclaim any events found. Reclaimed 
+events are then processed and acknowledged as normal. </p>
 <h3 id="max_stream_length"><code>max_stream_length</code><a class="headerlink" href="#max_stream_length" title="Permanent link">&para;</a></h3>
 <p><em>Type: <code>int</code>, default: <code>100_000</code></em> </p>
 <p>Streams will be trimmed so they never exceed the given length. Set to <code>null</code> for no limit.</p>
@@ -1766,8 +1787,8 @@ messages will only be ordered for an individual event.</p>
 <h3 id="url_1"><code>url</code><a class="headerlink" href="#url_1" title="Permanent link">&para;</a></h3>
 <p><em>Type: <code>str</code>, default: <code>redis://127.0.0.1:6379/0</code></em></p>
 <p>The connection string for the redis server. Format is:</p>
-<div class="codehilite"><pre><span></span>`redis://host:port/db_number`
-</pre></div>
+<div class="codehilite"><pre><span></span><code>`redis://host:port/db_number`
+</code></pre></div>
 
 
 <h3 id="batch_size_1"><code>batch_size</code><a class="headerlink" href="#batch_size_1" title="Permanent link">&para;</a></h3>
@@ -1804,8 +1825,8 @@ in cases where Redis errors (e.g. connection issues). Execution will be retried 
 <h3 id="url_2"><code>url</code><a class="headerlink" href="#url_2" title="Permanent link">&para;</a></h3>
 <p><em>Type: <code>str</code>, default: <code>redis://127.0.0.1:6379/0</code></em></p>
 <p>The connection string for the redis server. Format is:</p>
-<div class="codehilite"><pre><span></span>`redis://host:port/db_number`
-</pre></div>
+<div class="codehilite"><pre><span></span><code>`redis://host:port/db_number`
+</code></pre></div>
 
 
 <h3 id="serializer_2"><code>serializer</code><a class="headerlink" href="#serializer_2" title="Permanent link">&para;</a></h3>
@@ -1836,8 +1857,8 @@ in cases where Redis errors (e.g. connection issues). Execution will be retried 
 <h3 id="url_3"><code>url</code><a class="headerlink" href="#url_3" title="Permanent link">&para;</a></h3>
 <p><em>Type: <code>str</code>, default: <code>redis://127.0.0.1:6379/0</code></em></p>
 <p>The connection string for the redis server. Format is:</p>
-<div class="codehilite"><pre><span></span>`redis://host:port/db_number`
-</pre></div>
+<div class="codehilite"><pre><span></span><code>`redis://host:port/db_number`
+</code></pre></div>
                 
                   
                 
@@ -1896,9 +1917,9 @@ in cases where Redis errors (e.g. connection issues). Execution will be retried 
       <div class="md-footer-copyright">
         
         powered by
-        <a href="https://www.mkdocs.org">MkDocs</a>
+        <a href="https://www.mkdocs.org" target="_blank" rel="noopener">MkDocs</a>
         and
-        <a href="https://squidfunk.github.io/mkdocs-material/">
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
           Material for MkDocs</a>
       </div>
       
@@ -1908,9 +1929,9 @@ in cases where Redis errors (e.g. connection issues). Execution will be retried 
       
     </div>
     
-      <script src="../../assets/javascripts/application.808e90bb.js"></script>
+      <script src="../../assets/javascripts/application.c33a9706.js"></script>
       
-      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      <script>app.initialize({version:"1.1",url:{base:"../.."}})</script>
       
         <script src="../../static/js/version-select.js"></script>
       
