@@ -1,4 +1,5 @@
 """Utility functions relating to bus creation"""
+import asyncio
 import logging
 import os
 import sys
@@ -15,7 +16,7 @@ from lightbus.client.utilities import ErrorQueueType
 from lightbus.hooks import HookRegistry
 from lightbus.internal_apis import LightbusStateApi, LightbusMetricsApi
 from lightbus.plugins import PluginRegistry
-from lightbus.utilities.async_tools import get_event_loop
+from lightbus.utilities.async_tools import get_event_loop, block
 from lightbus.utilities.internal_queue import InternalQueue
 from lightbus.utilities.features import ALL_FEATURES, Feature
 from lightbus.config.structure import RootConfig
@@ -211,6 +212,15 @@ def create(
         config=config,
     )
 
+    # Wait until the docks are ready to go
+    if not get_event_loop().is_running():
+        # If the event loop is running then we can assume that this setup
+        # will happen momentarily anyway. Plus, if an event loop is running
+        # then we cannot block. This is mainly to make sure everything
+        # starts up in a sensible fashion when we are in non-worker-mode.
+        block(event_dock.wait_until_ready(), timeout=2)
+        block(rpc_result_dock.wait_until_ready(), timeout=2)
+
     return node_class(name="", parent=None, client=client)
 
 
@@ -253,30 +263,29 @@ def import_bus_module(bus_module_name: str = None):
     except ImportError as e:
         raise FailedToImportBusModule(
             f"Failed to import bus module '{bus_module_name}'.\n\n"
-            f"    Perhaps you need to set the LIGHTBUS_MODULE environment variable? Alternatively "
-            f"you may need to configure your PYTHONPATH.\n\n"
+            "    Perhaps you need to set the LIGHTBUS_MODULE environment variable? Alternatively "
+            "you may need to configure your PYTHONPATH.\n\n"
             f"    Error was: {e}"
         )
 
     if not hasattr(bus_module, "bus"):
         raise FailedToImportBusModule(
             f"Bus module at '{bus_module_name}' contains no attribute named 'bus'.\n\n"
-            f"    Your bus module must set a variable named bus using:\n"
-            f"        bus = lightbus.create()"
+            "    Your bus module must set a variable named bus using:\n"
+            "        bus = lightbus.create()"
         )
 
     if not isinstance(bus_module.bus, BusPath):
         raise FailedToImportBusModule(
-            f"Bus module at '{bus_module_name}' contains an invalid value for the 'bus' attribute.\n\n"
-            f"    We expected a BusPath instance, but found '{type(bus_module.bus).__name__}'.\n"
-            f"    Your bus module must contain a variable named 'bus' using:\n"
-            f"        bus = lightbus.create()"
+            f"Bus module at '{bus_module_name}' contains an invalid value for the 'bus'"
+            " attribute.\n\n    We expected a BusPath instance, but found"
+            f" '{type(bus_module.bus).__name__}'.\n    Your bus module must contain a variable"
+            " named 'bus' using:\n        bus = lightbus.create()"
         )
 
     return bus_module
 
 
 def get_bus(bus_module_name: str = None) -> BusPath:
-    """Get the bus, importing if necessary
-    """
+    """Get the bus, importing if necessary"""
     return import_bus_module(bus_module_name).bus

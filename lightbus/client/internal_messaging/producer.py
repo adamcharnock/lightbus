@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 # Was invoker
 class InternalProducer:
-    """ Base invoker class. Puts commands onto a queue
+    """Base invoker class. Puts commands onto a queue
 
     Note that commands are execute in parallel. If you wish to know when a command has
     been executed you should await the command.on_done event.
@@ -63,8 +63,7 @@ class InternalProducer:
         self.error_queue = error_queue
 
     def start(self):
-        """ Starts the queue monitor
-        """
+        """Starts the queue monitor"""
         # fmt: off
         self._queue_monitor_task = asyncio.ensure_future(queue_exception_checker(
             self._queue_monitor(),
@@ -79,7 +78,7 @@ class InternalProducer:
             self._monitor_ready = asyncio.Event()
 
     async def wait_until_ready(self):
-        """Wait until this invoker is ready to start receiving & handling commands"""
+        """Wait until this producer is ready to start receiving & handling commands"""
         await self._monitor_ready.wait()
 
     async def _queue_monitor(self):

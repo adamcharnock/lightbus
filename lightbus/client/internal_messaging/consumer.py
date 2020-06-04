@@ -29,6 +29,10 @@ class InternalConsumer:
 
         Use `stop()` to shutdown the invoker.
         """
+        logger.debug(
+            f"Starting consumer for handler {handler.__qualname__}(). This should report ready"
+            " shortly..."
+        )
         self._consumer_task = asyncio.ensure_future(
             queue_exception_checker(self._consumer_loop(self.queue, handler), self.error_queue)
         )
@@ -54,12 +58,17 @@ class InternalConsumer:
 
     async def _consumer_loop(self, queue, handler):
         """Continually fetch commands from the queue and handle them"""
+        logger.debug(f"Consumer loop is ready with handler {handler.__qualname__}()")
         self._ready.set()
 
         while True:
             on_done: asyncio.Event
             command, on_done = await queue.get()
             self.handle_in_background(queue, handler, command, on_done)
+
+    async def wait_until_ready(self):
+        """Wait until this consumer is ready to start receiving & handling commands"""
+        await self._ready.wait()
 
     def handle_in_background(self, queue: InternalQueue, handler, command, on_done: asyncio.Event):
         """Handle a received command by calling the provided handler

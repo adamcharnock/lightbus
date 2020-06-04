@@ -37,3 +37,7 @@ class BaseDock:
 
     async def handle(self, command):
         raise NotImplementedError()
+
+    async def wait_until_ready(self):
+        await self.producer.wait_until_ready()
+        await self.consumer.wait_until_ready()
