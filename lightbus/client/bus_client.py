@@ -127,8 +127,7 @@ class BusClient:
         block(self.close_async())
 
     async def close_async(self):
-        """Async version of close()
-        """
+        """Async version of close()"""
         if self._closed:
             raise BusAlreadyClosed()
 
@@ -164,8 +163,7 @@ class BusClient:
         return self.exit_code
 
     async def start_worker(self):
-        """Worker startup procedure
-        """
+        """Worker startup procedure"""
         # Ensure an event loop exists
         get_event_loop()
 
@@ -291,6 +289,7 @@ class BusClient:
             self.stop_loop()
 
     def stop_loop(self):
+        logger.debug("Stopping event loop")
         self.loop.stop()
 
     def request_shutdown(self):
@@ -363,7 +362,7 @@ class BusClient:
     async def call_rpc_remote(
         self, api_name: str, name: str, kwargs: dict = frozendict(), options: dict = frozendict()
     ):
-        """ Perform an RPC call
+        """Perform an RPC call
 
         Call an RPC and return the result.
         """
@@ -593,7 +592,7 @@ class BusClient:
         also_run_immediately=False,
         **timedelta_extra,
     ):
-        """ Call a coroutine at the specified interval
+        """Call a coroutine at the specified interval
 
         This is a simple scheduling mechanism which you can use in your bus module to setup
         recurring tasks. For example:
@@ -617,8 +616,9 @@ class BusClient:
 
         if td.total_seconds() == 0:
             raise InvalidSchedule(
-                "The @bus.client.every() decorator must be provided with a non-zero time argument. "
-                "Ensure you are passing at least one time argument, and that it has a non-zero value."
+                "The @bus.client.every() decorator must be provided with a non-zero time argument."
+                " Ensure you are passing at least one time argument, and that it has a non-zero"
+                " value."
             )
 
         # TODO: There is an argument that the backgrounding of this should be done only after
@@ -634,7 +634,7 @@ class BusClient:
         return wrapper
 
     def schedule(self, schedule: "Job", also_run_immediately=False):
-        """ Call a coroutine on the specified schedule
+        """Call a coroutine on the specified schedule
 
         Schedule a task using the `schedule` library:
 

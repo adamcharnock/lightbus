@@ -50,6 +50,7 @@ def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
     return create_bus_client_with_unhappy_schema
 
 
+@pytest.mark.asyncio
 def test_rpc_validate_incoming(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema()
 
@@ -59,6 +60,7 @@ def test_rpc_validate_incoming(create_bus_client_with_unhappy_schema):
     jsonschema.validate.assert_called_with({"p": 1}, {"p": {}})
 
 
+@pytest.mark.asyncio
 def test_result_validate(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema()
 
@@ -70,6 +72,7 @@ def test_result_validate(create_bus_client_with_unhappy_schema):
     jsonschema.validate.assert_called_with("123", {})
 
 
+@pytest.mark.asyncio
 def test_event_validate(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema()
 
@@ -79,6 +82,7 @@ def test_event_validate(create_bus_client_with_unhappy_schema):
     jsonschema.validate.assert_called_with({"p": 1}, {"p": {}})
 
 
+@pytest.mark.asyncio
 def test_validate_disabled(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema(validate=False)
 
@@ -86,6 +90,7 @@ def test_validate_disabled(create_bus_client_with_unhappy_schema):
     validate_outgoing(config=client.config, schema=client.schema, message=message)
 
 
+@pytest.mark.asyncio
 def test_validate_non_strict(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema(strict_validation=False)
 
@@ -96,6 +101,7 @@ def test_validate_non_strict(create_bus_client_with_unhappy_schema):
     validate_outgoing(config=client.config, schema=client.schema, message=message)
 
 
+@pytest.mark.asyncio
 def test_validate_strict_missing_api(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema(strict_validation=True)
 
@@ -106,6 +112,7 @@ def test_validate_strict_missing_api(create_bus_client_with_unhappy_schema):
         validate_outgoing(config=client.config, schema=client.schema, message=message)
 
 
+@pytest.mark.asyncio
 def test_validate_incoming_disabled(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema(validate={"incoming": False})
 
@@ -113,6 +120,7 @@ def test_validate_incoming_disabled(create_bus_client_with_unhappy_schema):
     validate_incoming(config=client.config, schema=client.schema, message=message)
 
 
+@pytest.mark.asyncio
 def test_validate_incoming_enabled(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema(validate={"incoming": True})
 
@@ -121,6 +129,7 @@ def test_validate_incoming_enabled(create_bus_client_with_unhappy_schema):
         validate_incoming(config=client.config, schema=client.schema, message=message)
 
 
+@pytest.mark.asyncio
 def test_validate_outgoing_disabled(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema(validate={"outgoing": False})
 
@@ -128,6 +137,7 @@ def test_validate_outgoing_disabled(create_bus_client_with_unhappy_schema):
     validate_outgoing(config=client.config, schema=client.schema, message=message)
 
 
+@pytest.mark.asyncio
 def test_validate_outgoing_enabled(create_bus_client_with_unhappy_schema):
     client: BusClient = create_bus_client_with_unhappy_schema(validate={"outgoing": True})
 

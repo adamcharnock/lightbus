@@ -1,10 +1,11 @@
 """Utility functions relating to bus creation"""
-import asyncio
 import logging
 import os
 import sys
+import threading
 import weakref
-from typing import Union, Mapping, Type, List
+from functools import partial
+from typing import Union, Mapping, Type, List, Optional, Callable
 
 from lightbus import Schema
 from lightbus.api import ApiRegistry
@@ -33,7 +34,7 @@ __all__ = ["create", "load_config", "import_bus_module", "get_bus"]
 logger = logging.getLogger(__name__)
 
 
-def create(
+def create_client(
     config: Union[dict, RootConfig] = None,
     *,
     config_file: str = None,
@@ -44,8 +45,10 @@ def create(
     node_class: Type[BusPath] = BusPath,
     plugins=None,
     flask: bool = False,
+    hook_registry: Optional[HookRegistry] = None,
+    api_registry: Optional[ApiRegistry] = None,
     **kwargs,
-) -> BusPath:
+) -> BusClient:
     """
     Create a new bus instance which can be used to access the bus.
 
@@ -124,16 +127,16 @@ def create(
         plugin_registry.set_plugins(plugins)
 
     # Hook registry
-
-    hook_registry = HookRegistry(
-        error_queue=error_queue, execute_plugin_hooks=plugin_registry.execute_hook
-    )
+    if not hook_registry:
+        hook_registry = HookRegistry(
+            error_queue=error_queue, execute_plugin_hooks=plugin_registry.execute_hook
+        )
 
     # API registry
-
-    api_registry = ApiRegistry()
-    api_registry.add(LightbusStateApi())
-    api_registry.add(LightbusMetricsApi())
+    if not api_registry:
+        api_registry = ApiRegistry()
+        api_registry.add(LightbusStateApi())
+        api_registry.add(LightbusMetricsApi())
 
     events_queue_client_to_dock = InternalQueue()
     events_queue_dock_to_client = InternalQueue()
@@ -221,7 +224,85 @@ def create(
         block(event_dock.wait_until_ready(), timeout=2)
         block(rpc_result_dock.wait_until_ready(), timeout=2)
 
-    return node_class(name="", parent=None, client=client)
+    return client
+
+
+def create(
+    config: Union[dict, RootConfig] = None,
+    *,
+    config_file: str = None,
+    service_name: str = None,
+    process_name: str = None,
+    features: List[Union[Feature, str]] = ALL_FEATURES,
+    client_class: Type[BusClient] = BusClient,
+    node_class: Type[BusPath] = BusPath,
+    plugins=None,
+    flask: bool = False,
+    **kwargs,
+) -> BusPath:
+    client_proxy = ThreadLocalClientProxy(
+        partial(
+            create_client,
+            config,
+            config_file=config_file,
+            service_name=service_name,
+            process_name=process_name,
+            features=features,
+            client_class=client_class,
+            node_class=node_class,
+            plugins=plugins,
+            flask=flask,
+            **kwargs,
+        )
+    )
+
+    return node_class(name="", parent=None, client=client_proxy)
+
+
+class ThreadLocalClientProxy:
+    """A proxy which wraps around the BusClient
+
+    This proxy will ensure a bus client is created for each thread.
+    """
+
+    def __init__(self, client_factory: Callable):
+        self.client_factory = client_factory
+        self.local = threading.local()
+        self.main_client: Optional[BusClient] = None
+
+    def _create_client(self) -> BusClient:
+        """Create a bus client using our client_factory"""
+        if self.main_client is None:
+            # This is the first bus client creation. This bus client
+            # will contain some post-instantiation state which we will need to give
+            # to any future clients we create. We therefore store it as
+            # self.main_client so we can access it later
+            self.main_client = self.client_factory()
+            return self.main_client
+        else:
+            # Create another client, as the bus has been accessed
+            # from a thread. Pass this new client the hook & api
+            # registry which would have been configured post-instantiation,
+            # and therefore our client_factory will not be aware of this state.
+            # TODO: Consider copying this rather than passing a reference
+            return self.client_factory(
+                hook_registry=self.main_client.hook_registry,
+                api_registry=self.main_client.api_registry,
+            )
+
+    @property
+    def proxied_client(self):
+        """Directly access the BusClient instance
+
+        Useful in some edge-cases, such as mocking within the tests
+        """
+        if not hasattr(self.local, "client"):
+            logger.debug(f"Creating new client for thread {threading.current_thread().name}")
+            self.local.client = self._create_client()
+        return self.local.client
+
+    def __getattr__(self, item):
+        return getattr(self.proxied_client, item)
 
 
 def load_config(

@@ -374,7 +374,7 @@ async def test_event_exception_in_listener_realtime(
         raise Exception()
 
     worker_bus = new_bus()
-    worker_bus.client.stop_loop = MagicMock()
+    bus.client.proxied_client.stop_loop = MagicMock()
     worker_bus.my.dummy.my_event.listen(
         listener, listener_name="test_listener", bus_options={"since": "0"}
     )

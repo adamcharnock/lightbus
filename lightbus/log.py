@@ -26,11 +26,11 @@ default_log_colors = {
 # The default format to use for each style
 default_formats = {
     "%": {
-        "DEBUG": "%(log_color)s %(name)s | %(msg)s",
-        "INFO": "%(log_color)s %(name)s | %(msg)s",
-        "WARNING": "%(log_color)s %(name)s | %(msg)s",
-        "ERROR": "%(log_color)s %(name)s | ERROR: %(msg)s (%(module)s:%(lineno)d)",
-        "CRITICAL": "%(log_color)s %(name)s | CRITICAL: %(msg)s",
+        "DEBUG": "%(log_color)s%(threadName)s | %(name)s | %(msg)s",
+        "INFO": "%(log_color)s%(threadName)s | %(name)s | %(msg)s",
+        "WARNING": "%(log_color)s%(threadName)s | %(name)s | %(msg)s",
+        "ERROR": "%(log_color)s%(threadName)s | %(name)s | ERROR: %(msg)s (%(module)s:%(lineno)d)",
+        "CRITICAL": "%(log_color)s%(threadName)s | %(name)s | CRITICAL: %(msg)s",
     },
     "{": "{log_color} {levelname}:{name}:{message}",
     "$": "${log_color}$ ${levelname}:${name}:${message}",

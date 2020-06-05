@@ -176,11 +176,13 @@ async def redis_pool(create_redis_pool, loop):
     return await create_redis_pool()
 
 
-@pytest.fixture
+@pytest.yield_fixture
 async def redis_client(create_redis_client, loop):
     """Returns Redis client instance."""
     redis = await create_redis_client()
-    return redis
+    yield redis
+    redis.close()
+    await redis.wait_closed()
 
 
 @pytest.fixture
@@ -324,8 +326,10 @@ def pytest_addoption(parser):
         "--redis-server",
         default=default_redis_server,
         action="append",
-        help="Path to redis-server executable,"
-        " defaults to value REDIS_SERVER environment variable, else `%(default)s`",
+        help=(
+            "Path to redis-server executable,"
+            " defaults to value REDIS_SERVER environment variable, else `%(default)s`"
+        ),
     )
     parser.addoption(
         "--test-timeout", default=30, type=int, help="The timeout for each individual test"
@@ -680,7 +684,7 @@ class Worker:
 
     def __call__(self, bus: Optional[BusPath] = None, raise_errors=True):
         bus = bus or self.bus_factory()
-        bus.client.stop_loop = MagicMock()
+        bus.client.proxied_client.stop_loop = MagicMock()
 
         @asynccontextmanager
         async def worker_context(bus):

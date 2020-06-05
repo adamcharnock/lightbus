@@ -251,7 +251,9 @@ async def test_no_transport_type(dummy_bus):
 
 @pytest.mark.asyncio
 async def test_setup_transports_opened(dummy_bus: BusPath, mocker):
-    schema_transport_pool: SchemaTransportPoolType = dummy_bus.client.transport_registry.get_schema_transport()
+    schema_transport_pool: SchemaTransportPoolType = (
+        dummy_bus.client.transport_registry.get_schema_transport()
+    )
 
     assert schema_transport_pool.total == 0
     await dummy_bus.client.lazy_load_now()
@@ -260,7 +262,7 @@ async def test_setup_transports_opened(dummy_bus: BusPath, mocker):
 
 def test_run_forever(dummy_bus: lightbus.path.BusPath, mocker, dummy_api):
     """A simple test to ensure run_forever executes without errors"""
-    m = mocker.patch.object(dummy_bus.client, "_actually_run_forever")
+    m = mocker.patch.object(dummy_bus.client.proxied_client, "_actually_run_forever")
     dummy_bus.client.run_forever()
     assert m.called
 
@@ -328,7 +330,7 @@ async def test_exception_in_listener_shutdown(
         raise TestException()
 
     bus = new_bus()
-    bus.client.stop_loop = MagicMock()
+    bus.client.proxied_client.stop_loop = MagicMock()
 
     # Start the listener
     bus.client.listen_for_events(
@@ -376,7 +378,7 @@ async def test_exception_in_listener_log(
         raise TestException()
 
     bus: BusPath = new_bus()
-    bus.client.stop_loop = MagicMock()
+    bus.client.proxied_client.stop_loop = MagicMock()
 
     # Start the listener
     bus.client.listen_for_events(

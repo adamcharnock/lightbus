@@ -40,6 +40,7 @@ def add_base_plugin(dummy_bus: BusPath):
     return do_add_base_plugin
 
 
+@pytest.fixture
 def test_worker_start_stop(
     mocker, track_called_hooks, dummy_bus: BusPath, add_base_plugin, dummy_api
 ):
@@ -51,6 +52,7 @@ def test_worker_start_stop(
     assert hook_tracker() == ["before_worker_start", "after_worker_stopped"]
 
 
+@pytest.fixture
 def test_rpc_calls(track_called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
     dummy_bus.client.register_api(dummy_api)
@@ -86,6 +88,7 @@ async def test_rpc_execution(
     assert hook_tracker() == ["before_rpc_execution", "after_rpc_execution"]
 
 
+@pytest.mark.asyncio
 def test_event_sent(track_called_hooks, dummy_bus: BusPath, loop, add_base_plugin, dummy_api):
     add_base_plugin()
     dummy_bus.client.register_api(dummy_api)
