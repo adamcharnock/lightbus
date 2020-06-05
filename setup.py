@@ -23,7 +23,7 @@ if os.path.exists(readme_path):
 setup(
     long_description=readme,
     name="lightbus",
-    version="0.10.0-alpha7",
+    version="0.10.0",
     description="RPC & event framework for Python 3",
     python_requires=">=3.7",
     project_urls={
@@ -87,34 +87,4 @@ setup(
     package_dir={"": "."},
     package_data={},
     install_requires=["aioredis>=1.2.0", "jsonschema>=3.2", "pyyaml>=3.12"],
-    extras_require={
-        "dev": [
-            "bpython",
-            "codacy-coverage==1.*,>=1.3.0",
-            "colorama",
-            "coverage",
-            "dephell>=0.7.6",
-            "fissix==19.2b1",
-            "flake8",
-            "markdown",
-            "markdown-include",
-            "mike==0.*,>=0.5.1",
-            "mkdocs==1.*,>=1.1.0",
-            "mkdocs-material<5,>=4",
-            "pre-commit",
-            "pylint",
-            "pymdown-extensions",
-            "pytest>=5.1.1",
-            "pytest-asyncio>=0.10.0",
-            "pytest-benchmark",
-            "pytest-cov",
-            "pytest-mock==2.0.0",
-            "pytest-repeat",
-            "pytest-timeout",
-            "pytest-xdist",
-            "schedule",
-            "structlog",
-            "tox",
-        ]
-    },
 )
