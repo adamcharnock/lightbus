@@ -492,7 +492,7 @@ class BusClient:
 
             callback(self, *, client: "BusClient")
         """
-        return self.before_worker_start(callback, before_plugins=before_plugins)
+        return self.after_worker_stopped(callback, before_plugins=before_plugins)
 
     def before_worker_start(self, callback=None, *, before_plugins=False):
         """Decorator to register a function to be called before the worker starts up
