@@ -268,27 +268,20 @@ class ThreadLocalClientProxy:
     def __init__(self, client_factory: Callable):
         self.client_factory = client_factory
         self.local = threading.local()
-        self.main_client: Optional[BusClient] = None
+        self.main_client: Optional[BusClient] = self.client_factory()
+        self.enabled = True
 
     def _create_client(self) -> BusClient:
         """Create a bus client using our client_factory"""
-        if self.main_client is None:
-            # This is the first bus client creation. This bus client
-            # will contain some post-instantiation state which we will need to give
-            # to any future clients we create. We therefore store it as
-            # self.main_client so we can access it later
-            self.main_client = self.client_factory()
-            return self.main_client
-        else:
-            # Create another client, as the bus has been accessed
-            # from a thread. Pass this new client the hook & api
-            # registry which would have been configured post-instantiation,
-            # and therefore our client_factory will not be aware of this state.
-            # TODO: Consider copying this rather than passing a reference
-            return self.client_factory(
-                hook_registry=self.main_client.hook_registry,
-                api_registry=self.main_client.api_registry,
-            )
+        # Create another client, as the bus has been accessed
+        # from a thread. Pass this new client the hook & api
+        # registry which would have been configured post-instantiation,
+        # and therefore our client_factory will not be aware of this state.
+        # TODO: Consider copying this rather than passing a reference
+        return self.client_factory(
+            hook_registry=self.main_client.hook_registry,
+            api_registry=self.main_client.api_registry,
+        )
 
     @property
     def proxied_client(self):
@@ -296,10 +289,23 @@ class ThreadLocalClientProxy:
 
         Useful in some edge-cases, such as mocking within the tests
         """
+        if not self.enabled:
+            return self.main_client
+
         if not hasattr(self.local, "client"):
             logger.debug(f"Creating new client for thread {threading.current_thread().name}")
             self.local.client = self._create_client()
         return self.local.client
+
+    def disable_proxy(self):
+        """Disable the proxying and always use self.main_client
+
+        This is mainly useful within the lightbus worker (i.e. `lightbus run`).
+        In this case lightbus is in control of the process so can make sane choices
+        with regards its use of threads, rather than being at the mercy of some
+        other system (i.e. gunicorn, django's development server, etc)
+        """
+        self.enabled = False
 
     def __getattr__(self, item):
         return getattr(self.proxied_client, item)

@@ -7,6 +7,7 @@ import sys
 
 from lightbus import BusPath
 from lightbus.commands import utilities as command_utilities
+from lightbus.creation import ThreadLocalClientProxy
 from lightbus.plugins import PluginRegistry
 from lightbus.utilities.async_tools import block
 from lightbus.utilities.features import Feature, ALL_FEATURES
@@ -31,14 +32,17 @@ class Command:
         group.add_argument(
             "--only",
             "-o",
-            help=f"Only provide the specified features. Comma separated list. Possible values: {self.features_str}",
+            help=(
+                "Only provide the specified features. Comma separated list. Possible values:"
+                f" {self.features_str}"
+            ),
             type=csv_type,
         )
         group.add_argument(
             "--skip",
             "-k",
             help=(
-                f"Provide all except the specified features. Comma separated list. "
+                "Provide all except the specified features. Comma separated list. "
                 f"Possible values: {self.features_str}"
             ),
             type=csv_type,
@@ -69,6 +73,9 @@ class Command:
 
         bus: BusPath
         bus_module, bus = command_utilities.import_bus(args)
+
+        if isinstance(bus.client, ThreadLocalClientProxy):
+            bus.client.disable_proxy()
 
         # Convert only & skip into a list of features to enable
         if args.only or args.skip:
