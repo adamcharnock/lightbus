@@ -1,0 +1,7 @@
+.md-typeset .admonition, .md-typeset details {
+    font-size: 0.8rem;
+}
+
+.md-typeset h5 {
+    color: black;
+}
