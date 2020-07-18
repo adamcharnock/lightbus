@@ -190,7 +190,7 @@ def new_redis_pool(_closable, create_redis_pool, loop):
     """Useful when you need multiple redis connections."""
 
     async def make_new(**kwargs):
-        redis = await create_redis_pool(loop=loop, **kwargs)
+        redis = await create_redis_pool(**kwargs)
         await redis.flushall()
         return redis
 
@@ -246,6 +246,8 @@ def dummy_bus(loop, redis_server_url):
         plugins=[],
     )
     # fmt: on
+    dummy_bus.client.disable_proxy()
+
     yield dummy_bus
     try:
         dummy_bus.client.close()
@@ -415,7 +417,7 @@ def make_test_bus_module():
 
     def inner(code: str = None):
         if code is None:
-            code = "bus = lightbus.create()"
+            code = "bus = lightbus.create()\nbus.client.disable_proxy()"
 
         project_name = f"test_project_{randint(1000000, 9999999)}"
         d = Path(tempfile.mkdtemp())
@@ -739,6 +741,7 @@ def new_bus(loop, redis_server_url):
             ),
             plugins=[],
         )
+        bus.client.disable_proxy()
         return bus
     return _new_bus
 # fmt: on

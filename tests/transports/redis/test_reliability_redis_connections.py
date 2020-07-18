@@ -83,7 +83,7 @@ async def test_create_and_destroy_redis_transports(
     caplog.set_level(logging.WARNING)
 
     for _ in range(0, 100):
-        pool = await create_redis_pool(**redis_server_config, loop=loop, maxsize=1000)
+        pool = await create_redis_pool(**redis_server_config, maxsize=1000)
         transport = transport_class(redis_pool=pool, **kwargs)
         await transport.open()
         await transport.close()

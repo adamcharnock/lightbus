@@ -403,6 +403,7 @@ async def test_from_config(redis_client):
     assert transport._redis_pool.connection.maxsize == 123
     assert isinstance(transport.serializer, BlobMessageSerializer)
     assert isinstance(transport.deserializer, BlobMessageDeserializer)
+    await transport.close()
 
 
 @pytest.mark.asyncio

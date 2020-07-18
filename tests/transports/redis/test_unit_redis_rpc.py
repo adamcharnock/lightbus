@@ -137,6 +137,8 @@ async def test_from_config(redis_client):
     assert isinstance(transport.serializer, BlobMessageSerializer)
     assert isinstance(transport.deserializer, BlobMessageDeserializer)
 
+    await transport.close()
+
 
 @pytest.mark.asyncio
 async def test_consume_rpcs_only_once(redis_client, dummy_api, redis_pool):
@@ -256,12 +258,12 @@ async def test_reconnect_consume_rpcs_dead_server(
     await cancel(enqueue_task)
     standalone_redis_server.stop()
 
-    # We don't get any more messages
-    total_messages = 0
-    await asyncio.sleep(0.2)
-    assert total_messages == 0
-
     try:
+        # We don't get any more messages
+        total_messages = 0
+        await asyncio.sleep(0.2)
+        assert total_messages == 0
+
         # Now start the server again, and start emitting messages
         standalone_redis_server.start()
         enqueue_task = asyncio.ensure_future(co_enqeue())

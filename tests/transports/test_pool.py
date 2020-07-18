@@ -222,20 +222,9 @@ async def test_checkout_checkin_threaded(
     Note that this will not grow the pool. See the doc string for TransportPool
     """
 
-    # mocker.spy in pytest-mock runs afoul of this change in 3.8.1
-    #    https://bugs.python.org/issue38857
-    # We therefore use mocker.spy for python 3.7, or the new AsyncMock in 3.8.
-    # See: https://github.com/pytest-dev/pytest-mock/issues/178
-    if sys.version_info >= (3, 8):
-        from unittest.mock import AsyncMock
-
-        redis_pool.grow = AsyncMock(wraps=redis_pool.grow)
-        redis_pool._create_transport = AsyncMock(wraps=redis_pool._create_transport)
-        redis_pool._close_transport = AsyncMock(wraps=redis_pool._close_transport)
-    else:
-        mocker.spy(redis_pool, "grow")
-        mocker.spy(redis_pool, "_create_transport")
-        mocker.spy(redis_pool, "_close_transport")
+    mocker.spy(redis_pool, "grow")
+    mocker.spy(redis_pool, "_create_transport")
+    mocker.spy(redis_pool, "_close_transport")
 
     async def _check_in_out():
         transport = await redis_pool.checkout()

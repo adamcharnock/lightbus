@@ -62,7 +62,7 @@ async def test_rpc_error(bus: lightbus.path.BusPath, dummy_api, worker: Worker, 
         # Event loop not stopped, because RPCs should continue to be served
         # even in the case of an error
         assert not bus.client.stop_loop.called
-        assert len(caplog.records) == 1
+        assert len(caplog.records) == 1, caplog.records
         assert "Oh no, there was some kind of error" in caplog.records[0].message
 
 
@@ -179,6 +179,7 @@ async def test_multiple_rpc_transports(loop, redis_server_url, redis_server_b_ur
     )
 
     bus = lightbus.create(config=config)
+    bus.client.disable_proxy()
     bus.client.register_api(ApiA())
     bus.client.register_api(ApiB())
 
@@ -223,6 +224,7 @@ async def test_multiple_event_transports(
     )
 
     bus = lightbus.create(config=config)
+    bus.client.disable_proxy()
     bus.client.register_api(ApiA())
     bus.client.register_api(ApiB())
     await asyncio.sleep(0.1)
@@ -336,6 +338,7 @@ async def test_listen_to_multiple_events_across_multiple_transports(
     )
 
     bus = lightbus.create(config=config)
+    bus.client.disable_proxy()
     bus.client.register_api(ApiA())
     bus.client.register_api(ApiB())
     await asyncio.sleep(0.1)

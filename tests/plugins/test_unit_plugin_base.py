@@ -35,13 +35,10 @@ async def test_execute_hook(mocker, plugin_registry: PluginRegistry):
     plugin = LightbusPlugin()
     plugin_registry.set_plugins([plugin])
 
-    async def dummy_coroutine(*args, **kwargs):
-        pass
+    mocker.spy(plugin, "before_worker_start")
 
-    m = mocker.patch.object(plugin, "before_worker_start", return_value=dummy_coroutine())
-
-    await plugin_registry.execute_hook("before_worker_start", client=None, loop=None)
-    assert m.called
+    await plugin_registry.execute_hook("before_worker_start", client=None)
+    assert plugin.before_worker_start.called
 
 
 def test_is_plugin_loaded(plugin_registry: PluginRegistry):

@@ -72,6 +72,9 @@ async def test_timeouts(bus: lightbus.path.BusPath, new_bus, caplog, dummy_api, 
         *[do_single_call(n, client_bus) for n, client_bus in enumerate(client_buses)]
     )
 
+    for bus_ in server_buses:
+        await bus_.client.stop_worker()
+
     for bus_ in server_buses + client_buses:
         await bus_.client.close_async()
 

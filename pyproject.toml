@@ -61,7 +61,7 @@
     pytest-asyncio = ">=0.12.0"
     pytest-benchmark = "*"
     pytest-cov = "*"
-    pytest-mock = "2.0.0"
+    pytest-mock = "3.2.0"
     pytest-repeat = "*"
     pytest-timeout = "*"
     pytest-xdist = "*"

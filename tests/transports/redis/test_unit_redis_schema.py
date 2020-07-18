@@ -69,3 +69,4 @@ async def test_from_config(redis_client):
         assert await redis_client.get("x")
 
     assert transport._redis_pool.connection.maxsize == 3
+    await transport.close()
