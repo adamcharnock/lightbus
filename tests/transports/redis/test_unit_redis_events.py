@@ -700,8 +700,7 @@ async def test_reclaim_lost_messages_consume(redis_client, redis_pool, error_que
 
 @pytest.mark.asyncio
 async def test_reclaim_pending_messages(redis_client, redis_pool, error_queue):
-    """Test that unacked messages belonging to this consumer get reclaimed on startup
-    """
+    """Test that unacked messages belonging to this consumer get reclaimed on startup"""
 
     # Add a message
     await redis_client.xadd(
@@ -1213,3 +1212,185 @@ async def test_history_get_subset_multiple_batches(
     )
     message_ids = {m.native_id async for m in messages}
     assert message_ids == {"2-0", "3-0", "4-0"}
+
+
+@pytest.mark.asyncio
+async def test_lag_no_stream(redis_event_transport: RedisEventTransport, redis_client, error_queue):
+    """No stream exists"""
+    lag = await redis_event_transport.lag(
+        api_name="my_api", event_name="my_event", listener_name="my_listener",
+    )
+    assert lag == 0
+
+
+@pytest.mark.asyncio
+async def test_lag_no_consumer(
+    redis_event_transport: RedisEventTransport, redis_client, error_queue
+):
+    """No consumer exists"""
+    await redis_client.xadd("my_api.my_event:stream", {"a": 1}, message_id=b"1-0")
+    lag = await redis_event_transport.lag(
+        api_name="my_api", event_name="my_event", listener_name="my_listener",
+    )
+    assert lag == 0
+
+
+@pytest.mark.asyncio
+async def test_lag_no_matching_group(
+    redis_event_transport: RedisEventTransport, redis_client, error_queue
+):
+    """A group exists but it is the wrong group"""
+    await redis_client.xadd("my_api.my_event:stream", {"a": 1}, message_id=b"1-0")
+    await redis_client.xgroup_create("my_api.my_event:stream", "another_listener", latest_id="0")
+    lag = await redis_event_transport.lag(
+        api_name="my_api", event_name="my_event", listener_name="my_listener",
+    )
+    assert lag == 0
+
+
+@pytest.mark.asyncio
+async def test_lag_no_lag(redis_event_transport: RedisEventTransport, redis_client, error_queue):
+    """The stream & group exist, and there is no lag"""
+    await redis_client.xadd("my_api.my_event:stream", {"a": 1}, message_id=b"1-0")
+    await redis_client.xgroup_create(
+        "my_api.my_event:stream", "test_service-my_listener", latest_id="1-0"
+    )
+    lag = await redis_event_transport.lag(
+        api_name="my_api", event_name="my_event", listener_name="my_listener",
+    )
+    assert lag == 0
+
+
+@pytest.mark.asyncio
+async def test_lag_has_lag_no_pending(
+    redis_event_transport: RedisEventTransport, redis_client, error_queue
+):
+    """The stream & group exist, there is lag, and there are no pending messages"""
+    await redis_client.xadd("my_api.my_event:stream", {"a": 1}, message_id=b"1-0")
+    await redis_client.xadd("my_api.my_event:stream", {"a": 1}, message_id=b"2-0")
+    await redis_client.xadd("my_api.my_event:stream", {"a": 1}, message_id=b"3-0")
+    await redis_client.xgroup_create(
+        "my_api.my_event:stream", "test_service-my_listener", latest_id="1-0"
+    )
+    lag = await redis_event_transport.lag(
+        api_name="my_api", event_name="my_event", listener_name="my_listener",
+    )
+    assert lag == 2
+
+
+@pytest.mark.asyncio
+async def test_lag_no_lag_latest_message_missing(
+    redis_event_transport: RedisEventTransport, redis_client, error_queue
+):
+    """The stream & group exist, there is no lag, and the message pointed to by latest_id does not exist"""
+    await redis_client.xadd("my_api.my_event:stream", {"a": 1}, message_id=b"1-0")
+    await redis_client.xgroup_create(
+        "my_api.my_event:stream", "test_service-my_listener", latest_id="2-0"
+    )
+    lag = await redis_event_transport.lag(
+        api_name="my_api", event_name="my_event", listener_name="my_listener",
+    )
+    assert lag == 0
+
+
+@pytest.mark.asyncio
+async def test_lag_has_lag_has_pending(
+    redis_event_transport: RedisEventTransport, redis_client, error_queue
+):
+    """The stream & group exist, there is lag, and there are pending messages"""
+    await redis_client.xadd("my_api.my_event:stream", {"a": 1}, message_id=b"1-0")
+    await redis_client.xadd("my_api.my_event:stream", {"a": 2}, message_id=b"2-0")
+    await redis_client.xadd("my_api.my_event:stream", {"a": 3}, message_id=b"3-0")
+    await redis_client.xgroup_create(
+        "my_api.my_event:stream", "test_service-my_listener", latest_id="1-0"
+    )
+    # Do the read. The message will therefore be pending, but the
+    # consumer groups latest_id will point to 2-0
+    message = await redis_client.xread_group(
+        group_name="test_service-my_listener",
+        consumer_name="test_consumer",
+        streams=["my_api.my_event:stream"],
+        latest_ids=[">"],
+        count=1,
+    )
+    lag = await redis_event_transport.lag(
+        api_name="my_api", event_name="my_event", listener_name="my_listener",
+    )
+    assert lag == 2
+
+
+@pytest.mark.asyncio
+async def test_lag_no_lag_has_pending(
+    redis_event_transport: RedisEventTransport, redis_client, error_queue
+):
+    """The stream & group exist, there is no lag, and there are pending messages"""
+    await redis_client.xadd("my_api.my_event:stream", {"a": 1}, message_id=b"1-0")
+    await redis_client.xadd("my_api.my_event:stream", {"a": 2}, message_id=b"2-0")
+    await redis_client.xgroup_create(
+        "my_api.my_event:stream", "test_service-my_listener", latest_id="1-0"
+    )
+    # Do the read. The message will therefore be pending, but the
+    # consumer groups latest_id will point to 2-0
+    message = await redis_client.xread_group(
+        group_name="test_service-my_listener",
+        consumer_name="test_consumer",
+        streams=["my_api.my_event:stream"],
+        latest_ids=[">"],
+        count=1,
+    )
+    lag = await redis_event_transport.lag(
+        api_name="my_api", event_name="my_event", listener_name="my_listener",
+    )
+    assert lag == 1
+
+
+@pytest.mark.asyncio
+async def test_lag_max_count_set(
+    redis_event_transport: RedisEventTransport, redis_client, error_queue
+):
+    """The stream & group exist, there is lag, and there are no pending messages"""
+    for _ in range(0, 20):
+        await redis_client.xadd("my_api.my_event:stream", {"a": 1})
+
+    await redis_client.xgroup_create(
+        "my_api.my_event:stream", "test_service-my_listener", latest_id="1-0"
+    )
+    lag = await redis_event_transport.lag(
+        api_name="my_api", event_name="my_event", listener_name="my_listener", max_count=15
+    )
+    assert lag == 15
+
+
+@pytest.mark.asyncio
+async def test_lag_max_count_none(
+    redis_event_transport: RedisEventTransport, redis_client, error_queue
+):
+    """Check that passing max_count=None calculates the full stream lag"""
+    for _ in range(0, 20):
+        await redis_client.xadd("my_api.my_event:stream", {"a": 1})
+
+    await redis_client.xgroup_create(
+        "my_api.my_event:stream", "test_service-my_listener", latest_id="1-0"
+    )
+    lag = await redis_event_transport.lag(
+        api_name="my_api", event_name="my_event", listener_name="my_listener", max_count=None
+    )
+    assert lag == 20
+
+
+@pytest.mark.asyncio
+async def test_lag_max_count_none_latest_id_doesnt_exist(
+    redis_event_transport: RedisEventTransport, redis_client, error_queue
+):
+    """Check that passing max_count=None calculates the full stream lag
+    even when the latest_id doesn't exist"""
+    for _ in range(0, 20):
+        await redis_client.xadd("my_api.my_event:stream", {"a": 1})
+
+    await redis_client.xgroup_create(
+        "my_api.my_event:stream", "test_service-my_listener", latest_id="0-0"
+    )
+    lag = await redis_event_transport.lag(
+        api_name="my_api", event_name="my_event", listener_name="my_listener", max_count=None
+    )
+    assert lag == 20

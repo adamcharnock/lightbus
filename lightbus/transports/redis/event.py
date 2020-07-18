@@ -283,11 +283,13 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 try:
                     messages = await queue.get()
                     logger.debug(
-                        f"Got batch of {len(messages)} message(s). Yielding messages to Lightbus client"
+                        f"Got batch of {len(messages)} message(s). Yielding messages to Lightbus"
+                        " client"
                     )
                     yield messages
                     logger.debug(
-                        f"Batch of {len(messages)} message(s) was processed by Lightbus client. Marking as done."
+                        f"Batch of {len(messages)} message(s) was processed by Lightbus client."
+                        " Marking as done."
                     )
                     queue.task_done()
                 except GeneratorExit:
@@ -406,7 +408,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         # This listener doesn't need to care about this message, so acknowledge
                         # it and move on with our lives
                         logger.debug(
-                            f"Ignoring NOOP event with ID {message_id} discovered during streaming of messages"
+                            f"Ignoring NOOP event with ID {message_id} discovered during streaming"
+                            " of messages"
                         )
                         await redis.xack(stream, consumer_group, message_id)
                         continue
@@ -492,7 +495,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         if ms_since_last_delivery > timeout:
                             logger.info(
                                 L(
-                                    "Found timed out event {} in stream {}. Abandoned by {}. Attempting to reclaim...",
+                                    "Found timed out event {} in stream {}. Abandoned by {}."
+                                    " Attempting to reclaim...",
                                     Bold(message_id),
                                     Bold(stream),
                                     Bold(consumer_name),
@@ -523,7 +527,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                                     # This listener doesn't need to care about this message, so acknowledge
                                     # it and move on with our lives
                                     logger.debug(
-                                        f"Ignoring NOOP event with ID {message_id} discovered during event reclaiming"
+                                        f"Ignoring NOOP event with ID {message_id} discovered"
+                                        " during event reclaiming"
                                     )
                                     await redis.xack(stream, consumer_group, message_id)
                                     continue
@@ -531,7 +536,8 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                                 logger.debug(
                                     LBullets(
                                         L(
-                                            "⬅ Reclaimed timed out event {} on stream {}. Abandoned by {}.",
+                                            "⬅ Reclaimed timed out event {} on stream {}. Abandoned"
+                                            " by {}.",
                                             Bold(message_id),
                                             Bold(stream),
                                             Bold(consumer_name),
@@ -549,14 +555,14 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         yield event_messages
 
     async def acknowledge(self, *event_messages: RedisEventMessage):
-        """Acknowledge that a message has been successfully processed
-        """
+        """Acknowledge that a message has been successfully processed"""
         with await self.connection_manager() as redis:
             p = redis.pipeline()
             for event_message in event_messages:
                 p.xack(event_message.stream, event_message.consumer_group, event_message.native_id)
                 logging.debug(
-                    f"Preparing to acknowledge message {event_message.id} (Native ID: {event_message.native_id})"
+                    f"Preparing to acknowledge message {event_message.id} (Native ID:"
+                    f" {event_message.native_id})"
                 )
 
             logger.debug(
@@ -611,10 +617,87 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         )
                     except (NoopMessage, IgnoreMessage):
                         logger.debug(
-                            f"Ignoring NOOP event with ID {message_id} discovered during fetching of event history"
+                            f"Ignoring NOOP event with ID {message_id} discovered during fetching"
+                            " of event history"
                         )
                     else:
                         yield event_message
+
+    async def lag(
+        self,
+        api_name: str,
+        event_name: str,
+        listener_name: str,
+        include_pending: bool = True,
+        max_count: Optional[int] = 100,
+    ) -> int:
+        """How far behind is the given listener for the given api/event?
+
+        This must fetch all lagging messages from Redis, which means
+        this cannot be particularly performant for determining the size of large
+        lags. The ideal is therefore to set max_count to a sane minimum, thereby
+        minimising the number of messages which need to be pulled back.
+        Note however, that this method will never return a value larger than
+        max_count + the total pending messages.
+
+        If max_count is None then the full lag will be calculated.
+        """
+        consumer_group = f"{self.service_name}-{listener_name}".encode("utf8")
+        stream_name = self._get_stream_names([(api_name, event_name)])[0]
+
+        with await self.connection_manager() as redis:
+            try:
+                # Get the groups for the given stream
+                groups = await redis.xinfo_groups(stream_name)
+            except ReplyError as e:
+                if "no such key" in str(e):
+                    # Steam doesn't exist, so group doesn't exist
+                    groups = []
+                else:
+                    raise
+
+            for group in groups:
+                # Find the group we care about
+                if group[b"name"] == consumer_group:
+                    if max_count is not None:
+                        # We should normally receive the last delivered message in addition to any lagging
+                        # messages We take that into account here and is tested by test_lag_max_count_set()
+                        max_count += 1
+
+                    # This is the part with poor performance. Get all the lagging messages.
+                    messages = await redis.xrange(
+                        stream=stream_name, start=group[b"last-delivered-id"], count=max_count
+                    )
+
+                    # Messages found, exit our for loop
+                    break
+            else:
+                # For loop didn't find any matching consumer groups, return 0
+                return 0
+
+        first_message_id = messages[0][0] if messages else None
+        total_messages = len(messages)
+
+        if first_message_id == group[b"last-delivered-id"]:
+            # The last delivered message is among the results returned, so
+            # take that off our count
+            lag = total_messages - 1
+        elif max_count is not None and total_messages == max_count:
+            # The last delivered message has been deleted, and we received the max_count number of results,
+            # which is actually one more than we expected because we incremented max_count above.
+            # Therefore fix this by subtracting one
+            lag = total_messages - 1
+        else:
+            # The last delivered message has been deleted,
+            # so all returned messages are lagging. We retrieved all messages
+            # (rather than limiting with max_count) therefore no need to
+            # subtract anything
+            lag = total_messages
+
+        if include_pending:
+            lag += group[b"pending"]
+
+        return lag
 
     async def _create_consumer_groups(self, streams, redis, consumer_group):
         """Ensure the consumer groups exist
@@ -686,9 +769,10 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         # listening for self.consumer_ttl seconds
                         if idle_seconds >= self.consumer_ttl:
                             logger.debug(
-                                f"Cleaning up consumer {consumer_name} in group {group_name} on stream {stream_name}. "
-                                f"The consumer has been idle for {idle_seconds} seconds, which is more than the "
-                                f"consumer TTL of {self.consumer_ttl}"
+                                f"Cleaning up consumer {consumer_name} in group {group_name} on"
+                                f" stream {stream_name}. The consumer has been idle for"
+                                f" {idle_seconds} seconds, which is more than the consumer TTL of"
+                                f" {self.consumer_ttl}"
                             )
                             await redis.xgroup_delconsumer(stream_name, group_name, consumer_name)
                         else:
