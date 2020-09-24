@@ -6,7 +6,7 @@
     to = {format = "setuppy", path = "setup.py"}
 [tool.poetry]
     name = "lightbus"
-    version = "0.11.0-alpha2"
+    version = "1.0.0"
     authors = [
         "Adam Charnock <adam@adamcharnock.com>",
     ]
