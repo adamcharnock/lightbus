@@ -1,0 +1,1940 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="RPC & event system for Python 3">
+      
+      
+        <link rel="canonical" href="http://lightbus.org/reference/transport-configuration/">
+      
+      
+        <meta name="author" content="Adam Charnock">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../..">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-4.6.3">
+    
+    
+      
+        <title>Transport configuration - Lightbus</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.adb8469c.css">
+      
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#e91e63">
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.86422ebf.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../../static/stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../../static/stylesheets/version-select.css">
+    
+    
+      
+        
+<script>
+  window.ga = window.ga || function() {
+    (ga.q = ga.q || []).push(arguments)
+  }
+  ga.l = +new Date
+  /* Setup integration and send page view */
+  ga("create", "UA-103655163-1", "auto")
+  ga("set", "anonymizeIp", true)
+  ga("send", "pageview")
+  /* Register handler to log search on blur */
+  document.addEventListener("DOMContentLoaded", () => {
+    if (document.forms.search) {
+      var query = document.forms.search.query
+      query.addEventListener("blur", function() {
+        if (this.value) {
+          var path = document.location.pathname;
+          ga("send", "pageview", path + "?q=" + this.value)
+        }
+      })
+    }
+  })
+</script>
+<script async src="https://www.google-analytics.com/analytics.js"></script>
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="pink" data-md-color-accent="indigo">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#transport-configuration" tabindex="0" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="http://lightbus.org" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Lightbus
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Transport configuration
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" aria-label="search" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+        
+
+  
+
+<nav class="md-tabs md-tabs--active" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  <li class="md-tabs__item">
+    
+      <a href="../.." class="md-tabs__link">
+        Home
+      </a>
+    
+  </li>
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../tutorial/" class="md-tabs__link">
+          Tutorials
+        </a>
+      
+    </li>
+  
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../howto/" class="md-tabs__link">
+          How to
+        </a>
+      
+    </li>
+  
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../explanation/" class="md-tabs__link">
+          Explanation
+        </a>
+      
+    </li>
+  
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../" class="md-tabs__link md-tabs__link--active">
+          Reference
+        </a>
+      
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="http://lightbus.org" title="Lightbus" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    Lightbus
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      Tutorials
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Tutorials
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../tutorial/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../tutorial/installation/" title="1. Installation" class="md-nav__link">
+      1. Installation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../tutorial/quick-start/" title="2. Quick start" class="md-nav__link">
+      2. Quick start
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../tutorial/worked-example/" title="3. Worked example" class="md-nav__link">
+      3. Worked example
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../tutorial/django-and-lightbus/" title="4. Django & Lightbus" class="md-nav__link">
+      4. Django & Lightbus
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../tutorial/getting-involved/" title="Getting involved (even if you don't code)" class="md-nav__link">
+      Getting involved (even if you don't code)
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      How to
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        How to
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../howto/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../howto/access-your-bus-client/" title="Access your bus client" class="md-nav__link">
+      Access your bus client
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../howto/schedule-recurring-tasks/" title="Schedule recurring tasks" class="md-nav__link">
+      Schedule recurring tasks
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../howto/run-background-tasks/" title="Run background tasks" class="md-nav__link">
+      Run background tasks
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../howto/migrate-from-celery-to-lightbus/" title="Migrate from Celery to Lightbus" class="md-nav__link">
+      Migrate from Celery to Lightbus
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../howto/write-idempotent-event-handlers/" title="Write idempotent event handlers" class="md-nav__link">
+      Write idempotent event handlers
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../howto/metrics/" title="Use Lightbus for realtime metrics" class="md-nav__link">
+      Use Lightbus for realtime metrics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../howto/event-sourcing/" title="Use Lightbus for event sourcing" class="md-nav__link">
+      Use Lightbus for event sourcing
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../howto/modify-lightbus/" title="Modify Lightbus" class="md-nav__link">
+      Modify Lightbus
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
+      Explanation
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        Explanation
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/anatomy-lesson/" title="Anatomy lesson" class="md-nav__link">
+      Anatomy lesson
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/services/" title="Services" class="md-nav__link">
+      Services
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/bus/" title="The bus" class="md-nav__link">
+      The bus
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/apis/" title="APIs" class="md-nav__link">
+      APIs
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/rpcs/" title="Remote procedure calls" class="md-nav__link">
+      Remote procedure calls
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/events/" title="Events" class="md-nav__link">
+      Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/marshalling/" title="Marshalling" class="md-nav__link">
+      Marshalling
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/transports/" title="Transports" class="md-nav__link">
+      Transports
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/configuration/" title="Configuration" class="md-nav__link">
+      Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/schema/" title="Schema" class="md-nav__link">
+      Schema
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/lightbus-vs-celery/" title="Lightbus vs Celery" class="md-nav__link">
+      Lightbus vs Celery
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/architecture-tips/" title="Architecture tips" class="md-nav__link">
+      Architecture tips
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../explanation/performance/" title="Performance" class="md-nav__link">
+      Performance
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5" checked>
+    
+    <label class="md-nav__link" for="nav-5">
+      Reference
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-5">
+        Reference
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../apis/" title="APIs" class="md-nav__link">
+      APIs
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../rpcs/" title="Remote procedure calls" class="md-nav__link">
+      Remote procedure calls
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../events/" title="Events" class="md-nav__link">
+      Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../typing/" title="Typing" class="md-nav__link">
+      Typing
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../configuration/" title="Configuration" class="md-nav__link">
+      Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../schema/" title="Schema" class="md-nav__link">
+      Schema
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-8" type="checkbox" id="nav-5-8">
+    
+    <label class="md-nav__link" for="nav-5-8">
+      Command line use
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-8">
+        Command line use
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../command-line-use/run/" title="run" class="md-nav__link">
+      run
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../command-line-use/inspect/" title="inspect" class="md-nav__link">
+      inspect
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../command-line-use/shell/" title="shell" class="md-nav__link">
+      shell
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../command-line-use/dumpschema/" title="dumpschema" class="md-nav__link">
+      dumpschema
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../command-line-use/dumpconfigschema/" title="dumpconfigschema" class="md-nav__link">
+      dumpconfigschema
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../testing-and-mocking/" title="Testing & Mocking" class="md-nav__link">
+      Testing & Mocking
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../plugins/" title="Plugins" class="md-nav__link">
+      Plugins
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../plugins-development/" title="Plugin development" class="md-nav__link">
+      Plugin development
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Transport configuration
+      </label>
+    
+    <a href="./" title="Transport configuration" class="md-nav__link md-nav__link--active">
+      Transport configuration
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#complete-configuration-example" class="md-nav__link">
+    Complete configuration example
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#redis-event-transport-configuration" class="md-nav__link">
+    Redis Event Transport configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#url" class="md-nav__link">
+    url
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch_size" class="md-nav__link">
+    batch_size
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reclaim_batch_size" class="md-nav__link">
+    reclaim_batch_size
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serializer" class="md-nav__link">
+    serializer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deserializer" class="md-nav__link">
+    deserializer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#acknowledgement_timeout" class="md-nav__link">
+    acknowledgement_timeout
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reclaim_interval" class="md-nav__link">
+    reclaim_interval
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max_stream_length" class="md-nav__link">
+    max_stream_length
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stream_use" class="md-nav__link">
+    stream_use
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consumption_restart_delay" class="md-nav__link">
+    consumption_restart_delay
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consumer_ttl" class="md-nav__link">
+    consumer_ttl
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#redis-rpc-transport-configuration" class="md-nav__link">
+    Redis RPC Transport configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#url_1" class="md-nav__link">
+    url
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch_size_1" class="md-nav__link">
+    batch_size
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serializer_1" class="md-nav__link">
+    serializer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deserializer_1" class="md-nav__link">
+    deserializer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpc_timeout" class="md-nav__link">
+    rpc_timeout
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpc_retry_delay" class="md-nav__link">
+    rpc_retry_delay
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consumption_restart_delay_1" class="md-nav__link">
+    consumption_restart_delay
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#redis-result-transport-configuration" class="md-nav__link">
+    Redis Result Transport configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#url_2" class="md-nav__link">
+    url
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serializer_2" class="md-nav__link">
+    serializer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deserializer_2" class="md-nav__link">
+    deserializer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpc_timeout_1" class="md-nav__link">
+    rpc_timeout
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpc_retry_delay_1" class="md-nav__link">
+    rpc_retry_delay
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consumption_restart_delay_2" class="md-nav__link">
+    consumption_restart_delay
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#redis-schema-transport-configuration" class="md-nav__link">
+    Redis Schema Transport configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#url_3" class="md-nav__link">
+    url
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-13" type="checkbox" id="nav-5-13">
+    
+    <label class="md-nav__link" for="nav-5-13">
+      Protocols
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-5-13">
+        Protocols
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../protocols/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../protocols/rpc-and-result/" title="RPC & Result Protocol (Redis)" class="md-nav__link">
+      RPC & Result Protocol (Redis)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../protocols/event/" title="Event Protocol (Redis)" class="md-nav__link">
+      Event Protocol (Redis)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../protocols/schema/" title="Schema Protocol (Redis)" class="md-nav__link">
+      Schema Protocol (Redis)
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../release-process/" title="Release process" class="md-nav__link">
+      Release process
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../authors/" title="Authors" class="md-nav__link">
+      Authors
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../code-of-conduct/" title="Code of Conduct" class="md-nav__link">
+      Code of Conduct
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#complete-configuration-example" class="md-nav__link">
+    Complete configuration example
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#redis-event-transport-configuration" class="md-nav__link">
+    Redis Event Transport configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#url" class="md-nav__link">
+    url
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch_size" class="md-nav__link">
+    batch_size
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reclaim_batch_size" class="md-nav__link">
+    reclaim_batch_size
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serializer" class="md-nav__link">
+    serializer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deserializer" class="md-nav__link">
+    deserializer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#acknowledgement_timeout" class="md-nav__link">
+    acknowledgement_timeout
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reclaim_interval" class="md-nav__link">
+    reclaim_interval
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max_stream_length" class="md-nav__link">
+    max_stream_length
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stream_use" class="md-nav__link">
+    stream_use
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consumption_restart_delay" class="md-nav__link">
+    consumption_restart_delay
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consumer_ttl" class="md-nav__link">
+    consumer_ttl
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#redis-rpc-transport-configuration" class="md-nav__link">
+    Redis RPC Transport configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#url_1" class="md-nav__link">
+    url
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch_size_1" class="md-nav__link">
+    batch_size
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serializer_1" class="md-nav__link">
+    serializer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deserializer_1" class="md-nav__link">
+    deserializer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpc_timeout" class="md-nav__link">
+    rpc_timeout
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpc_retry_delay" class="md-nav__link">
+    rpc_retry_delay
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consumption_restart_delay_1" class="md-nav__link">
+    consumption_restart_delay
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#redis-result-transport-configuration" class="md-nav__link">
+    Redis Result Transport configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#url_2" class="md-nav__link">
+    url
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serializer_2" class="md-nav__link">
+    serializer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deserializer_2" class="md-nav__link">
+    deserializer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpc_timeout_1" class="md-nav__link">
+    rpc_timeout
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rpc_retry_delay_1" class="md-nav__link">
+    rpc_retry_delay
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consumption_restart_delay_2" class="md-nav__link">
+    consumption_restart_delay
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#redis-schema-transport-configuration" class="md-nav__link">
+    Redis Schema Transport configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#url_3" class="md-nav__link">
+    url
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/adamcharnock/lightbus/edit/master/docs/reference/transport-configuration.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="transport-configuration">Transport configuration<a class="headerlink" href="#transport-configuration" title="Permanent link">&para;</a></h1>
+<p>Lightbus ships with built-in support for Redis. This is provided by the following transports:</p>
+<ul>
+<li>An event transport – sends and consumes RPC calls</li>
+<li>An RPC transport – sends and receives RPC results</li>
+<li>A result transport – sends and consumes events</li>
+<li>A schema transport – stores and retrieves the <a href="../../explanation/schema/">bus schema</a></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Configuration auto-complete using JSON Schema</p>
+<p>Many code editors support using a JSON schema to provide auto-complete and validation when 
+editing a JSON file. If you wish, you can write your configuration in JSON (rather than YAML),
+and load the following JSON schema into your editor: </p>
+<div class="codehilite"><pre><span></span><code>https://lightbus.org/static/default-config-schema.json
+</code></pre></div>
+
+
+<p>This will provide you with autocomplete and validation for Lightbus' various 
+configuration options.</p>
+<p>If you are using custom transports or plugins you should 
+<a href="../command-line-use/dumpconfigschema/">generate your own config schema</a>.</p>
+</div>
+<h2 id="complete-configuration-example">Complete configuration example<a class="headerlink" href="#complete-configuration-example" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span>
+<span class="nt">apis</span><span class="p">:</span>
+
+  <span class="c1"># Catch-all api config</span>
+  <span class="nt">default</span><span class="p">:</span>
+    <span class="c1"># ...API Config options here (see configuration reference)...</span>
+
+    <span class="c1"># Per-transport configuration</span>
+    <span class="nt">event_transport</span><span class="p">:</span>
+      <span class="nt">redis</span><span class="p">:</span>
+        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis_host:6379/0&quot;</span>
+        <span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10</span>
+        <span class="nt">reclaim_batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
+        <span class="nt">serializer</span><span class="p">:</span> <span class="s">&quot;lightbus.serializers.ByFieldMessageSerializer&quot;</span>
+        <span class="nt">deserializer</span><span class="p">:</span> <span class="s">&quot;lightbus.serializers.ByFieldMessageDeserializer&quot;</span>
+        <span class="nt">acknowledgement_timeout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">60</span>
+        <span class="nt">max_stream_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">100000</span>
+        <span class="nt">stream_use</span><span class="p">:</span> <span class="s">&quot;per_api&quot;</span>
+        <span class="nt">consumption_restart_delay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
+        <span class="nt">consumer_ttl</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2592000</span>
+
+    <span class="nt">rpc_transport</span><span class="p">:</span>
+      <span class="nt">redis</span><span class="p">:</span>
+        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis_host:6379/0&quot;</span>
+        <span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10</span>
+        <span class="nt">serializer</span><span class="p">:</span> <span class="s">&quot;lightbus.serializers.BlobMessageSerializer&quot;</span>
+        <span class="nt">deserializer</span><span class="p">:</span> <span class="s">&quot;lightbus.serializers.BlobMessageDeserializer&quot;</span>
+        <span class="nt">rpc_timeout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
+        <span class="nt">rpc_retry_delay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+        <span class="nt">consumption_restart_delay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
+
+    <span class="nt">result_transport</span><span class="p">:</span>
+      <span class="nt">redis</span><span class="p">:</span>
+        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis_host:6379/0&quot;</span>
+        <span class="nt">serializer</span><span class="p">:</span> <span class="s">&quot;lightbus.serializers.BlobMessageSerializer&quot;</span>
+        <span class="nt">deserializer</span><span class="p">:</span> <span class="s">&quot;lightbus.serializers.BlobMessageDeserializer&quot;</span> 
+        <span class="nt">rpc_timeout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span> 
+        <span class="nt">rpc_retry_delay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span> 
+        <span class="nt">consumption_restart_delay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span> 
+
+  <span class="c1"># Can respecify the above config for specific APIs </span>
+  <span class="c1"># if customisation is needed.</span>
+  <span class="nt">marketing.analytics</span><span class="p">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">...</span>
+
+<span class="c1"># Schema transport configuration is at the root level</span>
+<span class="nt">schema</span><span class="p">:</span>
+    <span class="nt">transport</span><span class="p">:</span>
+      <span class="nt">redis</span><span class="p">:</span>
+        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
+</code></pre></div>
+
+<h2 id="redis-event-transport-configuration">Redis Event Transport configuration<a class="headerlink" href="#redis-event-transport-configuration" title="Permanent link">&para;</a></h2>
+<h3 id="url"><code>url</code><a class="headerlink" href="#url" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>str</code>, default: <code>redis://127.0.0.1:6379/0</code></em></p>
+<p>The connection string for the redis server. Format is:</p>
+<div class="codehilite"><pre><span></span><code>`redis://host:port/db_number`
+</code></pre></div>
+
+
+<h3 id="batch_size"><code>batch_size</code><a class="headerlink" href="#batch_size" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>int</code>, default: <code>10</code></em> </p>
+<p>The maximum number of messages to be fetched at one time. A higher value will reduce overhead 
+for large volumes of messages. </p>
+<p>However, should a worker die then the processing of the fetched 
+messages will be delayed by <code>acknowledgement_timeout</code>. In this case those messages will be 
+processed out-of-order.</p>
+<h3 id="reclaim_batch_size"><code>reclaim_batch_size</code><a class="headerlink" href="#reclaim_batch_size" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>int</code>, default: <code>reclaim_batch_size * 10</code></em> </p>
+<p>The maximum number of messages to be fetched at one time <em>when reclaiming timed out messages</em>.</p>
+<h3 id="serializer"><code>serializer</code><a class="headerlink" href="#serializer" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>str</code>, default: <code>lightbus.serializers.ByFieldMessageSerializer</code></em> </p>
+<p>The serializer to be used in converting the lightbus message into a bus-appropriate format.</p>
+<h3 id="deserializer"><code>deserializer</code><a class="headerlink" href="#deserializer" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>str</code>, default: <code>lightbus.serializers.ByFieldMessageDeserializer</code></em> </p>
+<p>The deserializer to be used in converting the lightbus message into a bus-appropriate format.</p>
+<h3 id="acknowledgement_timeout"><code>acknowledgement_timeout</code><a class="headerlink" href="#acknowledgement_timeout" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>float</code>, default: <code>60.0</code>, seconds</em> </p>
+<p>Any message not processed <code>acknowledgement_timeout</code> seconds will assume to have failed and 
+will therefore be reclaimed up by another Lightbus worker. This is typically caused by a Lightbus worker 
+exiting ungracefully.</p>
+<div class="admonition important">
+<p class="admonition-title">Long running events</p>
+<p>You will need to modify this if you have event handlers which take a long time to execute. 
+This value must exceed the length of time it takes any event to be processed</p>
+</div>
+<h3 id="reclaim_interval"><code>reclaim_interval</code><a class="headerlink" href="#reclaim_interval" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>float</code>, default is the value of <code>acknowledgement_timeout</code>, in seconds</em> </p>
+<p>How often should each Lightbus client attempt to reclaim events?</p>
+<p>When an error occurs in a Lightbus worker then it may die while still holding a claim over events. 
+Other Lightbus works therefore periodically check for any events which have timed out 
+(see <code>acknowledgement_timeout</code>) and attempt to reclaim any events found. Reclaimed 
+events are then processed and acknowledged as normal. </p>
+<h3 id="max_stream_length"><code>max_stream_length</code><a class="headerlink" href="#max_stream_length" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>int</code>, default: <code>100_000</code></em> </p>
+<p>Streams will be trimmed so they never exceed the given length. Set to <code>null</code> for no limit.</p>
+<h3 id="stream_use"><code>stream_use</code><a class="headerlink" href="#stream_use" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>str</code>, default: <code>per_api</code></em> </p>
+<p>How should Redis streams be created? There are two options:</p>
+<ul>
+<li><code>per_api</code> – One stream for an entire API.</li>
+<li><code>per_event</code> – One stream for each event on an API</li>
+</ul>
+<p>Setting this to <code>per_api</code> will ensure event listeners receive all events on an api in order. 
+However, all events for the API will be received even if not needed (Lightbus will discard these 
+unwanted events before passing them to your event handler). This will consume unnecessary resources 
+if an API contains high-volume events which your listener does not care for.</p>
+<p>Setting this to <code>per_event</code> will ensure that Lightbus only receives the needed events, but 
+messages will only be ordered for an individual event.</p>
+<h3 id="consumption_restart_delay"><code>consumption_restart_delay</code><a class="headerlink" href="#consumption_restart_delay" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>int</code>, default: <code>5</code>, seconds</em> </p>
+<p>How long to wait before attempting to reconnect after loosing the connection to Redis.</p>
+<h3 id="consumer_ttl"><code>consumer_ttl</code><a class="headerlink" href="#consumer_ttl" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>int</code>, default: <code>2_592_000</code>, seconds</em> </p>
+<p>How long to wait before cleaning up inactive consumers. Default is 30 days.</p>
+<h2 id="redis-rpc-transport-configuration">Redis RPC Transport configuration<a class="headerlink" href="#redis-rpc-transport-configuration" title="Permanent link">&para;</a></h2>
+<h3 id="url_1"><code>url</code><a class="headerlink" href="#url_1" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>str</code>, default: <code>redis://127.0.0.1:6379/0</code></em></p>
+<p>The connection string for the redis server. Format is:</p>
+<div class="codehilite"><pre><span></span><code>`redis://host:port/db_number`
+</code></pre></div>
+
+
+<h3 id="batch_size_1"><code>batch_size</code><a class="headerlink" href="#batch_size_1" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>int</code>, default: <code>10</code></em> </p>
+<p>The maximum number of messages to be fetched at one time. A higher value will reduce overhead 
+for large volumes of messages. </p>
+<h3 id="serializer_1"><code>serializer</code><a class="headerlink" href="#serializer_1" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>str</code>, default: <code>lightbus.serializers.BlobMessageSerializer</code></em> </p>
+<p>The serializer to be used in converting the lightbus message into a bus-appropriate format.</p>
+<h3 id="deserializer_1"><code>deserializer</code><a class="headerlink" href="#deserializer_1" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>str</code>, default: <code>lightbus.serializers.BlobMessageDeserializer</code></em> </p>
+<p>The deserializer to be used in converting the lightbus message into a bus-appropriate format.</p>
+<h3 id="rpc_timeout"><code>rpc_timeout</code><a class="headerlink" href="#rpc_timeout" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>int</code>, default: <code>5</code>, seconds</em></p>
+<p>How long to wait before we give up waiting for an RPC to be processed.</p>
+<div class="admonition note">
+<p class="admonition-title">Note on <code>rpc_timeout</code></p>
+<p>This configuration option is also repeated in the <a href="../configuration/#api-config">API config</a>. For now 
+this value needs to be specified in three places:</p>
+<ul>
+<li>The <a href="../configuration/#api-config">API config</a>    </li>
+<li>RPC transport config</li>
+<li>Result transport config (see below)</li>
+</ul>
+</div>
+<h3 id="rpc_retry_delay"><code>rpc_retry_delay</code><a class="headerlink" href="#rpc_retry_delay" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>int</code>, default: <code>1</code>, seconds</em> </p>
+<p>How long to wait before reattempting to call the remote RPC. For example, 
+in cases where Redis errors (e.g. connection issues). Execution will be retried once only.</p>
+<h3 id="consumption_restart_delay_1"><code>consumption_restart_delay</code><a class="headerlink" href="#consumption_restart_delay_1" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>int</code>, default: <code>5</code>, seconds</em> </p>
+<p>How long to wait before attempting to reconnect after loosing the connection to Redis.</p>
+<h2 id="redis-result-transport-configuration">Redis Result Transport configuration<a class="headerlink" href="#redis-result-transport-configuration" title="Permanent link">&para;</a></h2>
+<h3 id="url_2"><code>url</code><a class="headerlink" href="#url_2" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>str</code>, default: <code>redis://127.0.0.1:6379/0</code></em></p>
+<p>The connection string for the redis server. Format is:</p>
+<div class="codehilite"><pre><span></span><code>`redis://host:port/db_number`
+</code></pre></div>
+
+
+<h3 id="serializer_2"><code>serializer</code><a class="headerlink" href="#serializer_2" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>str</code>, default: <code>lightbus.serializers.BlobMessageSerializer</code></em> </p>
+<p>The serializer to be used in converting the lightbus message into a bus-appropriate format.</p>
+<h3 id="deserializer_2"><code>deserializer</code><a class="headerlink" href="#deserializer_2" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>str</code>, default: <code>lightbus.serializers.BlobMessageDeserializer</code></em> </p>
+<p>The deserializer to be used in converting the lightbus message into a bus-appropriate format.</p>
+<h3 id="rpc_timeout_1"><code>rpc_timeout</code><a class="headerlink" href="#rpc_timeout_1" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>int</code>, default: <code>5</code>, seconds</em></p>
+<p>How long to wait before we give up waiting for an RPC result to be received.</p>
+<div class="admonition note">
+<p class="admonition-title">Note on <code>rpc_timeout</code></p>
+<p>This configuration option is also repeated in the <a href="../configuration/#api-config">API config</a>. For now 
+this value needs to be specified in three places:</p>
+<p># The <a href="../configuration/#api-config">API config</a>  <br />
+  * RPC transport config (see above)
+  * Result transport config</p>
+</div>
+<h3 id="rpc_retry_delay_1"><code>rpc_retry_delay</code><a class="headerlink" href="#rpc_retry_delay_1" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>int</code>, default: <code>1</code>, seconds</em> </p>
+<p>How long to wait before reattempting to call the remote RPC. For example, 
+in cases where Redis errors (e.g. connection issues). Execution will be retried once only.</p>
+<h3 id="consumption_restart_delay_2"><code>consumption_restart_delay</code><a class="headerlink" href="#consumption_restart_delay_2" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>int</code>, default: <code>5</code>, seconds</em> </p>
+<p>How long to wait before attempting to reconnect after loosing the connection to Redis.</p>
+<h2 id="redis-schema-transport-configuration">Redis Schema Transport configuration<a class="headerlink" href="#redis-schema-transport-configuration" title="Permanent link">&para;</a></h2>
+<h3 id="url_3"><code>url</code><a class="headerlink" href="#url_3" title="Permanent link">&para;</a></h3>
+<p><em>Type: <code>str</code>, default: <code>redis://127.0.0.1:6379/0</code></em></p>
+<p>The connection string for the redis server. Format is:</p>
+<div class="codehilite"><pre><span></span><code>`redis://host:port/db_number`
+</code></pre></div>
+                
+                  
+                
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../plugins-development/" title="Plugin development" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Plugin development
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../protocols/" title="Overview" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Overview
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org" target="_blank" rel="noopener">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs</a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.c33a9706.js"></script>
+      
+      <script>app.initialize({version:"1.1.2",url:{base:"../.."}})</script>
+      
+        <script src="../../static/js/version-select.js"></script>
+      
+    
+  </body>
+</html>
