@@ -25,7 +25,7 @@ git checkout gh-pages
 git pull origin gh-pages
 git checkout master
 
-mike deploy v$VERSION_DOCS --message="Build docs for release of $VERSION"
+mike deploy v$VERSION_DOCS --message="Build docs for release of $VERSION [ci skip]"
 mike delete latest
 mike alias v$VERSION_DOCS latest
 
