@@ -1,5 +1,16 @@
 # Lightbus Changelog
 
+## 1.0.1
+
+* Bug: Scheduled tasks were not been executed as expected
+
+## 1.0.0
+
+* No changes since `0.11.0`, appears to be stable
+
+## 0.11.0
+
+* Lightbus should now behave sensibly in threaded environments
 
 ## 0.10.0
 
