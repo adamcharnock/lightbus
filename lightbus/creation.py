@@ -268,7 +268,12 @@ class ThreadLocalClientProxy:
     def __init__(self, client_factory: Callable):
         self.client_factory = client_factory
         self.local = threading.local()
+        # Create the client from the main thread. We'll assume the current
+        # thread is the main thread, even if that is not strictly the case
         self.main_client: Optional[BusClient] = self.client_factory()
+        # Make the main client available in the current thread's
+        # local storage. We do this because the current thread is the 'main' thread
+        self.local.client = self.main_client
         self.enabled = True
 
     def _create_client(self) -> BusClient:
