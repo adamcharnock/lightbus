@@ -15,7 +15,18 @@ from lightbus.utilities.type_checks import (
     issubclass_safe,
 )
 
+try:
+    from dateutil.parser import parse as dateutil_parse
+except ImportError:
+    dateutil_parse = None
+
 is_callable = callable
+
+# Prefer dateutil if available is it is more robust than the
+# built-in datetime.fromisoformat(). For example, it will parse
+# timezones from either +0000 or the (correct) +00:00
+iso_datetime_parser = dateutil_parse or datetime.datetime.fromisoformat
+
 logger = logging.getLogger(__name__)
 
 
@@ -82,10 +93,10 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
         return _mapping_to_instance(mapping=value, destination_type=hint)
     elif is_class and issubclass_safe(hint_type, datetime.datetime) and isinstance_safe(value, str):
         # Datetime as a string
-        return datetime.datetime.fromisoformat(value)
+        return iso_datetime_parser(value)
     elif is_class and issubclass_safe(hint_type, datetime.date) and isinstance_safe(value, str):
         # Date as a string
-        return cast_or_warning(lambda v: datetime.datetime.fromisoformat(v).date(), value)
+        return cast_or_warning(lambda v: iso_datetime_parser(v).date(), value)
     elif is_class and issubclass_safe(hint_type, list):
         # Lists
         if hint_args and hasattr(value, "__iter__"):
@@ -108,9 +119,9 @@ def cast_to_hint(value: V, hint: H) -> Union[V, H]:
     ):
         logger.warning(
             f"Cannot cast to arbitrary class {hint}, using un-casted value. "
-            f"If you want to receive custom objects you can 1) "
-            f"use a NamedTuple, 2) use a dataclass, or 3) specify the "
-            f"__from_bus__() and __to_bus__() magic methods."
+            "If you want to receive custom objects you can 1) "
+            "use a NamedTuple, 2) use a dataclass, or 3) specify the "
+            "__from_bus__() and __to_bus__() magic methods."
         )
         return value
     else:
@@ -179,7 +190,7 @@ def cast_or_warning(type_, value):
     except Exception as e:
         logger.warning(
             f"Failed to cast value {repr(value)} to type {type_}. Will "
-            f"continue without casting, but this may cause errors in any "
+            "continue without casting, but this may cause errors in any "
             f"called code. Error was: {e}"
         )
         return value

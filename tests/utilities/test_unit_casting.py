@@ -4,11 +4,14 @@ from datetime import datetime, timezone, date
 from decimal import Decimal
 from enum import Enum
 from typing import NamedTuple, Optional, List, Any, SupportsRound, Mapping, Set, Tuple
+from unittest.mock import patch
 from uuid import UUID
 
 import pytest
 from dataclasses import dataclass
+import dateutil.parser
 
+import lightbus.utilities.casting
 from lightbus.utilities.casting import cast_to_signature, cast_to_hint
 from lightbus.utilities.frozendict import frozendict
 
@@ -45,6 +48,28 @@ def test_cast_to_signature_no_annotations():
     casted = cast_to_signature(callable=fn, parameters={"a": "1", "b": 2, "c": obj})
     # Values untouched
     assert casted == {"a": "1", "b": 2, "c": obj}
+
+
+def UTC(args):
+    pass
+
+
+@patch("lightbus.utilities.casting.iso_datetime_parser", datetime.fromisoformat)
+def test_date_parsing_using_builtin_fromisoformat():
+    # Can manage parsing of strictly correct ISO formats
+    assert isinstance(cast_to_hint("2050-09-12T00:00:00+00:00", datetime), datetime)
+    assert isinstance(cast_to_hint("2050-09-12T00:00:00+00:00", date), date)
+
+
+@patch("lightbus.utilities.casting.iso_datetime_parser", dateutil.parser.parse)
+def test_date_parsing_using_dateutil_library():
+    assert isinstance(cast_to_hint("2050-09-12T00:00:00+00:00", datetime), datetime)
+    assert isinstance(cast_to_hint("2050-09-12T00:00:00+00:00", date), date)
+    # The dateutil lib also successfully parses less strictly formatted dates
+    assert isinstance(cast_to_hint("2020-01-01 00:00", datetime), datetime)
+    assert isinstance(cast_to_hint("2020-01-01 00:00", date), date)
+    assert isinstance(cast_to_hint("2050-09-12T00:00:00+00:00", datetime), datetime)
+    assert isinstance(cast_to_hint("2050-09-12T00:00:00+00:00", date), date)
 
 
 class SimpleNamedTuple(NamedTuple):

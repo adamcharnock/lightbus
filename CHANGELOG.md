@@ -1,5 +1,10 @@
 # Lightbus Changelog
 
+## 1.1
+
+* Enhancement: Dates & datetimes will now be parsed from their string format using `dateutil` where available.
+               This provides more flexible parsing of date formats.
+
 ## 1.0.1
 
 * Bug: Scheduled tasks were not been executed as expected
