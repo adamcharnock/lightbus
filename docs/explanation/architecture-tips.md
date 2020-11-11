@@ -161,3 +161,8 @@ general) are:
   (See [API registration & authoritative/non-authoritative APIs](apis.md#api-registration-authoritativenon-authoritative-apis))
 * **Sharing of global bus configuration** – similar to sharing data structures, your global bus configuration 
   YAML file can likewise be available to all services.
+
+[Domain Driven Design]: https://en.wikipedia.org/wiki/Domain-driven_design
+[CQRS]: https://martinfowler.com/bliki/CQRS.html
+[NamedTuples]: https://docs.python.org/3/library/typing.html#typing.NamedTuple
+[dataclasses]: https://docs.python.org/3/library/dataclasses.html
