@@ -1,215 +1,215 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url>
      <loc>http://lightbus.org/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/tutorial/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/tutorial/installation/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/tutorial/quick-start/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/tutorial/worked-example/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/tutorial/django-and-lightbus/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/tutorial/getting-involved/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/howto/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/howto/access-your-bus-client/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/howto/schedule-recurring-tasks/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/howto/run-background-tasks/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/howto/migrate-from-celery-to-lightbus/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/howto/write-idempotent-event-handlers/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/howto/metrics/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/howto/event-sourcing/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/howto/modify-lightbus/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/anatomy-lesson/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/services/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/bus/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/apis/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/rpcs/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/events/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/marshalling/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/transports/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/configuration/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/schema/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/lightbus-vs-celery/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/architecture-tips/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/explanation/performance/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/apis/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/rpcs/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/events/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/typing/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/configuration/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/schema/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/command-line-use/run/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/command-line-use/inspect/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/command-line-use/shell/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/command-line-use/dumpschema/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/command-line-use/dumpconfigschema/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/testing-and-mocking/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/plugins/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/plugins-development/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/transport-configuration/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/protocols/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/protocols/rpc-and-result/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/protocols/event/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/protocols/schema/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/release-process/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/authors/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>http://lightbus.org/reference/code-of-conduct/</loc>
-     <lastmod>2020-11-11</lastmod>
+     <lastmod>2020-12-19</lastmod>
      <changefreq>daily</changefreq>
     </url>
 </urlset>
