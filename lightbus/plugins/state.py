@@ -1,7 +1,6 @@
 """Plugin to broadcast Lightbus' state on the internal.state API"""
 import asyncio
 import logging
-import resource
 import socket
 from argparse import ArgumentParser, _ArgumentGroup, Namespace
 from datetime import datetime
@@ -15,6 +14,12 @@ from lightbus.message import EventMessage
 from lightbus.plugins import LightbusPlugin
 from lightbus.plugins.metrics import MetricsPlugin
 from lightbus.utilities.async_tools import cancel
+
+try:
+    import resource
+except ImportError:
+    # Windows doesn't have the resource module
+    resource = None
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import
@@ -74,17 +79,22 @@ class StatePlugin(LightbusPlugin):
         state_run_group = run_command_parser.add_argument_group(title="State plugin arguments")
         state_run_group.add_argument(
             "--ping-interval",
-            help="Interval between worker ping events in seconds. Ping events alert the bus "
-            "that this Lightbus worker is alive, and are used to update the lightbus admin interface.",
+            help=(
+                "Interval between worker ping events in seconds. Ping events alert the bus that"
+                " this Lightbus worker is alive, and are used to update the lightbus admin"
+                " interface."
+            ),
             metavar="SECONDS",
             type=int,
             default=self.ping_interval,
         )
         state_run_group.add_argument(
             "--no-ping",
-            help="Disable sending ping events on the internal.state API. This "
-            "may result in your worker not appearing in the lightbus admin interface, "
-            "but will reduce traffic and log volume.",
+            help=(
+                "Disable sending ping events on the internal.state API. This "
+                "may result in your worker not appearing in the lightbus admin interface, "
+                "but will reduce traffic and log volume."
+            ),
             action="store_true",
         )
 
@@ -139,7 +149,12 @@ class StatePlugin(LightbusPlugin):
 
     def get_state_kwargs(self, client: "BusClient"):
         """Get the kwargs for a worker_started or ping message"""
-        max_memory_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        if resource:
+            max_memory_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        else:
+            # The resource module isn't available on windows. Set to zero
+            max_memory_use = 0
+
         event_listeners = chain(
             *[event_listener.events for event_listener in client.event_client._event_listeners]
         )
