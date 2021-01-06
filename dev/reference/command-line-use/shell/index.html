@@ -1213,7 +1213,6 @@ you can interface with the bus.</p>
 <p>To use this command you must first install <code>bpython</code>:</p>
 <div class="highlight"><pre><span></span><code>pip install bpython
 </code></pre></div>
-
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <p>You should see the following when starting up the shell. This is a fully functional 
 Python shell, with your bus loaded in a ready to be used:</p>
@@ -1221,7 +1220,6 @@ Python shell, with your bus loaded in a ready to be used:</p>
 &gt;&gt;&gt; █ 
 Welcome to the Lightbus shell. Use `bus` to access your bus.\
 </code></pre></div>
-
 <p>Upon typing the shell will begin to auto-complete based on the locally available APIs:</p>
 <div class="highlight"><pre><span></span><code>$ lightbus shell
 &gt;&gt;&gt; bus.au█
@@ -1229,7 +1227,6 @@ Welcome to the Lightbus shell. Use `bus` to access your bus.\
 │ auth                                                                     │
 └──────────────────────────────────────────────────────────────────────────┘
 </code></pre></div>
-
 <p>You can fire events and call RPCs as follows:</p>
 <div class="highlight"><pre><span></span><code># Fire an event
 &gt;&gt;&gt; bus.auth.user_registered.fire(email=&quot;joe@example.com&quot;, username=&quot;joe&quot;)
@@ -1238,7 +1235,6 @@ Welcome to the Lightbus shell. Use `bus` to access your bus.\
 &gt;&gt;&gt; bus.auth.check_password(username=&quot;admin&quot;, password=&quot;secret&quot;)
 True
 </code></pre></div>
-
 <h2 id="option-reference">Option reference<a class="headerlink" href="#option-reference" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>$ lightbus shell --help
 usage: lightbus shell [-h] [--bus BUS_MODULE] [--service-name SERVICE_NAME]

@@ -1222,7 +1222,6 @@ codebase. For example:</p>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 </code></pre></div>
-
 <div class="highlight"><pre><span></span><code><span class="c1"># Elsewhere in codebase</span>
 <span class="kn">from</span> <span class="nn">my_project.bus</span> <span class="kn">import</span> <span class="n">bus</span>
 
@@ -1238,7 +1237,6 @@ codebase. For example:</p>
     <span class="n">email</span><span class="o">=</span><span class="s2">&quot;sally@example.com&quot;</span>
 <span class="p">)</span>
 </code></pre></div>
-
 <p>You can use this client anywhere you need to, such as:</p>
 <ul>
 <li>Within your Django/Flask views</li>
@@ -1290,11 +1288,9 @@ bus:</p>
         <span class="n">create_user_for_customer</span>
     <span class="p">)</span>
 </code></pre></div>
-
 <p>You start this process using the command:</p>
 <div class="codehilite"><pre><span></span><code>lightbus run
 </code></pre></div>
-
 
 <p>Lightbus will import the bus module (your <code>bus.py</code> file) and wait
 for incoming events and remote procedure calls.</p>

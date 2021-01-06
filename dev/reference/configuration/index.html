@@ -1462,7 +1462,6 @@ and load the following JSON schema into your editor: </p>
 <div class="codehilite"><pre><span></span><code>https://lightbus.org/static/default-config-schema.json
 </code></pre></div>
 
-
 <p>This will provide you with autocomplete and validation for Lightbus' various 
 configuration options.</p>
 <p>If you are using custom transports or plugins you should 
@@ -1488,7 +1487,6 @@ must define a Lightbus client as follows:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Must be in your bus.py file</span>
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 </code></pre></div>
-
 <p>The above statement serves several purposes:</p>
 <ol>
 <li>The <code>lightbus run</code> command will use this client to access the bus.</li>
@@ -1519,7 +1517,6 @@ because the values will vary between services.</p>
     <span class="n">features</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;rpcs&#39;</span><span class="p">,</span> <span class="s1">&#39;events&#39;</span><span class="p">,</span> <span class="s1">&#39;tasks&#39;</span><span class="p">],</span>
 <span class="p">)</span>
 </code></pre></div>
-
 <p>The above configuration options can also be set using the following
 environment variables or command line arguments:</p>
 <table>
@@ -1663,7 +1660,6 @@ disk, or as a HTTP(S) URL (<a href="../../explanation/configuration/#3-global-bu
     <span class="nt">ping_enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
     <span class="nt">ping_interval</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">60</span>
 </code></pre></div>
-
 <p>Each section is detailed below.</p>
 <h3 id="root-config">Root config<a class="headerlink" href="#root-config" title="Permanent link">&para;</a></h3>
 <p>The available root-level configuration keys are:</p>
@@ -1735,7 +1731,6 @@ APIs do not inherit from the default configuration.</p>
       <span class="nt">redis</span><span class="p">:</span>
         <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis-marketing.svc.cluster.local:6379/0&quot;</span>
 </code></pre></div>
-
 <p>See <a href="#api-config">API config</a> for further details on the API options available.</p>
 <h4 id="api-config">API config<a class="headerlink" href="#api-config" title="Permanent link">&para;</a></h4>
 <p>The API config resides under the <a href="#api-configuration-listing">API configuration listing</a>.</p>
@@ -1768,7 +1763,6 @@ APIs do not inherit from the default configuration.</p>
         option: &quot;value&quot;
         option: &quot;value&quot;
 </code></pre></div>
-
 <p>Where <code>[transport-name]</code> can be one of:</p>
 <ul>
 <li><code>redis</code> – The redis-backed transport.</li>

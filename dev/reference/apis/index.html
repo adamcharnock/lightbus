@@ -1264,7 +1264,6 @@ your API elsewhere and import it into your <code>bus.py</code> file.</p>
     <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">get_case_from_db</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="nb">id</span><span class="p">)</span>
 </code></pre></div>
-
 <p>A service can define zero or more APIs, and each API can contain
 zero or more events and zero or more procedures.</p>
 <p>The <code>Meta</code> class specifies options regarding the API, with <code>name</code> being
@@ -1276,7 +1275,6 @@ accessed on the bus.</p>
 <span class="c1"># Call the get_case() RPC.</span>
 <span class="n">case</span> <span class="o">=</span> <span class="n">bus</span><span class="o">.</span><span class="n">support</span><span class="o">.</span><span class="n">case</span><span class="o">.</span><span class="n">get_case</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
 </code></pre></div>
-
 <p>You can also fire an event on this API:</p>
 <div class="highlight"><pre><span></span><code><span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 
@@ -1288,7 +1286,6 @@ accessed on the bus.</p>
     <span class="n">body</span><span class="o">=</span><span class="s1">&#39;...&#39;</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
-
 <h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
 <h3 id="name-str"><code>name (str)</code><a class="headerlink" href="#name-str" title="Permanent link">&para;</a></h3>
 <p>Specifies the name of the API. This will determine how the API is addressed

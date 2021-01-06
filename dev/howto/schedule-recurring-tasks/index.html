@@ -1236,7 +1236,6 @@
 <span class="k">def</span> <span class="nf">do_it</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hello!&quot;</span><span class="p">)</span>
 </code></pre></div>
-
 <p>The interval can be specified using the <code>seconds</code>, <code>minutes</code>, <code>hours</code>, and <code>days</code> keys.
 Pass <code>also_run_immediately=True</code> to execute the function/coroutine immediately, as well as 
 at the given interval.</p>
@@ -1255,7 +1254,6 @@ For example:</p>
 <span class="k">def</span> <span class="nf">do_it</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hello using schedule library&quot;</span><span class="p">)</span>
 </code></pre></div>
-
 <h2 id="long-running-tasks">Long running tasks<a class="headerlink" href="#long-running-tasks" title="Permanent link">&para;</a></h2>
 <p>If your tasks are long running you may prefer to handle these in a separate 
 Lightbus process. This will avoid blocking the processing of incoming events and RPCs.</p>

@@ -1309,7 +1309,6 @@ you could define the following bus.py in your authenication service:</p>
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
         <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;auth&#39;</span>
 </code></pre></div>
-
 <h2 id="firing-events">Firing events<a class="headerlink" href="#firing-events" title="Permanent link">&para;</a></h2>
 <p>You can fire events as follows:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Anywhere in your code</span>
@@ -1319,7 +1318,6 @@ you could define the following bus.py in your authenication service:</p>
 
 <span class="n">bus</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">user_created</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;adam&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;adam@example.com&#39;</span><span class="p">)</span>
 </code></pre></div>
-
 <h2 id="firing-events-asynchronously">Firing events (asynchronously)<a class="headerlink" href="#firing-events-asynchronously" title="Permanent link">&para;</a></h2>
 <p>You can also fire events asynchronously using asyncio:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Anywhere in your code</span>
@@ -1332,7 +1330,6 @@ you could define the following bus.py in your authenication service:</p>
     <span class="n">password</span><span class="o">=</span><span class="s1">&#39;adam@example.com&#39;</span>
 <span class="p">)</span>
 </code></pre></div>
-
 <h2 id="listening-for-events">Listening for events<a class="headerlink" href="#listening-for-events" title="Permanent link">&para;</a></h2>
 <p>Listening for events is typically a long-running background
 activity, and is therefore dealt with by the <code>lightbus run</code>
@@ -1378,7 +1375,6 @@ as follows:</p>
         <span class="n">listener_name</span><span class="o">=</span><span class="s2">&quot;user_deleted&quot;</span>
     <span class="p">)</span>
 </code></pre></div>
-
 <p>Specifying <code>listener_name</code> is required in order to ensure 
 each listeners receives all events it is due.
 See the <a href="../../explanation/events/">events explanation page</a> for further discussion.</p>
@@ -1399,7 +1395,6 @@ For example, this will <strong>not</strong> work (it will raise a <code>Duplicat
     <span class="n">listener_name</span><span class="o">=</span><span class="s2">&quot;price_listener&quot;</span><span class="p">,</span>  <span class="c1"># ⇠ DuplicateListenerName exception</span>
 <span class="p">)</span>
 </code></pre></div>
-
 <p>This restriction only applies to listeners within the same service.</p>
 <h3 id="errors-in-event-listeners">Errors in event listeners<a class="headerlink" href="#errors-in-event-listeners" title="Permanent link">&para;</a></h3>
 <p>By default, the Lightbus worker will exit if an event listener encounters an error. 
@@ -1429,7 +1424,6 @@ Possible values are:</p>
     <span class="n">on_error</span><span class="o">=</span><span class="n">lightbus</span><span class="o">.</span><span class="n">OnError</span><span class="o">.</span><span class="n">ACKNOWLEDGE_AND_LOG</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
-
 <h2 id="listening-for-events-asynchronous-handlers">Listening for events (asynchronous handlers)<a class="headerlink" href="#listening-for-events-asynchronous-handlers" title="Permanent link">&para;</a></h2>
 <p>Event handlers may also be asynchronous. For example:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">lightbus</span>
@@ -1453,7 +1447,6 @@ Possible values are:</p>
         <span class="n">listener_name</span><span class="o">=</span><span class="s2">&quot;user_created&quot;</span>
     <span class="p">)</span>
 </code></pre></div>
-
 <div class="admonition note">
 <p class="admonition-title">A note on threads</p>
 <p>Asynchronous handlers will be executed 

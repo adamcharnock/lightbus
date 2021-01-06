@@ -1345,12 +1345,10 @@ the following in a <code>bus.py</code> file:</p>
 <span class="c1"># as the developer to fire events on any registered APIs.</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">register_api</span><span class="p">(</span><span class="n">AuthApi</span><span class="p">())</span>
 </code></pre></div>
-
 <p>You should now be able to startup Lightbus as follows:</p>
 <div class="highlight"><pre><span></span><code>cd ./auth_service/
 lightbus run
 </code></pre></div>
-
 <p>Lightbus will output some logging data which will include a list of
 registered APIs, including your new <code>auth</code> API:</p>
 <p><img alt="lightbus run output" src="/static/images/quickstart-lightbus-run.png" /></p>
@@ -1374,7 +1372,6 @@ Therefore, create <code>./another_service/bus.py</code> containing the following
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 </code></pre></div>
-
 <p>Now create <code>./another_service/check_password.py</code>. We will use this 
 to experiment with making RPC calls:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># File: ./another_service/check_password.py</span>
@@ -1394,13 +1391,11 @@ to experiment with making RPC calls:</p>
 <span class="k">else</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Oops, bad username or password&#39;</span><span class="p">)</span>
 </code></pre></div>
-
 <p>Running this script should show you the following:</p>
 <div class="codehilite"><pre><span></span><code>cd ./another_service/
 python3 ./check_password.py
 Password valid!
 </code></pre></div>
-
 
 <p>Looking at the other terminal window you have open you should see that
 Lightbus has also reported that it is handled a remote procedure call.</p>
@@ -1435,12 +1430,10 @@ register it.</p>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done&quot;</span><span class="p">)</span>
 </code></pre></div>
-
 <p>Run this script using:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">cd</span> ./auth_service/
 python3 manually_register_user.py
 </code></pre></div>
-
 <p>You should be prompted for a new username &amp; email address, at which point an event will be 
 fired onto the bus. We will make use of this event in the next section.</p>
 <h3 id="listening-for-events">Listening for events<a class="headerlink" href="#listening-for-events" title="Permanent link">&para;</a></h3>
@@ -1464,7 +1457,6 @@ we can setup an event listener by modifying <code>./another_service/bus.py</code
         <span class="n">listener_name</span><span class="o">=</span><span class="s2">&quot;print_on_new_registration&quot;</span>
     <span class="p">)</span>
 </code></pre></div>
-
 <p>Listening for events requires your service to sit waiting for something to 
 happen. Sitting around and waiting for something to happen is precisely 
 what the <code>lightbus run</code> console command is for. </p>
@@ -1474,14 +1466,12 @@ what the <code>lightbus run</code> console command is for. </p>
 <span class="nb">cd</span> ./another_service/
 lightbus run
 </code></pre></div>
-
 <p>Your service is now waiting for events.</p>
 <p>In the <strong>second terminal window</strong> let's cause an event to be fired 
 using the script we wrote in the previous section:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">cd</span> ./auth_service/
 python3 manually_register_user.py
 </code></pre></div>
-
 <p>You should see that the event gets sent by the <code>manually_register_user.py</code> script within the 
 <code>auth_service</code>, and received by by the <code>lightbus run</code> process within the <code>another_service</code>.</p>
 <p><img alt="Listening for and firing an event" src="/static/images/quickstart-events.png" /></p>

@@ -1219,7 +1219,6 @@ help desk:</p>
     <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">get_ticket_from_db</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="nb">id</span><span class="p">)</span>
 </code></pre></div>
-
 <p>This API defines an event, a procedure, and the name used to address the API
 on the bus. The help desk service could define multiple additional APIs as needed
 (perhaps for listing help desk staff or retrieving reports).</p>
@@ -1233,7 +1232,6 @@ on the bus. The help desk service could define multiple additional APIs as neede
 <span class="c1"># Register the API with your service&#39;s client</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">register_api</span><span class="p">(</span><span class="n">HelpDeskApi</span><span class="p">())</span>
 </code></pre></div>
-
 <p>Registering an API will:</p>
 <ol>
 <li>Allow you to <strong>fire events</strong> on the API using the service's client</li>

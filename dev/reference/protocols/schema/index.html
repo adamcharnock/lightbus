@@ -1273,16 +1273,15 @@ protocol in order to use Lightbus</strong>.</p>
     <span class="k">def</span> <span class="nf">check_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">username</span> <span class="o">==</span> <span class="s1">&#39;admin&#39;</span> <span class="ow">and</span> <span class="n">password</span> <span class="o">==</span> <span class="s1">&#39;secret&#39;</span>
 </code></pre></div>
-
 <h2 id="schema-format">Schema format<a class="headerlink" href="#schema-format" title="Permanent link">&para;</a></h2>
 <p>The Lightbus schema format is a JSON structure containing multiple JSON schemas.
 Below is the schema for the example <code>my_company.auth</code> API shown above 
 (generalised format follows):</p>
-<div class="highlight"><pre><span></span><code><span class="err">//</span> <span class="err">Auto-generated</span> <span class="err">schema</span> <span class="err">for</span> <span class="err">auth</span> <span class="err">API</span>
+<div class="highlight"><pre><span></span><code><span class="err">//</span> <span class="err">Au</span><span class="kc">t</span><span class="err">o</span><span class="mi">-</span><span class="err">ge</span><span class="kc">nerate</span><span class="err">d</span> <span class="err">schema</span> <span class="kc">f</span><span class="err">or</span> <span class="err">au</span><span class="kc">t</span><span class="err">h</span> <span class="err">API</span>
 <span class="p">{</span>
   <span class="nt">&quot;my_company.auth&quot;</span><span class="p">:</span> <span class="p">{</span>
 
-    <span class="err">//</span> <span class="err">Events</span> <span class="err">specify</span> <span class="err">only</span> <span class="err">parameters</span>
+    <span class="err">//</span> <span class="err">Eve</span><span class="kc">nts</span> <span class="err">speci</span><span class="kc">f</span><span class="err">y</span> <span class="err">o</span><span class="kc">nl</span><span class="err">y</span> <span class="err">parame</span><span class="kc">ters</span>
     <span class="nt">&quot;events&quot;</span><span class="p">:</span> <span class="p">{</span>
       <span class="nt">&quot;user_registered&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -1310,7 +1309,7 @@ Below is the schema for the example <code>my_company.auth</code> API shown above
       <span class="p">}</span>
     <span class="p">},</span>
 
-    <span class="err">//</span> <span class="err">RPCs</span> <span class="err">specify</span> <span class="err">both</span> <span class="err">parameters</span> <span class="err">and</span> <span class="err">response</span>
+    <span class="err">//</span> <span class="err">RPCs</span> <span class="err">speci</span><span class="kc">f</span><span class="err">y</span> <span class="err">bo</span><span class="kc">t</span><span class="err">h</span> <span class="err">parame</span><span class="kc">ters</span> <span class="err">a</span><span class="kc">n</span><span class="err">d</span> <span class="err">respo</span><span class="kc">nse</span>
     <span class="nt">&quot;rpcs&quot;</span><span class="p">:</span> <span class="p">{</span>
       <span class="nt">&quot;check_password&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -1342,48 +1341,43 @@ Below is the schema for the example <code>my_company.auth</code> API shown above
   <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
-
 <p>The generalised format is as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="err">//</span> <span class="err">Generalised</span> <span class="err">Lightbus</span> <span class="err">schema</span> <span class="err">format</span>
+<div class="highlight"><pre><span></span><code><span class="err">//</span> <span class="err">Ge</span><span class="kc">neral</span><span class="err">ised</span> <span class="err">Ligh</span><span class="kc">t</span><span class="err">bus</span> <span class="err">schema</span> <span class="kc">f</span><span class="err">orma</span><span class="kc">t</span>
 <span class="p">{</span>
   <span class="nt">&quot;&lt;api-name&gt;&quot;</span><span class="p">:</span> <span class="p">{</span>
 
     <span class="nt">&quot;events&quot;</span><span class="p">:</span> <span class="p">{</span>
       <span class="nt">&quot;&lt;event-name&gt;&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="nt">&quot;parameters&quot;</span><span class="p">:</span>  <span class="p">{</span> <span class="err">/*</span> <span class="err">json</span> <span class="err">schema</span> <span class="err">*/</span> <span class="p">}</span>
+        <span class="nt">&quot;parameters&quot;</span><span class="p">:</span>  <span class="p">{</span> <span class="err">/*</span> <span class="err">jso</span><span class="kc">n</span> <span class="err">schema</span> <span class="err">*/</span> <span class="p">}</span>
       <span class="p">}</span>
-      <span class="err">//</span> <span class="err">additional</span> <span class="err">events</span>
+      <span class="err">//</span> <span class="err">addi</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span> <span class="err">eve</span><span class="kc">nts</span>
     <span class="p">},</span>
 
     <span class="nt">&quot;rpcs&quot;</span><span class="p">:</span> <span class="p">{</span>
       <span class="nt">&quot;&lt;rpc-name&gt;&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="err">/*</span> <span class="err">json</span> <span class="err">schema</span> <span class="err">*/</span> <span class="p">},</span>
-        <span class="nt">&quot;response&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="err">/*</span> <span class="err">json</span> <span class="err">schema</span> <span class="err">*/</span> <span class="p">}</span>
+        <span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="err">/*</span> <span class="err">jso</span><span class="kc">n</span> <span class="err">schema</span> <span class="err">*/</span> <span class="p">},</span>
+        <span class="nt">&quot;response&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="err">/*</span> <span class="err">jso</span><span class="kc">n</span> <span class="err">schema</span> <span class="err">*/</span> <span class="p">}</span>
       <span class="p">}</span>
-      <span class="err">//</span> <span class="err">additional</span> <span class="err">procedures</span>
+      <span class="err">//</span> <span class="err">addi</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span> <span class="err">procedures</span>
     <span class="p">}</span>
 
   <span class="p">}</span>
-  <span class="err">//</span> <span class="err">additional</span> <span class="err">APIs</span>
+  <span class="err">//</span> <span class="err">addi</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span> <span class="err">APIs</span>
 <span class="p">}</span>
 </code></pre></div>
-
 <h2 id="per-schema-redis-key">Per-schema Redis key<a class="headerlink" href="#per-schema-redis-key" title="Permanent link">&para;</a></h2>
 <p>Each schema is stored in redis as a string-ified JSON blob using a key formed as follows:</p>
 <div class="highlight"><pre><span></span><code>schema:{api_name}
 </code></pre></div>
-
 <p>For example:</p>
 <div class="highlight"><pre><span></span><code>schema:my_company.auth
 </code></pre></div>
-
 <h2 id="storing-schemas">Storing schemas<a class="headerlink" href="#storing-schemas" title="Permanent link">&para;</a></h2>
 <p>A schema can be stored on the bus as follows:</p>
 <div class="highlight"><pre><span></span><code>SET &quot;schema:{api_name}&quot; &quot;{json_schema}&quot;
 SADD &quot;schemas&quot; &quot;{api_name}&quot;
 EXPIRE &quot;schema:{api_name}&quot; &quot;{json_schema}&quot; {ttl_seconds}
 </code></pre></div>
-
 <p>Where:</p>
 <ul>
 <li><code>{api_name}</code> is replaced with the fully qualified API name (e.g. <code>my_company.auth</code>)</li>
@@ -1400,7 +1394,6 @@ on the bus.</p>
 for api_name in scheams:
     GET &quot;schema:{api_name}&quot;
 </code></pre></div>
-
 <p>A schema is only available if the <code>GET</code> succeeds. The data returned by the <code>GET</code> should be JSON decoded, 
 and will contain the structure detailed above.</p>
                 

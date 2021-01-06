@@ -1298,7 +1298,6 @@ create – <code>store/</code>, <code>dashboard/</code>, and <code>image/</code>
 <div class="codehilite"><pre><span></span><code>pip3 install flask honcho
 </code></pre></div>
 
-
 <p>A passing familiarity with <a href="http://flask.pocoo.org/">Flask</a> may be useful, but is not required. <a href="https://github.com/nickstenning/honcho">Honcho</a>
 will assist us in running the various processes required for our services.</p>
 <p>We will assume you
@@ -1322,7 +1321,6 @@ is to allow our store to resize images prior to display:</p>
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">register_api</span><span class="p">(</span><span class="n">ImageApi</span><span class="p">)</span>
 </code></pre></div>
-
 <p>There is no web interface for this service, so this is all we need.</p>
 <h2 id="33-store-service">3.3. Store service<a class="headerlink" href="#33-store-service" title="Permanent link">&para;</a></h2>
 <p>Our store will have both a Lightbus API and a web interface. We'll start
@@ -1339,7 +1337,6 @@ with the API first:</p>
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">register_api</span><span class="p">(</span><span class="n">StoreApi</span><span class="p">)</span>
 </code></pre></div>
-
 <p>This API has a single event called <code>page_viewed</code>. The store web interface will fire this
 event whenever a page is viewed.</p>
 <p>Our store web interface uses Flask and is a little longer:</p>
@@ -1391,7 +1388,6 @@ event whenever a page is viewed.</p>
     <span class="n">html</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&lt;img src=&quot;</span><span class="si">{</span><span class="n">resized_url</span><span class="si">}</span><span class="s1">&quot;&gt;&lt;br /&gt;&#39;</span>
     <span class="k">return</span> <span class="n">html</span>
 </code></pre></div>
-
 <h2 id="34-interlude-give-it-a-go">3.4. Interlude: give it a go<a class="headerlink" href="#34-interlude-give-it-a-go" title="Permanent link">&para;</a></h2>
 <p>We're not quite done yet, but you can now startup the necessary processes and
 see the store. You will need to run each of these in a separate terminal window:</p>
@@ -1404,7 +1400,6 @@ $ lightbus run --bus<span class="o">=</span>image.bus
 <span class="c1"># Start our store&#39;s web interface</span>
 $ <span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py flask run --port<span class="o">=</span><span class="m">5001</span>
 </code></pre></div>
-
 <p>Now open <a href="http://127.0.0.1:5001">127.0.0.1:5001</a> in your browser and
 you should see three animal pictures awaiting you. The URL for each
 image was fetched from the image resizing service.</p>
@@ -1445,7 +1440,6 @@ web process.</p>
     <span class="c1"># Called when lightbus starts up</span>
     <span class="n">bus</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">page_viewed</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">handle_page_view</span><span class="p">)</span>
 </code></pre></div>
-
 <p>This is a simple listener for the <code>bus.store.page_viewed</code> event. This event is fired by the
 store's web interface we created above.</p>
 <p>Note we do not define any APIs,
@@ -1476,7 +1470,6 @@ Redis, Mongo etc). For simplicity we just store JSON to a file.</p>
 
     <span class="k">return</span> <span class="n">html</span>
 </code></pre></div>
-
 <p>This reads the JSON data that was written by the event listener in <code>dashboard/bus.py</code> above,
 then render it to HTML.</p>
 <h2 id="37-run-it">3.7. Run it!<a class="headerlink" href="#37-run-it" title="Permanent link">&para;</a></h2>
@@ -1537,7 +1530,6 @@ $ <span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py flask ru
 $ lightbus run --bus<span class="o">=</span>dashboard.bus
 $ <span class="nv">FLASK_APP</span><span class="o">=</span>dashboard/web.py flask run --port<span class="o">=</span><span class="m">5000</span>
 </code></pre></div>
-
 <p><strong>However,</strong> you may find it easier to startup these processes
 with the <code>honcho</code> tool we installed earlier. First, create
 a file called <code>Procfile</code>:</p>
@@ -1547,14 +1539,12 @@ store_web:         <span class="nv">FLASK_APP</span><span class="o">=</span>stor
 dashboard_bus:     lightbus run --bus<span class="o">=</span>dashboard.bus
 dashboard_web:     <span class="nv">FLASK_APP</span><span class="o">=</span>dashboard/web.py flask run --port<span class="o">=</span><span class="m">5000</span>
 </code></pre></div>
-
 <p>And now use <code>honcho</code> to startup all the processes together:</p>
 <div class="highlight"><pre><span></span><code>$ ls
 Procfile    dashboard/    image/    store/
 
 $ honcho start
 </code></pre></div>
-
 <p>If you see an error stating <code>command not found</code>, ensure you installed <code>honcho</code> as
 detailed above (<code>pip3 install honcho</code>).</p>
 <p>Once started, see the output for any errors. Each log line will state the process

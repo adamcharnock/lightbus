@@ -1383,7 +1383,6 @@ SET &quot;rpc_expiry_key:{rpc_call_message_id}&quot;
 EXPIRE &quot;rpc_expiry_key:{rpc_call_message_id}&quot; {rpc_timeout_seconds:5}
 </code></pre></div>
 
-
 <p>See <a href="#message-serialisation-encoding">message serialisation &amp; encoding</a> for the format of 
 <code>{blob_serialized_message}</code>.</p>
 <h3 id="the-return-path">The return path<a class="headerlink" href="#the-return-path" title="Permanent link">&para;</a></h3>
@@ -1395,14 +1394,12 @@ should be in the following format:</p>
 <div class="codehilite"><pre><span></span><code>redis+key://{api_name}.{rpc_name}:result:{rpc_call_message_id}
 </code></pre></div>
 
-
 <p>The server will place the RPC result into a Redis key. The value following 
 <code>redis+key://</code> will be used as the key name.</p>
 <h2 id="receiving-rpc-results-client">Receiving RPC Results (client)<a class="headerlink" href="#receiving-rpc-results-client" title="Permanent link">&para;</a></h2>
 <p>The following Redis commands will block and await the result of an RPC call:</p>
 <div class="codehilite"><pre><span></span><code>BLPOP &quot;{api_name}.{rpc_name}:result:{rpc_call_message_id}&quot;
 </code></pre></div>
-
 
 <p>This simply waits from a value to appear within the key specified by the <code>return_path</code>
 in the sent RPC message.</p>
@@ -1422,7 +1419,6 @@ DEL &quot;rpc_expiry_key:{rpc_call_message_id}&quot;
 LPUSH {redis_key_specific_in_return_path} {blob_serialized_result}
 EXPIRE {redis_key_specific_in_return_path} {result_ttl_seconds}
 </code></pre></div>
-
 
 <h2 id="message-serialisation-encoding">Message serialisation &amp; encoding<a class="headerlink" href="#message-serialisation-encoding" title="Permanent link">&para;</a></h2>
 <p>Above we have often referred to <code>{blob_serialized_message}</code> 
@@ -1456,7 +1452,6 @@ returned.</p>
     <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
-
 <h4 id="result-message">Result Message<a class="headerlink" href="#result-message" title="Permanent link">&para;</a></h4>
 <p>This is the response message indicating an RPC has been 
 (successfully or unsuccessfully) executed.</p>
@@ -1477,7 +1472,6 @@ returned.</p>
     <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="o">...</span>
 <span class="p">}</span>
 </code></pre></div>
-
 <h3 id="encoding-customisation">Encoding &amp; Customisation<a class="headerlink" href="#encoding-customisation" title="Permanent link">&para;</a></h3>
 <p>See also: <a href="../../../explanation/marshalling/">data marshalling</a></p>
 <p>The message must be encoded as a string once it has been serialised to 

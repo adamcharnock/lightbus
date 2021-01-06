@@ -1317,7 +1317,6 @@ group is identified by a name in the form:</p>
 {service_name}-{listener_name}
 </code></pre></div>
 
-
 <p>The <em>service name</em> is specified in your <a href="../../reference/configuration/#2-service-level-configuration">service-level configuration</a>.
 The <em>listener name</em> is setup when you create your event listener (see below).</p>
 <p>For example, this <code>bus</code> module sets up two listeners. Each listener is
@@ -1342,7 +1341,6 @@ copy of every <code>competitor_prices.changed</code> event.</p>
     <span class="n">listener_name</span><span class="o">=</span><span class="s2">&quot;update_db&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
-
 <h2 id="process-names">Process names<a class="headerlink" href="#process-names" title="Permanent link">&para;</a></h2>
 <p>Your <a href="../../reference/configuration/#2-service-level-configuration">service-level configuration</a> also specifies a <em>process name</em>.
 This is less critical than the service name &amp; listener name pairing

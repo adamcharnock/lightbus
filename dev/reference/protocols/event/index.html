@@ -1422,7 +1422,6 @@ protocol in order to use Lightbus</strong>.</p>
 <p>The following command will send an event:</p>
 <div class="highlight"><pre><span></span><code>XADD {stream_name} [MAXLEN ~ {max_stream_length}] * {field_name_1} {field_value_1} {field_name_2} {field_value_2}...
 </code></pre></div>
-
 <h3 id="stream_name"><code>{stream_name}</code><a class="headerlink" href="#stream_name" title="Permanent link">&para;</a></h3>
 <p>The <code>{stream_name}</code> value is composed in one of the following ways:</p>
 <ul>
@@ -1454,13 +1453,11 @@ due to an error, hardware failure, network problem, etc).</p>
 <p>We perform this initial check for events as follows:</p>
 <div class="highlight"><pre><span></span><code>XREAD_GROUP {group_name} {consumer_name} {stream_name} 0
 </code></pre></div>
-
 <p>The <code>0</code> above indicates we wish to receive un-acknowledged events for this consumer 
 (i.e this Lightbus process).</p>
 <p>Once we have received and processed any of these events, we can retrieve further events as follows:</p>
 <div class="highlight"><pre><span></span><code>XREAD_GROUP {group_name} {consumer_name} {stream} &gt;
 </code></pre></div>
-
 <h3 id="group_name"><code>{group_name}</code><a class="headerlink" href="#group_name" title="Permanent link">&para;</a></h3>
 <p>The <code>{group_name}</code> value is comprised of the <a href="../../../explanation/events/#service-names-listener-names">service name and listener name</a> as follows: 
 <code>{service_name}-{listener_name}</code>.</p>
@@ -1480,7 +1477,6 @@ XCLAIM {stream} {group_name} {timeout}
 
 # If successful, process the event. Otherwise ignore it
 </code></pre></div>
-
 <h3 id="batch_size"><code>{batch_size}</code><a class="headerlink" href="#batch_size" title="Permanent link">&para;</a></h3>
 <p>How many pending messages to fetch in each batch</p>
 <h3 id="timeout"><code>{timeout}</code><a class="headerlink" href="#timeout" title="Permanent link">&para;</a></h3>

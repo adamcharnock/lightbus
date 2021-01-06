@@ -1213,7 +1213,6 @@
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 </code></pre></div>
-
 <p>However, you will often need to make use of your bus client
 in other areas of your codebase. For example, you may need to
 fire an event when a web form is submitted.</p>
@@ -1228,7 +1227,6 @@ in your codebase:</p>
 <span class="c1"># ...or if your service has its own package</span>
 <span class="kn">from</span> <span class="nn">my_service.bus</span> <span class="kn">import</span> <span class="n">bus</span>
 </code></pre></div>
-
 <p>You should use this approach in code which is specific to your
 service (i.e. non-shared/non-library code). This approach is more
 explicit (good), but hard codes the path to your bus module (bad for shared code).</p>
@@ -1243,7 +1241,6 @@ imported first.</p>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">get_bus</span><span class="p">()</span>
 </code></pre></div>
-
 <p>This approach is best suited to when you do not know where your bus module
 will be at runtime. This could be the case when:</p>
 <ul>

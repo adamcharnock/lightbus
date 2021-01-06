@@ -1287,7 +1287,6 @@ an 'update' and an 'insert' which says: *'Insert this record, but if you find a 
 <span class="k">def</span> <span class="nf">handle_page_view</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
     <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO views (url)&quot;</span><span class="p">)</span>
 </code></pre></div>
-
 <p>This is not an idempotent event handler because multiple invocations for the same event will 
 result in multiple records being created.</p>
 <p>An idempotent version of the above can be rewritten as:</p>
@@ -1300,7 +1299,6 @@ result in multiple records being created.</p>
         <span class="c1"># UUID already exists, so do an update</span>
         <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;UPDATE views SET url = </span><span class="si">%s</span><span class="s2"> WHERE view_uuid = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">url</span><span class="p">,</span> <span class="n">uuid</span><span class="p">])</span>
 </code></pre></div>
-
 <p>This handler can be executed any number of times for the same parameters without ever 
 creating duplicate records. It is idempotent.</p>
 <p>Note that the <code>views</code> table must include a <code>UUID</code> column which is <code>UNIQUE</code>, otherwise an error 
@@ -1315,14 +1313,12 @@ method which serves exactly this purpose:</p>
 <span class="k">def</span> <span class="nf">handle_page_view</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
     <span class="n">Views</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">update_or_create</span><span class="p">(</span><span class="n">uuid</span><span class="o">=</span><span class="n">uuid</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="n">url</span><span class="p">})</span>
 </code></pre></div>
-
 <h3 id="upserts-in-sql">Upserts in SQL<a class="headerlink" href="#upserts-in-sql" title="Permanent link">&para;</a></h3>
 <p>Many relational databases can also perform upsert in a single SQL query:</p>
 <div class="highlight"><pre><span></span><code><span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">views</span> <span class="p">(</span><span class="nb">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">&#39;uuid-here&#39;</span><span class="p">,</span> <span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">)</span> 
 <span class="k">ON</span> <span class="k">CONFLICT</span> <span class="p">(</span><span class="nb">uuid</span><span class="p">)</span> 
 <span class="k">DO</span> <span class="k">UPDATE</span> <span class="k">SET</span> <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">;</span>
 </code></pre></div>
-
 <h2 id="ensuring-idempotency-in-other-cases">Ensuring idempotency in other cases<a class="headerlink" href="#ensuring-idempotency-in-other-cases" title="Permanent link">&para;</a></h2>
 <p>There are additional areas where idempotency can become relevant:</p>
 <ul>

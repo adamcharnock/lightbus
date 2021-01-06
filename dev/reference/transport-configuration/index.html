@@ -1661,7 +1661,6 @@ and load the following JSON schema into your editor: </p>
 <div class="codehilite"><pre><span></span><code>https://lightbus.org/static/default-config-schema.json
 </code></pre></div>
 
-
 <p>This will provide you with autocomplete and validation for Lightbus' various 
 configuration options.</p>
 <p>If you are using custom transports or plugins you should 
@@ -1719,14 +1718,12 @@ configuration options.</p>
       <span class="nt">redis</span><span class="p">:</span>
         <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
 </code></pre></div>
-
 <h2 id="redis-event-transport-configuration">Redis Event Transport configuration<a class="headerlink" href="#redis-event-transport-configuration" title="Permanent link">&para;</a></h2>
 <h3 id="url"><code>url</code><a class="headerlink" href="#url" title="Permanent link">&para;</a></h3>
 <p><em>Type: <code>str</code>, default: <code>redis://127.0.0.1:6379/0</code></em></p>
 <p>The connection string for the redis server. Format is:</p>
 <div class="codehilite"><pre><span></span><code>`redis://host:port/db_number`
 </code></pre></div>
-
 
 <h3 id="batch_size"><code>batch_size</code><a class="headerlink" href="#batch_size" title="Permanent link">&para;</a></h3>
 <p><em>Type: <code>int</code>, default: <code>10</code></em> </p>
@@ -1790,7 +1787,6 @@ messages will only be ordered for an individual event.</p>
 <div class="codehilite"><pre><span></span><code>`redis://host:port/db_number`
 </code></pre></div>
 
-
 <h3 id="batch_size_1"><code>batch_size</code><a class="headerlink" href="#batch_size_1" title="Permanent link">&para;</a></h3>
 <p><em>Type: <code>int</code>, default: <code>10</code></em> </p>
 <p>The maximum number of messages to be fetched at one time. A higher value will reduce overhead 
@@ -1827,7 +1823,6 @@ in cases where Redis errors (e.g. connection issues). Execution will be retried 
 <p>The connection string for the redis server. Format is:</p>
 <div class="codehilite"><pre><span></span><code>`redis://host:port/db_number`
 </code></pre></div>
-
 
 <h3 id="serializer_2"><code>serializer</code><a class="headerlink" href="#serializer_2" title="Permanent link">&para;</a></h3>
 <p><em>Type: <code>str</code>, default: <code>lightbus.serializers.BlobMessageSerializer</code></em> </p>

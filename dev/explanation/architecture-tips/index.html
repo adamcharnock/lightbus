@@ -1251,7 +1251,6 @@ Both <a href="https://docs.python.org/3/library/typing.html#typing.NamedTuple">N
     <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
 </code></pre></div>
-
 <p>You can then take advantage of Lightbus' schema checking and data casting:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">lightbus</span>
 
@@ -1265,7 +1264,6 @@ Both <a href="https://docs.python.org/3/library/typing.html#typing.NamedTuple">N
         <span class="c1"># Customer, and will cast the data to be a Customer object</span>
         <span class="o">...</span>
 </code></pre></div>
-
 <p>You would call the <code>customer.create()</code> API as follows:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">lightbus</span>
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
@@ -1274,7 +1272,6 @@ Both <a href="https://docs.python.org/3/library/typing.html#typing.NamedTuple">N
     <span class="n">customer</span><span class="o">=</span><span class="n">Customer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Joe&quot;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s2">&quot;joe@gmail.com&quot;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">54</span><span class="p">)</span>
 <span class="p">)</span>
 </code></pre></div>
-
 <p>This provides a standard way of communicating shared concepts across
 your services.</p>
 <div class="admonition note">
@@ -1286,7 +1283,6 @@ use a dictionary:</p>
     <span class="n">customer</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Joe&quot;</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="s2">&quot;joe@gmail.com&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mi">54</span><span class="p">}</span>
 <span class="p">)</span>
 </code></pre></div>
-
 <p>Likewise, an RPC or event listener without type hints will simply
 receive a dictionary.</p>
 </div>

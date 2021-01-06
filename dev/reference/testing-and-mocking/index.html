@@ -1276,7 +1276,6 @@ These utilities allow you to:</p>
         <span class="n">message</span> <span class="o">=</span> <span class="n">bus_mock</span><span class="o">.</span><span class="n">get_event_messages</span><span class="p">(</span><span class="s2">&quot;auth.user_created&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="s2">&quot;sarahjane&quot;</span><span class="p">}</span>
 </code></pre></div>
-
 <h2 id="mocking-with-rpcs">Mocking with RPCs<a class="headerlink" href="#mocking-with-rpcs" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus.utilities.testing</span> <span class="kn">import</span> <span class="n">BusMocker</span>
 
@@ -1298,7 +1297,6 @@ These utilities allow you to:</p>
         <span class="n">message</span> <span class="o">=</span> <span class="n">bus_mock</span><span class="o">.</span><span class="n">get_rpc_messages</span><span class="p">(</span><span class="s2">&quot;auth.check_password&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="s2">&quot;sarahjane&quot;</span><span class="p">,</span> <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="s2">&quot;secret&quot;</span><span class="p">}</span>
 </code></pre></div>
-
 <h2 id="allowing-arbitrary-events-and-rpcs">Allowing arbitrary events and RPCs<a class="headerlink" href="#allowing-arbitrary-events-and-rpcs" title="Permanent link">&para;</a></h2>
 <p>By default the mocker will raise an error if any event or RPC is fired or called which has 
 not be setup using the <code>mock_event_firing</code> / <code>mock_rpc_call</code> methods.</p>
@@ -1317,7 +1315,6 @@ setup any mocks:</p>
         <span class="n">bus</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">user_created</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
         <span class="n">bus</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">check_password</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&quot;sarahjane&quot;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s2">&quot;secret&quot;</span><span class="p">)</span>
 </code></pre></div>
-
 <h2 id="the-bus_mocker-decorator">The <code>@bus_mocker</code> decorator<a class="headerlink" href="#the-bus_mocker-decorator" title="Permanent link">&para;</a></h2>
 <p>You can also access the bus mocker using the <code>@bus_mocker</code> decorator. We can rewrite 
 our earlier event example (above) as follows:</p>
@@ -1341,7 +1338,6 @@ our earlier event example (above) as follows:</p>
     <span class="n">message</span> <span class="o">=</span> <span class="n">bus_mock</span><span class="o">.</span><span class="n">get_event_messages</span><span class="p">(</span><span class="s2">&quot;auth.user_created&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">assert</span> <span class="n">message</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="s2">&quot;sarahjane&quot;</span><span class="p">}</span>
 </code></pre></div>
-
 <h2 id="testing-in-django">Testing in Django<a class="headerlink" href="#testing-in-django" title="Permanent link">&para;</a></h2>
 <p>You can use the mocker in your Django tests just as shown above.
 For example, we can access the mocker using the context manager:</p>
@@ -1357,7 +1353,6 @@ For example, we can access the mocker using the context manager:</p>
         <span class="k">with</span> <span class="n">BusMocker</span><span class="p">(</span><span class="n">bus</span><span class="p">,</span> <span class="n">require_mocking</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">bus_mock</span><span class="p">:</span>
             <span class="o">...</span>
 </code></pre></div>
-
 <p>Or we can use the <code>@bus_mocker</code> decorator:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django.test</span> <span class="kn">import</span> <span class="n">TestCase</span>
 <span class="kn">from</span> <span class="nn">lightbus.utilities.testing</span> <span class="kn">import</span> <span class="n">bus_mocker</span>

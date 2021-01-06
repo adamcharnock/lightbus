@@ -1309,13 +1309,11 @@ development installation of Lightbus. Using this installation you will be able t
 cd lightbus
 </code></pre></div>
 
-
 <h2 id="environment-setup">Environment setup<a class="headerlink" href="#environment-setup" title="Permanent link">&para;</a></h2>
 <p>It is a good idea to put <code>asyncio</code> into debug mode. You can do this by setting the following in 
 your shell's environment:</p>
 <div class="codehilite"><pre><span></span><code>PYTHONASYNCIODEBUG=1
 </code></pre></div>
-
 
 <p>The testing framework will also need to know where your redis instance is running.
 This is set using the <code>REDIS_URL</code> and <code>REDIS_URL_B</code> environment variables:</p>
@@ -1323,7 +1321,6 @@ This is set using the <code>REDIS_URL</code> and <code>REDIS_URL_B</code> enviro
 REDIS_URL=redis://127.0.0.1:6379/10
 REDIS_URL_B=redis://127.0.0.1:6379/11
 </code></pre></div>
-
 
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <p>You will need to install Lightbus' standard dependencies, as well as Lightbus' development 
@@ -1338,12 +1335,10 @@ poetry install
 poetry shell
 </code></pre></div>
 
-
 <h2 id="running-the-tests">Running the tests<a class="headerlink" href="#running-the-tests" title="Permanent link">&para;</a></h2>
 <p>You can run the tests once you have completed the above steps:</p>
 <div class="codehilite"><pre><span></span><code>pytest
 </code></pre></div>
-
 
 <p>Note that you can run subsets of the tests as follows:</p>
 <div class="codehilite"><pre><span></span><code>pytest -m unit  # Fast with high coverage
@@ -1352,13 +1347,11 @@ pytest -m reliability
 pytest -m benchmark
 </code></pre></div>
 
-
 <h2 id="viewing-the-lightbus-documentation-locally">Viewing the Lightbus documentation locally<a class="headerlink" href="#viewing-the-lightbus-documentation-locally" title="Permanent link">&para;</a></h2>
 <p>You can view the documentation of your local Lightbus install as follows:</p>
 <div class="codehilite"><pre><span></span><code># Serve the docs locally
 mkdocs serve
 </code></pre></div>
-
 
 <p>You can now view the documentation <a href="http://127.0.0.1:8000">http://127.0.0.1:8000</a>. 
 The documentation source can be found in <code>docs/</code>.</p>
@@ -1367,7 +1360,6 @@ The documentation source can be found in <code>docs/</code>.</p>
 <div class="codehilite"><pre><span></span><code># Check for broken links
 ./docs/check_links.sh
 </code></pre></div>
-
 
 <h2 id="using-within-your-project">Using within your project<a class="headerlink" href="#using-within-your-project" title="Permanent link">&para;</a></h2>
 <p>You can install your development Lightbus install within your 
@@ -1380,7 +1372,6 @@ pip uninstall lightbus
 # Install your local development lightbus
 pip install --editable /path/to/your/local/lightbus
 </code></pre></div>
-
 
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <p>Being familiar with the <a href="../../explanation/">explanation</a> section is highly recommended 

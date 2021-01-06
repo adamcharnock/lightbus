@@ -1439,7 +1439,6 @@ bus' <code>config.yaml</code>.</p>
     <span class="nt">default</span><span class="p">:</span>
         <span class="nt">validate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
 </code></pre></div>
-
 <p>For finer grained control you can specify individual flags for incoming/outgoing
 validation:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># In config.yaml</span>
@@ -1449,7 +1448,6 @@ validation:</p>
           <span class="nt">outgoing</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
           <span class="nt">incoming</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
 </code></pre></div>
-
 <h4 id="strict_validation-bool-false"><code>strict_validation (bool) = false</code><a class="headerlink" href="#strict_validation-bool-false" title="Permanent link">&para;</a></h4>
 <p>If <code>strict_validation</code> is <code>true</code> then calling a procedure for which no schema exists will
 result in an error:</p>
@@ -1458,7 +1456,6 @@ result in an error:</p>
     <span class="nt">default</span><span class="p">:</span>
         <span class="nt">strict_validation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
-
 <h2 id="manual-validation">Manual validation<a class="headerlink" href="#manual-validation" title="Permanent link">&para;</a></h2>
 <p>Lightbus supports manually loading your bus' schema into your bus client. 
 For example, you may <a href="../command-line-use/dumpschema/">take a dump of your production bus schema</a>
@@ -1473,7 +1470,6 @@ in any automated testing system.</p>
 <span class="c1"># ... or load all schemas in a directory</span>
 <span class="n">bus</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">load_local</span><span class="p">(</span><span class="s2">&quot;/path/to/local/schema/&quot;</span><span class="p">)</span>
 </code></pre></div>
-
 <p>Your bus client will now use the specified schema to validate RPCs and events.</p>
 <p>Parameters and responses may also be directly validated so you need:</p>
 <ul>

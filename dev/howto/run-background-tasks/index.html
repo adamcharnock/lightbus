@@ -1164,7 +1164,6 @@
 <span class="k">def</span> <span class="nf">on_startup</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">add_background_task</span><span class="p">(</span><span class="n">my_background_task</span><span class="p">())</span>
 </code></pre></div>
-
 <p>Important points to note are:</p>
 <ul>
 <li>The background task will be automatically cancelled when the bus is closed.</li>

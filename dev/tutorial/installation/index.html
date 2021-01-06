@@ -1357,7 +1357,6 @@ for all major operating systems.</p>
 Python 3.7.2
 </code></pre></div>
 
-
 <p>You need version 3.7 or above to run Lightbus.</p>
 <p>If you are running an older version of Python you can install a newer
 version via one of the following methods:</p>
@@ -1376,7 +1375,6 @@ Python version as follows:</p>
 Python 3.7.2
 </code></pre></div>
 
-
 <p>You need version 3.7 or above to run Lightbus. Digital Ocean has a
 <a href="https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-local-programming-environment-on-ubuntu-16-04">beginner-suitable guide</a> on installing Python 3 which you may find useful.</p>
 <p>If you require more granular control of your python versions you may find <a href="https://github.com/pyenv/pyenv">pyenv</a> more suitable.</p>
@@ -1388,13 +1386,11 @@ The Hitchhiker's Guide to Python covers <a href="http://docs.python-guide.org/en
 <div class="codehilite"><pre><span></span><code>$ pip3 install lightbus
 </code></pre></div>
 
-
 <h3 id="installing-using-git">Installing using git<a class="headerlink" href="#installing-using-git" title="Permanent link">&para;</a></h3>
 <p>This will clone the bleeding-edge version Lightbus and install it ready to use. This is useful
 if you need the latest (albeit unstable) changes, or if you wish to modify the Lightbus source.</p>
 <div class="codehilite"><pre><span></span><code>$ pip install https://github.com/adamcharnock/lightbus.git#egg=lightbus
 </code></pre></div>
-
 
 <h2 id="13-installing-redis">1.3. Installing Redis<a class="headerlink" href="#13-installing-redis" title="Permanent link">&para;</a></h2>
 <p>You will need Redis 5.0 or above in order to use Lightbus.</p>
@@ -1417,11 +1413,9 @@ name <code>bus.py</code> which contains:</p>
 
 <span class="n">bus</span> <span class="o">=</span> <span class="n">lightbus</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
 </code></pre></div>
-
 <p>Now run the command:</p>
 <div class="codehilite"><pre><span></span><code>$ lightbus run
 </code></pre></div>
-
 
 <p>Lightbus should start without errors and wait for messages.
 You can exit using <span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-c">C</kbd></span>.</p>

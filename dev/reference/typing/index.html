@@ -1284,7 +1284,6 @@ regular Python type hinting:</p>
     <span class="k">def</span> <span class="nf">check_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">username</span> <span class="o">==</span> <span class="s1">&#39;admin&#39;</span> <span class="ow">and</span> <span class="n">password</span> <span class="o">==</span> <span class="s1">&#39;secret&#39;</span>
 </code></pre></div>
-
 <p>This will:</p>
 <ul>
 <li>Ensure the received <code>username</code> parameter is a string</li>
@@ -1311,7 +1310,6 @@ parameters are specified differently:</p>
         <span class="n">Parameter</span><span class="p">(</span><span class="s1">&#39;is_admin&#39;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
     <span class="p">))</span>
 </code></pre></div>
-
 <p>This will:</p>
 <ul>
 <li>Ensure the received <code>username</code> parameter is a string</li>
@@ -1354,7 +1352,6 @@ the following data structures:</p>
     <span class="k">def</span> <span class="nf">get_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">User</span><span class="p">:</span>
         <span class="k">return</span> <span class="o">...</span>
 </code></pre></div>
-
 <h3 id="dataclass-example">Dataclass example<a class="headerlink" href="#dataclass-example" title="Permanent link">&para;</a></h3>
 <p>Lightbus supports <a href="https://www.python.org/dev/peps/pep-0557/">dataclasses</a> 
 in the same way as it supports <a href="#namedtuple-example">named tuples</a>. For example:</p>
@@ -1377,7 +1374,6 @@ in the same way as it supports <a href="#namedtuple-example">named tuples</a>. F
     <span class="k">def</span> <span class="nf">get_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">User</span><span class="p">:</span>
         <span class="k">return</span> <span class="o">...</span>
 </code></pre></div>
-
 <h3 id="custom-class-example">Custom class example<a class="headerlink" href="#custom-class-example" title="Permanent link">&para;</a></h3>
 <p>Lightbus can also work with classes of any type provided that:</p>
 <ol>

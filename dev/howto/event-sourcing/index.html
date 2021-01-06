@@ -1272,14 +1272,12 @@ something like this:</p>
         <span class="c1"># ordering (this is the default)</span>
         <span class="nt">stream_use</span><span class="p">:</span> <span class="s">&quot;per_api&quot;</span>
 </code></pre></div>
-
 <h2 id="run-a-single-lightbus-worker">Run a single Lightbus worker<a class="headerlink" href="#run-a-single-lightbus-worker" title="Permanent link">&para;</a></h2>
 <p>Running only a single Lightbus worker process 
 (with a specific process name) will ensure messages are processed in 
 order.</p>
 <div class="codehilite"><pre><span></span><code>lightbus run --service-name=example_service --process-name=worker
 </code></pre></div>
-
 
 <h2 id="set-process-names">Set process names<a class="headerlink" href="#set-process-names" title="Permanent link">&para;</a></h2>
 <p>If your event volume requires multiple workers then ensure you set
@@ -1291,7 +1289,6 @@ without needing to wait for a timeout.</p>
 lightbus run --service-name=example_service --process-name=worker2
 lightbus run --service-name=example_service --process-name=worker3
 </code></pre></div>
-
 
 <p><strong>Ordering will <em>not</em> be maintained when running multiple workers.</strong></p>
                 

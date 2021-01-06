@@ -1215,7 +1215,6 @@ used in any Lightbus deployment. See the <a href="../../../explanation/anatomy-l
 called <code>bus</code> which will contain your bus client:</p>
 <div class="highlight"><pre><span></span><code>lightbus run
 </code></pre></div>
-
 <hr />
 <p>You can also <strong>enable/disable specific features</strong>. For example, you may 
 wish to run a worker which responds soley to RPCs in order to ensure a 
@@ -1226,7 +1225,6 @@ lightbus run --only rpcs
 # Handles everything else (events and tasks)
 lightbus run --skip rpcs
 </code></pre></div>
-
 <hr />
 <p><strong>A production use</strong> may look something like this 
 (for more information on service &amp; process names see the <a href="../../../explanation/events/#service-names-listener-names">events explanation</a>):</p>
@@ -1237,7 +1235,6 @@ lightbus run --skip rpcs
     --config /etc/lightbus/global-bus.yaml \
     --log-level debug
 </code></pre></div>
-
 <p>This could also be re-written as:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">export</span> <span class="nv">LIGHTBUS_MODULE</span><span class="o">=</span>my_company.my_project.bus
 <span class="nb">export</span> <span class="nv">LIGHTBUS_SERVICE_NAME</span><span class="o">=</span>video-encoder
@@ -1247,14 +1244,12 @@ lightbus run <span class="se">\</span>
     --config /etc/lightbus/global-bus.yaml <span class="se">\</span>
     --log-level debug
 </code></pre></div>
-
 <hr />
 <p><strong>Configuration can also be loaded over HTTP or HTTPS</strong>. This may be useful if you 
 wish to pull the global bus config from an (internal-only) endpoint/service:</p>
 <div class="highlight"><pre><span></span><code># Can load JSON/YAML over HTTP/HTTPS
 lightbus run --config http://config.internal/lightbus/global-bus.yaml
 </code></pre></div>
-
 <h2 id="option-reference">Option reference<a class="headerlink" href="#option-reference" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>$ lightbus run --help
 usage: lightbus run [-h] [--only ONLY] [--skip SKIP]
