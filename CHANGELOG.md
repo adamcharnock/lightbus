@@ -1,6 +1,18 @@
 # Lightbus Changelog
 
-## 1.1
+## 1.0.4
+
+* Bug: `__from_bus__()` will now correctly operate upon non-mapping types
+
+## 1.0.3
+
+* Enhancement: Smarter schema generation for objects with` __to_bus__()` methods. 
+  The return annotation of the `__to_bus__()` method will now be used for schema generation
+* Bug: Fixing type hint on `cast_to_hint()` method definition
+* Bug: Adjusting `inspect` command to ensure using the experimental option `--show-casting` doesn't 
+  cause the whole command to explode
+
+## 1.0.2
 
 * Enhancement: Dates & datetimes will now be parsed from their string format using `dateutil` where available.
                This provides more flexible parsing of date formats.
