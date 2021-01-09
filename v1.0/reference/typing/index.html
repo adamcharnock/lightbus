@@ -1381,13 +1381,16 @@ in the same way as it supports <a href="#namedtuple-example">named tuples</a>. F
 <h3 id="custom-class-example">Custom class example<a class="headerlink" href="#custom-class-example" title="Permanent link">&para;</a></h3>
 <p>Lightbus can also work with classes of any type provided that:</p>
 <ol>
-<li>The class defines a <code>__from_bus__(self, value: dict)</code> class method, which returns an instance of the class.</li>
-<li>The class defines a <code>__to_bus__(self)</code> method, which annotates its return type.</li>
+<li>The class defines a <code>__from_bus__(self, value)</code> class method, which returns an instance of the class.
+   If <code>value</code> is a dict, it will be best-effort cased to the class' type annotations before <code>__from_bus__</code> 
+   is invoked.</li>
+<li>The class defines a <code>__to_bus__(self)</code> method which both annotates its return type, and returns a value 
+   suitable for serialising on the bus.</li>
 </ol>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus</span> <span class="kn">import</span> <span class="n">Api</span>
 
 
-<span class="k">class</span> <span class="nc">User</span><span class="p">():</span>
+<span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
     <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
