@@ -152,6 +152,16 @@ class CustomClassWithMagicMethod:
         return o
 
 
+class CustomClassWithMagicMethodNonMapping:
+    value: str
+
+    @classmethod
+    def __from_bus__(cls, data: str):
+        o = cls()
+        o.value = data
+        return o
+
+
 class NamedTupleWithMappingToCustomObject(NamedTuple):
     a: Mapping[str, CustomClassWithMagicMethod]
 
@@ -359,3 +369,9 @@ def test_cast_to_annotation_custom_class_with_magic_method_on_mapping():
     assert isinstance(casted.a, Mapping)
     assert isinstance(casted.a["b"], CustomClassWithMagicMethod)
     assert casted.a["b"].value == "abc"
+
+
+def test_cast_to_annotation_custom_class_with_magic_method_non_mapping():
+    casted = cast_to_hint(value="abc", hint=CustomClassWithMagicMethodNonMapping)
+    assert isinstance(casted, CustomClassWithMagicMethodNonMapping)
+    assert casted.value == "abc"

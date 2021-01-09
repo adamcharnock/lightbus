@@ -77,14 +77,20 @@ def cast_to_hint(value: V, hint: Type[H]) -> Union[V, H]:
     elif isinstance_safe(value, hint):
         # Already correct type
         return value
-    elif hasattr(hint, "__from_bus__"):
-        # Hint supports custom deserializing.
+    elif hasattr(hint, "__from_bus__") and isinstance_safe(value, Mapping):
+        # Hint supports custom deserializing. Do the best we can
+        # with casting our dict-ish value onto the classes annotation ,
+        # then pass the resulting dict to __from_bus__ to deal with as it wishes.
         return _mapping_to_instance(
             mapping=value,
             destination_type=hint,
             instantiator=hint.__from_bus__,
             expand_kwargs=False,
         )
+    elif hasattr(hint, "__from_bus__"):
+        # Hint supports custom deserializing. This is a non-mapping value,
+        # so just pass it do __from_bus__ to do with as it wishes
+        return hint.__from_bus__(value)
     elif issubclass_safe(hint, bytes):
         return b64decode(value.encode("utf8"))
     elif type_is_namedtuple(hint) and isinstance_safe(value, Mapping):
