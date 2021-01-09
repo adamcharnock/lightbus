@@ -140,7 +140,7 @@ Lightbus can also work with classes of any type provided that:
 from lightbus import Api
 
 
-class User():
+class User:
     username: str
     name: str
     email: str
