@@ -426,6 +426,18 @@ def test_object_with_method():
     assert schema["additionalProperties"] == False
 
 
+def test_object_with_to_bus():
+    class CustomClassToBus:
+        def __to_bus__(self) -> float:
+            pass
+
+    def func(username) -> CustomClassToBus:
+        pass
+
+    schema = make_response_schema("api_name", "rpc_name", func)
+    assert schema["type"] == "number"
+
+
 def test_make_rpc_parameter_schema_null():
     def func(username=None):
         pass

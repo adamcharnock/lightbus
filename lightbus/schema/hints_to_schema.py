@@ -2,7 +2,7 @@ import inspect
 import itertools
 import logging
 from decimal import Decimal
-from typing import Union, Any, Tuple, Sequence, Mapping, Callable, TYPE_CHECKING
+from typing import Union, Any, Tuple, Sequence, Mapping, Callable, TYPE_CHECKING, get_type_hints
 
 import datetime
 from enum import Enum
@@ -24,8 +24,7 @@ SCHEMA_URI = "http://json-schema.org/draft-07/schema#"
 
 
 def make_rpc_parameter_schema(api_name, method_name, method):
-    """Create a full parameter JSON schema for the given RPC
-    """
+    """Create a full parameter JSON schema for the given RPC"""
     parameters = inspect.signature(method).parameters.values()
     schema = make_parameter_schema(parameters)
     schema["title"] = "RPC {}.{}() parameters".format(api_name, method_name)
@@ -33,8 +32,7 @@ def make_rpc_parameter_schema(api_name, method_name, method):
 
 
 def make_response_schema(api_name: str, method_name: str, method: Callable):
-    """Create a full response JSON schema for the given RPC
-    """
+    """Create a full response JSON schema for the given RPC"""
     sig = inspect.signature(method)
     schema = return_type_to_schema(sig.return_annotation)
     schema["title"] = "RPC {}.{}() response".format(api_name, method_name)
@@ -43,8 +41,7 @@ def make_response_schema(api_name: str, method_name: str, method: Callable):
 
 
 def make_event_parameter_schema(api_name, method_name, event: "Event"):
-    """Create a full parameter JSON schema for the given event
-    """
+    """Create a full parameter JSON schema for the given event"""
     parameters = _normalise_event_parameters(event.parameters)
     schema = make_parameter_schema(parameters)
     schema["title"] = "Event {}.{} parameters".format(api_name, method_name)
@@ -52,8 +49,7 @@ def make_event_parameter_schema(api_name, method_name, event: "Event"):
 
 
 def make_parameter_schema(parameters: Sequence[inspect.Parameter]):
-    """Create a full JSON schema for the given parameters
-    """
+    """Create a full JSON schema for the given parameters"""
     parameter_schema = {
         "$schema": SCHEMA_URI,
         "type": "object",
@@ -223,13 +219,15 @@ def python_type_to_json_schemas(type_):
         return [{"type": "string", "format": "date"}]
     elif issubclass_safe(type_, (datetime.time)):
         return [{"type": "string", "format": "time"}]
+    elif hasattr(type_, "__to_bus__"):
+        return python_type_to_json_schemas(inspect.signature(type_.__to_bus__).return_annotation)
     elif getattr(type_, "__annotations__", None):
         # Custom class
         return [make_custom_object_schema(type_)]
     else:
         logger.warning(
             f"Could not convert python type to json schema type: {type_}. If it is a class, "
-            f"ensure it's class-level variables have type hints."
+            "ensure it's class-level variables have type hints."
         )
         return [{}]
 
@@ -244,8 +242,10 @@ def make_custom_object_schema(type_, property_names=None):
     general classes.
     """
     if property_names is None:
+        # Use typing.get_type_hints() rather than `__annotations__`, as this will resolve
+        # forward references
         property_names = [
-            p for p in set(list(type_.__annotations__.keys()) + dir(type_)) if p[0] != "_"
+            p for p in set(list(get_type_hints(type_).keys()) + dir(type_)) if p[0] != "_"
         ]
 
     properties = {}
@@ -260,9 +260,11 @@ def make_custom_object_schema(type_, property_names=None):
         default = get_property_default(type_, property_name)
 
         if hasattr(type_, "__annotations__"):
+            # Use typing.get_type_hints() rather than `__annotations__`, as this will resolve
+            # forward references
             properties[property_name] = wrap_with_any_of(
                 annotation_to_json_schemas(
-                    annotation=type_.__annotations__.get(property_name, None), default=default
+                    annotation=get_type_hints(type_).get(property_name, None), default=default
                 )
             )
         elif default is not empty:
