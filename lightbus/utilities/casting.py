@@ -49,7 +49,7 @@ V = TypeVar("V")
 H = TypeVar("A")
 
 
-def cast_to_hint(value: V, hint: H) -> Union[V, H]:
+def cast_to_hint(value: V, hint: Type[H]) -> Union[V, H]:
     """Cast a value into a given type hint
 
     If a value cannot be cast then the original value will be returned
