@@ -129,8 +129,11 @@ class AuthApi(Api):
 
 Lightbus can also work with classes of any type provided that:
 
-1. The class defines a `__from_bus__(self, value: dict)` class method, which returns an instance of the class.
-2. The class defines a `__to_bus__(self)` method, which annotates its return type.
+1. The class defines a `__from_bus__(self, value)` class method, which returns an instance of the class.
+   If `value` is a dict, it will be best-effort cased to the class' type annotations before `__from_bus__` 
+   is invoked.
+2. The class defines a `__to_bus__(self)` method which both annotates its return type, and returns a value 
+   suitable for serialising on the bus.
 
 
 ```python3
