@@ -155,12 +155,12 @@ class User():
         user.is_admin = value.get("is_admin", False)
         return user
 
-    def __to_bus__():
+    def __to_bus__(self):
         return dict(
-            username=username,
-            name=name,
-            email=email,
-            is_admin=is_admin,
+            username=self.username,
+            name=self.name,
+            email=self.email,
+            is_admin=self.is_admin,
         )
 
 
