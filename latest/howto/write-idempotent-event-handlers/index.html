@@ -1319,7 +1319,7 @@ method which serves exactly this purpose:</p>
 <h3 id="upserts-in-sql">Upserts in SQL<a class="headerlink" href="#upserts-in-sql" title="Permanent link">&para;</a></h3>
 <p>Many relational databases can also perform upsert in a single SQL query:</p>
 <div class="highlight"><pre><span></span><code><span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">views</span> <span class="p">(</span><span class="nb">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">&#39;uuid-here&#39;</span><span class="p">,</span> <span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">)</span> 
-<span class="k">ON</span> <span class="n">CONFLICT</span> <span class="p">(</span><span class="nb">uuid</span><span class="p">)</span> 
+<span class="k">ON</span> <span class="k">CONFLICT</span> <span class="p">(</span><span class="nb">uuid</span><span class="p">)</span> 
 <span class="k">DO</span> <span class="k">UPDATE</span> <span class="k">SET</span> <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">;</span>
 </code></pre></div>
 

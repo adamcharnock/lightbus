@@ -1170,7 +1170,7 @@ git checkout gh-pages
 git pull origin gh-pages
 git checkout master
 
-mike deploy v<span class="nv">$VERSION_DOCS</span> --message<span class="o">=</span><span class="s2">&quot;Build docs for release of </span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
+mike deploy v<span class="nv">$VERSION_DOCS</span> --message<span class="o">=</span><span class="s2">&quot;Build docs for release of </span><span class="nv">$VERSION</span><span class="s2"> [ci skip]&quot;</span>
 mike delete latest
 mike <span class="nb">alias</span> v<span class="nv">$VERSION_DOCS</span> latest
 
