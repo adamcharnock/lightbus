@@ -34,37 +34,37 @@ class Command:
         group.add_argument(
             "--json-path",
             "-j",
-            help=("Search event body json for the givn value. Eg. address.city=London"),
+            help="Search event body json for the givn value. Eg. address.city=London",
             metavar="JSON_SEARCH",
         )
         group.add_argument(
             "--id",
             "-i",
-            help=("Find a single event with this Lightbus event ID"),
+            help="Find a single event with this Lightbus event ID",
             metavar="LIGHTBUS_EVENT_ID",
         )
         group.add_argument(
             "--native-id",
             "-n",
-            help=("Find a single event with this broker-native ID"),
+            help="Find a single event with this broker-native ID",
             metavar="NATIVE_EVENT_ID",
         )
         group.add_argument(
             "--api",
             "-a",
-            help=("Find events for this API name. Supports the '*' wildcard."),
+            help="Find events for this API name. Supports the '*' wildcard.",
             metavar="API_NAME",
         )
         group.add_argument(
             "--event",
             "-e",
-            help=("Find events for this event name. Supports the '*' wildcard."),
+            help="Find events for this event name. Supports the '*' wildcard.",
             metavar="EVENT_NAME",
         )
         group.add_argument(
             "--version",
             "-v",
-            help=("Find events with the specified version number. Can be prefixed by <, >, <=, >="),
+            help="Find events with the specified version number. Can be prefixed by <, >, <=, >=",
             metavar="VERSION_NUMBER",
             type=int,
         )
@@ -77,7 +77,7 @@ class Command:
             choices=("json", "pretty", "human"),
         )
         group.add_argument(
-            "--cache-only", "-c", help=("Search the local cache only"), action="store_true"
+            "--cache-only", "-c", help="Search the local cache only", action="store_true"
         )
         group.add_argument(
             "--follow",
@@ -117,7 +117,6 @@ class Command:
         api_names: List[str]
 
         block(bus.client.lazy_load_now())
-        block(bus.client.hook_registry.execute("before_worker_start"))
 
         # Locally registered APIs
         api_names = [api.meta.name for api in bus.client.api_registry.all()]
@@ -200,7 +199,8 @@ class Command:
         # Sanity check
         if not cache_file.exists() and args.cache_only:
             sys.stderr.write(
-                f"No cache file exists for {api_name}.{event_name}, but --cache-only was specified\n"
+                f"No cache file exists for {api_name}.{event_name}, but --cache-only was"
+                " specified\n"
             )
             sys.exit(1)
 
@@ -224,7 +224,8 @@ class Command:
                             # Messages do not provide a datetime, stop loading from the cache as
                             # this is required
                             logger.warning(
-                                "Event transport does not provide message datetimes. Will not load from cache."
+                                "Event transport does not provide message datetimes. Will not load"
+                                " from cache."
                             )
                             break
                         start = (
@@ -272,7 +273,8 @@ class Command:
                     await sleep(1)
                 else:
                     logger.warning(
-                        "Event transport does not provide message datetimes. Following not supported."
+                        "Event transport does not provide message datetimes. Following not"
+                        " supported."
                     )
                     break
             else:
@@ -387,6 +389,8 @@ class Command:
                 print(f"    Validation:         {validation_message}")
 
             if args.show_casting:
+                block(bus.client.hook_registry.execute("before_worker_start"))
+
                 for listener in bus.client.event_client._event_listeners:
                     if (message.api_name, message.event_name) not in listener.events:
                         continue
@@ -405,7 +409,7 @@ class Command:
                         now = type(casted[key])
                         color = Colors.Green if via == now else Colors.Red
                         print(
-                            f"        "
+                            "        "
                             f"{color}{str(key).ljust(20)}: "
                             f"Received a '{was.__name__}', "
                             f"casted to a '{via.__name__}', "
