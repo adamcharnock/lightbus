@@ -1378,7 +1378,7 @@ in the same way as it supports <a href="#namedtuple-example">named tuples</a>. F
 <p>Lightbus can also work with classes of any type provided that:</p>
 <ol>
 <li>The class defines a <code>__from_bus__(self, value: dict)</code> class method, which returns an instance of the class.</li>
-<li>The class defines a <code>__to_bus__(self)</code> method, which returns a <code>dict</code>.</li>
+<li>The class defines a <code>__to_bus__(self)</code> method, which annotates its return type.</li>
 </ol>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">lightbus</span> <span class="kn">import</span> <span class="n">Api</span>
 
@@ -1401,12 +1401,12 @@ in the same way as it supports <a href="#namedtuple-example">named tuples</a>. F
         <span class="n">user</span><span class="o">.</span><span class="n">is_admin</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_admin&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">user</span>
 
-    <span class="k">def</span> <span class="nf">__to_bus__</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">__to_bus__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
-            <span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span>
-            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-            <span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="p">,</span>
-            <span class="n">is_admin</span><span class="o">=</span><span class="n">is_admin</span><span class="p">,</span>
+            <span class="n">username</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">email</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">email</span><span class="p">,</span>
+            <span class="n">is_admin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">is_admin</span><span class="p">,</span>
         <span class="p">)</span>
 
 
