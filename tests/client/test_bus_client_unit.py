@@ -199,7 +199,6 @@ async def test_fire_event_empty_name(dummy_bus: lightbus.path.BusPath, dummy_api
 
 @pytest.mark.asyncio
 async def test_fire_event_version(dummy_bus: lightbus.path.BusPath, mocker):
-    # TODO: This one is buggering it up
     class ApiWithVersion(lightbus.Api):
         my_event = lightbus.Event()
 
