@@ -39,18 +39,22 @@ class EventClient(BaseSubClient):
         self._event_listener_tasks = set()
         self._listeners_started = False
 
-    async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
+    async def fire_event(
+        self, api_name, name, kwargs: dict = None, options: dict = None
+    ) -> EventMessage:
         kwargs = kwargs or {}
         try:
             api = self.api_registry.get(api_name)
         except UnknownApi:
             raise UnknownApi(
-                "Lightbus tried to fire the event {api_name}.{name}, but no API named {api_name} was found in the "
-                "registry. An API being in the registry implies you are an authority on that API. Therefore, "
-                "Lightbus requires the API to be in the registry as it is a bad idea to fire "
-                "events on behalf of remote APIs. However, this could also be caused by a typo in the "
-                "API name or event name, or be because the API class has not been "
-                "registered using bus.client.register_api(). ".format(**locals())
+                "Lightbus tried to fire the event {api_name}.{name}, but no API named {api_name}"
+                " was found in the registry. An API being in the registry implies you are an"
+                " authority on that API. Therefore, Lightbus requires the API to be in the registry"
+                " as it is a bad idea to fire events on behalf of remote APIs. However, this could"
+                " also be caused by a typo in the API name or event name, or be because the API"
+                " class has not been registered using bus.client.register_api(). ".format(
+                    **locals()
+                )
             )
 
         validate_event_or_rpc_name(api_name, "event", name)
@@ -59,9 +63,9 @@ class EventClient(BaseSubClient):
             event = api.get_event(name)
         except EventNotFound:
             raise EventNotFound(
-                "Lightbus tried to fire the event {api_name}.{name}, but the API {api_name} does not "
-                "seem to contain an event named {name}. You may need to define the event, you "
-                "may also be using the incorrect API. Also check for typos.".format(**locals())
+                "Lightbus tried to fire the event {api_name}.{name}, but the API {api_name} does"
+                " not seem to contain an event named {name}. You may need to define the event, you"
+                " may also be using the incorrect API. Also check for typos.".format(**locals())
             )
 
         parameter_names = {p.name if isinstance(p, Parameter) else p for p in event.parameters}
@@ -91,6 +95,8 @@ class EventClient(BaseSubClient):
 
         await self.hook_registry.execute("after_event_sent", event_message=event_message)
 
+        return event_message
+
     def listen(
         self,
         events: List[Tuple[str, str]],
@@ -104,8 +110,9 @@ class EventClient(BaseSubClient):
             # startup, but it seems like it is a bad idea and a bit of an edge case.
             # We may revisit this if sufficient demand arises.
             raise ListenersAlreadyStarted(
-                "You are trying to register a new listener after the worker has started running. "
-                "Listeners should be setup in your @bus.client.on_start() hook, in your bus.py file."
+                "You are trying to register a new listener after the worker has started running."
+                " Listeners should be setup in your @bus.client.on_start() hook, in your bus.py"
+                " file."
             )
 
         sanity_check_listener(listener)
@@ -114,9 +121,9 @@ class EventClient(BaseSubClient):
             duplicate_listener = self.get_event_listener(listener_api_name, listener_name)
             if duplicate_listener:
                 raise DuplicateListenerName(
-                    f"A listener with name '{listener_name}' is already registered for API '{listener_api_name}'. "
-                    f"You cannot have multiple listeners with the same name for a given API. Rename one of your "
-                    f"listeners to resolve this problem."
+                    f"A listener with name '{listener_name}' is already registered for API"
+                    f" '{listener_api_name}'. You cannot have multiple listeners with the same name"
+                    " for a given API. Rename one of your listeners to resolve this problem."
                 )
 
         for api_name, name in events:
@@ -174,10 +181,10 @@ class EventClient(BaseSubClient):
                 run_user_provided_callable(listener, args=[event_message], kwargs=parameters),
                 self.error_queue,
                 help=(
-                    f"An error occurred while {listener} was handling an event. Lightbus will "
-                    f"now shutdown. If you wish to continue you can use the on_error parameter "
-                    f"when setting up your event. For example:\n\n"
-                    f"    bus.my_api.my_event.listen(fn, listener_name='example', on_error=lightbus.OnError.ACKNOWLEDGE_AND_LOG)"
+                    f"An error occurred while {listener} was handling an event. Lightbus will now"
+                    " shutdown. If you wish to continue you can use the on_error parameter when"
+                    " setting up your event. For example:\n\n    bus.my_api.my_event.listen(fn,"
+                    " listener_name='example', on_error=lightbus.OnError.ACKNOWLEDGE_AND_LOG)"
                 ),
             )
         elif on_error == on_error.ACKNOWLEDGE_AND_LOG:
@@ -259,8 +266,8 @@ class Listener(NamedTuple):
 def sanity_check_listener(listener):
     if not callable(listener):
         raise InvalidEventListener(
-            f"The specified event listener {listener} is not callable. Perhaps you called the function rather "
-            f"than passing the function itself?"
+            f"The specified event listener {listener} is not callable. Perhaps you called the"
+            " function rather than passing the function itself?"
         )
 
     total_positional_args = 0
@@ -280,6 +287,6 @@ def sanity_check_listener(listener):
     if not total_positional_args:
         raise InvalidEventListener(
             f"The specified event listener {listener} must take at one positional argument. "
-            f"This will be the event message. For example: "
-            f"my_listener(event, other, ...)"
+            "This will be the event message. For example: "
+            "my_listener(event, other, ...)"
         )

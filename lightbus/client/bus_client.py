@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from lightbus.api import Api, ApiRegistry
     from lightbus.transports.registry import TransportRegistry
     from lightbus.hooks import HookRegistry
+    from lightbus import EventMessage
 
 __all__ = ["BusClient"]
 
@@ -374,7 +375,9 @@ class BusClient:
     # Events
 
     @raise_queued_errors
-    async def fire_event(self, api_name, name, kwargs: dict = None, options: dict = None):
+    async def fire_event(
+        self, api_name, name, kwargs: dict = None, options: dict = None
+    ) -> "EventMessage":
         """Fire an event onto the bus"""
         await self.lazy_load_now()
         return await self.event_client.fire_event(

@@ -172,7 +172,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
         # performance issues. Need to confirm.
         with await self.connection_manager() as redis:
             start_time = time.time()
-            await redis.xadd(
+            native_id: bytes = await redis.xadd(
                 stream=stream,
                 fields=self.serializer(event_message),
                 max_len=self.max_stream_length or None,
@@ -187,6 +187,9 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                 Bold(stream),
             )
         )
+
+        event_message.native_id = native_id.decode("utf8")
+        return event_message
 
     async def consume(
         self,

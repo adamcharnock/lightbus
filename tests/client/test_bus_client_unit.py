@@ -1,6 +1,8 @@
 import asyncio
 import logging
+import re
 from unittest.mock import MagicMock
+from uuid import UUID
 
 import pytest
 from typing import Type
@@ -216,6 +218,27 @@ async def test_fire_event_version(dummy_bus: lightbus.path.BusPath, mocker):
     assert send_event_spy.called
     args, kwargs = send_event_spy.call_args
     assert kwargs["event_message"].version == 5
+
+
+@pytest.mark.asyncio
+async def test_fired_event_is_returned(dummy_bus: lightbus.path.BusPath, mocker):
+    class MyApi(lightbus.Api):
+        my_event = lightbus.Event()
+
+        class Meta:
+            name = "my_api"
+
+    dummy_bus.client.register_api(MyApi())
+
+    send_event_spy = mocker.spy(
+        dummy_bus.client.transport_registry.get_event_transport("my_api"), "send_event"
+    )
+
+    event_message = await dummy_bus.my_api.my_event.fire_async()
+    assert isinstance(event_message, EventMessage)
+    assert event_message.id
+    # Check it is a valid ID
+    assert UUID(event_message.id)
 
 
 @pytest.mark.asyncio

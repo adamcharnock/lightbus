@@ -6,7 +6,7 @@ from lightbus.utilities.async_tools import block
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import
-    from lightbus import BusClient
+    from lightbus import BusClient, EventMessage
 
 __all__ = ["BusPath"]
 
@@ -94,8 +94,8 @@ class BusPath:
         if args:
             raise InvalidParameters(
                 f"You have attempted to call the RPC {self.fully_qualified_name} using positional "
-                f"arguments. Lightbus requires you use keyword arguments. For example, "
-                f"instead of func(1), use func(foo=1)."
+                "arguments. Lightbus requires you use keyword arguments. For example, "
+                "instead of func(1), use func(foo=1)."
             )
 
         bus_options = bus_options or {}
@@ -123,20 +123,20 @@ class BusPath:
             on_error=on_error,
         )
 
-    def fire(self, *args, bus_options: dict = None, **kwargs):
+    def fire(self, *args, bus_options: dict = None, **kwargs) -> "EventMessage":
         """Fire an event for this BusPath node"""
         return block(
             self.fire_async(*args, **kwargs, bus_options=bus_options),
             timeout=self.client.config.api(self.api_name).event_fire_timeout,
         )
 
-    async def fire_async(self, *args, bus_options: dict = None, **kwargs):
+    async def fire_async(self, *args, bus_options: dict = None, **kwargs) -> "EventMessage":
         """Fire an event for this BusPath node (asynchronous)"""
         if args:
             raise InvalidParameters(
-                f"You have attempted to fire the event {self.fully_qualified_name} using positional "
-                f"arguments. Lightbus requires you use keyword arguments. For example, "
-                f"instead of func(1), use func(foo=1)."
+                f"You have attempted to fire the event {self.fully_qualified_name} using positional"
+                " arguments. Lightbus requires you use keyword arguments. For example, instead of"
+                " func(1), use func(foo=1)."
             )
         return await self.client.fire_event(
             api_name=self.api_name, name=self.name, kwargs=kwargs, options=bus_options
@@ -164,8 +164,7 @@ class BusPath:
 
     @property
     def fully_qualified_name(self) -> str:
-        """Get the fully qualified string name of this node
-        """
+        """Get the fully qualified string name of this node"""
         path = [node.name for node in self.ancestors(include_self=True)]
         path.reverse()
         return ".".join(path[1:])

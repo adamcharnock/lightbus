@@ -1,7 +1,9 @@
 import asyncio
 import logging
+import re
 from datetime import datetime
 from itertools import chain
+from uuid import UUID
 
 import aioredis
 import pytest
@@ -46,6 +48,18 @@ async def test_send_event(redis_event_transport: RedisEventTransport, redis_clie
         b"version": b"1",
         b":field": b'"value"',
     }
+
+
+@pytest.mark.asyncio
+async def test_send_event_return_value(redis_event_transport: RedisEventTransport, redis_client):
+    event_message = await redis_event_transport.send_event(
+        EventMessage(api_name="my.api", event_name="my_event", id="123", kwargs={"field": "value"}),
+        options={},
+    )
+    assert isinstance(event_message, EventMessage)
+    assert event_message.id
+    assert event_message.native_id
+    assert re.match(r"\d+-0", event_message.native_id)
 
 
 @pytest.mark.asyncio

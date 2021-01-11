@@ -1,5 +1,9 @@
 # Lightbus Changelog
 
+## 1.0.5
+
+* An `EventMessage` is now returned when firing any event.
+
 ## 1.0.4
 
 * Bug: `__from_bus__()` will now correctly operate upon non-mapping types
