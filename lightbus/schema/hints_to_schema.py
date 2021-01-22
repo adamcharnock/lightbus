@@ -161,6 +161,8 @@ def python_type_to_json_schemas(type_):
         return [{}]
     elif type_ in (Any, ...):
         return [{}]
+    elif hasattr(type_, "__to_bus__"):
+        return python_type_to_json_schemas(inspect.signature(type_.__to_bus__).return_annotation)
     elif issubclass_safe(type_, (str, bytes, complex, UUID)):
         return [{"type": "string"}]
     elif issubclass_safe(type_, Decimal):
@@ -219,8 +221,6 @@ def python_type_to_json_schemas(type_):
         return [{"type": "string", "format": "date"}]
     elif issubclass_safe(type_, (datetime.time)):
         return [{"type": "string", "format": "time"}]
-    elif hasattr(type_, "__to_bus__"):
-        return python_type_to_json_schemas(inspect.signature(type_.__to_bus__).return_annotation)
     elif getattr(type_, "__annotations__", None):
         # Custom class
         return [make_custom_object_schema(type_)]
