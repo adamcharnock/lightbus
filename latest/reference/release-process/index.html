@@ -1148,11 +1148,7 @@
                 
                 <h1 id="lightbus-release-process">Lightbus release process<a class="headerlink" href="#lightbus-release-process" title="Permanent link">&para;</a></h1>
 <p>Lightbus releases are performed as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># Update the setup.py</span>
-dephell convert
-black setup.py
-
-<span class="c1"># Ensure poetry.lock is up to date</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Ensure poetry.lock is up to date</span>
 poetry lock
 
 <span class="c1"># Version bump</span>
@@ -1160,6 +1156,10 @@ poetry version <span class="o">{</span>patch,minor,major,prepatch,preminor,prema
 
 <span class="nb">export</span> <span class="nv">VERSION</span><span class="o">=</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span>   <span class="c1"># v1.2.3</span>
 <span class="nb">export</span> <span class="nv">VERSION_DOCS</span><span class="o">=</span><span class="k">$(</span>lightbus version --pyproject --docs<span class="k">)</span>  <span class="c1"># v1.2</span>
+
+<span class="c1"># Update the setup.py</span>
+dephell convert
+black setup.py
 
 <span class="c1"># Commit</span>
 git add .
