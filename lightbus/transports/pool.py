@@ -21,7 +21,7 @@ else:
 
 
 class TransportPool(Generic[VT]):
-    """ Pool for managing access to transports
+    """Pool for managing access to transports
 
     This pool with function as a transparent proxy to the underlying transports.
     In most cases you shouldn't need to access the underlying transports. If you
@@ -59,13 +59,20 @@ class TransportPool(Generic[VT]):
         self.home_thread = threading.current_thread()
 
     def __repr__(self):
-        return f"<Pool of {self.transport_class.__name__} at 0x{id(self):02x}>"
+        return f"<Pool of {self.transport_class.__name__} at 0x{id(self):02x} to {self}>"
 
     def __hash__(self):
         return hash((self.transport_class, self.transport_config))
 
     def __eq__(self, other):
         return hash(self) == hash(other)
+
+    def __str__(self):
+        # Here we create an un-opened transport and stringify it.
+        # This means we can display nice redis URLs when displaying the pool
+        # for debugging output.
+        transport = self._instantiate_transport()
+        return str(transport)
 
     async def grow(self):
         with self.lock:
@@ -138,10 +145,15 @@ class TransportPool(Generic[VT]):
             while self.pool:
                 await self._close_transport(self.pool.pop())
 
-    async def _create_transport(self) -> VT:
-        new_transport = self.transport_class.from_config(
+    def _instantiate_transport(self) -> VT:
+        """Instantiate a transport without opening it"""
+        return self.transport_class.from_config(
             config=self.config, **self.transport_config._asdict()
         )
+
+    async def _create_transport(self) -> VT:
+        """Return an opened transport"""
+        new_transport = self._instantiate_transport()
         await new_transport.open()
         return new_transport
 
@@ -185,5 +197,5 @@ class TransportPool(Generic[VT]):
             else:
                 raise CannotProxySynchronousMethod(
                     f"{self.transport_class.__name__}.{item}() is synchronous "
-                    f"and must be accessed directly and not via the pool"
+                    "and must be accessed directly and not via the pool"
                 )

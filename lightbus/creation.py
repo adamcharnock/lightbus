@@ -207,14 +207,6 @@ def create_client(
     client.event_dock = event_dock
     client.rpc_result_dock = rpc_result_dock
 
-    log_welcome_message(
-        logger=logger,
-        transport_registry=transport_registry,
-        schema=schema,
-        plugin_registry=plugin_registry,
-        config=config,
-    )
-
     # Wait until the docks are ready to go
     if not get_event_loop().is_running():
         # If the event loop is running then we can assume that this setup

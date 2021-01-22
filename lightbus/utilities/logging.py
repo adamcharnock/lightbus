@@ -34,8 +34,7 @@ def log_welcome_message(
     plugin_registry: PluginRegistry,
     config: Config,
 ):
-    """Show the worker-startup welcome message
-    """
+    """Show the worker-startup welcome message"""
     logger.info(
         LBullets(
             "Lightbus is setting up",
@@ -81,7 +80,7 @@ def log_transport_information(
 
     logger.info(
         LBullets(
-            "Default transports are setup as follows:",
+            "Default transports are setup as follows",
             items={
                 "RPC transport": stringify_transport(rpc_transport),
                 "Result transport": stringify_transport(result_transport),
