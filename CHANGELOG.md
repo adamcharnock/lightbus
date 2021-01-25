@@ -4,7 +4,7 @@
 
 * Bug: Now showing the welcome message only once
 * Enhancement: `TransportPool` now has a sensible `__str__()` implementation, which improves logging
-* Prioritising use of `the __to_bus__()` method in schema creation. This ensures that
+* Bug: Prioritising use of the `__to_bus__()` method in schema creation. This ensures that
   schema generation and data deforming are now consistent
 
 ## 1.0.5
