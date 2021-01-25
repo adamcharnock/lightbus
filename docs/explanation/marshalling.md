@@ -5,8 +5,8 @@ Lightbus has four stages of data marshalling:
 * Validation
 * Deform / Cast
 
-A **outbound message** will go through this process from **top to bottom**. 
-An **inbound message** will go through this process from **bottom to top**.
+An **inbound message** will go through this process from **top to bottom**. 
+An **outbound message** will go through this process from **bottom to top**.
 
 ## Inbound flow
 
