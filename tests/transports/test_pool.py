@@ -22,7 +22,7 @@ from lightbus.transports.pool import TransportPool
 pytestmark = pytest.mark.unit
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 async def dummy_pool():
     pool = TransportPool(
         transport_class=DebugEventTransport,
@@ -33,7 +33,7 @@ async def dummy_pool():
     await pool.close()
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 async def redis_pool(redis_server_url):
     pool = TransportPool(
         transport_class=RedisEventTransport,
@@ -44,7 +44,7 @@ async def redis_pool(redis_server_url):
     await pool.close()
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 async def attr_test_pool(redis_server_url):
     """Used for testing attribute access only"""
 
@@ -69,7 +69,7 @@ async def attr_test_pool(redis_server_url):
     await pool.close()
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def run_in_many_threads():
     def run_in_many_threads_(async_fn, max_workers=50, executions=200, *args, **kwargs):
         with ThreadPoolExecutor(max_workers=max_workers) as e:

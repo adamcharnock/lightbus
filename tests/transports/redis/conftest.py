@@ -29,7 +29,7 @@ async def redis_result_transport(new_redis_pool, loop):
     )
 
 
-@pytest.yield_fixture
+@pytest.fixture
 async def redis_event_transport(new_redis_pool, loop):
     transport = lightbus.transports.redis.event.RedisEventTransport(
         redis_pool=await new_redis_pool(maxsize=10000),
@@ -49,7 +49,7 @@ async def redis_schema_transport(new_redis_pool, loop):
     )
 
 
-@pytest.yield_fixture
+@pytest.fixture
 async def bus(new_bus):
     bus = new_bus()
 

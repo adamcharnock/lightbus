@@ -13,7 +13,7 @@ from lightbus.transports.pool import TransportPool
 pytestmark = pytest.mark.unit
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def create_bus_client_with_unhappy_schema(mocker, dummy_bus):
     """Schema which always fails to validate"""
 

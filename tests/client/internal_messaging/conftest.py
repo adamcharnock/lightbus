@@ -7,7 +7,7 @@ from lightbus.client.internal_messaging.producer import InternalProducer
 from lightbus.utilities.internal_queue import InternalQueue
 
 
-@pytest.yield_fixture
+@pytest.fixture
 async def consumer():
     def _on_exception(e):
         raise e
@@ -17,7 +17,7 @@ async def consumer():
     await consumer.close()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 async def producer():
     def _on_exception(e):
         raise e

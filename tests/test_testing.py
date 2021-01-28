@@ -8,7 +8,7 @@ from lightbus.utilities.testing import BusQueueMockerContext
 pytestmark = pytest.mark.unit
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def mock_result(dummy_bus):
     with BusQueueMockerContext(dummy_bus) as mocker_context:
         yield testing.MockResult(mocker_context, mock_responses={}, mock_events=set())

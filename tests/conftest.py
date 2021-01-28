@@ -176,7 +176,7 @@ async def redis_pool(create_redis_pool, loop):
     return await create_redis_pool()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 async def redis_client(create_redis_client, loop):
     """Returns Redis client instance."""
     redis = await create_redis_client()
@@ -206,7 +206,7 @@ def get_total_redis_connections(redis_client):
     return _get_total_redis_connections
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def _closable(loop):
     conns = []
 
@@ -225,7 +225,7 @@ def _closable(loop):
 # Lightbus fixtures
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def dummy_bus(loop, redis_server_url):
     # fmt: off
     dummy_bus = lightbus.creation.create(
@@ -255,7 +255,7 @@ def dummy_bus(loop, redis_server_url):
         pass
 
 
-@pytest.yield_fixture
+@pytest.fixture
 async def dummy_listener(dummy_bus: BusPath, loop):
     """Start the dummy bus consuming events"""
     # TODO: Remove. Barely used any more
@@ -375,7 +375,7 @@ def dummy_api():
     return DummyApi()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def tmp_file():
     f = NamedTemporaryFile("r+", encoding="utf8")
     yield f
@@ -385,7 +385,7 @@ def tmp_file():
         pass
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def tmp_directory():
     f = TemporaryDirectory()
     yield Path(f.name)
@@ -410,7 +410,7 @@ def set_env():
     return _set_env
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def make_test_bus_module():
     """Create a python module on disk which contains a bus, and put it on the python path"""
     created_modules = []
@@ -554,7 +554,7 @@ bus.client.register_api(DummyApi())
 """
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 async def redis_config_file(loop, redis_server_url, redis_client):
     config = REDIS_BUS_CONFIG.format(redis_url=redis_server_url)
     with NamedTemporaryFile() as f:
@@ -564,7 +564,7 @@ async def redis_config_file(loop, redis_server_url, redis_client):
         await redis_client.execute(b"CLIENT", b"KILL", b"TYPE", b"NORMAL")
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def debug_config_file():
     with NamedTemporaryFile() as f:
         f.write(DEBUG_BUS_CONFIG.encode("utf8"))
@@ -572,7 +572,7 @@ def debug_config_file():
         yield f.name
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def run_lightbus_command(make_test_bus_module, redis_config_file):
     processes = []
 
@@ -658,7 +658,7 @@ def queue_mocker() -> Type[BusQueueMockerContext]:
     return BusQueueMockerContext
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def error_queue():
     queue = InternalQueue()
     yield queue
@@ -705,7 +705,7 @@ class Worker:
         return worker_context(bus)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 async def worker(new_bus):
     yield Worker(bus_factory=new_bus)
 
@@ -803,7 +803,7 @@ def _docker_available():
     return docker_cmd.returncode == 0
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def standalone_redis_server():
     if not _docker_available():
         raise pytest.skip("Docker not available")
