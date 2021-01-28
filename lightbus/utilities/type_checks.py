@@ -60,7 +60,7 @@ def issubclass_safe(value, type_):
 
 
 def parse_hint(hint: Type) -> Tuple[Type, Optional[List]]:
-    """ Parse a typing hint into its type and and arguments.
+    """Parse a typing hint into its type and and arguments.
 
     For example:
 
@@ -75,7 +75,7 @@ def parse_hint(hint: Type) -> Tuple[Type, Optional[List]]:
         # This is a type hint (eg typing.Union)
         # Filter out TypeVars such as KT & VT_co (they generally
         # indicate that no explicit hint was given)
-        hint_args = [a for a in hint.__args__ if not isinstance(a, TypeVar)]
+        hint_args = [a for a in getattr(hint, "__args__", []) if not isinstance(a, TypeVar)]
         return hint.__origin__, hint_args or None
     else:
         # This is something other than a type hint
