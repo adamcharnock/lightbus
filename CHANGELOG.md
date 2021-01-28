@@ -1,5 +1,9 @@
 # Lightbus Changelog
 
+## 1.1.0
+
+* Enhancement: Python 3.9 now supported
+
 ## 1.0.6
 
 * Bug: Now showing the welcome message only once
