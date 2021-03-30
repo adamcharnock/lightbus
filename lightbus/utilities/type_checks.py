@@ -95,7 +95,7 @@ def get_property_default(type_: Type, property_name: str) -> ...:
         # everything else
         default = getattr(type_, property_name, inspect.Parameter.empty)
 
-    if callable(default):
+    if callable(default) or isinstance(default, property):
         default = inspect.Parameter.empty
 
     return default

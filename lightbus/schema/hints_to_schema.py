@@ -251,19 +251,17 @@ def make_custom_object_schema(type_, property_names=None):
     required = []
     for property_name in property_names:
         property_value = getattr(type_, property_name, None)
-        if callable(property_value) or isinstance(property_value, property):
+        if callable(property_value):
             # is a method or dynamic property
             continue
 
         default = get_property_default(type_, property_name)
-
-        if hasattr(type_, "__annotations__"):
+        type_hints = get_type_hints(type_)
+        if hasattr(type_, "__annotations__") and property_name in type_hints:
             # Use typing.get_type_hints() rather than `__annotations__`, as this will resolve
             # forward references
             properties[property_name] = wrap_with_any_of(
-                annotation_to_json_schemas(
-                    annotation=get_type_hints(type_).get(property_name, None), default=default
-                )
+                annotation_to_json_schemas(annotation=type_hints[property_name], default=default)
             )
         elif default is not empty:
             properties[property_name] = wrap_with_any_of(python_type_to_json_schemas(type(default)))

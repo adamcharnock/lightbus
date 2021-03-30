@@ -439,7 +439,7 @@ def test_object_with_property():
 
     schema = make_response_schema("api_name", "rpc_name", func)
     assert schema["type"] == "object"
-    assert "my_prop" not in schema["properties"]
+    assert schema["properties"]["my_prop"] == {}
 
 
 def test_object_with_to_bus():
