@@ -426,6 +426,22 @@ def test_object_with_method():
     assert schema["additionalProperties"] == False
 
 
+def test_object_with_property():
+    class User:
+        username: str
+
+        @property
+        def my_prop(self):
+            pass
+
+    def func(username) -> User:
+        pass
+
+    schema = make_response_schema("api_name", "rpc_name", func)
+    assert schema["type"] == "object"
+    assert "my_prop" not in schema["properties"]
+
+
 def test_object_with_to_bus():
     class CustomClassToBus:
         def __to_bus__(self) -> float:

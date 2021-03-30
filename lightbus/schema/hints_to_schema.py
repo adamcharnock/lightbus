@@ -154,7 +154,6 @@ def python_type_to_json_schemas(type_):
     """
     # pylint: disable=too-many-return-statements
     type_, hint_args = parse_hint(type_)
-
     if type_ == Union:
         return list(itertools.chain(*map(python_type_to_json_schemas, hint_args)))
     if type_ == empty:
@@ -251,10 +250,9 @@ def make_custom_object_schema(type_, property_names=None):
     properties = {}
     required = []
     for property_name in property_names:
-        default = empty
-
-        if callable(getattr(type_, property_name, None)):
-            # is a method
+        property_value = getattr(type_, property_name, None)
+        if callable(property_value) or isinstance(property_value, property):
+            # is a method or dynamic property
             continue
 
         default = get_property_default(type_, property_name)

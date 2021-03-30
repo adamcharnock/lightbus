@@ -1,5 +1,9 @@
 # Lightbus Changelog
 
+## 1.1.1
+
+* Now correctly creating schemas from custom classes with `@property` decorated methods
+
 ## 1.1.0
 
 * Enhancement: Python 3.9 now supported
