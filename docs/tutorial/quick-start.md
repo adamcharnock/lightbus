@@ -74,7 +74,7 @@ You should now have the following structure:
 * `./auth_service/bus.py`, created above
 * `./another_service/`, which we will create files within now.
 
-We always we define a service's `bus` client within a `bus.py` file.
+We always define a service's `bus` client within a `bus.py` file.
 Therefore, create `./another_service/bus.py` containing the following:
 
 ```python3
