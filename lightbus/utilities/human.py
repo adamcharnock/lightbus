@@ -1,6 +1,7 @@
 """Generation of human-friendly strings"""
 
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -204,19 +205,7 @@ def human_time(seconds: float):
         return "{} milliseconds".format(round(seconds * 1000, 2))
 
 
-class LazyHumanName:
-    def __init__(self):
-        self._s = None
-
-    def __str__(self):
-        if self._s is None:
-            import secrets
-
-            self._s = "{}-{}-{}".format(
-                secrets.choice(_adjectives), secrets.choice(_nouns), secrets.randbelow(999) + 1
-            )
-        return self._s
-
-
 def generate_human_friendly_name():
-    return LazyHumanName()
+    return "{}-{}-{}".format(
+        random.choice(_adjectives), random.choice(_nouns), random.randint(0, 999)
+    )
