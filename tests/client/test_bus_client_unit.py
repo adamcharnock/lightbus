@@ -377,13 +377,11 @@ async def test_exception_in_listener_shutdown(
 
             # Note that this hasn't actually shut the bus down, we'll test that in test_server_shutdown
 
-            assert len(caplog.records) == 2
+            assert len(caplog.records) == 1
 
             exception_record: logging.LogRecord = caplog.records[0]
             assert "TestException" in exception_record.msg
-
-            help_record: logging.LogRecord = caplog.records[1]
-            assert "Lightbus will now shutdown" in help_record.message
+            assert "Lightbus will now shutdown" in exception_record.message
 
 
 @pytest.mark.asyncio

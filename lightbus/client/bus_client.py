@@ -281,8 +281,6 @@ class BusClient:
 
             if error.should_show_error():
                 logger.error(str(error))
-                if error.help:
-                    logger.error(error.help)
             else:
                 logger.info(error.value)
 

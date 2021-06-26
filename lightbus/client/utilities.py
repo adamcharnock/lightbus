@@ -60,11 +60,13 @@ class Error(NamedTuple):
             return ""
 
     def __str__(self):
+        if self.help:
+            help = f"{self.help}\n\n"
+        else:
+            help = ""
+
         return (
-            f"A coroutine raised an error, it was invoked at:\n\n"
-            f"{self.invoking_traceback_str or 'Not available'}\n\n"
-            f"The exception was:\n\n"
-            f"{self.exception_str or 'Not available'}"
+            f"{self.type.__name__}: {self.value}:\n\n{help}{self.exception_str or 'Not available'}"
         )
 
     def should_show_error(self):
@@ -79,8 +81,8 @@ def validate_event_or_rpc_name(api_name: str, type_: str, name: str):
 
     if name.startswith("_"):
         raise InvalidName(
-            f"You can not use '{api_name}.{name}' as an {type_} because it starts with an underscore. "
-            f"API attributes starting with underscores are not available on the bus."
+            f"You can not use '{api_name}.{name}' as an {type_} because it starts with an"
+            " underscore. API attributes starting with underscores are not available on the bus."
         )
 
 

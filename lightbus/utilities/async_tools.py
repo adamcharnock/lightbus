@@ -104,8 +104,7 @@ async def cancel_and_log_exceptions(*tasks):
             await cancel(task)
         except Exception as e:
             # pylint: disable=broad-except
-            logger.exception(e)
-            logger.error(
+            logger.info(
                 "Error encountered when shutting down task %s. Exception logged, will now move on.",
                 task,
             )
