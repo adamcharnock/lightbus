@@ -15,13 +15,16 @@ def uses_django_db(f):
     # Import Django locally as it is not a dependency of Lightbus.
     # This will only get run on startup anyway, and we will assume that
     # if someone uses this decorator then they have Django installed.
-    from django import db
+    from django.db import reset_queries, close_old_connections
 
     @wraps(f)
     def wrapped(*args, **kwargs):
+        reset_queries()
+        close_old_connections()
+
         try:
             return f(*args, **kwargs)
         finally:
-            db.connections.close_all()
+            close_old_connections()
 
     return wrapped
