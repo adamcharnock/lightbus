@@ -1,5 +1,13 @@
 # Lightbus Changelog
 
+## 1.2.0
+
+* Updating @uses_django_db helper to use django's built-in db connection cleaning up facilities. 
+  This should more closely mirror Django's own internal request-based connection management
+* Errors are now reported in a single log message. This should make error logging much more sane.
+* Human name is now generated using the `random` builtin rather than `secret`, as this does not need to be crypt-secure
+* Event firing sanity checking now correctly respects non-required parameters
+
 ## 1.1.1
 
 * Now correctly creating schemas from custom classes with `@property` decorated methods
