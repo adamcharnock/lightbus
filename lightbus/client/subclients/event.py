@@ -68,16 +68,32 @@ class EventClient(BaseSubClient):
                 " may also be using the incorrect API. Also check for typos.".format(**locals())
             )
 
+        p: Parameter
         parameter_names = {p.name if isinstance(p, Parameter) else p for p in event.parameters}
-
-        if set(kwargs.keys()) != parameter_names:
+        required_parameter_names = {
+            p.name if isinstance(p, Parameter) else p
+            for p in event.parameters
+            if getattr(p, "is_required", True)
+        }
+        if required_parameter_names and not required_parameter_names.issubset(set(kwargs.keys())):
             raise InvalidEventArguments(
-                "Invalid event arguments supplied when firing event. Attempted to fire event with "
-                "{} arguments: {}. Event expected {}: {}".format(
+                "Missing required arguments when firing event {}.{}. Attempted to fire event with "
+                "{} arguments: {}. Event requires {}: {}".format(
+                    api_name,
+                    name,
                     len(kwargs),
                     sorted(kwargs.keys()),
-                    len(event.parameters),
+                    len(parameter_names),
                     sorted(parameter_names),
+                )
+            )
+
+        extra_arguments = set(kwargs.keys()) - parameter_names
+        if extra_arguments:
+            raise InvalidEventArguments(
+                "Unexpected argument supplied when firing event {}.{}. Attempted to fire event with"
+                " {} arguments: {}. Unexpected argument(s): {}".format(
+                    api_name, name, len(kwargs), sorted(kwargs.keys()), sorted(extra_arguments),
                 )
             )
 

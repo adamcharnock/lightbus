@@ -50,6 +50,15 @@ async def test_fire_event_event_doesnt_exist(dummy_bus: lightbus.path.BusPath, d
 async def test_fire_event_bad_event_arguments(dummy_bus: lightbus.path.BusPath, dummy_api):
     dummy_bus.client.register_api(dummy_api)
     with pytest.raises(InvalidEventArguments):
+        await dummy_bus.client.fire_event(
+            "my.dummy", "my_event", kwargs={"field": "a", "bad_arg": "value"}
+        )
+
+
+@pytest.mark.asyncio
+async def test_fire_event_missing_required_argument(dummy_bus: lightbus.path.BusPath, dummy_api):
+    dummy_bus.client.register_api(dummy_api)
+    with pytest.raises(InvalidEventArguments):
         await dummy_bus.client.fire_event("my.dummy", "my_event", kwargs={"bad_arg": "value"})
 
 

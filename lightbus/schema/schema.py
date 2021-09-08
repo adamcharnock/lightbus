@@ -27,6 +27,7 @@ from lightbus.schema.hints_to_schema import (
 from lightbus.transports.registry import SchemaTransportPoolType
 from lightbus.utilities.io import make_file_safe_api_name
 from lightbus.api import Api, Event
+from lightbus.utilities.type_checks import is_optional
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import
@@ -37,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class Schema:
-    """ Represents the bus' schema
+    """Represents the bus' schema
 
 
     Note that the presence of a schema does not necessarily
@@ -85,9 +86,9 @@ class Schema:
         if not api_schema:
             # TODO: Add link to docs in error message
             raise SchemaNotFound(
-                "No schema could be found for API {}. You should ensure that either this "
-                "API is being served by another lightbus process, or you can load this schema manually."
-                "".format(api_name)
+                "No schema could be found for API {}. You should ensure that either this API is"
+                " being served by another lightbus process, or you can load this schema manually."
+                .format(api_name)
             )
         return api_schema
 
@@ -97,8 +98,9 @@ class Schema:
             return event_schemas[event_name]
         except KeyError:
             raise SchemaNotFound(
-                "Found schema for API '{}', but it did not contain an event named '{}'"
-                "".format(api_name, event_name)
+                "Found schema for API '{}', but it did not contain an event named '{}'".format(
+                    api_name, event_name
+                )
             )
 
     def get_rpc_schema(self, api_name, rpc_name):
@@ -107,8 +109,9 @@ class Schema:
             return rpc_schemas[rpc_name]
         except KeyError:
             raise SchemaNotFound(
-                "Found schema for API '{}', but it did not contain a RPC named '{}'"
-                "".format(api_name, rpc_name)
+                "Found schema for API '{}', but it did not contain a RPC named '{}'".format(
+                    api_name, rpc_name
+                )
             )
 
     def get_event_or_rpc_schema(self, api_name, name):
@@ -143,40 +146,40 @@ class Schema:
             path = list(e.absolute_path)
             if not path:
                 raise ValidationError(
-                    f"Validation error when using JSON schema to validate parameters for \n"
+                    "Validation error when using JSON schema to validate parameters for \n"
                     f"{api_name}.{event_or_rpc_name}.\n"
-                    f"\n"
-                    f"It is likely you have included an unwanted parameter or omitted a required \n"
-                    f"parameter.\n"
-                    f"\n"
+                    "\n"
+                    "It is likely you have included an unwanted parameter or omitted a required \n"
+                    "parameter.\n"
+                    "\n"
                     f"The error was: {e.message}\n"
-                    f"\n"
-                    f"The full validator error was logged above"
+                    "\n"
+                    "The full validator error was logged above"
                 ) from None
             elif len(path) == 1:
                 raise ValidationError(
-                    f"Validation error when using JSON schema to validate parameters for \n"
+                    "Validation error when using JSON schema to validate parameters for \n"
                     f"{api_name}.{event_or_rpc_name}.\n"
-                    f"\n"
-                    f"It is likely that you have passed in an invalid value for the \n"
+                    "\n"
+                    "It is likely that you have passed in an invalid value for the \n"
                     f"'{path[0]}' parameter.\n"
-                    f"\n"
+                    "\n"
                     f"The error given was: {e.message}\n"
-                    f"\n"
-                    f"The full validator error was logged above"
+                    "\n"
+                    "The full validator error was logged above"
                 ) from None
             else:
                 raise ValidationError(
-                    f"Validation error when using JSON schema to validate parameters for \n"
+                    "Validation error when using JSON schema to validate parameters for \n"
                     f"{api_name}.{event_or_rpc_name}.\n"
-                    f"\n"
-                    f"This was an error in validating the internal structure of one \n"
-                    f"of the parameters' values. The path to this error is \n"
+                    "\n"
+                    "This was an error in validating the internal structure of one \n"
+                    "of the parameters' values. The path to this error is \n"
                     f"'<root>.{'.'.join(e.absolute_path)}'.\n"
-                    f"\n"
+                    "\n"
                     f"The error given was: {e.message}\n"
-                    f"\n"
-                    f"The full validator error was logged above"
+                    "\n"
+                    "The full validator error was logged above"
                 ) from None
 
     def validate_response(self, api_name, rpc_name, response):
@@ -196,28 +199,28 @@ class Schema:
             path = list(e.absolute_path)
             if not path:
                 raise ValidationError(
-                    f"Validation error when using JSON schema to validate result from \n"
+                    "Validation error when using JSON schema to validate result from \n"
                     f"RPC {api_name}.{rpc_name}.\n"
-                    f"\n"
-                    f"It is likely the response was either of the incorrect type, or "
-                    f"some fields were erroneously absent/present.\n"
-                    f"\n"
+                    "\n"
+                    "It is likely the response was either of the incorrect type, or "
+                    "some fields were erroneously absent/present.\n"
+                    "\n"
                     f"The error was: {e.message}\n"
-                    f"\n"
-                    f"The full validator error was logged above"
+                    "\n"
+                    "The full validator error was logged above"
                 ) from None
             else:
                 raise ValidationError(
-                    f"Validation error when using JSON schema to validate result from \n"
+                    "Validation error when using JSON schema to validate result from \n"
                     f"RPC {api_name}.{rpc_name}.\n"
-                    f"\n"
-                    f"This was an error in validating the internal structure of the \n"
-                    f"data returned values. The path to this error is \n"
+                    "\n"
+                    "This was an error in validating the internal structure of the \n"
+                    "data returned values. The path to this error is \n"
                     f"'<root>.{'.'.join(e.absolute_path)}'.\n"
-                    f"\n"
+                    "\n"
                     f"The error given was: {e.message}\n"
-                    f"\n"
-                    f"The full validator error was logged above"
+                    "\n"
+                    "The full validator error was logged above"
                 ) from None
 
     @property
@@ -283,15 +286,14 @@ class Schema:
         """
         if self._remote_schemas is None:
             raise RemoteSchemasNotLoaded(
-                "The remote schemas have not yet been loaded. Lightbus should have ensured this was done "
-                "already, and therefore this is likely a bug. However, calling "
-                "bus.client.lazy_load_now() should resolve this."
+                "The remote schemas have not yet been loaded. Lightbus should have ensured this was"
+                " done already, and therefore this is likely a bug. However, calling"
+                " bus.client.lazy_load_now() should resolve this."
             )
         return self._remote_schemas
 
     async def monitor(self, interval=None):
-        """Monitor for remote schema changes and keep any local schemas alive on the bus
-        """
+        """Monitor for remote schema changes and keep any local schemas alive on the bus"""
         interval = interval or self.max_age_seconds * 0.8
         try:
             while True:
@@ -396,10 +398,13 @@ class Parameter(inspect.Parameter):
             name, inspect.Parameter.KEYWORD_ONLY, default=default, annotation=annotation
         )
 
+    @property
+    def is_required(self):
+        return self.default is self.empty and not is_optional(self.annotation)
+
 
 class WildcardParameter(inspect.Parameter):
-    """Describes a **kwargs style parameter to an event
-    """
+    """Describes a **kwargs style parameter to an event"""
 
     def __init__(self):
         super(WildcardParameter, self).__init__(

@@ -2,7 +2,7 @@ import asyncio
 import json
 from enum import Enum
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import jsonschema
 import os
@@ -571,3 +571,23 @@ async def test_rpcs(tmp_file, schema):
         ("my.test_api1", "rpc_b"),
         ("my.test_api2", "rpc_a"),
     }
+
+
+def test_parameter_is_required_default():
+    parameter = Parameter("foo", int, default=0)
+    assert not parameter.is_required
+
+
+def test_parameter_is_required_optional():
+    parameter = Parameter("foo", Optional[int])
+    assert not parameter.is_required
+
+
+def test_parameter_is_required_optional_default():
+    parameter = Parameter("foo", Optional[int], default=None)
+    assert not parameter.is_required
+
+
+def test_parameter_is_required_true():
+    parameter = Parameter("foo", int)
+    assert parameter.is_required
