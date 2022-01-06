@@ -2,7 +2,7 @@ amqp==1.4.9
 anyjson==0.3.3
 billiard==3.5.0.2
 bottle==0.12.13
-celery==4.0.2
+celery==5.2.2
 certifi==2017.4.17
 chardet==3.0.4
 CProfileV==1.0.7
