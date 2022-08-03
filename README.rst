@@ -90,7 +90,7 @@ You can also listen for events:
        )
 
    @bus.client.on_start()
-   def bus_start():
+   def bus_start(client):
        bus.auth.user_registered.listen(
            send_signup_email
        )

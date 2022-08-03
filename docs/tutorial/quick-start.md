@@ -182,7 +182,7 @@ def handle_new_user(event, username, email):
 
 
 @bus.client.on_start()
-def bus_start():
+def bus_start(client):
     bus.auth.user_registered.listen(
         handle_new_user,
         listener_name="print_on_new_registration"
