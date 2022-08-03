@@ -1365,7 +1365,7 @@ interact with the auth service. </p>
 <li><code>./auth_service/bus.py</code>, created above</li>
 <li><code>./another_service/</code>, which we will create files within now.</li>
 </ul>
-<p>We always we define a service's <code>bus</code> client within a <code>bus.py</code> file.
+<p>We always define a service's <code>bus</code> client within a <code>bus.py</code> file.
 Therefore, create <code>./another_service/bus.py</code> containing the following:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># File: ./another_service/bus.py</span>
 <span class="kn">import</span> <span class="nn">lightbus</span>
@@ -1451,7 +1451,7 @@ we can setup an event listener by modifying <code>./another_service/bus.py</code
 
 
 <span class="nd">@bus</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">on_start</span><span class="p">()</span>
-<span class="k">def</span> <span class="nf">bus_start</span><span class="p">():</span>
+<span class="k">def</span> <span class="nf">bus_start</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
     <span class="n">bus</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">user_registered</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span>
         <span class="n">handle_new_user</span><span class="p">,</span>
         <span class="n">listener_name</span><span class="o">=</span><span class="s2">&quot;print_on_new_registration&quot;</span>
