@@ -3,8 +3,7 @@ import logging
 import time
 from typing import Mapping, Sequence, TYPE_CHECKING
 
-from aioredis import PipelineError, ConnectionClosedError, ReplyError
-from aioredis.util import decode
+from redis.asyncio import RedisError
 
 from lightbus.transports.base import RpcTransport, RpcMessage, Api
 from lightbus.exceptions import TransportIsClosed
@@ -107,7 +106,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
             try:
                 await self._call_rpc(rpc_message, queue_key, expiry_key)
                 break
-            except (PipelineError, ConnectionClosedError, ConnectionResetError) as e:
+            except RedisError as e:
                 if not last_try:
                     logger.debug(
                         f"Retrying sending of message. Will retry {try_number} more times. "
@@ -180,7 +179,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
                 redis.close()
                 raise
 
-            stream = decode(stream, "utf8")
+            stream = stream.decode("utf8")
             rpc_message = self.deserializer(data)
             expiry_key = f"rpc_expiry_key:{rpc_message.id}"
             key_deleted = await redis.delete(expiry_key)

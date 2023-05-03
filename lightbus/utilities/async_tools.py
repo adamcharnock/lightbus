@@ -7,7 +7,7 @@ from time import time
 from typing import Coroutine, TYPE_CHECKING
 import datetime
 
-import aioredis
+from redis import asyncio as aioredis
 
 from lightbus.exceptions import CannotBlockHere
 

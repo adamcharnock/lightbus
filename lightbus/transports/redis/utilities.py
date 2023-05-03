@@ -3,10 +3,8 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional, Mapping
 
-import aioredis
-from aioredis import Redis, ConnectionsPool, ReplyError, ConnectionClosedError
-
-from aioredis.util import decode
+from redis import asyncio as aioredis
+from redis.asyncio import Redis, ConnectionPool, RedisError, ConnectionError
 
 from lightbus.transports.base import EventMessage
 from lightbus.exceptions import LightbusException, TransportIsClosed, LightbusShutdownInProgress
@@ -58,7 +56,7 @@ def normalise_since_value(since):
 
 
 def redis_steam_id_to_datetime(message_id):
-    message_id = decode(message_id, "utf8")
+    message_id = message_id.decode("utf8")
     milliseconds, seq = map(int, message_id.split("-"))
     # Treat the sequence value as additional microseconds to ensure correct sequencing
     microseconds = (milliseconds % 1000 * 1000) + seq
@@ -121,7 +119,7 @@ class RedisTransportMixin:
         else:
             # Use the provided connection
 
-            if isinstance(redis_pool, (ConnectionsPool,)):
+            if isinstance(redis_pool, (ConnectionPool,)):
                 # If they've passed a raw pool then wrap it up in a Redis object.
                 # aioredis.create_redis_pool() normally does this for us.
                 redis_pool = Redis(redis_pool)
@@ -130,7 +128,7 @@ class RedisTransportMixin:
                     "Invalid Redis connection provided: {}. If unsure, use aioredis.create_redis_pool() to "
                     "create your redis connection.".format(redis_pool)
                 )
-            if not isinstance(redis_pool._pool_or_conn, (ConnectionsPool,)):
+            if not isinstance(redis_pool._pool_or_conn, (ConnectionPool,)):
                 raise InvalidRedisPool(
                     "The provided redis connection is backed by a single connection, rather than a "
                     "pool of connections. This will lead to lightbus deadlocks and is unsupported. "
@@ -210,8 +208,8 @@ async def retry_on_redis_connection_failure(fn, *, args=tuple(), retry_delay: in
     while True:
         try:
             return await fn(*args)
-        except (ConnectionClosedError, ConnectionResetError):
-            # ConnectionClosedError is from aioredis. However, sometimes the connection
+        except (ConnectionError, ConnectionResetError):
+            # ConnectionError is from aioredis. However, sometimes the connection
             # can die outside of aioredis, in which case we get a builtin ConnectionResetError.
             logger.warning(
                 f"Redis connection lost while {action}, reconnecting "
@@ -223,7 +221,7 @@ async def retry_on_redis_connection_failure(fn, *, args=tuple(), retry_delay: in
                 f"Redis connection refused while {action}, retrying " f"in {retry_delay} seconds..."
             )
             await asyncio.sleep(retry_delay)
-        except ReplyError as e:
+        except RedisError as e:
             if "LOADING" in str(e):
                 logger.warning(
                     f"Redis server is still loading, retrying " f"in {retry_delay} seconds..."

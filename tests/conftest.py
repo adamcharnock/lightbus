@@ -29,8 +29,7 @@ import tempfile
 
 from collections import namedtuple
 
-import aioredis
-import aioredis.sentinel
+from redis import asyncio as aioredis
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import lightbus

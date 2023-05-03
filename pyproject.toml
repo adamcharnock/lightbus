@@ -43,9 +43,9 @@
     #   black setup.py
     # See the release process docs for more information
     python = ">=3.7"
-    aioredis = ">=1.2.0"
     jsonschema = ">=3.2"
     pyyaml = ">=3.12"
+redis = ">=4.2.0,<5"
 
 [tool.poetry.dev-dependencies]
     bpython = "*"

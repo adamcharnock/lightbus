@@ -16,9 +16,7 @@ from typing import (
     TYPE_CHECKING,
 )
 
-from aioredis import ConnectionClosedError, ReplyError
-from aioredis.commands import streams
-from aioredis.util import decode
+from redis.asyncio import RedisError
 
 from lightbus.client.utilities import queue_exception_checker, ErrorQueueType
 from lightbus.transports.base import EventTransport, EventMessage
@@ -469,7 +467,7 @@ class RedisEventTransport(RedisTransportMixin, EventTransport):
                         old_messages = await redis.xpending(
                             stream, consumer_group, reclaim_from, "+", count=self.reclaim_batch_size
                         )
-                    except ReplyError as e:
+                    except RedisError as e:
                         if "NOGROUP" in str(e):
                             # Group or consumer doesn't exist yet, so stop processing for this loop.
                             break
@@ -867,23 +865,3 @@ if table.getn(consumers) == 0 then
 end
 """
 
-
-def parse_messages(messages):
-    # TODO: Remove and bump required aioredis version when merged:
-    #       https://github.com/aio-libs/aioredis/pull/723
-    if messages is None:
-        return []
-
-    parsed_messages = []
-    for message in messages:
-        if message is None:
-            # In some conditions redis will return a NIL message
-            parsed_messages.append((None, {}))
-        else:
-            mid, values = message
-            parsed_messages.append((mid, streams.fields_to_dict(values)))
-
-    return parsed_messages
-
-
-streams.parse_messages = parse_messages

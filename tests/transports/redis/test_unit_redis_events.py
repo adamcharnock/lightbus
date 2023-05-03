@@ -5,9 +5,9 @@ from datetime import datetime
 from itertools import chain
 from uuid import UUID
 
-import aioredis
+from redis import asyncio as aioredis
+from redis.asyncio import Redis
 import pytest
-from aioredis import Redis
 
 from lightbus.config import Config
 from lightbus.message import EventMessage

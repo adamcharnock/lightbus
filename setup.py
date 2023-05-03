@@ -86,5 +86,5 @@ setup(
     ],
     package_dir={"": "."},
     package_data={},
-    install_requires=["aioredis>=1.2.0", "jsonschema>=3.2", "pyyaml>=3.12"],
+    install_requires=["redis>=4.2.0,<5", "jsonschema>=3.2", "pyyaml>=3.12"],
 )
