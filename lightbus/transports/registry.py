@@ -28,7 +28,7 @@ AnyTransportPoolType = Union[
 
 
 class TransportRegistry:
-    """ Manages access to transports
+    """Manages access to transports
 
     It is possible for different APIs within lightbus to use different transports.
     This registry handles the logic of loading the transports for a given
@@ -268,8 +268,8 @@ def get_available_transports(type_):
             f"No {type_} transports are available, which means lightbus has not been "
             f"installed correctly. This is likely because you are working on Lightbus itself. "
             f"In which case, within your local lightbus repo you should run "
-            f"something like 'pip install .' or 'python setup.py develop'.\n\n"
-            f"This will install the entrypoints (defined in setup.py) which point Lightbus "
+            f"something like 'pip install .'\n\n"
+            f"This will install the entrypoints (defined in pyproject.toml) which point Lightbus "
             f"to it's bundled transports."
         )
     return {name: class_ for module_name, name, class_ in loaded}
@@ -282,7 +282,7 @@ def get_transport(type_, name):
 
     raise TransportNotFound(
         f"No '{type_}' transport found named '{name}'. Check the transport is installed and "
-        f"has the relevant entrypoints setup in it's setup.py file. Or perhaps "
+        f"has the relevant entrypoints setup in it's pyproject.toml file. Or perhaps "
         f"you have a typo in your config file."
     )
 

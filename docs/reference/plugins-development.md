@@ -47,30 +47,23 @@ class GreetingPlugin(LightbusPlugin):
 
 ### 2. Make Lightbus aware of the plugin
 
-Lightbus is made aware of the plugin via an entrypoint in you're project's `setup.py` file:
+Lightbus is made aware of the plugin via an entrypoint in your project's `pyproject.toml` file:
 
-```python
-# Your setup.py file
-from setuptools import setup, find_packages
+```toml
+# Your pyproject.toml file
 
-setup(
-    name='My Project',
-    version='0.1',
-    packages=find_packages(),
-    entry_points={
-        "lightbus_plugins": [
-            # `greeting_plugin` defines the plugin name in the config
-            # `my_project.greeting_plugin` is your plugin's python module
-            # `GreetingPlugin` is your plugins class name
-            "greeting_plugin = my_project.greeting_plugin:GreetingPlugin",
-        ],
-    }
-)
+...
+
+[tool.poetry.plugins.lightbus_plugins]
+    # `greeting_plugin` defines the plugin name in the config
+    # `my_project.greeting_plugin` is your plugin's python module
+    # `GreetingPlugin` is your plugins class name
+    greeting_plugin = "my_project.greeting_plugin:GreetingPlugin"
 ```
 
 Once you've made this change (or for subsequent modifications) you will need to run:
 
-    python setup.py develop
+    pip install .
     
 This will setup the `entry_points` you have specified
 

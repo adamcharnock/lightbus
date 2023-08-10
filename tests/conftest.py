@@ -8,6 +8,7 @@ will is still required to organise the setup code below.
 import asyncio
 import resource
 import signal
+import socket
 import threading
 import time
 from contextlib import asynccontextmanager

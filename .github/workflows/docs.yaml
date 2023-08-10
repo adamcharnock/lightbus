@@ -1,0 +1,51 @@
+name: Docs
+
+on:
+  push:
+    paths:
+      - '.github/workflows/docs.yaml'
+      - 'docs/**'
+
+  # TODO: Trigger on release tag creation
+  # TODO: Also create workflow for creating releases
+
+jobs:
+  docs:
+    name: Build docs
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.8
+
+      - name: "Configure git"
+        run: |
+          # Mike needs the git config user.name & user.email values set
+          git config --global user.name "Adam Charnock"
+          git config --global user.email "adam@adamcharnock.com"
+
+      - name: "Pull the latest docs"
+        run: |
+          git fetch origin master gh-pages
+          git checkout gh-pages
+          git pull origin gh-pages
+          git checkout ${{ github.sha }}
+
+      - name: "Install poetry and lightbus"
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: "Dump config schema"
+        run: |
+          poetry run lightbus dumpconfigschema > docs/static/default-config-schema.json
+
+      - name: "Build and push docs"
+        run: |
+          poetry run mike deploy --message="Automated docs build [ci skip]" dev
+          git push --force origin gh-pages
+

@@ -6,6 +6,7 @@ INTEREST
 /.cache
 /.coverage
 /coverage.xml
+/junit.xml
 /site
 /.env
 /.venv

@@ -1,0 +1,100 @@
+name: Test
+
+on:
+  push:
+    paths:
+      - '.github/workflows/test.yaml'
+      - 'lightbus/**'
+      - 'tests/**'
+      - 'poetry.lock'
+      - 'pyproject.toml'
+      - 'pytest.ini'
+      - 'lightbus_vendored/**'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-22.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - '3.8'
+          - '3.9'
+          - '3.10'
+          - '3.11'
+          # Remove greenlet entry from pyproject.toml when greenlet 3.0 is released
+          - '3.12.0-rc.1'
+
+    services:
+      redis:
+        image: redis:5
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install
+        run: |
+          pip install poetry
+          poetry install
+          mkdir -p .coverage .test-reports
+
+      - name: Test
+        run: |
+          poetry run pytest --cov=lightbus --junit-xml=junit.xml -v -m "not benchmark" --maxfail=10
+          mv .coverage/coverage .coverage/coverage-${{ matrix.python }}
+
+      - name: Upload code coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage-reports
+          path: .coverage/*
+
+  code_coverage:
+    name: Code Coverage Reports
+    runs-on: ubuntu-22.04
+    needs: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.11
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@v3
+        with:
+          name: code-coverage-reports
+
+      - name: Install tools
+        run: |
+          # Coverage
+          pip install coverage
+          
+          # Codacy reporter
+          curl -Ls -o codacy-coverage-reporter "$(curl -Ls https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets | map({name, browser_download_url} | select(.name | contains("codacy-coverage-reporter-linux"))) | .[0].browser_download_url')"
+          chmod +x codacy-coverage-reporter
+
+      - name: Combine reports
+        run: |
+          coverage combine coverage*
+          coverage xml -i
+
+#      - name: Upload report
+#        run: |
+#          ./codacy-coverage-reporter report --api-token ${{ secrets.CODACY_API_TOKEN }} --organization-provider gh --username adamcharnock --project-name lightbus -r coverage.xml
