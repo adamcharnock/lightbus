@@ -1157,10 +1157,6 @@ poetry<span class="w"> </span>version<span class="w"> </span><span class="o">{</
 <span class="nb">export</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span><span class="k">$(</span>lightbus<span class="w"> </span>version<span class="w"> </span>--pyproject<span class="k">)</span><span class="w">   </span><span class="c1"># v1.2.3</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">VERSION_DOCS</span><span class="o">=</span><span class="k">$(</span>lightbus<span class="w"> </span>version<span class="w"> </span>--pyproject<span class="w"> </span>--docs<span class="k">)</span><span class="w">  </span><span class="c1"># v1.2</span>
 
-<span class="c1"># Update the setup.py</span>
-dephell<span class="w"> </span>convert
-black<span class="w"> </span>setup.py
-
 <span class="c1"># Commit</span>
 git<span class="w"> </span>add<span class="w"> </span>.
 git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Releasing version </span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
