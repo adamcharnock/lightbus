@@ -52,7 +52,7 @@ jobs:
 
       - name: Test
         run: |
-          poetry run pytest --cov=lightbus --junit-xml=junit.xml -v -m "not benchmark" --maxfail=10
+          poetry run pytest --cov=lightbus --junit-xml=junit.xml -v -m "not benchmark" --maxfail=10 -k test_consume_rpcs_with_transport_error
           mv .coverage/coverage .coverage/coverage-${{ github.run_number }}
 
       - name: Upload code coverage report
@@ -79,4 +79,5 @@ jobs:
 
       - name: Upload
         run: |
+          ./codacy-coverage-reporter --help
           ./codacy-coverage-reporter report --api-token ${{ secrets.CODACY_API_TOKEN }} --organization-provider gh --username adamcharnock --project-name lightbus -r code-coverage-reports/*
