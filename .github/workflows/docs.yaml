@@ -41,3 +41,4 @@ jobs:
         run: |
           poetry run mike deploy --message="Automated docs build [ci skip]" dev
           git push --force origin gh-pages
+
