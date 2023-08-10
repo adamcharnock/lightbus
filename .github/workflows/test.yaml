@@ -1,0 +1,52 @@
+name: test
+
+on:
+  push:
+    paths:
+      - '.github/workflows/test.yaml'
+      - 'lightbus/**'
+      - 'tests/**'
+      - 'poetry.lock'
+      - 'pyproject.toml'
+      - 'pytest.ini'
+      - 'lightbus_vendored/**'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        python:
+          - '3.8'
+          - '3.9'
+          - '3.10'
+          - '3.11'
+
+    services:
+      redis:
+        image: redis:5
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install & initialise
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry install
+          mkdir -p .coverage .test-reports
+
+      - name: Test
+        run: |
+          poetry run pytest --cov=lightbus --junit-xml=junit.xml -v -m "not benchmark"
