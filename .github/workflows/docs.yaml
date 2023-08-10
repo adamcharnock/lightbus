@@ -39,5 +39,5 @@ jobs:
 
       - name: "Build and push docs"
         run: |
-          poetry run mike deploy --message="Automated build by CircleCI [ci skip]" dev
+          poetry run mike deploy --message="Automated docs build [ci skip]" dev
           git push --force origin gh-pages

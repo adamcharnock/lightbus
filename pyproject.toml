@@ -104,6 +104,11 @@ python-dateutil = "^2.8.1"
     redis = "lightbus:RedisSchemaTransport"
     debug = "lightbus:DebugSchemaTransport"
 
+
+[tool.poetry.group.dev.dependencies]
+mike = "^1.1.2"
+mkdocs = "^1.5.2"
+
 [build-system]
     requires = ["poetry>=0.12"]
     build-backend = "poetry.masonry.api"
