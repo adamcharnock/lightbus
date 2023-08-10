@@ -1,7 +1,6 @@
 # What is Lightbus?
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/f5e5fd4eeb57462b80e2a99e957b7baa)](https://app.codacy.com/gh/adamcharnock/lightbus/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/f5e5fd4eeb57462b80e2a99e957b7baa)](https://app.codacy.com/gh/adamcharnock/lightbus/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/f5e5fd4eeb57462b80e2a99e957b7baa)](https://app.codacy.com/gh/adamcharnock/lightbus/dashboard)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](https://lightbus.org/reference/code-of-conduct/)
 
 Lightbus allows your backend processes to communicate, run background
