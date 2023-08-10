@@ -31,7 +31,7 @@ def import_from_string(name):
 def load_entrypoint_classes(entrypoint_name) -> Sequence[Tuple[str, str, Callable]]:
     """Load classes specified in an entrypoint
 
-    Entrypoints are specified in setup.py, and Lightbus uses them to
+    Entrypoints are specified in pyproject.toml, and Lightbus uses them to
     discover plugins & transports.
     """
     found_classes = []

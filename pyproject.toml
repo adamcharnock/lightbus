@@ -1,9 +1,5 @@
 [tool]
 
-[tool.dephell.main]
-    from = {format = "poetry", path = "pyproject.toml"}
-    envs = ["main"]
-    to = {format = "setuppy", path = "setup.py"}
 [tool.poetry]
     name = "lightbus"
     version = "1.2.0a4"
@@ -38,14 +34,11 @@
     ]
 
 [tool.poetry.dependencies]
-    # If modifying this section ensure you run:
-    #   dephell deps convert
-    #   black setup.py
-    # See the release process docs for more information
     python = ">=3.8"
     jsonschema = "^4.19.0"
     pyyaml = ">=3.12"
     python-dateutil = "^2.8.1"
+async-timeout = "^4.0.3"
 
 [tool.poetry.group.dev.dependencies]
     bpython = "*"
@@ -68,9 +61,6 @@
     schedule = "*"
     structlog = "*"
     tox = "*"
-    dephell = ">=0.7.6"
-    # Remove once this is done https://github.com/dephell/dephell/issues/216
-    fissix = "==19.2b1"
     codacy-coverage = "^1.3"
     black = "19.10b0"
 

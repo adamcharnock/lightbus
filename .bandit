@@ -1,3 +1,3 @@
 [bandit]
 exclude: /lightbus_experiments,/lightbus_examples,/tests,/build,/dist,/.tox,/.venv
-targets: /lightbus,setup.py
+targets: /lightbus

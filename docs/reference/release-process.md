@@ -12,10 +12,6 @@ poetry version {patch,minor,major,prepatch,preminor,premajor,prerelease}
 export VERSION=$(lightbus version --pyproject)   # v1.2.3
 export VERSION_DOCS=$(lightbus version --pyproject --docs)  # v1.2
 
-# Update the setup.py
-dephell convert
-black setup.py
-
 # Commit
 git add .
 git commit -m "Releasing version $VERSION"
