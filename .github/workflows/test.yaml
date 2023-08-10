@@ -95,6 +95,6 @@ jobs:
           coverage combine coverage*
           coverage xml -i
 
-#      - name: Upload report
-#        run: |
-#          ./codacy-coverage-reporter report --api-token ${{ secrets.CODACY_API_TOKEN }} --organization-provider gh --username adamcharnock --project-name lightbus -r coverage.xml
+      - name: Upload report
+        run: |
+          ./codacy-coverage-reporter report --project-token ${{ secrets.CODACY_PROJECT_TOKEN }} --organization-provider gh --username adamcharnock --project-name lightbus -r coverage.xml
