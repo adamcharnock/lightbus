@@ -20,6 +20,7 @@ from lightbus.utilities.async_tools import (
     call_every,
     call_on_schedule,
     cancel_and_log_exceptions,
+    delayed_startup,
 )
 from lightbus.utilities.features import Feature, ALL_FEATURES
 from lightbus.utilities.frozendict import frozendict
@@ -234,7 +235,12 @@ class BusClient:
         # Start off any background tasks
         if Feature.TASKS in self.features:
             for coroutine in self._background_coroutines:
-                task = asyncio.ensure_future(queue_exception_checker(coroutine, self.error_queue))
+                # Delay calling of the co-routing to allow Lightbus' internals
+                # to start up. Not ideal, but sufficient for now.
+                coroutine = delayed_startup(coroutine, delay=1)
+                coroutine = queue_exception_checker(coroutine, self.error_queue)
+
+                task = asyncio.ensure_future(coroutine)
                 self._background_tasks.append(task)
 
         self._worker_tasks.add(consume_rpc_task)

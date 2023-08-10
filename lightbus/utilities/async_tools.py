@@ -178,3 +178,8 @@ async def call_on_schedule(callback, schedule: "Job", also_run_immediately: bool
         td = schedule.next_run - datetime.datetime.now()
         await asyncio.sleep(td.total_seconds())
         first_run = False
+
+
+async def delayed_startup(coroutine: Coroutine, delay: float):
+    await asyncio.sleep(delay)
+    return await coroutine
