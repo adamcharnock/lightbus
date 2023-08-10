@@ -79,8 +79,4 @@ jobs:
 
       - name: Upload
         run: |
-          # Show all reports for debugging purposes
-          find ./code-coverage-reports
-          
-          ./codacy-coverage-reporter report --help
-          ./codacy-coverage-reporter report --api-token ${{ secrets.CODACY_API_TOKEN }} --organization-provider gh --username adamcharnock --project-name lightbus -r $(echo $(find code-coverage-reports/*) | sed 's/ / -r /g')
+          ./codacy-coverage-reporter report --api-token ${{ secrets.CODACY_API_TOKEN }} --organization-provider gh --username adamcharnock --project-name lightbus -r ./coverage*
