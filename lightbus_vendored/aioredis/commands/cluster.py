@@ -1,4 +1,4 @@
-from aioredis.util import wait_ok
+from lightbus_vendored.aioredis.util import wait_ok
 
 
 class ClusterCommandsMixin:

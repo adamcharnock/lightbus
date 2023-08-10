@@ -1,4 +1,4 @@
-from aioredis.util import wait_convert, wait_ok, _NOTSET, _ScanIter
+from lightbus_vendored.aioredis.util import wait_convert, wait_ok, _NOTSET, _ScanIter
 
 
 class GenericCommandsMixin:

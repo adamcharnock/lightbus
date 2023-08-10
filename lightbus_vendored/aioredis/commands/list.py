@@ -1,4 +1,4 @@
-from aioredis.util import _NOTSET, wait_ok
+from lightbus_vendored.aioredis.util import _NOTSET, wait_ok
 
 
 class ListCommandsMixin:

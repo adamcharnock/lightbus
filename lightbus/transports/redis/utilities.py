@@ -3,10 +3,10 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional, Mapping
 
-import aioredis
-from aioredis import Redis, ConnectionsPool, ReplyError, ConnectionClosedError
+from lightbus_vendored import aioredis
+from lightbus_vendored.aioredis import Redis, ConnectionsPool, ReplyError, ConnectionClosedError
 
-from aioredis.util import decode
+from lightbus_vendored.aioredis.util import decode
 
 from lightbus.transports.base import EventMessage
 from lightbus.exceptions import LightbusException, TransportIsClosed, LightbusShutdownInProgress
@@ -211,7 +211,7 @@ async def retry_on_redis_connection_failure(fn, *, args=tuple(), retry_delay: in
         try:
             return await fn(*args)
         except (ConnectionClosedError, ConnectionResetError):
-            # ConnectionClosedError is from aioredis. However, sometimes the connection
+            # ConnectionClosedError is from lightbus_vendored.aioredis. However, sometimes the connection
             # can die outside of aioredis, in which case we get a builtin ConnectionResetError.
             logger.warning(
                 f"Redis connection lost while {action}, reconnecting "

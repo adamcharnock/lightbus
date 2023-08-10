@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from aioredis.util import wait_ok, wait_convert, wait_make_dict, _NOTSET
+from lightbus_vendored.aioredis.util import wait_ok, wait_convert, wait_make_dict, _NOTSET
 
 
 class ServerCommandsMixin:

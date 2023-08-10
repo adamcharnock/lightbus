@@ -1,7 +1,7 @@
-from aioredis.connection import create_connection
-from aioredis.pool import create_pool
-from aioredis.util import _NOTSET, wait_ok
-from aioredis.abc import AbcPool
+from lightbus_vendored.aioredis.connection import create_connection
+from lightbus_vendored.aioredis.pool import create_pool
+from lightbus_vendored.aioredis.util import _NOTSET, wait_ok
+from lightbus_vendored.aioredis.abc import AbcPool
 from .generic import GenericCommandsMixin
 from .string import StringCommandsMixin
 from .hash import HashCommandsMixin

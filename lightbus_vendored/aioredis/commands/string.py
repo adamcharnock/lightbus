@@ -1,6 +1,6 @@
 from itertools import chain
 
-from aioredis.util import wait_convert, wait_ok, _NOTSET
+from lightbus_vendored.aioredis.util import wait_convert, wait_ok, _NOTSET
 
 
 class StringCommandsMixin:

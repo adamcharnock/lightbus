@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 import pytest
-from aioredis import create_redis_pool
+from lightbus_vendored.aioredis import create_redis_pool
 
 import lightbus
 import lightbus.transports.redis.event

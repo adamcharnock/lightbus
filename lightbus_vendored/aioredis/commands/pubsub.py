@@ -1,6 +1,6 @@
 import json
 
-from aioredis.util import wait_make_dict
+from lightbus_vendored.aioredis.util import wait_make_dict
 
 
 class PubSubCommandsMixin:

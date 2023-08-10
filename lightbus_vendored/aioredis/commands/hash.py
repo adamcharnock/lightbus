@@ -1,6 +1,6 @@
 from itertools import chain
 
-from aioredis.util import (
+from lightbus_vendored.aioredis.util import (
     wait_ok,
     wait_convert,
     wait_make_dict,

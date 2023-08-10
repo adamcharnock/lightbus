@@ -1,6 +1,6 @@
 """ Setup pytest
 
-This initial version of this setup has been pulled from aioredis,
+This initial version of this setup has been pulled from lightbus_vendored.aioredis,
 as that provides fixtures for both asyncio and redis. Some
 will is still required to organise the setup code below.
 
@@ -29,8 +29,7 @@ import tempfile
 
 from collections import namedtuple
 
-import aioredis
-import aioredis.sentinel
+from lightbus_vendored import aioredis
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import lightbus
@@ -95,7 +94,7 @@ def create_redis_connection(_closable):
 
     @asyncio.coroutine
     def f(*args, **kw):
-        conn = yield from aioredis.create_connection(*args, **kw)
+        conn = yield from lightbus_vendored.aioredis.create_connection(*args, **kw)
         _closable(conn)
         return conn
 

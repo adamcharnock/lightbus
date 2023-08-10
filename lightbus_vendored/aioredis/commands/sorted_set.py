@@ -1,4 +1,4 @@
-from aioredis.util import wait_convert, _NOTSET, _ScanIter
+from lightbus_vendored.aioredis.util import wait_convert, _NOTSET, _ScanIter
 
 
 class SortedSetCommandsMixin:

@@ -16,9 +16,9 @@ from typing import (
     TYPE_CHECKING,
 )
 
-from aioredis import ConnectionClosedError, ReplyError
-from aioredis.commands import streams
-from aioredis.util import decode
+from lightbus_vendored.aioredis import ConnectionClosedError, ReplyError
+from lightbus_vendored.aioredis.commands import streams
+from lightbus_vendored.aioredis.util import decode
 
 from lightbus.client.utilities import queue_exception_checker, ErrorQueueType
 from lightbus.transports.base import EventTransport, EventMessage

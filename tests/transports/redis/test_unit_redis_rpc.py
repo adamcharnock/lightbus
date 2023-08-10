@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-import aioredis
+from lightbus_vendored import aioredis
 import pytest
 
 from lightbus import RedisRpcTransport

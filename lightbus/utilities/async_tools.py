@@ -7,7 +7,7 @@ from time import time
 from typing import Coroutine, TYPE_CHECKING
 import datetime
 
-import aioredis
+from lightbus_vendored import aioredis
 
 from lightbus.exceptions import CannotBlockHere
 

@@ -3,8 +3,8 @@ import logging
 import time
 from typing import Mapping, Sequence, TYPE_CHECKING
 
-from aioredis import PipelineError, ConnectionClosedError, ReplyError
-from aioredis.util import decode
+from lightbus_vendored.aioredis import PipelineError, ConnectionClosedError, ReplyError
+from lightbus_vendored.aioredis.util import decode
 
 from lightbus.transports.base import RpcTransport, RpcMessage, Api
 from lightbus.exceptions import TransportIsClosed

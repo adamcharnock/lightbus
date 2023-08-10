@@ -168,8 +168,8 @@ class Receiver:
 
     Example use case:
 
-    >>> from aioredis.pubsub import Receiver
-    >>> from aioredis.abc import AbcChannel
+    >>> from lightbus_vendored.aioredis.pubsub import Receiver
+    >>> from lightbus_vendored.aioredis.abc import AbcChannel
     >>> mpsc = Receiver()
     >>> async def reader(mpsc):
     ...     async for channel, msg in mpsc.iter():

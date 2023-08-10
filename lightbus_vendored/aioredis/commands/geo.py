@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from aioredis.util import wait_convert, _NOTSET
+from lightbus_vendored.aioredis.util import wait_convert, _NOTSET
 
 
 GeoPoint = namedtuple('GeoPoint', ('longitude', 'latitude'))
