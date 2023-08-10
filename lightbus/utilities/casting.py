@@ -5,7 +5,9 @@ import logging
 from enum import Enum
 from typing import Mapping, Type, get_type_hints, Union, TypeVar, Callable, Any
 from base64 import b64decode
+from uuid import UUID
 
+from lightbus.utilities.frozendict import frozendict
 from lightbus.utilities.type_checks import (
     type_is_namedtuple,
     type_is_dataclass,
@@ -47,6 +49,14 @@ def cast_to_signature(parameters: dict, callable) -> dict:
 
 V = TypeVar("V")
 H = TypeVar("A")
+
+# Create as a list (not tuple) so it can be mutated by
+# lightbus user's if it really has to be.
+ALLOW_DIRECT_INSTANTIATION = [
+    Enum,
+    frozendict,
+    UUID,
+]
 
 
 def cast_to_hint(value: V, hint: Type[H]) -> Union[V, H]:
@@ -94,8 +104,10 @@ def cast_to_hint(value: V, hint: Type[H]) -> Union[V, H]:
     elif issubclass_safe(hint, bytes):
         return b64decode(value.encode("utf8"))
     elif type_is_namedtuple(hint) and isinstance_safe(value, Mapping):
+        # Namedtuple from dict
         return _mapping_to_instance(mapping=value, destination_type=hint)
     elif type_is_dataclass(hint) and isinstance_safe(value, Mapping):
+        # Dataclass from dict
         return _mapping_to_instance(mapping=value, destination_type=hint)
     elif is_class and issubclass_safe(hint_type, datetime.datetime) and isinstance_safe(value, str):
         # Datetime as a string
@@ -121,7 +133,7 @@ def cast_to_hint(value: V, hint: Type[H]) -> Union[V, H]:
     elif (
         inspect.isclass(hint)
         and hasattr(hint, "__annotations__")
-        and not issubclass_safe(hint_type, Enum)
+        and not issubclass_safe(hint_type, tuple(ALLOW_DIRECT_INSTANTIATION))
     ):
         logger.warning(
             f"Cannot cast to arbitrary class {hint}, using un-casted value. "
