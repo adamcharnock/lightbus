@@ -6,7 +6,7 @@
     authors = [
         "Adam Charnock <adam@adamcharnock.com>",
     ]
-    readme = "README.rst"
+    readme = "README.md"
     homepage = "https://lightbus.org"
     documentation = "https://lightbus.org"
     repository = "https://github.com/adamcharnock/lightbus/"
