@@ -79,5 +79,5 @@ jobs:
 
       - name: Upload
         run: |
-          ./codacy-coverage-reporter --help
+          ./codacy-coverage-reporter report --help
           ./codacy-coverage-reporter report --api-token ${{ secrets.CODACY_API_TOKEN }} --organization-provider gh --username adamcharnock --project-name lightbus -r code-coverage-reports/*
