@@ -50,7 +50,7 @@ jobs:
 
       - name: Test
         run: |
-          poetry run pytest --cov=lightbus --junit-xml=junit.xml -v -m "not benchmark"
+          poetry run pytest --cov=lightbus --junit-xml=junit.xml -v -m "not benchmark" --maxfail=10
           mv .coverage/coverage .coverage/coverage-${{ github.run_number }}
 
       - name: Upload code coverage report
@@ -62,6 +62,7 @@ jobs:
   code_coverage:
     name: Code Coverage Reports
     runs-on: ubuntu-22.04
+    needs: test
 
     steps:
       - uses: actions/setup-python@v2
