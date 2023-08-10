@@ -2,7 +2,7 @@ from .connection import RedisConnection, create_connection
 from .commands import (
     Redis, create_redis,
     create_redis_pool,
-    GeoPoint, GeoMember,
+    # GeoPoint, GeoMember,
     )
 from .pool import ConnectionsPool, create_pool
 from .pubsub import Channel

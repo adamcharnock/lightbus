@@ -4,17 +4,17 @@ from lightbus_vendored.aioredis.util import _NOTSET, wait_ok
 from lightbus_vendored.aioredis.abc import AbcPool
 from .generic import GenericCommandsMixin
 from .string import StringCommandsMixin
-from .hash import HashCommandsMixin
-from .hyperloglog import HyperLogLogCommandsMixin
+# from .hyperloglog import HyperLogLogCommandsMixin
 from .set import SetCommandsMixin
-from .sorted_set import SortedSetCommandsMixin
+# from .hash import HashCommandsMixin
 from .transaction import TransactionsCommandsMixin, Pipeline, MultiExec
+# from .sorted_set import SortedSetCommandsMixin
 from .list import ListCommandsMixin
 from .scripting import ScriptingCommandsMixin
 from .server import ServerCommandsMixin
-from .pubsub import PubSubCommandsMixin
-from .cluster import ClusterCommandsMixin
-from .geo import GeoCommandsMixin, GeoPoint, GeoMember
+# from .pubsub import PubSubCommandsMixin
+# from .cluster import ClusterCommandsMixin
+# from .geo import GeoCommandsMixin, GeoPoint, GeoMember
 from .streams import StreamCommandsMixin
 
 __all__ = [
@@ -23,18 +23,27 @@ __all__ = [
     'Redis',
     'Pipeline',
     'MultiExec',
-    'GeoPoint',
-    'GeoMember',
+    # 'GeoPoint',
+    # 'GeoMember',
 ]
 
 
-class Redis(GenericCommandsMixin, StringCommandsMixin,
-            HyperLogLogCommandsMixin, SetCommandsMixin,
-            HashCommandsMixin, TransactionsCommandsMixin,
-            SortedSetCommandsMixin, ListCommandsMixin,
-            ScriptingCommandsMixin, ServerCommandsMixin,
-            PubSubCommandsMixin, ClusterCommandsMixin,
-            GeoCommandsMixin, StreamCommandsMixin):
+class Redis(
+    GenericCommandsMixin,
+    StringCommandsMixin,
+    # HyperLogLogCommandsMixin,
+    SetCommandsMixin,
+    # HashCommandsMixin,
+    TransactionsCommandsMixin,
+    # SortedSetCommandsMixin,
+    ListCommandsMixin,
+    ScriptingCommandsMixin,
+    ServerCommandsMixin,
+    # PubSubCommandsMixin,
+    # ClusterCommandsMixin,
+    # GeoCommandsMixin,
+    StreamCommandsMixin
+):
     """High-level Redis interface.
 
     Gathers in one place Redis commands implemented in mixins.
