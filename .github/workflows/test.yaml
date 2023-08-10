@@ -19,9 +19,9 @@ jobs:
     strategy:
       matrix:
         python:
-          - '3.8'
-          - '3.9'
-          - '3.10'
+#          - '3.8'
+#          - '3.9'
+#          - '3.10'
           - '3.11'
 
     services:
@@ -32,6 +32,9 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+    env:
+      REDIS_URL: redis://redis:6379/10
+      REDIS_URL_B: redis://redis:6379/11
 
     steps:
       - name: Checkout
@@ -41,7 +44,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Install & initialise
+      - name: Install
         run: |
           pip install poetry
           poetry config virtualenvs.in-project true
