@@ -13,7 +13,7 @@
         <meta name="description" content="RPC & event system for Python 3">
       
       
-        <link rel="canonical" href="http://lightbus.org/howto/write-idempotent-event-handlers/">
+        <link rel="canonical" href="http://lightbus.org/dev/howto/write-idempotent-event-handlers/">
       
       
         <meta name="author" content="Adam Charnock">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../..">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-4.6.3">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-4.6.3">
     
     
       
@@ -129,7 +129,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://lightbus.org" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
+        <a href="http://lightbus.org/dev" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
           
             <i class="md-icon"></i>
           
@@ -188,7 +188,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -295,7 +295,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://lightbus.org" title="Lightbus" class="md-nav__button md-logo">
+    <a href="http://lightbus.org/dev" title="Lightbus" class="md-nav__button md-logo">
       
         <i class="md-icon"></i>
       
@@ -309,7 +309,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -1315,9 +1315,9 @@ method which serves exactly this purpose:</p>
 </code></pre></div>
 <h3 id="upserts-in-sql">Upserts in SQL<a class="headerlink" href="#upserts-in-sql" title="Permanent link">&para;</a></h3>
 <p>Many relational databases can also perform upsert in a single SQL query:</p>
-<div class="highlight"><pre><span></span><code><span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">views</span> <span class="p">(</span><span class="nb">uuid</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="s1">&#39;uuid-here&#39;</span><span class="p">,</span> <span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">)</span> 
-<span class="k">ON</span> <span class="k">CONFLICT</span> <span class="p">(</span><span class="nb">uuid</span><span class="p">)</span> 
-<span class="k">DO</span> <span class="k">UPDATE</span> <span class="k">SET</span> <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="k">views</span><span class="w"> </span><span class="p">(</span><span class="nb">uuid</span><span class="p">,</span><span class="w"> </span><span class="n">url</span><span class="p">)</span><span class="w"> </span><span class="k">VALUES</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;uuid-here&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">)</span><span class="w"> </span>
+<span class="k">ON</span><span class="w"> </span><span class="k">CONFLICT</span><span class="w"> </span><span class="p">(</span><span class="nb">uuid</span><span class="p">)</span><span class="w"> </span>
+<span class="k">DO</span><span class="w"> </span><span class="k">UPDATE</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="n">url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;http://lightbus.org&#39;</span><span class="p">;</span>
 </code></pre></div>
 <h2 id="ensuring-idempotency-in-other-cases">Ensuring idempotency in other cases<a class="headerlink" href="#ensuring-idempotency-in-other-cases" title="Permanent link">&para;</a></h2>
 <p>There are additional areas where idempotency can become relevant:</p>
@@ -1409,7 +1409,7 @@ as long as they are sufficiently rare (for example, sending emails).</p>
     
       <script src="../../assets/javascripts/application.c33a9706.js"></script>
       
-      <script>app.initialize({version:"1.1.2",url:{base:"../.."}})</script>
+      <script>app.initialize({version:"1.5.2",url:{base:"../.."}})</script>
       
         <script src="../../static/js/version-select.js"></script>
       

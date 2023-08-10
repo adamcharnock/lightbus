@@ -13,7 +13,7 @@
         <meta name="description" content="RPC & event system for Python 3">
       
       
-        <link rel="canonical" href="http://lightbus.org/tutorial/worked-example/">
+        <link rel="canonical" href="http://lightbus.org/dev/tutorial/worked-example/">
       
       
         <meta name="author" content="Adam Charnock">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../..">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-4.6.3">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-4.6.3">
     
     
       
@@ -129,7 +129,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://lightbus.org" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
+        <a href="http://lightbus.org/dev" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
           
             <i class="md-icon"></i>
           
@@ -188,7 +188,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -295,7 +295,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://lightbus.org" title="Lightbus" class="md-nav__button md-logo">
+    <a href="http://lightbus.org/dev" title="Lightbus" class="md-nav__button md-logo">
       
         <i class="md-icon"></i>
       
@@ -309,7 +309,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -1391,14 +1391,14 @@ event whenever a page is viewed.</p>
 <h2 id="34-interlude-give-it-a-go">3.4. Interlude: give it a go<a class="headerlink" href="#34-interlude-give-it-a-go" title="Permanent link">&para;</a></h2>
 <p>We're not quite done yet, but you can now startup the necessary processes and
 see the store. You will need to run each of these in a separate terminal window:</p>
-<div class="highlight"><pre><span></span><code>$ ls
-image/       store/
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>ls
+image/<span class="w">       </span>store/
 
 <span class="c1"># Start our image resizing service</span>
-$ lightbus run --bus<span class="o">=</span>image.bus
+$<span class="w"> </span>lightbus<span class="w"> </span>run<span class="w"> </span>--bus<span class="o">=</span>image.bus
 
 <span class="c1"># Start our store&#39;s web interface</span>
-$ <span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py flask run --port<span class="o">=</span><span class="m">5001</span>
+$<span class="w"> </span><span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py<span class="w"> </span>flask<span class="w"> </span>run<span class="w"> </span>--port<span class="o">=</span><span class="m">5001</span>
 </code></pre></div>
 <p>Now open <a href="http://127.0.0.1:5001">127.0.0.1:5001</a> in your browser and
 you should see three animal pictures awaiting you. The URL for each
@@ -1517,33 +1517,33 @@ then render it to HTML.</p>
 </tbody>
 </table>
 <p>You can run each of these as follows:</p>
-<div class="highlight"><pre><span></span><code>$ ls
-dashboard/    image/    store/
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>ls
+dashboard/<span class="w">    </span>image/<span class="w">    </span>store/
 
 <span class="c1"># Image resizer (Lightbus)</span>
-$ lightbus run --bus<span class="o">=</span>image.bus
+$<span class="w"> </span>lightbus<span class="w"> </span>run<span class="w"> </span>--bus<span class="o">=</span>image.bus
 
 <span class="c1"># Store (Web)</span>
-$ <span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py flask run --port<span class="o">=</span><span class="m">5001</span>
+$<span class="w"> </span><span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py<span class="w"> </span>flask<span class="w"> </span>run<span class="w"> </span>--port<span class="o">=</span><span class="m">5001</span>
 
 <span class="c1"># Dashboard (Web + Lightbus)</span>
-$ lightbus run --bus<span class="o">=</span>dashboard.bus
-$ <span class="nv">FLASK_APP</span><span class="o">=</span>dashboard/web.py flask run --port<span class="o">=</span><span class="m">5000</span>
+$<span class="w"> </span>lightbus<span class="w"> </span>run<span class="w"> </span>--bus<span class="o">=</span>dashboard.bus
+$<span class="w"> </span><span class="nv">FLASK_APP</span><span class="o">=</span>dashboard/web.py<span class="w"> </span>flask<span class="w"> </span>run<span class="w"> </span>--port<span class="o">=</span><span class="m">5000</span>
 </code></pre></div>
 <p><strong>However,</strong> you may find it easier to startup these processes
 with the <code>honcho</code> tool we installed earlier. First, create
 a file called <code>Procfile</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Procfile</span>
-image_resizer_bus: lightbus run --bus<span class="o">=</span>image.bus
-store_web:         <span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py flask run --port<span class="o">=</span><span class="m">5001</span>
-dashboard_bus:     lightbus run --bus<span class="o">=</span>dashboard.bus
-dashboard_web:     <span class="nv">FLASK_APP</span><span class="o">=</span>dashboard/web.py flask run --port<span class="o">=</span><span class="m">5000</span>
+image_resizer_bus:<span class="w"> </span>lightbus<span class="w"> </span>run<span class="w"> </span>--bus<span class="o">=</span>image.bus
+store_web:<span class="w">         </span><span class="nv">FLASK_APP</span><span class="o">=</span>store/web.py<span class="w"> </span>flask<span class="w"> </span>run<span class="w"> </span>--port<span class="o">=</span><span class="m">5001</span>
+dashboard_bus:<span class="w">     </span>lightbus<span class="w"> </span>run<span class="w"> </span>--bus<span class="o">=</span>dashboard.bus
+dashboard_web:<span class="w">     </span><span class="nv">FLASK_APP</span><span class="o">=</span>dashboard/web.py<span class="w"> </span>flask<span class="w"> </span>run<span class="w"> </span>--port<span class="o">=</span><span class="m">5000</span>
 </code></pre></div>
 <p>And now use <code>honcho</code> to startup all the processes together:</p>
-<div class="highlight"><pre><span></span><code>$ ls
-Procfile    dashboard/    image/    store/
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>ls
+Procfile<span class="w">    </span>dashboard/<span class="w">    </span>image/<span class="w">    </span>store/
 
-$ honcho start
+$<span class="w"> </span>honcho<span class="w"> </span>start
 </code></pre></div>
 <p>If you see an error stating <code>command not found</code>, ensure you installed <code>honcho</code> as
 detailed above (<code>pip3 install honcho</code>).</p>
@@ -1643,7 +1643,7 @@ you should explore the <a href="../../explanation/">Explanation</a> section.</p>
     
       <script src="../../assets/javascripts/application.c33a9706.js"></script>
       
-      <script>app.initialize({version:"1.1.2",url:{base:"../.."}})</script>
+      <script>app.initialize({version:"1.5.2",url:{base:"../.."}})</script>
       
         <script src="../../static/js/version-select.js"></script>
       

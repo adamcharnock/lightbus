@@ -13,7 +13,7 @@
         <meta name="description" content="RPC & event system for Python 3">
       
       
-        <link rel="canonical" href="http://lightbus.org/reference/plugins-development/">
+        <link rel="canonical" href="http://lightbus.org/dev/reference/plugins-development/">
       
       
         <meta name="author" content="Adam Charnock">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../..">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-4.6.3">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-4.6.3">
     
     
       
@@ -129,7 +129,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://lightbus.org" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
+        <a href="http://lightbus.org/dev" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
           
             <i class="md-icon"></i>
           
@@ -188,7 +188,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -295,7 +295,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://lightbus.org" title="Lightbus" class="md-nav__button md-logo">
+    <a href="http://lightbus.org/dev" title="Lightbus" class="md-nav__button md-logo">
       
         <i class="md-icon"></i>
       
@@ -309,7 +309,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -1277,7 +1277,7 @@ console every time a message is sent.</p>
 
 
 <span class="k">class</span> <span class="nc">GreetingPlugin</span><span class="p">(</span><span class="n">LightbusPlugin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Print a greeting after every event it sent&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Print a greeting after every event it sent&quot;&quot;&quot;</span>
 
     <span class="n">priority</span> <span class="o">=</span> <span class="mi">200</span>
 
@@ -1322,23 +1322,23 @@ console every time a message is sent.</p>
 <p>You can configure your plugin in your bus' configuration YAML file 
 (see the <a href="../configuration/">configuration reference</a>). For example:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">bus</span><span class="p">:</span>
-  <span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
 
 <span class="nt">apis</span><span class="p">:</span>
-  <span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
 
 <span class="nt">plugins</span><span class="p">:</span>
-  <span class="nt">greeting_plugin</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">greeting_plugin</span><span class="p">:</span>
 
-    <span class="c1"># The &#39;enabled&#39; configuration is available for all plugins, </span>
-    <span class="c1"># if set to &#39;false&#39; the plugin will not be loaded.</span>
-    <span class="c1"># Default is false</span>
-    <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="c1"># The &#39;enabled&#39; configuration is available for all plugins, </span>
+<span class="w">    </span><span class="c1"># if set to &#39;false&#39; the plugin will not be loaded.</span>
+<span class="w">    </span><span class="c1"># Default is false</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 
-    <span class="c1"># Lightbus is aware of our `greeting` option as it reads it </span>
-    <span class="c1"># from our `from_config()` method above.</span>
-    <span class="c1"># If we omit this it will have the default value of &quot;Hello world!&quot;</span>
-    <span class="nt">greeting</span><span class="p">:</span> <span class="s">&quot;Hello</span><span class="nv"> </span><span class="s">world,</span><span class="nv"> </span><span class="s">I</span><span class="nv"> </span><span class="s">sent</span><span class="nv"> </span><span class="s">an</span><span class="nv"> </span><span class="s">event!&quot;</span>
+<span class="w">    </span><span class="c1"># Lightbus is aware of our `greeting` option as it reads it </span>
+<span class="w">    </span><span class="c1"># from our `from_config()` method above.</span>
+<span class="w">    </span><span class="c1"># If we omit this it will have the default value of &quot;Hello world!&quot;</span>
+<span class="w">    </span><span class="nt">greeting</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Hello</span><span class="nv"> </span><span class="s">world,</span><span class="nv"> </span><span class="s">I</span><span class="nv"> </span><span class="s">sent</span><span class="nv"> </span><span class="s">an</span><span class="nv"> </span><span class="s">event!&quot;</span>
 </code></pre></div>
 <h2 id="plugin-hooksmethods">Plugin hooks/methods<a class="headerlink" href="#plugin-hooksmethods" title="Permanent link">&para;</a></h2>
 <p>The following hooks are available. Each of these should be implemented 
@@ -1431,7 +1431,7 @@ as an asynchronous method on your plugin class. </p>
     
       <script src="../../assets/javascripts/application.c33a9706.js"></script>
       
-      <script>app.initialize({version:"1.1.2",url:{base:"../.."}})</script>
+      <script>app.initialize({version:"1.5.2",url:{base:"../.."}})</script>
       
         <script src="../../static/js/version-select.js"></script>
       

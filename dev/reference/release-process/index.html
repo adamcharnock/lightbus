@@ -13,7 +13,7 @@
         <meta name="description" content="RPC & event system for Python 3">
       
       
-        <link rel="canonical" href="http://lightbus.org/reference/release-process/">
+        <link rel="canonical" href="http://lightbus.org/dev/reference/release-process/">
       
       
         <meta name="author" content="Adam Charnock">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../..">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-4.6.3">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-4.6.3">
     
     
       
@@ -129,7 +129,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://lightbus.org" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
+        <a href="http://lightbus.org/dev" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
           
             <i class="md-icon"></i>
           
@@ -188,7 +188,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -295,7 +295,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://lightbus.org" title="Lightbus" class="md-nav__button md-logo">
+    <a href="http://lightbus.org/dev" title="Lightbus" class="md-nav__button md-logo">
       
         <i class="md-icon"></i>
       
@@ -309,7 +309,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -1149,44 +1149,44 @@
                 <h1 id="lightbus-release-process">Lightbus release process<a class="headerlink" href="#lightbus-release-process" title="Permanent link">&para;</a></h1>
 <p>Lightbus releases are performed as follows:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Ensure poetry.lock is up to date</span>
-poetry lock
+poetry<span class="w"> </span>lock
 
 <span class="c1"># Version bump</span>
-poetry version <span class="o">{</span>patch,minor,major,prepatch,preminor,premajor,prerelease<span class="o">}</span>
+poetry<span class="w"> </span>version<span class="w"> </span><span class="o">{</span>patch,minor,major,prepatch,preminor,premajor,prerelease<span class="o">}</span>
 
-<span class="nb">export</span> <span class="nv">VERSION</span><span class="o">=</span><span class="k">$(</span>lightbus version --pyproject<span class="k">)</span>   <span class="c1"># v1.2.3</span>
-<span class="nb">export</span> <span class="nv">VERSION_DOCS</span><span class="o">=</span><span class="k">$(</span>lightbus version --pyproject --docs<span class="k">)</span>  <span class="c1"># v1.2</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span><span class="k">$(</span>lightbus<span class="w"> </span>version<span class="w"> </span>--pyproject<span class="k">)</span><span class="w">   </span><span class="c1"># v1.2.3</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">VERSION_DOCS</span><span class="o">=</span><span class="k">$(</span>lightbus<span class="w"> </span>version<span class="w"> </span>--pyproject<span class="w"> </span>--docs<span class="k">)</span><span class="w">  </span><span class="c1"># v1.2</span>
 
 <span class="c1"># Update the setup.py</span>
-dephell convert
-black setup.py
+dephell<span class="w"> </span>convert
+black<span class="w"> </span>setup.py
 
 <span class="c1"># Commit</span>
-git add .
-git commit -m <span class="s2">&quot;Releasing version </span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
+git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Releasing version </span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
 
 <span class="c1"># Make docs</span>
-git checkout gh-pages
-git pull origin gh-pages
-git checkout master
+git<span class="w"> </span>checkout<span class="w"> </span>gh-pages
+git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>gh-pages
+git<span class="w"> </span>checkout<span class="w"> </span>master
 
-mike deploy v<span class="nv">$VERSION_DOCS</span> --message<span class="o">=</span><span class="s2">&quot;Build docs for release of </span><span class="nv">$VERSION</span><span class="s2"> [ci skip]&quot;</span>
-mike delete latest
-mike <span class="nb">alias</span> v<span class="nv">$VERSION_DOCS</span> latest
+mike<span class="w"> </span>deploy<span class="w"> </span>v<span class="nv">$VERSION_DOCS</span><span class="w"> </span>--message<span class="o">=</span><span class="s2">&quot;Build docs for release of </span><span class="nv">$VERSION</span><span class="s2"> [ci skip]&quot;</span>
+mike<span class="w"> </span>delete<span class="w"> </span>latest
+mike<span class="w"> </span><span class="nb">alias</span><span class="w"> </span>v<span class="nv">$VERSION_DOCS</span><span class="w"> </span>latest
 
 <span class="c1"># Tagging and branching</span>
-git tag <span class="s2">&quot;v</span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
-git branch <span class="s2">&quot;v</span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
-git push origin <span class="se">\</span>
-    refs/tags/<span class="s2">&quot;v</span><span class="nv">$VERSION</span><span class="s2">&quot;</span> <span class="se">\</span>
-    refs/heads/<span class="s2">&quot;v</span><span class="nv">$VERSION</span><span class="s2">&quot;</span> <span class="se">\</span>
-    master <span class="se">\</span>
-    gh-pages
+git<span class="w"> </span>tag<span class="w"> </span><span class="s2">&quot;v</span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
+git<span class="w"> </span>branch<span class="w"> </span><span class="s2">&quot;v</span><span class="nv">$VERSION</span><span class="s2">&quot;</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>refs/tags/<span class="s2">&quot;v</span><span class="nv">$VERSION</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>refs/heads/<span class="s2">&quot;v</span><span class="nv">$VERSION</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>master<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>gh-pages
 
 <span class="c1"># Wait for CI to pass: https://circleci.com/gh/adamcharnock/lightbus</span>
 
 <span class="c1"># Build and publish</span>
-poetry publish --build
+poetry<span class="w"> </span>publish<span class="w"> </span>--build
 </code></pre></div>
                 
                   
@@ -1260,7 +1260,7 @@ poetry publish --build
     
       <script src="../../assets/javascripts/application.c33a9706.js"></script>
       
-      <script>app.initialize({version:"1.1.2",url:{base:"../.."}})</script>
+      <script>app.initialize({version:"1.5.2",url:{base:"../.."}})</script>
       
         <script src="../../static/js/version-select.js"></script>
       

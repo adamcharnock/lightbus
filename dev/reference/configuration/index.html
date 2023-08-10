@@ -13,7 +13,7 @@
         <meta name="description" content="RPC & event system for Python 3">
       
       
-        <link rel="canonical" href="http://lightbus.org/reference/configuration/">
+        <link rel="canonical" href="http://lightbus.org/dev/reference/configuration/">
       
       
         <meta name="author" content="Adam Charnock">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../..">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-4.6.3">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-4.6.3">
     
     
       
@@ -129,7 +129,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://lightbus.org" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
+        <a href="http://lightbus.org/dev" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
           
             <i class="md-icon"></i>
           
@@ -188,7 +188,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -295,7 +295,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://lightbus.org" title="Lightbus" class="md-nav__button md-logo">
+    <a href="http://lightbus.org/dev" title="Lightbus" class="md-nav__button md-logo">
       
         <i class="md-icon"></i>
       
@@ -309,7 +309,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -1612,53 +1612,53 @@ disk, or as a HTTP(S) URL (<a href="../../explanation/configuration/#3-global-bu
 <p>A basic default configuration file is as follows:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Root configuration</span>
 <span class="nt">bus</span><span class="p">:</span>
-  <span class="c1"># Bus configuration</span>
+<span class="w">  </span><span class="c1"># Bus configuration</span>
 
-  <span class="nt">schema</span><span class="p">:</span>
-    <span class="c1"># Schema configuration</span>
+<span class="w">  </span><span class="nt">schema</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># Schema configuration</span>
 
-    <span class="nt">transport</span><span class="p">:</span>
-      <span class="c1"># Transport selector config</span>
+<span class="w">    </span><span class="nt">transport</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># Transport selector config</span>
 
-      <span class="nt">redis</span><span class="p">:</span>
-        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
+<span class="w">      </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
 
 <span class="nt">apis</span><span class="p">:</span>
-  <span class="c1"># API configuration listing</span>
+<span class="w">  </span><span class="c1"># API configuration listing</span>
 
-  <span class="nt">default</span><span class="p">:</span>
-    <span class="c1"># Api config</span>
+<span class="w">  </span><span class="nt">default</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># Api config</span>
 
-    <span class="nt">event_transport</span><span class="p">:</span>
-      <span class="c1"># Transport selector configuration</span>
-      <span class="nt">redis</span><span class="p">:</span>
-        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
+<span class="w">    </span><span class="nt">event_transport</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># Transport selector configuration</span>
+<span class="w">      </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
 
-    <span class="nt">rpc_transport</span><span class="p">:</span>
-      <span class="c1"># Transport selector configuration</span>
-      <span class="nt">redis</span><span class="p">:</span>
-        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
+<span class="w">    </span><span class="nt">rpc_transport</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># Transport selector configuration</span>
+<span class="w">      </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
 
-    <span class="nt">result_transport</span><span class="p">:</span>
-      <span class="c1"># Transport selector configuration</span>
-      <span class="nt">redis</span><span class="p">:</span>
-        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
+<span class="w">    </span><span class="nt">result_transport</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># Transport selector configuration</span>
+<span class="w">      </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
 
 <span class="nt">plugins</span><span class="p">:</span>
-  <span class="c1"># Plugin configuring listing</span>
+<span class="w">  </span><span class="c1"># Plugin configuring listing</span>
 
-  <span class="c1"># These plugins ship with Lightbus</span>
-  <span class="nt">internal_metrics</span><span class="p">:</span>
-    <span class="c1"># Plugin configuration</span>
+<span class="w">  </span><span class="c1"># These plugins ship with Lightbus</span>
+<span class="w">  </span><span class="nt">internal_metrics</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># Plugin configuration</span>
 
-    <span class="c1"># Note that plugins are disabled by default, and must be enabled here </span>
-    <span class="c1"># in your bus&#39; global configuration</span>
-    <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="c1"># Note that plugins are disabled by default, and must be enabled here </span>
+<span class="w">    </span><span class="c1"># in your bus&#39; global configuration</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 
-  <span class="nt">internal_state</span><span class="p">:</span>
-    <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-    <span class="nt">ping_enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-    <span class="nt">ping_interval</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">60</span>
+<span class="w">  </span><span class="nt">internal_state</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">ping_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">ping_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
 </code></pre></div>
 <p>Each section is detailed below.</p>
 <h3 id="root-config">Root config<a class="headerlink" href="#root-config" title="Permanent link">&para;</a></h3>
@@ -1706,30 +1706,30 @@ APIs do not inherit from the default configuration.</p>
 <div class="highlight"><pre><span></span><code><span class="nn">...</span>
 <span class="nt">apis</span><span class="p">:</span>
 
-  <span class="c1"># Catch-all api config</span>
-  <span class="nt">default</span><span class="p">:</span>
-    <span class="c1"># See &#39;API config&#39;</span>
-    <span class="l l-Scalar l-Scalar-Plain">... default config as above ...</span>
+<span class="w">  </span><span class="c1"># Catch-all api config</span>
+<span class="w">  </span><span class="nt">default</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># See &#39;API config&#39;</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">... default config as above ...</span>
 
-  <span class="c1"># Specific config for the &#39;marketing.analytics&#39; API.</span>
-  <span class="c1"># Use a different Redis instance for the high</span>
-  <span class="c1"># volume marketing analytics</span>
-  <span class="nt">marketing.analytics</span><span class="p">:</span>
-    <span class="c1"># See &#39;API config&#39;</span>
-    <span class="nt">validate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-    <span class="nt">cast_values</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">  </span><span class="c1"># Specific config for the &#39;marketing.analytics&#39; API.</span>
+<span class="w">  </span><span class="c1"># Use a different Redis instance for the high</span>
+<span class="w">  </span><span class="c1"># volume marketing analytics</span>
+<span class="w">  </span><span class="nt">marketing.analytics</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># See &#39;API config&#39;</span>
+<span class="w">    </span><span class="nt">validate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">cast_values</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 
-    <span class="nt">event_transport</span><span class="p">:</span>
-      <span class="nt">redis</span><span class="p">:</span>
-        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis-marketing.svc.cluster.local:6379/0&quot;</span>
+<span class="w">    </span><span class="nt">event_transport</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://redis-marketing.svc.cluster.local:6379/0&quot;</span>
 
-    <span class="nt">rpc_transport</span><span class="p">:</span>
-      <span class="nt">redis</span><span class="p">:</span>
-        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis-marketing.svc.cluster.local:6379/0&quot;</span>
+<span class="w">    </span><span class="nt">rpc_transport</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://redis-marketing.svc.cluster.local:6379/0&quot;</span>
 
-    <span class="nt">result_transport</span><span class="p">:</span>
-      <span class="nt">redis</span><span class="p">:</span>
-        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis-marketing.svc.cluster.local:6379/0&quot;</span>
+<span class="w">    </span><span class="nt">result_transport</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://redis-marketing.svc.cluster.local:6379/0&quot;</span>
 </code></pre></div>
 <p>See <a href="#api-config">API config</a> for further details on the API options available.</p>
 <h4 id="api-config">API config<a class="headerlink" href="#api-config" title="Permanent link">&para;</a></h4>
@@ -1834,15 +1834,15 @@ the plugin's documentation for details.</p>
 <p>However, all plugins support the <code>enabled</code> property, which defaults to <code>false</code>. 
 You must there set <code>enabled: true</code> if you wish to use the plugin. For example:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">bus</span><span class="p">:</span>
-  <span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
 
 <span class="nt">apis</span><span class="p">:</span>
-  <span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
 
 <span class="nt">plugins</span><span class="p">:</span>
-  <span class="nt">internal_metrics</span><span class="p">:</span>
-    <span class="c1"># Plugin configuration</span>
-    <span class="nt">enabled</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">internal_metrics</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># Plugin configuration</span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
                 
                   
@@ -1916,7 +1916,7 @@ You must there set <code>enabled: true</code> if you wish to use the plugin. For
     
       <script src="../../assets/javascripts/application.c33a9706.js"></script>
       
-      <script>app.initialize({version:"1.1.2",url:{base:"../.."}})</script>
+      <script>app.initialize({version:"1.5.2",url:{base:"../.."}})</script>
       
         <script src="../../static/js/version-select.js"></script>
       

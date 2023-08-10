@@ -13,7 +13,7 @@
         <meta name="description" content="RPC & event system for Python 3">
       
       
-        <link rel="canonical" href="http://lightbus.org/reference/transport-configuration/">
+        <link rel="canonical" href="http://lightbus.org/dev/reference/transport-configuration/">
       
       
         <meta name="author" content="Adam Charnock">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../..">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-4.6.3">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-4.6.3">
     
     
       
@@ -129,7 +129,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://lightbus.org" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
+        <a href="http://lightbus.org/dev" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
           
             <i class="md-icon"></i>
           
@@ -188,7 +188,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -295,7 +295,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://lightbus.org" title="Lightbus" class="md-nav__button md-logo">
+    <a href="http://lightbus.org/dev" title="Lightbus" class="md-nav__button md-logo">
       
         <i class="md-icon"></i>
       
@@ -309,7 +309,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -1670,53 +1670,53 @@ configuration options.</p>
 <div class="highlight"><pre><span></span><code><span class="nn">...</span>
 <span class="nt">apis</span><span class="p">:</span>
 
-  <span class="c1"># Catch-all api config</span>
-  <span class="nt">default</span><span class="p">:</span>
-    <span class="c1"># ...API Config options here (see configuration reference)...</span>
+<span class="w">  </span><span class="c1"># Catch-all api config</span>
+<span class="w">  </span><span class="nt">default</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># ...API Config options here (see configuration reference)...</span>
 
-    <span class="c1"># Per-transport configuration</span>
-    <span class="nt">event_transport</span><span class="p">:</span>
-      <span class="nt">redis</span><span class="p">:</span>
-        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis_host:6379/0&quot;</span>
-        <span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10</span>
-        <span class="nt">reclaim_batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">100</span>
-        <span class="nt">serializer</span><span class="p">:</span> <span class="s">&quot;lightbus.serializers.ByFieldMessageSerializer&quot;</span>
-        <span class="nt">deserializer</span><span class="p">:</span> <span class="s">&quot;lightbus.serializers.ByFieldMessageDeserializer&quot;</span>
-        <span class="nt">acknowledgement_timeout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">60</span>
-        <span class="nt">max_stream_length</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">100000</span>
-        <span class="nt">stream_use</span><span class="p">:</span> <span class="s">&quot;per_api&quot;</span>
-        <span class="nt">consumption_restart_delay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
-        <span class="nt">consumer_ttl</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2592000</span>
+<span class="w">    </span><span class="c1"># Per-transport configuration</span>
+<span class="w">    </span><span class="nt">event_transport</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://redis_host:6379/0&quot;</span>
+<span class="w">        </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="w">        </span><span class="nt">reclaim_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="w">        </span><span class="nt">serializer</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;lightbus.serializers.ByFieldMessageSerializer&quot;</span>
+<span class="w">        </span><span class="nt">deserializer</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;lightbus.serializers.ByFieldMessageDeserializer&quot;</span>
+<span class="w">        </span><span class="nt">acknowledgement_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
+<span class="w">        </span><span class="nt">max_stream_length</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100000</span>
+<span class="w">        </span><span class="nt">stream_use</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;per_api&quot;</span>
+<span class="w">        </span><span class="nt">consumption_restart_delay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">        </span><span class="nt">consumer_ttl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2592000</span>
 
-    <span class="nt">rpc_transport</span><span class="p">:</span>
-      <span class="nt">redis</span><span class="p">:</span>
-        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis_host:6379/0&quot;</span>
-        <span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10</span>
-        <span class="nt">serializer</span><span class="p">:</span> <span class="s">&quot;lightbus.serializers.BlobMessageSerializer&quot;</span>
-        <span class="nt">deserializer</span><span class="p">:</span> <span class="s">&quot;lightbus.serializers.BlobMessageDeserializer&quot;</span>
-        <span class="nt">rpc_timeout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
-        <span class="nt">rpc_retry_delay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-        <span class="nt">consumption_restart_delay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">    </span><span class="nt">rpc_transport</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://redis_host:6379/0&quot;</span>
+<span class="w">        </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="w">        </span><span class="nt">serializer</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;lightbus.serializers.BlobMessageSerializer&quot;</span>
+<span class="w">        </span><span class="nt">deserializer</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;lightbus.serializers.BlobMessageDeserializer&quot;</span>
+<span class="w">        </span><span class="nt">rpc_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">        </span><span class="nt">rpc_retry_delay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">        </span><span class="nt">consumption_restart_delay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
 
-    <span class="nt">result_transport</span><span class="p">:</span>
-      <span class="nt">redis</span><span class="p">:</span>
-        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis_host:6379/0&quot;</span>
-        <span class="nt">serializer</span><span class="p">:</span> <span class="s">&quot;lightbus.serializers.BlobMessageSerializer&quot;</span>
-        <span class="nt">deserializer</span><span class="p">:</span> <span class="s">&quot;lightbus.serializers.BlobMessageDeserializer&quot;</span> 
-        <span class="nt">rpc_timeout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span> 
-        <span class="nt">rpc_retry_delay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span> 
-        <span class="nt">consumption_restart_delay</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span> 
+<span class="w">    </span><span class="nt">result_transport</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://redis_host:6379/0&quot;</span>
+<span class="w">        </span><span class="nt">serializer</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;lightbus.serializers.BlobMessageSerializer&quot;</span>
+<span class="w">        </span><span class="nt">deserializer</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;lightbus.serializers.BlobMessageDeserializer&quot;</span><span class="w"> </span>
+<span class="w">        </span><span class="nt">rpc_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span><span class="w"> </span>
+<span class="w">        </span><span class="nt">rpc_retry_delay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"> </span>
+<span class="w">        </span><span class="nt">consumption_restart_delay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span><span class="w"> </span>
 
-  <span class="c1"># Can respecify the above config for specific APIs </span>
-  <span class="c1"># if customisation is needed.</span>
-  <span class="nt">marketing.analytics</span><span class="p">:</span>
-    <span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="w">  </span><span class="c1"># Can respecify the above config for specific APIs </span>
+<span class="w">  </span><span class="c1"># if customisation is needed.</span>
+<span class="w">  </span><span class="nt">marketing.analytics</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span>
 
 <span class="c1"># Schema transport configuration is at the root level</span>
 <span class="nt">schema</span><span class="p">:</span>
-    <span class="nt">transport</span><span class="p">:</span>
-      <span class="nt">redis</span><span class="p">:</span>
-        <span class="nt">url</span><span class="p">:</span> <span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
+<span class="w">    </span><span class="nt">transport</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">redis</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://redis.svc.cluster.local:6379/0&quot;</span>
 </code></pre></div>
 <h2 id="redis-event-transport-configuration">Redis Event Transport configuration<a class="headerlink" href="#redis-event-transport-configuration" title="Permanent link">&para;</a></h2>
 <h3 id="url"><code>url</code><a class="headerlink" href="#url" title="Permanent link">&para;</a></h3>
@@ -1926,7 +1926,7 @@ in cases where Redis errors (e.g. connection issues). Execution will be retried 
     
       <script src="../../assets/javascripts/application.c33a9706.js"></script>
       
-      <script>app.initialize({version:"1.1.2",url:{base:"../.."}})</script>
+      <script>app.initialize({version:"1.5.2",url:{base:"../.."}})</script>
       
         <script src="../../static/js/version-select.js"></script>
       

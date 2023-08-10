@@ -13,7 +13,7 @@
         <meta name="description" content="RPC & event system for Python 3">
       
       
-        <link rel="canonical" href="http://lightbus.org/reference/protocols/schema/">
+        <link rel="canonical" href="http://lightbus.org/dev/reference/protocols/schema/">
       
       
         <meta name="author" content="Adam Charnock">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../..">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-4.6.3">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-4.6.3">
     
     
       
@@ -129,7 +129,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://lightbus.org" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
+        <a href="http://lightbus.org/dev" title="Lightbus" aria-label="Lightbus" class="md-header-nav__button md-logo">
           
             <i class="md-icon"></i>
           
@@ -188,7 +188,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -295,7 +295,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://lightbus.org" title="Lightbus" class="md-nav__button md-logo">
+    <a href="http://lightbus.org/dev" title="Lightbus" class="md-nav__button md-logo">
       
         <i class="md-icon"></i>
       
@@ -309,7 +309,7 @@
 
   
 
-<a href="https://github.com/adamcharnock/lightbus/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/adamcharnock/lightbus" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -1277,92 +1277,92 @@ protocol in order to use Lightbus</strong>.</p>
 <p>The Lightbus schema format is a JSON structure containing multiple JSON schemas.
 Below is the schema for the example <code>my_company.auth</code> API shown above 
 (generalised format follows):</p>
-<div class="highlight"><pre><span></span><code><span class="err">//</span> <span class="err">Au</span><span class="kc">t</span><span class="err">o</span><span class="mi">-</span><span class="err">ge</span><span class="kc">nerate</span><span class="err">d</span> <span class="err">schema</span> <span class="kc">f</span><span class="err">or</span> <span class="err">au</span><span class="kc">t</span><span class="err">h</span> <span class="err">API</span>
+<div class="highlight"><pre><span></span><code><span class="c1">// Auto-generated schema for auth API</span>
 <span class="p">{</span>
-  <span class="nt">&quot;my_company.auth&quot;</span><span class="p">:</span> <span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;my_company.auth&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 
-    <span class="err">//</span> <span class="err">Eve</span><span class="kc">nts</span> <span class="err">speci</span><span class="kc">f</span><span class="err">y</span> <span class="err">o</span><span class="kc">nl</span><span class="err">y</span> <span class="err">parame</span><span class="kc">ters</span>
-    <span class="nt">&quot;events&quot;</span><span class="p">:</span> <span class="p">{</span>
-      <span class="nt">&quot;user_registered&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
-          <span class="nt">&quot;$schema&quot;</span><span class="p">:</span> <span class="s2">&quot;http://json-schema.org/draft-07/schema#&quot;</span><span class="p">,</span>
-          <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Event my_company.auth.user_registered parameters&quot;</span><span class="p">,</span>
-          <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
-            <span class="nt">&quot;username&quot;</span><span class="p">:</span> <span class="p">{</span>
-              <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
-            <span class="p">},</span>
-          <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="nt">&quot;email&quot;</span><span class="p">:</span> <span class="p">{</span>
-              <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
-            <span class="p">},</span>
-            <span class="nt">&quot;is_admin&quot;</span><span class="p">:</span> <span class="p">{</span>
-              <span class="nt">&quot;default&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
-              <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;boolean&quot;</span>
-            <span class="p">}</span>
-          <span class="p">},</span>
-          <span class="nt">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;username&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;email&quot;</span>
-          <span class="p">],</span>
-          <span class="nt">&quot;additionalProperties&quot;</span><span class="p">:</span> <span class="kc">false</span>
-        <span class="p">}</span>
-      <span class="p">}</span>
-    <span class="p">},</span>
+<span class="w">    </span><span class="c1">// Events specify only parameters</span>
+<span class="w">    </span><span class="nt">&quot;events&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;user_registered&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;$schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://json-schema.org/draft-07/schema#&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Event my_company.auth.user_registered parameters&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;username&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">              </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
+<span class="w">            </span><span class="p">},</span>
+<span class="w">          </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;email&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">              </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
+<span class="w">            </span><span class="p">},</span>
+<span class="w">            </span><span class="nt">&quot;is_admin&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">              </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">              </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">          </span><span class="p">},</span>
+<span class="w">          </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="s2">&quot;username&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">&quot;email&quot;</span>
+<span class="w">          </span><span class="p">],</span>
+<span class="w">          </span><span class="nt">&quot;additionalProperties&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
 
-    <span class="err">//</span> <span class="err">RPCs</span> <span class="err">speci</span><span class="kc">f</span><span class="err">y</span> <span class="err">bo</span><span class="kc">t</span><span class="err">h</span> <span class="err">parame</span><span class="kc">ters</span> <span class="err">a</span><span class="kc">n</span><span class="err">d</span> <span class="err">respo</span><span class="kc">nse</span>
-    <span class="nt">&quot;rpcs&quot;</span><span class="p">:</span> <span class="p">{</span>
-      <span class="nt">&quot;check_password&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
-          <span class="nt">&quot;$schema&quot;</span><span class="p">:</span> <span class="s2">&quot;http://json-schema.org/draft-07/schema#&quot;</span><span class="p">,</span>
-          <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;RPC my_company.auth.check_password() parameters&quot;</span><span class="p">,</span>
-          <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
-          <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="nt">&quot;username&quot;</span><span class="p">:</span> <span class="p">{</span>
-              <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
-            <span class="p">},</span>
-            <span class="nt">&quot;password&quot;</span><span class="p">:</span> <span class="p">{</span>
-              <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
-            <span class="p">}</span>
-          <span class="p">},</span>
-          <span class="nt">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;username&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;password&quot;</span>
-          <span class="p">],</span>
-          <span class="nt">&quot;additionalProperties&quot;</span><span class="p">:</span> <span class="kc">false</span>
-        <span class="p">},</span>
+<span class="w">    </span><span class="c1">// RPCs specify both parameters and response</span>
+<span class="w">    </span><span class="nt">&quot;rpcs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;check_password&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;$schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://json-schema.org/draft-07/schema#&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RPC my_company.auth.check_password() parameters&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;username&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">              </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
+<span class="w">            </span><span class="p">},</span>
+<span class="w">            </span><span class="nt">&quot;password&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">              </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">          </span><span class="p">},</span>
+<span class="w">          </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="s2">&quot;username&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">&quot;password&quot;</span>
+<span class="w">          </span><span class="p">],</span>
+<span class="w">          </span><span class="nt">&quot;additionalProperties&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">        </span><span class="p">},</span>
 
-        <span class="nt">&quot;response&quot;</span><span class="p">:</span> <span class="p">{</span>
-          <span class="nt">&quot;$schema&quot;</span><span class="p">:</span> <span class="s2">&quot;http://json-schema.org/draft-07/schema#&quot;</span><span class="p">,</span>
-          <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;RPC my_company.auth.check_password() response&quot;</span><span class="p">,</span>
-          <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;boolean&quot;</span>
-        <span class="p">}</span>
-      <span class="p">}</span>
-    <span class="p">}</span>
-  <span class="p">}</span>
+<span class="w">        </span><span class="nt">&quot;response&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;$schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://json-schema.org/draft-07/schema#&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RPC my_company.auth.check_password() response&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
 <p>The generalised format is as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="err">//</span> <span class="err">Ge</span><span class="kc">neral</span><span class="err">ised</span> <span class="err">Ligh</span><span class="kc">t</span><span class="err">bus</span> <span class="err">schema</span> <span class="kc">f</span><span class="err">orma</span><span class="kc">t</span>
+<div class="highlight"><pre><span></span><code><span class="c1">// Generalised Lightbus schema format</span>
 <span class="p">{</span>
-  <span class="nt">&quot;&lt;api-name&gt;&quot;</span><span class="p">:</span> <span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;&lt;api-name&gt;&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 
-    <span class="nt">&quot;events&quot;</span><span class="p">:</span> <span class="p">{</span>
-      <span class="nt">&quot;&lt;event-name&gt;&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="nt">&quot;parameters&quot;</span><span class="p">:</span>  <span class="p">{</span> <span class="err">/*</span> <span class="err">jso</span><span class="kc">n</span> <span class="err">schema</span> <span class="err">*/</span> <span class="p">}</span>
-      <span class="p">}</span>
-      <span class="err">//</span> <span class="err">addi</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span> <span class="err">eve</span><span class="kc">nts</span>
-    <span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;events&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;&lt;event-name&gt;&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="cm">/* json schema */</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="c1">// additional events</span>
+<span class="w">    </span><span class="p">},</span>
 
-    <span class="nt">&quot;rpcs&quot;</span><span class="p">:</span> <span class="p">{</span>
-      <span class="nt">&quot;&lt;rpc-name&gt;&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="err">/*</span> <span class="err">jso</span><span class="kc">n</span> <span class="err">schema</span> <span class="err">*/</span> <span class="p">},</span>
-        <span class="nt">&quot;response&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="err">/*</span> <span class="err">jso</span><span class="kc">n</span> <span class="err">schema</span> <span class="err">*/</span> <span class="p">}</span>
-      <span class="p">}</span>
-      <span class="err">//</span> <span class="err">addi</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span> <span class="err">procedures</span>
-    <span class="p">}</span>
+<span class="w">    </span><span class="nt">&quot;rpcs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;&lt;rpc-name&gt;&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* json schema */</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;response&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* json schema */</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="c1">// additional procedures</span>
+<span class="w">    </span><span class="p">}</span>
 
-  <span class="p">}</span>
-  <span class="err">//</span> <span class="err">addi</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span> <span class="err">APIs</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="c1">// additional APIs</span>
 <span class="p">}</span>
 </code></pre></div>
 <h2 id="per-schema-redis-key">Per-schema Redis key<a class="headerlink" href="#per-schema-redis-key" title="Permanent link">&para;</a></h2>
@@ -1468,7 +1468,7 @@ and will contain the structure detailed above.</p>
     
       <script src="../../../assets/javascripts/application.c33a9706.js"></script>
       
-      <script>app.initialize({version:"1.1.2",url:{base:"../../.."}})</script>
+      <script>app.initialize({version:"1.5.2",url:{base:"../../.."}})</script>
       
         <script src="../../../static/js/version-select.js"></script>
       
