@@ -87,8 +87,8 @@ jobs:
 
       - name: Combine reports
         run: |
-          poetry run coverage combine coverage*
-          poetry run coverage xml -i
+          coverage combine coverage*
+          coverage xml -i
 
       - name: Upload report
         run: |

@@ -1,0 +1,46 @@
+name: test
+
+on:
+  push:
+    paths:
+      - '.github/workflows/docs.yaml'
+      - 'docs/**'
+
+jobs:
+  test:
+    name: Build docs
+    runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        python:
+          - '3.8'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: "Configure git"
+        run: |
+          # Mike needs the git config user.name & user.email values set
+          git config --global user.name "Adam Charnock"
+          git config --global user.email "adam@adamcharnock.com"
+          poetry config virtualenvs.in-project true
+
+      - name: "Install poetry"
+        run: |
+          poetry install
+
+      - name: "Dump config schema"
+        run: |
+          poetry run lightbus dumpconfigschema > docs/static/default-config-schema.json
+
+      - name: "Build and push docs"
+        run: |
+          cat /home/circleci/project/.circleci/known_hosts >> ~/.ssh/known_hosts
+          poetry run mike deploy --message="Automated build by CircleCI [ci skip]" dev
+          git push --force origin gh-pages
