@@ -113,9 +113,7 @@ class ResultMessage(Message):
             self.result = repr(result)
             self.error = True
             self.trace = "".join(
-                traceback.format_exception(
-                    etype=type(result), value=result, tb=result.__traceback__
-                )
+                traceback.format_exception(type(result), value=result, tb=result.__traceback__)
             )
         else:
             self.result = result

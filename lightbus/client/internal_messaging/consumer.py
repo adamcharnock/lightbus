@@ -3,7 +3,7 @@ import logging
 from typing import Optional, Callable
 
 from lightbus.client.utilities import queue_exception_checker, ErrorQueueType
-from lightbus.utilities.async_tools import cancel
+from lightbus.utilities.async_tools import cancel, get_event_loop
 from lightbus.utilities.internal_queue import InternalQueue
 
 logger = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ class InternalConsumer:
             # We use call_soon_threadsafe() to ensure we call the Event's set()
             # in a threadsafe fashion. This is because the Event object may have
             # been created in another thread and be attached to another event loop
-            on_done._loop.call_soon_threadsafe(on_done.set)
+            get_event_loop().call_soon_threadsafe(on_done.set)
 
         # fmt: off
         background_call_task = asyncio.ensure_future(queue_exception_checker(
