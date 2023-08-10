@@ -201,7 +201,7 @@ def python_type_to_json_schemas(type_):
                 "type": "array",
                 "maxItems": len(hint_args),
                 "minItems": len(hint_args),
-                "items": [
+                "prefixItems": [
                     wrap_with_any_of(python_type_to_json_schemas(sub_type))
                     for sub_type in hint_args
                 ],

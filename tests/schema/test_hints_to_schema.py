@@ -166,7 +166,6 @@ def test_named_tuple_enum_with_default():
 
 
 def test_named_tuple_using_function():
-
     User = namedtuple("User", ("username", "password"))
 
     def func(user: User):
@@ -221,7 +220,7 @@ def test_response_typed_tuple():
 
     schema = make_response_schema("api_name", "rpc_name", func)
     assert schema["type"] == "array"
-    assert schema["items"] == [{"type": "string"}, {"type": "integer"}, {"type": "boolean"}]
+    assert schema["prefixItems"] == [{"type": "string"}, {"type": "integer"}, {"type": "boolean"}]
 
 
 def test_response_named_tuple():

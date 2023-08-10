@@ -1,5 +1,11 @@
 # Lightbus Changelog
 
+## 1.3.0
+
+* Enhancement: Python 3.10 & 3.11 now supported
+* Vendored aioredis due to compatibility issues
+* Breaking: Python 3.7 no longer supported
+
 ## 1.2.0
 
 * Updating @uses_django_db helper to use django's built-in db connection cleaning up facilities. 
