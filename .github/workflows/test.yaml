@@ -67,17 +67,16 @@ jobs:
     needs: test
 
     steps:
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.11
-
       - name: Download coverage reports
         uses: actions/download-artifact@v3
         with:
           name: code-coverage-reports
 
-      - name: Send coverage reports
-        uses: codacy/codacy-coverage-reporter-action@v1
-        with:
-          api-token: ${{ secrets.CODACY_API_TOKEN }}
-          coverage-reports: code-coverage-reports/*
+      - name: Install coverage reporter
+        run: |
+          curl -Ls -o codacy-coverage-reporter "$(curl -Ls https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets | map({name, browser_download_url} | select(.name | contains("codacy-coverage-reporter-linux"))) | .[0].browser_download_url')"
+          chmod +x codacy-coverage-reporter
+
+      - name: Upload
+        run: |
+          ./codacy-coverage-reporter report --api-token ${{ secrets.CODACY_API_TOKEN }} --organization-provider gh --username adamcharnock --project-name lightbus -r code-coverage-reports/*
