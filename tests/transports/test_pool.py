@@ -88,7 +88,6 @@ def run_in_many_threads():
     return run_in_many_threads_
 
 
-@pytest.mark.asyncio
 def test_equal(dummy_pool):
     """Test the __eq__ method"""
     assert dummy_pool == TransportPool(
@@ -98,7 +97,6 @@ def test_equal(dummy_pool):
     )
 
 
-@pytest.mark.asyncio
 def test_not_equal(redis_pool, redis_server_url):
     """Test the __eq__ method"""
     assert redis_pool != TransportPool(
@@ -108,7 +106,6 @@ def test_not_equal(redis_pool, redis_server_url):
     )
 
 
-@pytest.mark.asyncio
 def test_hash_equal(dummy_pool):
     """Test the __hash__ method"""
     assert hash(dummy_pool) == hash(
@@ -120,7 +117,6 @@ def test_hash_equal(dummy_pool):
     )
 
 
-@pytest.mark.asyncio
 def test_hash_not_equal(redis_pool, redis_server_url):
     """Test the __hash__ method"""
     assert hash(redis_pool) != hash(
@@ -146,7 +142,6 @@ async def test_grow(dummy_pool: TransportPool):
     assert dummy_pool.in_use == 0
 
 
-@pytest.mark.asyncio
 def test_grow_threaded(redis_pool: TransportPool, run_in_many_threads):
     run_in_many_threads(redis_pool.grow, executions=200)
 

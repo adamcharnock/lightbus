@@ -6,7 +6,6 @@ from lightbus.utilities.internal_queue import InternalQueue
 from lightbus.utilities.testing import QueueMockContext
 
 
-@pytest.mark.asyncio
 def test_queue_mock_context_sync():
     queue = InternalQueue()
 
