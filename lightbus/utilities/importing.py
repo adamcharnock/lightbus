@@ -3,7 +3,11 @@ import logging
 import sys
 from typing import Sequence, Tuple, Callable
 
-import pkg_resources
+if sys.version_info < (3, 10):
+    from importlib_metadata import entry_points
+else:
+    from importlib.metadata import entry_points
+
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +35,7 @@ def load_entrypoint_classes(entrypoint_name) -> Sequence[Tuple[str, str, Callabl
     discover plugins & transports.
     """
     found_classes = []
-    for entrypoint in pkg_resources.iter_entry_points(entrypoint_name):
+    for entrypoint in entry_points(group=entrypoint_name):
         class_ = entrypoint.load()
-        found_classes.append((entrypoint.module_name, entrypoint.name, class_))
+        found_classes.append((entrypoint.module, entrypoint.name, class_))
     return found_classes

@@ -218,7 +218,7 @@ def _closable(loop):
             conn.close()
             waiters.append(conn.wait_closed())
         if waiters:
-            loop.run_until_complete(asyncio.gather(*waiters, loop=loop))
+            loop.run_until_complete(asyncio.gather(*waiters))
 
 
 # Lightbus fixtures

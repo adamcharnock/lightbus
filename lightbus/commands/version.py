@@ -1,8 +1,12 @@
 import argparse
 import logging
+import sys
 from pathlib import Path
 
-import pkg_resources
+if sys.version_info < (3, 10):
+    from importlib_metadata import version as importlib_version
+else:
+    from importlib.metadata import version as importlib_version
 
 
 logger = logging.getLogger(__name__)
@@ -31,4 +35,4 @@ class Command:
                 version = ".".join(version.split(".")[:2])
             print(version)
         else:
-            print(pkg_resources.get_distribution("lightbus").version)
+            print(importlib_version("lightbus"))

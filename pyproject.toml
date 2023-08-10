@@ -46,6 +46,7 @@
     jsonschema = ">=3.2"
     pyyaml = ">=3.12"
 redis = ">=4.2.0,<5"
+pytest-asyncio = "0.21.1"
 
 [tool.poetry.dev-dependencies]
     bpython = "*"
