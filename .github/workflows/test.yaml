@@ -19,9 +19,9 @@ jobs:
     strategy:
       matrix:
         python:
-#          - '3.8'
-#          - '3.9'
-#          - '3.10'
+          - '3.8'
+          - '3.9'
+          - '3.10'
           - '3.11'
 
     services:
@@ -51,7 +51,7 @@ jobs:
 
       - name: Test
         run: |
-          poetry run pytest --cov=lightbus --junit-xml=junit.xml -v -m "not benchmark" --maxfail=10 -k test_consume_rpcs_with_transport_error
+          poetry run pytest --cov=lightbus --junit-xml=junit.xml -v -m "not benchmark" --maxfail=10
           mv .coverage/coverage .coverage/coverage-${{ github.run_number }}
 
       - name: Upload code coverage report
@@ -92,6 +92,6 @@ jobs:
           coverage combine coverage*
           coverage xml -i
 
-      - name: Upload report
-        run: |
-          ./codacy-coverage-reporter report --api-token ${{ secrets.CODACY_API_TOKEN }} --organization-provider gh --username adamcharnock --project-name lightbus -r coverage.xml
+#      - name: Upload report
+#        run: |
+#          ./codacy-coverage-reporter report --api-token ${{ secrets.CODACY_API_TOKEN }} --organization-provider gh --username adamcharnock --project-name lightbus -r coverage.xml
