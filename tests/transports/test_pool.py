@@ -281,6 +281,9 @@ async def test_checkout_checkin_asyncio(
     await asyncio.wait(tasks)
     await redis_pool.close()
 
+    # Stop the test being flakey
+    await asyncio.sleep(0.2)
+
     assert redis_pool.grow.call_count == 20
     assert redis_pool._create_transport.call_count == 20
     assert redis_pool._close_transport.call_count == 20

@@ -10,4 +10,4 @@
     configuration options.
     
     If you are using custom transports or plugins you should 
-    [generate your own config schema](command-line-use/dumpconfigschema.md).
+    [generate your own config schema](../reference/command-line-use/dumpconfigschema.md).

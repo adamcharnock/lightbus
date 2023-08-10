@@ -337,7 +337,7 @@ This configuration section is a mapping between plugin names and their
 configuration options.
 
 Plugins are made available to Lightbus via the `lightbus_plugins` entry 
-point (see Lightbus' [setup.py] for an example). As a result, installing a 
+point (see Lightbus' [pyproject.toml] for an example). As a result, installing a 
 plugin should be sufficient for it to be made available for configuration.
 
 Plugin developers should see the [plugins reference] for further details.
@@ -379,7 +379,7 @@ plugins:
 [events explanation section]: ../explanation/events.md
 [service name explanation]: ../explanation/events.md#service-names-listener-names
 [process name explanation]: ../explanation/events.md#process-names
-[setup.py]: https://github.com/adamcharnock/lightbus/blob/master/setup.py
+[pyproject.toml]: https://github.com/adamcharnock/lightbus/blob/master/pyproject.toml
 [plugins reference]: plugins.md
 [configuration explanation]: ../explanation/configuration.md
 [Plugin configuration listing]: #plugin-configuration-listing
