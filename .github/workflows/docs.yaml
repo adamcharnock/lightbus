@@ -14,18 +14,13 @@ jobs:
     name: Build docs
     runs-on: ubuntu-22.04
 
-    strategy:
-      matrix:
-        python:
-          - '3.7'
-
     steps:
       - name: Checkout
         uses: actions/checkout@master
 
       - uses: actions/setup-python@v3
         with:
-          python-version: ${{ matrix.python }}
+          python-version: 3.7
 
       - name: "Configure git"
         run: |
