@@ -6,6 +6,9 @@ on:
       - '.github/workflows/docs.yaml'
       - 'docs/**'
 
+  # TODO: Trigger on release tag creation
+  # TODO: Also create workflow for creating releases
+
 jobs:
   docs:
     name: Build docs
