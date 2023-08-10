@@ -33,7 +33,7 @@ jobs:
           git fetch origin master gh-pages
           git checkout gh-pages
           git pull origin gh-pages
-          git checkout master
+          git checkout ${{ github.sha }}
 
       - name: "Install poetry and lightbus"
         run: |
