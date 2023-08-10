@@ -8,7 +8,9 @@ source =
 data_file = .coverage/coverage
 omit =
     lightbus/utilities/testing.py
-    lightbus/commands/
+    # Commands are executed in a separate interpreter, so do not
+    # get included in the coverage results (although maybe we could)
+    lightbus/commands/*.py
 
 [report]
 exclude_lines =

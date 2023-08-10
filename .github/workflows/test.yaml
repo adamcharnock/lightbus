@@ -6,10 +6,11 @@ on:
       - '.github/workflows/test.yaml'
       - 'lightbus/**'
       - 'tests/**'
+      - 'lightbus_vendored/**'
       - 'poetry.lock'
       - 'pyproject.toml'
       - 'pytest.ini'
-      - 'lightbus_vendored/**'
+      - '.coveragerc'
 
 jobs:
   test:
