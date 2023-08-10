@@ -43,6 +43,7 @@ jobs:
 
       - name: Install & initialise
         run: |
+          pip install poetry
           poetry config virtualenvs.in-project true
           poetry install
           mkdir -p .coverage .test-reports
