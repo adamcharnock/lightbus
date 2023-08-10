@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import chain
 from uuid import UUID
 
@@ -370,7 +370,7 @@ async def test_consume_events_since_datetime(
     )
 
     # 1515000001500-0 -> 2018-01-03T17:20:01.500Z
-    since_datetime = datetime(2018, 1, 3, 17, 20, 1, 500)
+    since_datetime = datetime(2018, 1, 3, 17, 20, 1, 500, tzinfo=timezone.utc)
     consumer = redis_event_transport.consume(
         [("my.dummy", "my_event")],
         listener_name="test",
@@ -1233,7 +1233,9 @@ async def test_history_get_subset_multiple_batches(
 async def test_lag_no_stream(redis_event_transport: RedisEventTransport, redis_client, error_queue):
     """No stream exists"""
     lag = await redis_event_transport.lag(
-        api_name="my_api", event_name="my_event", listener_name="my_listener",
+        api_name="my_api",
+        event_name="my_event",
+        listener_name="my_listener",
     )
     assert lag == 0
 
@@ -1245,7 +1247,9 @@ async def test_lag_no_consumer(
     """No consumer exists"""
     await redis_client.xadd("my_api.my_event:stream", {"a": 1}, message_id=b"1-0")
     lag = await redis_event_transport.lag(
-        api_name="my_api", event_name="my_event", listener_name="my_listener",
+        api_name="my_api",
+        event_name="my_event",
+        listener_name="my_listener",
     )
     assert lag == 0
 
@@ -1258,7 +1262,9 @@ async def test_lag_no_matching_group(
     await redis_client.xadd("my_api.my_event:stream", {"a": 1}, message_id=b"1-0")
     await redis_client.xgroup_create("my_api.my_event:stream", "another_listener", latest_id="0")
     lag = await redis_event_transport.lag(
-        api_name="my_api", event_name="my_event", listener_name="my_listener",
+        api_name="my_api",
+        event_name="my_event",
+        listener_name="my_listener",
     )
     assert lag == 0
 
@@ -1271,7 +1277,9 @@ async def test_lag_no_lag(redis_event_transport: RedisEventTransport, redis_clie
         "my_api.my_event:stream", "test_service-my_listener", latest_id="1-0"
     )
     lag = await redis_event_transport.lag(
-        api_name="my_api", event_name="my_event", listener_name="my_listener",
+        api_name="my_api",
+        event_name="my_event",
+        listener_name="my_listener",
     )
     assert lag == 0
 
@@ -1288,7 +1296,9 @@ async def test_lag_has_lag_no_pending(
         "my_api.my_event:stream", "test_service-my_listener", latest_id="1-0"
     )
     lag = await redis_event_transport.lag(
-        api_name="my_api", event_name="my_event", listener_name="my_listener",
+        api_name="my_api",
+        event_name="my_event",
+        listener_name="my_listener",
     )
     assert lag == 2
 
@@ -1303,7 +1313,9 @@ async def test_lag_no_lag_latest_message_missing(
         "my_api.my_event:stream", "test_service-my_listener", latest_id="2-0"
     )
     lag = await redis_event_transport.lag(
-        api_name="my_api", event_name="my_event", listener_name="my_listener",
+        api_name="my_api",
+        event_name="my_event",
+        listener_name="my_listener",
     )
     assert lag == 0
 
@@ -1329,7 +1341,9 @@ async def test_lag_has_lag_has_pending(
         count=1,
     )
     lag = await redis_event_transport.lag(
-        api_name="my_api", event_name="my_event", listener_name="my_listener",
+        api_name="my_api",
+        event_name="my_event",
+        listener_name="my_listener",
     )
     assert lag == 2
 
@@ -1354,7 +1368,9 @@ async def test_lag_no_lag_has_pending(
         count=1,
     )
     lag = await redis_event_transport.lag(
-        api_name="my_api", event_name="my_event", listener_name="my_listener",
+        api_name="my_api",
+        event_name="my_event",
+        listener_name="my_listener",
     )
     assert lag == 1
 

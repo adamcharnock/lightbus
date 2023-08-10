@@ -52,7 +52,7 @@ def normalise_since_value(since):
         return "$"
     elif hasattr(since, "timestamp"):  # datetime
         # Create message ID: "<milliseconds-timestamp>-<sequence-number>"
-        return f"{round(since.timestamp() * 1000):013d}-0"
+        return datetime_to_redis_steam_id(since)
     else:
         return since
 
@@ -71,7 +71,7 @@ def redis_steam_id_to_datetime(message_id):
 def datetime_to_redis_steam_id(dt: datetime) -> str:
     timestamp = round(dt.timestamp() * 1000)
     # We ignore microseconds here as using them in the sequence
-    # number would make the the sequence number non sequential
+    # number would make the sequence number non-sequential
     return f"{timestamp:013d}-0"
 
 
