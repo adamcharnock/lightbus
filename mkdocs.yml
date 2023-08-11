@@ -63,6 +63,7 @@ nav:
     - Lightbus vs Celery: explanation/lightbus-vs-celery.md
     - Architecture tips: explanation/architecture-tips.md
     - Performance: explanation/performance.md
+    - Internal Architecture: explanation/internal-architecture.md
   - Reference:
     - Overview: reference/index.md
     - APIs: reference/apis.md
