@@ -1206,15 +1206,15 @@
                 <h1 id="internal-architecture">Internal Architecture<a class="headerlink" href="#internal-architecture" title="Permanent link">&para;</a></h1>
 <p>Lightbus' internal workings are composed of:</p>
 <ul>
-<li>The user-facing API. This is provided by the <code>BusClient</code> class, which then makes use of the <code>EventClient</code> and
+<li><strong>The user-facing API</strong>. This is provided by the <code>BusClient</code> class, which then makes use of the <code>EventClient</code> and
   <code>RpcResultClient</code> classes. This is a friendly API that issues helpful errors where appropriate. This also
   orchestrates system startup and shutdown.</li>
-<li>An internal message queuing system. This includes four separate internal message queues plus the <code>EventDock</code> 
+<li><strong>An internal message queuing system</strong>. This includes four separate internal message queues plus the <code>EventDock</code> 
   &amp; <code>RpcResultDock</code> classes. The message queues provide the internal communication medium between the
   user-facing API and the Lightbus backend. The <code>EventDock</code> &amp; <code>RpcResultDock</code> classes convert these messages 
   into a simplified API for implementation by the transports. The <code>EventDock</code> contains the <code>EventTransport</code>, 
   and the <code>RpcResultDock</code> contains both the <code>RpcTransport</code> and <code>RpcResultTransport</code>.</li>
-<li>The Event &amp; RPC transports implement Lightbus functionality for a specific backend. The main transports 
+<li><strong>The Event &amp; RPC transports</strong> implement Lightbus functionality for a specific backend (e.g. Redis). The main transports 
   shipped with Lightbus are the <code>RedisEventTransport</code>, <code>RedisRpcTransport</code>, and <code>RedisResultTransport</code>.</li>
 </ul>
 <h2 id="diagram">Diagram<a class="headerlink" href="#diagram" title="Permanent link">&para;</a></h2>
