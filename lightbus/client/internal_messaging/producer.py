@@ -50,13 +50,14 @@ class InternalProducer:
     # How often should the queue sizes be monitored
     monitor_interval = 0.1
 
-    def __init__(self, queue: InternalQueue, error_queue: ErrorQueueType):
+    def __init__(self, name: str, queue: InternalQueue, error_queue: ErrorQueueType):
         """Initialise the invoker
 
         The callable specified by `on_exception` will be called with a single positional argument,
         which is the exception which occurred. This should take care of shutting down the invoker,
         as well as any other cleanup which needs to happen.
         """
+        self.name = name
         self._queue_monitor_task: Optional[asyncio.Task] = None
         self._monitor_ready = asyncio.Event()
         self.queue = queue
@@ -105,20 +106,18 @@ class InternalProducer:
 
                     logger.warning(
                         "Queue in %s has shrunk back down to %s commands.%s",
-                        self.__class__.__name__,
+                        self.name,
                         current_size,
                         everything_ok,
                     )
                 elif show_size_warning:
-                    logger.warning(
-                        "Queue in %s now has %s commands.", self.__class__.__name__, current_size
-                    )
+                    logger.warning("Queue in %s now has %s commands.", self.name, current_size)
 
             previous_size = current_size
             await asyncio.sleep(self.monitor_interval)
 
     def send(self, command) -> asyncio.Event:
-        logger.debug(f"Sending command {command}")
+        logger.debug(f"Sending command {command} in producer {self.name}")
         event = asyncio.Event()
         self.queue.put_nowait((command, event))
         return event

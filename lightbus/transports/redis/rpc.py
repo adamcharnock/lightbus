@@ -27,14 +27,14 @@ logger = logging.getLogger("lightbus.transports.redis")
 
 
 class RedisRpcTransport(RedisTransportMixin, RpcTransport):
-    """ Redis RPC transport providing at-most-once delivery
+    """Redis RPC transport providing at-most-once delivery
 
     This transport uses a redis list and a blocking pop operation
     to distribute an RPC call to a single RPC consumer.
 
     Each call also has a corresponding expiry key created. Once the
     key expires it should be assumed that the RPC call has timed
-    out and that therefore is should be discarded rather than
+    out and that therefore should be discarded rather than
     be processed.
     """
 
@@ -177,6 +177,7 @@ class RedisRpcTransport(RedisTransportMixin, RpcTransport):
                 # We need to manually close the connection here otherwise the aioredis
                 # pool will emit warnings saying that this connection still has pending
                 # commands (i.e. the above blocking pop)
+                logger.debug("Closing redis connection")
                 redis.close()
                 raise
 

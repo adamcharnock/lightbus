@@ -41,7 +41,7 @@ async def test_queue_monitor(producer: InternalProducer, caplog: LogCaptureFixtu
 
     # Now we have logging
     assert len(caplog.records) == 1
-    assert caplog.records[0].getMessage() == "Queue in InternalProducer now has 3 commands."
+    assert caplog.records[0].getMessage() == "Queue in TestProducer now has 3 commands."
     caplog.clear()  # Clear the log messages
 
     # Let's check we get another messages when the queue gets bigger again
@@ -49,7 +49,7 @@ async def test_queue_monitor(producer: InternalProducer, caplog: LogCaptureFixtu
     await asyncio.sleep(0.05)
 
     assert len(caplog.records) == 1
-    assert caplog.records[0].getMessage() == "Queue in InternalProducer now has 4 commands."
+    assert caplog.records[0].getMessage() == "Queue in TestProducer now has 4 commands."
     caplog.clear()  # Clear the log messages
 
     # Now check we get logging when the queue shrinks, but is still above the warning level
@@ -58,7 +58,7 @@ async def test_queue_monitor(producer: InternalProducer, caplog: LogCaptureFixtu
 
     assert len(caplog.records) == 1
     assert caplog.records[0].getMessage() == (
-        "Queue in InternalProducer has shrunk back down to 3 commands."
+        "Queue in TestProducer has shrunk back down to 3 commands."
     )
     caplog.clear()  # Clear the log messages
 
@@ -68,7 +68,7 @@ async def test_queue_monitor(producer: InternalProducer, caplog: LogCaptureFixtu
 
     assert len(caplog.records) == 1
     assert caplog.records[0].getMessage() == (
-        "Queue in InternalProducer has shrunk back down to 2 commands. "
+        "Queue in TestProducer has shrunk back down to 2 commands. "
         "Queue is now at an OK size again."
     )
     caplog.clear()  # Clear the log messages

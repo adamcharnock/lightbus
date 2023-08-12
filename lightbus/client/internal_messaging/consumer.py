@@ -17,10 +17,11 @@ class InternalConsumer:
     consumption by the transport
     """
 
-    def __init__(self, queue: InternalQueue, error_queue: ErrorQueueType):
+    def __init__(self, name: str, queue: InternalQueue, error_queue: ErrorQueueType):
         self._consumer_task: Optional[asyncio.Task] = None
         self._running_commands = set()
         self._ready = asyncio.Event()
+        self.name = name
         self.queue = queue
         self.error_queue = error_queue
 
@@ -30,7 +31,7 @@ class InternalConsumer:
         Use `stop()` to shutdown the invoker.
         """
         logger.debug(
-            f"Starting consumer for handler {handler.__qualname__}(). This should report ready"
+            f"Starting {self.name} consumer for handler {handler.__qualname__}(). This should report ready"
             " shortly..."
         )
         self._consumer_task = asyncio.ensure_future(
@@ -58,7 +59,9 @@ class InternalConsumer:
 
     async def _consumer_loop(self, queue, handler):
         """Continually fetch commands from the queue and handle them"""
-        logger.debug(f"Consumer loop is ready with handler {handler.__qualname__}()")
+        logger.debug(
+            f"Consumer loop for {self.name} is ready with handler {handler.__qualname__}()"
+        )
         self._ready.set()
 
         while True:
@@ -75,7 +78,7 @@ class InternalConsumer:
 
         This execution happens in the background.
         """
-        logger.debug(f"Handling command {command}")
+        logger.debug(f"Handling command {command} in consumer {self.name}")
 
         def when_task_finished(fut: asyncio.Future):
             self._running_commands.remove(fut)

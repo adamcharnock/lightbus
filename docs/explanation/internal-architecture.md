@@ -18,3 +18,4 @@ Lightbus' internal workings are composed of:
 ![Internal Architecture Diagram][diagram]
 
 [diagram]: ../static/images/internal-architecture.png
+

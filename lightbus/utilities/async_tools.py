@@ -181,5 +181,5 @@ async def call_on_schedule(callback, schedule: "Job", also_run_immediately: bool
 
 
 async def delayed_startup(coroutine: Coroutine, delay: float):
-    await asyncio.sleep(delay)
+    # await asyncio.sleep(delay)
     return await coroutine

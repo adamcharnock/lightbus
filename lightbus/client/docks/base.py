@@ -29,8 +29,12 @@ class BaseDock:
         self.api_registry = api_registry
         self.config = config
         self.error_queue = error_queue
-        self.producer = InternalProducer(queue=produce_to, error_queue=error_queue)
-        self.consumer = InternalConsumer(queue=consume_from, error_queue=error_queue)
+        self.producer = InternalProducer(
+            name=self.__class__.__name__, queue=produce_to, error_queue=error_queue
+        )
+        self.consumer = InternalConsumer(
+            name=self.__class__.__name__, queue=consume_from, error_queue=error_queue
+        )
 
         self.producer.start()
         self.consumer.start(self.handle)
