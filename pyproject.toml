@@ -94,5 +94,5 @@ async-timeout = "^4.0.3"
     debug = "lightbus:DebugSchemaTransport"
 
 [build-system]
-    requires = ["poetry>=0.12"]
-    build-backend = "poetry.masonry.api"
+    requires = ["poetry>=1.0.0"]
+    build-backend = "poetry.core.masonry.api"

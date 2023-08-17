@@ -4,7 +4,11 @@ import sys
 from typing import Sequence, Tuple, Callable
 
 if sys.version_info < (3, 10):
-    from importlib_metadata import entry_points
+    from importlib.metadata import entry_points as _entry_points
+
+    def entry_points(group):
+        return _entry_points()[group]
+
 else:
     from importlib.metadata import entry_points
 

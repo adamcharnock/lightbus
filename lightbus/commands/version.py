@@ -4,9 +4,13 @@ import sys
 from pathlib import Path
 
 if sys.version_info < (3, 10):
-    from importlib_metadata import version as importlib_version
+    from importlib.metadata import entry_points as _entry_points
+
+    def entry_points(group):
+        return _entry_points()[group]
+
 else:
-    from importlib.metadata import version as importlib_version
+    from importlib.metadata import entry_points
 
 
 logger = logging.getLogger(__name__)
