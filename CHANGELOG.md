@@ -4,7 +4,7 @@
 
 * Enhancement: Python 3.10 & 3.11 now supported
 * Vendored aioredis due to compatibility issues
-* Breaking: Python 3.7 no longer supported
+* Breaking: Python 3.7 & 3.8 no longer supported
 
 ## 1.2.0
 

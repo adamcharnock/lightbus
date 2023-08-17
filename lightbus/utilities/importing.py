@@ -41,8 +41,5 @@ def load_entrypoint_classes(entrypoint_name) -> Sequence[Tuple[str, str, Callabl
     found_classes = []
     for entrypoint in entry_points(group=entrypoint_name):
         class_ = entrypoint.load()
-        if sys.version_info < (3, 9):
-            found_classes.append((entrypoint.module_name, entrypoint.name, class_))
-        else:
-            found_classes.append((entrypoint.module, entrypoint.name, class_))
+        found_classes.append((entrypoint.module, entrypoint.name, class_))
     return found_classes

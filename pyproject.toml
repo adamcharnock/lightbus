@@ -34,7 +34,7 @@
     ]
 
 [tool.poetry.dependencies]
-    python = ">=3.8"
+    python = ">=3.9"
     jsonschema = "^4.19.0"
     pyyaml = ">=3.12"
     python-dateutil = "^2.8.1"
