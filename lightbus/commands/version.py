@@ -3,6 +3,8 @@ import logging
 import sys
 from pathlib import Path
 
+from importlib.metadata import version as importlib_version
+
 if sys.version_info < (3, 10):
     from importlib.metadata import entry_points as _entry_points
 
