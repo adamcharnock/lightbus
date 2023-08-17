@@ -2,287 +2,287 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>http://lightbus.org/dev/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/CODE_OF_CONDUCT/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/anatomy-lesson/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/apis/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/architecture-tips/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/bus/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/configuration/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/events/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/internal-architecture/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/lightbus-vs-celery/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/marshalling/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/performance/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/rpcs/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/schema/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/services/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/explanation/transports/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/howto/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/howto/access-your-bus-client/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/howto/event-sourcing/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/howto/metrics/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/howto/migrate-from-celery-to-lightbus/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/howto/modify-lightbus/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/howto/run-background-tasks/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/howto/schedule-recurring-tasks/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/howto/write-idempotent-event-handlers/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/includes/if-you-get-stuck/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/includes/note-configuration-auto-complete/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/apis/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/authors/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/code-of-conduct/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/configuration/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/events/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/plugins-development/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/plugins/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/release-process/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/rpcs/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/schema/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/testing-and-mocking/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/transport-configuration/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/typing/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/command-line-use/dumpconfigschema/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/command-line-use/dumpschema/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/command-line-use/inspect/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/command-line-use/run/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/command-line-use/shell/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/protocols/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/protocols/event/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/protocols/rpc-and-result/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/reference/protocols/schema/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/tutorial/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/tutorial/django-and-lightbus/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/tutorial/getting-involved/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/tutorial/installation/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/tutorial/quick-start/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>http://lightbus.org/dev/tutorial/worked-example/</loc>
-         <lastmod>2023-08-11</lastmod>
+         <lastmod>2023-08-17</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
