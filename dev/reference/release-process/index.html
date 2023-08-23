@@ -1166,8 +1166,8 @@ poetry<span class="w"> </span>lock
 <span class="c1"># Version bump</span>
 poetry<span class="w"> </span>version<span class="w"> </span><span class="o">{</span>patch,minor,major,prepatch,preminor,premajor,prerelease<span class="o">}</span>
 
-<span class="nb">export</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span><span class="k">$(</span>lightbus<span class="w"> </span>version<span class="w"> </span>--pyproject<span class="k">)</span><span class="w">   </span><span class="c1"># v1.2.3</span>
-<span class="nb">export</span><span class="w"> </span><span class="nv">VERSION_DOCS</span><span class="o">=</span><span class="k">$(</span>lightbus<span class="w"> </span>version<span class="w"> </span>--pyproject<span class="w"> </span>--docs<span class="k">)</span><span class="w">  </span><span class="c1"># v1.2</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">VERSION</span><span class="o">=(</span>lightbus<span class="w"> </span>version<span class="w"> </span>--pyproject<span class="o">)</span><span class="w">   </span><span class="c1"># v1.2.3</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">VERSION_DOCS</span><span class="o">=(</span>lightbus<span class="w"> </span>version<span class="w"> </span>--pyproject<span class="w"> </span>--docs<span class="o">)</span><span class="w">  </span><span class="c1"># v1.2</span>
 
 <span class="c1"># Commit</span>
 git<span class="w"> </span>add<span class="w"> </span>.
