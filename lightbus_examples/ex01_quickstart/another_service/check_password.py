@@ -1,5 +1,9 @@
 # File: ./another_service/check_password.py
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
 # Import our service's bus client
 from bus import bus
 

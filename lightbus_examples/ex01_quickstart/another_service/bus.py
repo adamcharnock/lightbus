@@ -6,6 +6,10 @@ bus = lightbus.create()
 
 
 def handle_new_user(event, username, email):
+    # bus.client.enabled = True
+    block(bus.auth.check_password.call_async(username="admin", password="secret"), timeout=2)
+    # bus.client.enabled = False
+
     print(f"A new user was created in the authentication service:")
     print(f"    Username: {username}")
     print(f"    Email: {email}")

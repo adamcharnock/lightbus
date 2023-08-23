@@ -124,6 +124,8 @@ async def run_user_provided_callable(callable_, args, kwargs, type_name):
 
     The callable will be called with the given args and kwargs
     """
+    from lightbus.creation import thread_cleanup
+
     if asyncio.iscoroutinefunction(callable_):
         try:
             return await callable_(*args, **kwargs)
@@ -131,11 +133,22 @@ async def run_user_provided_callable(callable_, args, kwargs, type_name):
             exception = e
     else:
         try:
-            thread_pool_executor = ThreadPoolExecutor(thread_name_prefix=f"{type_name}_user_tpe")
+            thread_pool_executor = ThreadPoolExecutor(
+                thread_name_prefix=f"{type_name}_user_tpe", max_workers=1
+            )
+
+            # Run the user-provided callable
             future = asyncio.get_event_loop().run_in_executor(
                 executor=thread_pool_executor, func=lambda: callable_(*args, **kwargs)
             )
-            return await future
+            result = await future
+
+            # Cleanup any bus clients created in this thread
+            await asyncio.get_event_loop().run_in_executor(
+                executor=thread_pool_executor, func=thread_cleanup
+            )
+
+            return result
         except Exception as e:
             exception = e
 

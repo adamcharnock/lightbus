@@ -258,15 +258,17 @@ class ThreadLocalClientProxy:
     This proxy will ensure a bus client is created for each thread.
     """
 
+    local = threading.local()
+
     def __init__(self, client_factory: Callable):
         self.client_factory = client_factory
-        self.local = threading.local()
         # Create the client from the main thread. We'll assume the current
         # thread is the main thread, even if that is not strictly the case
         self.main_client: Optional[BusClient] = self.client_factory()
         # Make the main client available in the current thread's
         # local storage. We do this because the current thread is the 'main' thread
         self.local.client = self.main_client
+        self.local.clean_me_up = False
         self.enabled = True
 
     def _create_client(self) -> BusClient:
@@ -299,6 +301,7 @@ class ThreadLocalClientProxy:
         if not hasattr(self.local, "client"):
             logger.debug(f"Creating new client for thread {threading.current_thread().name}")
             self.local.client = self._create_client()
+
         return self.local.client
 
     def disable_proxy(self):
@@ -310,6 +313,16 @@ class ThreadLocalClientProxy:
 
     def __getattr__(self, item):
         return getattr(self.proxied_client, item)
+
+
+def thread_cleanup():
+    """Cleanup any bus clients created for the current thread"""
+    local = ThreadLocalClientProxy.local
+    client = getattr(local, "client", None)
+    clean_me_up = getattr(local, "clean_me_up", True)
+    logger.debug(f"Cleaning up thread {threading.current_thread().name}. {clean_me_up=} {client=}")
+    if clean_me_up and client:
+        client.close()
 
 
 def load_config(
