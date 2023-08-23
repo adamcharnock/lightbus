@@ -9,8 +9,8 @@ poetry lock
 # Version bump
 poetry version {patch,minor,major,prepatch,preminor,premajor,prerelease}
 
-export VERSION=$(lightbus version --pyproject)   # v1.2.3
-export VERSION_DOCS=$(lightbus version --pyproject --docs)  # v1.2
+export VERSION=(lightbus version --pyproject)   # v1.2.3
+export VERSION_DOCS=(lightbus version --pyproject --docs)  # v1.2
 
 # Commit
 git add .
