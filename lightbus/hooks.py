@@ -32,7 +32,10 @@ class HookRegistry:
         for callback in self._hook_callbacks[key]:
             await queue_exception_checker(
                 run_user_provided_callable(
-                    callback, args=[], kwargs=dict(**self.extra_parameters, **kwargs)
+                    callback,
+                    args=[],
+                    kwargs=dict(**self.extra_parameters, **kwargs),
+                    type_name="hook",
                 ),
                 self.error_queue,
             )
@@ -43,7 +46,10 @@ class HookRegistry:
         key = CallbackKey(name, run_before_plugins=False)
         for callback in self._hook_callbacks[key]:
             await run_user_provided_callable(
-                callback, args=[], kwargs=dict(**self.extra_parameters, **kwargs)
+                callback,
+                args=[],
+                kwargs=dict(**self.extra_parameters, **kwargs),
+                type_name="hook",
             )
 
     def register_callback(self, name, fn, before_plugins=False):

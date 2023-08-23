@@ -93,7 +93,11 @@ class EventClient(BaseSubClient):
             raise InvalidEventArguments(
                 "Unexpected argument supplied when firing event {}.{}. Attempted to fire event with"
                 " {} arguments: {}. Unexpected argument(s): {}".format(
-                    api_name, name, len(kwargs), sorted(kwargs.keys()), sorted(extra_arguments),
+                    api_name,
+                    name,
+                    len(kwargs),
+                    sorted(kwargs.keys()),
+                    sorted(extra_arguments),
                 )
             )
 
@@ -166,7 +170,6 @@ class EventClient(BaseSubClient):
     async def _on_message(
         self, event_message: EventMessage, listener: Callable, options: dict, on_error: OnError
     ):
-
         # TODO: Check events match those requested
         logger.info(
             L(
@@ -194,7 +197,12 @@ class EventClient(BaseSubClient):
             # put any errors into Lightbus' error queue, and therefore
             # cause a shutdown
             await queue_exception_checker(
-                run_user_provided_callable(listener, args=[event_message], kwargs=parameters),
+                run_user_provided_callable(
+                    listener,
+                    args=[event_message],
+                    kwargs=parameters,
+                    type_name="listener",
+                ),
                 self.error_queue,
                 help=(
                     f"An error occurred while {listener} was handling an event. Lightbus will now"

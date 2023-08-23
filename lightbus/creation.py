@@ -232,6 +232,7 @@ def create(
     flask: bool = False,
     **kwargs,
 ) -> BusPath:
+    logger.debug("Creating BusClient")
     client_proxy = ThreadLocalClientProxy(
         partial(
             create_client,
@@ -289,6 +290,12 @@ class ThreadLocalClientProxy:
         if not self.enabled:
             return self.main_client
 
+        thread_name = threading.current_thread().name
+        if thread_name.startswith("hook_"):
+            # Hooks also get direct access to the main client so they can
+            # setup listeners
+            return self.main_client
+
         if not hasattr(self.local, "client"):
             logger.debug(f"Creating new client for thread {threading.current_thread().name}")
             self.local.client = self._create_client()
@@ -297,10 +304,7 @@ class ThreadLocalClientProxy:
     def disable_proxy(self):
         """Disable the proxying and always use self.main_client
 
-        This is mainly useful within the lightbus worker (i.e. `lightbus run`).
-        In this case lightbus is in control of the process so can make sane choices
-        with regards its use of threads, rather than being at the mercy of some
-        other system (i.e. gunicorn, django's development server, etc)
+        This is useful in tests.
         """
         self.enabled = False
 

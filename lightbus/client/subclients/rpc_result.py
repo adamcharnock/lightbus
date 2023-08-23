@@ -86,7 +86,7 @@ class RpcResultClient(BaseSubClient):
     async def call_rpc_remote(
         self, api_name: str, name: str, kwargs: dict = frozendict(), options: dict = frozendict()
     ):
-        """ Perform an RPC call
+        """Perform an RPC call
 
         Call an RPC and return the result.
         """
@@ -176,7 +176,9 @@ class RpcResultClient(BaseSubClient):
             method = getattr(api, name)
             if self.config.api(api_name).cast_values:
                 kwargs = cast_to_signature(kwargs, method)
-            result = await run_user_provided_callable(method, args=[], kwargs=kwargs)
+            result = await run_user_provided_callable(
+                method, args=[], kwargs=kwargs, type_name="rpc"
+            )
         except (asyncio.CancelledError, SuddenDeathException):
             raise
         except Exception as e:

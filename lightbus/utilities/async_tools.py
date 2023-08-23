@@ -110,7 +110,7 @@ async def cancel_and_log_exceptions(*tasks):
             )
 
 
-async def run_user_provided_callable(callable_, args, kwargs):
+async def run_user_provided_callable(callable_, args, kwargs, type_name):
     """Run user provided code
 
     If the callable is blocking (i.e. a regular function) it will be
@@ -131,9 +131,7 @@ async def run_user_provided_callable(callable_, args, kwargs):
             exception = e
     else:
         try:
-            thread_pool_executor = ThreadPoolExecutor(
-                thread_name_prefix="user_provided_callable_tpe"
-            )
+            thread_pool_executor = ThreadPoolExecutor(thread_name_prefix=f"{type_name}_user_tpe")
             future = asyncio.get_event_loop().run_in_executor(
                 executor=thread_pool_executor, func=lambda: callable_(*args, **kwargs)
             )
@@ -159,7 +157,7 @@ async def call_every(*, callback, timedelta: datetime.timedelta, also_run_immedi
     while True:
         start_time = time()
         if not first_run or also_run_immediately:
-            await run_user_provided_callable(callback, args=[], kwargs={})
+            await run_user_provided_callable(callback, args=[], kwargs={}, type_name="background")
         total_execution_time = time() - start_time
         sleep_time = max(0.0, timedelta.total_seconds() - total_execution_time)
         await asyncio.sleep(sleep_time)
@@ -173,7 +171,7 @@ async def call_on_schedule(callback, schedule: "Job", also_run_immediately: bool
 
         if not first_run or also_run_immediately:
             schedule.last_run = datetime.datetime.now()
-            await run_user_provided_callable(callback, args=[], kwargs={})
+            await run_user_provided_callable(callback, args=[], kwargs={}, type_name="background")
 
         td = schedule.next_run - datetime.datetime.now()
         await asyncio.sleep(td.total_seconds())

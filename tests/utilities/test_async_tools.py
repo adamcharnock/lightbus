@@ -191,7 +191,7 @@ async def test_run_user_provided_callable_regular_function():
         nonlocal called
         called = True
 
-    await run_user_provided_callable(call_me, args=[1], kwargs={"b": 2})
+    await run_user_provided_callable(call_me, args=[1], kwargs={"b": 2}, type_name="test")
     assert called
 
 
@@ -203,5 +203,5 @@ async def test_run_user_provided_callable_async_function():
         nonlocal called
         called = True
 
-    await run_user_provided_callable(call_me, args=[1], kwargs={"b": 2})
+    await run_user_provided_callable(call_me, args=[1], kwargs={"b": 2}, type_name="test")
     assert called

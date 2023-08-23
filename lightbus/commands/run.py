@@ -74,9 +74,6 @@ class Command:
         bus: BusPath
         bus_module, bus = command_utilities.import_bus(args)
 
-        if isinstance(bus.client, ThreadLocalClientProxy):
-            bus.client.disable_proxy()
-
         # Convert only & skip into a list of features to enable
         if args.only or args.skip:
             if args.only:

@@ -1,5 +1,6 @@
 # File: ./another_service/bus.py
 import lightbus
+from lightbus.utilities.async_tools import block
 
 bus = lightbus.create()
 
