@@ -282,7 +282,7 @@ def jsonpath(obj, expr, result_type="VALUE", debug=0, use_eval=True):
         def notvar(m):
             return "'%s' not in __obj" % m.group(1)
 
-        loc = re.sub("!@\.([a-zA-Z@_]+)", notvar, loc)
+        loc = re.sub(r"!@\.([a-zA-Z@_]+)", notvar, loc)
 
         # replace @.name.... with __obj['name']....
         # handle @.name[.name...].length

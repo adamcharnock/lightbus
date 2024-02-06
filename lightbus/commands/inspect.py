@@ -188,7 +188,7 @@ class Command:
 
         # Construct the cache file name
         file_name_hash = sha1((api_name + "\0" + event_name).encode("utf8")).hexdigest()[:8]
-        file_name_api = re.sub("[^a-zA-Z0-9_]", "_", api_name)
+        file_name_api = re.sub(r"[^a-zA-Z0-9_]", "_", api_name)
         file_name_event = event_name.replace("*", "all")
 
         cache_file_name = f"{file_name_hash}-{file_name_api}-{file_name_event}.json"
