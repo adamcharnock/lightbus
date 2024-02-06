@@ -137,16 +137,22 @@ async def run_user_provided_callable(callable_, args, kwargs, type_name):
                 thread_name_prefix=f"{type_name}_user_tpe", max_workers=1
             )
 
-            # Run the user-provided callable
+            def _call_then_cleanup():
+                # Run the user-provided callable
+                # then cleanup any bus clients created in this thread
+                result_ = callable_(*args, **kwargs)
+                thread_cleanup()
+                return result_
+
+            # Hand the callable to the executor and await the result
             future = asyncio.get_event_loop().run_in_executor(
-                executor=thread_pool_executor, func=lambda: callable_(*args, **kwargs)
+                executor=thread_pool_executor, func=_call_then_cleanup
             )
             result = await future
 
-            # Cleanup any bus clients created in this thread
-            await asyncio.get_event_loop().run_in_executor(
-                executor=thread_pool_executor, func=thread_cleanup
-            )
+            # NOTE: I suspect this is required to ensure any "Task was destroyed but it is pending"
+            #       errors get shown at the appropriate time.
+            thread_pool_executor.shutdown()
 
             return result
         except Exception as e:
