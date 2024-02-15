@@ -3,7 +3,7 @@ anyjson==0.3.3
 billiard==3.5.0.2
 bottle==0.12.13
 celery==4.0.2
-certifi==2017.4.17
+certifi==2022.12.7
 chardet==3.0.4
 CProfileV==1.0.7
 enum-compat==0.0.2
