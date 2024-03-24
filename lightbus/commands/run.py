@@ -4,12 +4,13 @@ import logging
 import os
 import signal
 import sys
+import threading
 
 from lightbus import BusPath
 from lightbus.commands import utilities as command_utilities
-from lightbus.creation import ThreadLocalClientProxy
 from lightbus.plugins import PluginRegistry
-from lightbus.utilities.async_tools import block
+from lightbus.utilities.async_tools import block, thread_pool_executors
+from lightbus.creation import thread_cleanup
 from lightbus.utilities.features import Feature, ALL_FEATURES
 from lightbus.utilities.logging import log_welcome_message
 
@@ -110,6 +111,24 @@ class Command:
                 asyncio.get_event_loop().remove_signal_handler(signal_)
 
             logger.debug("Caught signal. Stopping Lightbus worker")
+
+            # We've created a bunch of ThreadPoolExecutors while lightbus has
+            # been running, so let's shut each one down.
+            for type_name in thread_pool_executors:
+                executor = thread_pool_executors[type_name]
+                futures = []
+                for thread in executor._threads:
+                    logger.info(f"Shutdown of {thread.name}")
+                    # TODO: Actually send to a specific thread, rather than just
+                    #       assuming each worker will pick up a single task
+                    futures.append(executor.submit(thread_cleanup))
+
+                # Wait for them all to finish
+                [f.result() for f in futures]
+
+                executor.shutdown(wait=True)
+
+            logger.info(f"Shutdown of {threading.current_thread().name}")
             bus.client.request_shutdown()
 
         for signal_ in restart_signals:

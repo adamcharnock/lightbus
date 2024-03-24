@@ -28,11 +28,11 @@ from lightbus.transports.registry import SchemaTransportPoolType
 from lightbus.utilities.io import make_file_safe_api_name
 from lightbus.api import Api, Event
 from lightbus.utilities.type_checks import is_optional
+from lightbus.transports.pool import TransportPool
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import
     from lightbus.transports.base import SchemaTransport
-    from lightbus.transports.pool import TransportPool
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +87,9 @@ class Schema:
             # TODO: Add link to docs in error message
             raise SchemaNotFound(
                 "No schema could be found for API {}. You should ensure that either this API is"
-                " being served by another lightbus process, or you can load this schema manually."
-                .format(api_name)
+                " being served by another lightbus process, or you can load this schema manually.".format(
+                    api_name
+                )
             )
         return api_schema
 
@@ -298,6 +299,15 @@ class Schema:
         try:
             while True:
                 await asyncio.sleep(interval)
+
+                if (
+                    isinstance(self.schema_transport, TransportPool)
+                    and self.schema_transport.closed
+                ):
+                    # We're shutting down, don't ping as there is no
+                    # transport to use
+                    return
+
                 # Keep alive our local schemas
                 for api_name, schema in self.local_schemas.items():
                     await self.schema_transport.ping(

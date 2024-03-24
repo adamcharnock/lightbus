@@ -25,7 +25,7 @@ from lightbus.log import Bold
 from lightbus.path import BusPath
 from lightbus.client.bus_client import BusClient
 from lightbus.config import Config
-from lightbus.exceptions import FailedToImportBusModule
+from lightbus.exceptions import FailedToImportBusModule, BusAlreadyClosed
 from lightbus.transports.registry import TransportRegistry
 from lightbus.utilities.importing import import_module_from_string
 from lightbus.utilities.logging import log_welcome_message
@@ -318,11 +318,14 @@ class ThreadLocalClientProxy:
 def thread_cleanup():
     """Cleanup any bus clients created for the current thread"""
     local = ThreadLocalClientProxy.local
-    client = getattr(local, "client", None)
+    client: BusClient = getattr(local, "client", None)
     clean_me_up = getattr(local, "clean_me_up", True)
     logger.debug(f"Cleaning up thread {threading.current_thread().name}. {clean_me_up=} {client=}")
     if clean_me_up and client:
-        client.close()
+        try:
+            client.close()
+        except BusAlreadyClosed:
+            pass
 
 
 def load_config(

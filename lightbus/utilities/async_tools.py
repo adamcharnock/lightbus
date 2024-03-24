@@ -9,7 +9,7 @@ import datetime
 
 from lightbus_vendored import aioredis
 
-from lightbus.exceptions import CannotBlockHere
+from lightbus.exceptions import CannotBlockHere, LightbusShutdownInProgress
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,cyclic-import,cyclic-import
@@ -110,6 +110,14 @@ async def cancel_and_log_exceptions(*tasks):
             )
 
 
+# A global collection of thread pool executors we use
+# when operating `lightbus run`. These are long-lived
+# as each thread gets its own bus client, with its own
+# various network connections. We then access this collection
+# within `lightbus run` to gracefully tear it down.
+thread_pool_executors: dict[str, ThreadPoolExecutor] = {}
+
+
 async def run_user_provided_callable(callable_, args, kwargs, type_name):
     """Run user provided code
 
@@ -133,32 +141,31 @@ async def run_user_provided_callable(callable_, args, kwargs, type_name):
             exception = e
     else:
         try:
-            thread_pool_executor = ThreadPoolExecutor(
-                thread_name_prefix=f"{type_name}_user_tpe", max_workers=1
-            )
+            # Create the ThreadPoolExecutor if we don't have it
+            if type_name not in thread_pool_executors:
+                thread_pool_executors[type_name] = ThreadPoolExecutor(
+                    thread_name_prefix=f"{type_name}_user_tpe", max_workers=10
+                )
 
-            def _call_then_cleanup():
-                # Run the user-provided callable
-                # then cleanup any bus clients created in this thread
-                result_ = callable_(*args, **kwargs)
-                thread_cleanup()
-                return result_
+            thread_pool_executor: ThreadPoolExecutor = thread_pool_executors[type_name]
 
             # Hand the callable to the executor and await the result
             future = asyncio.get_event_loop().run_in_executor(
-                executor=thread_pool_executor, func=_call_then_cleanup
+                executor=thread_pool_executor, func=lambda: callable_(*args, **kwargs)
             )
             result = await future
-
-            # NOTE: I suspect this is required to ensure any "Task was destroyed but it is pending"
-            #       errors get shown at the appropriate time.
-            thread_pool_executor.shutdown()
 
             return result
         except Exception as e:
             exception = e
 
-    logger.debug(f"Error in user provided callable: {repr(exception)}")
+    if (
+        isinstance(exception, RuntimeError)
+        and str(exception).lower() == "cannot schedule new futures after shutdown"
+    ):
+        exception = LightbusShutdownInProgress()
+
+    logger.debug(f"Error in user provided callable {callable_.__name__}: {repr(exception)}")
     raise exception
 
 
@@ -176,7 +183,12 @@ async def call_every(*, callback, timedelta: datetime.timedelta, also_run_immedi
     while True:
         start_time = time()
         if not first_run or also_run_immediately:
-            await run_user_provided_callable(callback, args=[], kwargs={}, type_name="background")
+            try:
+                await run_user_provided_callable(
+                    callback, args=[], kwargs={}, type_name="background"
+                )
+            except LightbusShutdownInProgress:
+                return
         total_execution_time = time() - start_time
         sleep_time = max(0.0, timedelta.total_seconds() - total_execution_time)
         await asyncio.sleep(sleep_time)
