@@ -57,9 +57,9 @@ if you need the latest (albeit unstable) changes, or if you wish to modify the L
 
 ## 1.3. Installing Redis
 
-You will need Redis 5.0 or above in order to use Lightbus.
+You will need Redis (version 5 or above) in order to use Lightbus.
 
-You can install Redis 5.0 on macOS by either:
+You can install Redis on macOS by either:
 
 1. Using [Homebrew] (`brew install redis`), or
 2. Using docker (`docker run --rm -p 6379:6379 -d redis`) 
@@ -72,7 +72,7 @@ You should now have:
 2. Lightbus installed
 3. Redis installed and running
 
-You check check everything is setup correctly by starting up lightbus. First create a file 
+You can check everything is setup correctly by starting up lightbus. First create a file 
 name `bus.py` which contains:
 
 ```python

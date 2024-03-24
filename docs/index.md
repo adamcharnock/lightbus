@@ -7,7 +7,7 @@
 Lightbus is a powerful and intuitive messaging client for your
 backend Python services.
 
-Lightbus uses Redis 5 as its underlying [transport](explanation/transports.md), although support
+Lightbus uses Redis as its underlying [transport](explanation/transports.md), although support
 for other platforms will be added in future.
 
 Other languages can also communicate with Lightbus by 
