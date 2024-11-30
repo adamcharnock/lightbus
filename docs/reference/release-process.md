@@ -34,7 +34,7 @@ git push origin \
     master \
     gh-pages
 
-# Wait for CI to pass: https://circleci.com/gh/adamcharnock/lightbus
+# Wait for CI to pass: https://github.com/adamcharnock/lightbus/actions
 
 # Build and publish
 poetry publish --build
