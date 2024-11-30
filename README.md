@@ -13,6 +13,8 @@ Lightbus requires Python 3.9 or above.
 
 **Full documentation can be found at https://lightbus.org**
 
+**[Adam Charnock](https://adamcharnock.com) is available for freelance/contract work.**
+
 ## Designed for ease of use
 
 Lightbus is designed with developers in mind. The syntax aims to be
