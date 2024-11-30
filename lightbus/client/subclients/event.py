@@ -109,7 +109,13 @@ class EventClient(BaseSubClient):
         validate_outgoing(self.config, self.schema, event_message)
 
         await self.hook_registry.execute("before_event_sent", event_message=event_message)
-        logger.info(L("📤  Sending event {}.{}".format(Bold(api_name), Bold(name))))
+        logger.info(
+            L(
+                "📤  Sending event {}.{} with ID {}".format(
+                    Bold(api_name), Bold(name), event_message.id
+                )
+            )
+        )
 
         await self.producer.send(SendEventCommand(message=event_message, options=options)).wait()
 
